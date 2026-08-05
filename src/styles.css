@@ -138,10 +138,17 @@ textarea:focus {
 .topbar-meta {
   display: flex;
   align-items: center;
+  flex-wrap: wrap;
+  justify-content: flex-end;
   gap: 14px;
   color: var(--muted);
   font-size: 14px;
   min-width: 0;
+  max-width: 100%;
+}
+
+.sound-toggle {
+  margin-left: auto;
 }
 
 .menu-shell,
@@ -259,6 +266,45 @@ h2 {
   grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 14px;
   margin-top: 28px;
+}
+
+.scene-art {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 260px;
+  gap: 0;
+  margin-top: 22px;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--panel);
+}
+
+.power-board {
+  display: block;
+  width: 100%;
+  height: 260px;
+}
+
+.scene-caption {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 10px;
+  padding: 24px;
+  border-left: 1px solid var(--line);
+  background:
+    linear-gradient(150deg, rgba(242, 193, 78, 0.1), transparent 70%),
+    var(--panel-2);
+}
+
+.scene-caption strong {
+  color: var(--gold);
+  font-size: 18px;
+}
+
+.scene-caption span {
+  color: var(--muted);
+  line-height: 1.7;
 }
 
 .menu-card {
@@ -565,6 +611,20 @@ h2 {
 
 .story-shell {
   width: min(920px, 100%);
+}
+
+.story-art {
+  margin-bottom: 14px;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--panel);
+}
+
+.story-art canvas {
+  display: block;
+  width: 100%;
+  height: 180px;
 }
 
 .back-link {
@@ -1275,6 +1335,15 @@ h2 {
     font-size: 12px;
   }
 
+  .topbar-meta .resource-chip {
+    padding: 6px 8px;
+    font-size: 11px;
+  }
+
+  .topbar-meta .resource-chip i {
+    font-size: 13px;
+  }
+
   .menu-shell,
   .map-shell,
   .story-shell,
@@ -1414,6 +1483,15 @@ h2 {
 
   .hero-actions button {
     width: 100%;
+  }
+
+  .scene-art {
+    grid-template-columns: 1fr;
+  }
+
+  .scene-caption {
+    border-left: 0;
+    border-top: 1px solid var(--line);
   }
 
   .chapter-badge {

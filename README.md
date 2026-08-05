@@ -10,6 +10,8 @@
 - 10 项领导力能力与 6 级成长体系
 - 情境高尔夫式专家基准评分
 - AI 陪练、本地双人、WebRTC 远程 1v1
+- 程序化权力关系沙盘与情境局势图
+- Web Audio 程序化音效与氛围声
 - 本地存档、能力雷达图、复盘报告
 - GitHub Pages 自动部署
 
@@ -27,9 +29,10 @@ npm run dev
 ```bash
 npm run build
 npm test
+npm run audit
 ```
 
-`npm test` 会自动启动 Vite，并完成建档、主线情境、AI 1v1 全流程冒烟验证。
+`npm test` 会自动启动 Vite，并完成建档、主线情境、AI 1v1 全流程冒烟验证；`npm run audit` 会检查桌面/手机全页面布局与控制台错误。
 
 ## 远程对战
 

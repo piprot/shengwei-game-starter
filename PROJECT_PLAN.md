@@ -35,11 +35,14 @@
 - [x] 复盘报告
 - [x] 1v1 大厅
 - [x] AI / 本地 / 远程对战界面
+- [x] 程序化权力关系沙盘与情境局势图
+- [x] Web Audio 程序化音效与氛围声
 
 ### M4 质量与部署
 
 - [x] TypeScript 构建
 - [x] Playwright 端到端冒烟测试
+- [x] 全页面多分辨率浏览器审计
 - [x] 桌面/手机溢出检查
 - [x] GitHub Actions CI
 - [x] GitHub Pages 自动部署

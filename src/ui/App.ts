@@ -45,7 +45,9 @@ import type {
   StoryNode
 } from "../core/types";
 import { ManualRtcPeer, type RtcMessage } from "../net/rtc";
+import { GameAudio } from "../audio";
 import { renderAbilityRadar } from "./charts";
+import { renderPowerBoard } from "./art";
 
 type View =
   | "menu"
@@ -61,6 +63,8 @@ type DuelMode = "ai" | "local" | "remote";
 
 export class AdaptiveGameApp {
   private root: HTMLElement;
+  private audio = new GameAudio();
+  private muted = false;
   private save: SaveState;
   private view: View = "menu";
   private pendingRole: RoleId = "highPotential";
@@ -149,6 +153,7 @@ export class AdaptiveGameApp {
     this.root.innerHTML = `
       <header class="topbar">
         <div class="brand">权变之路</div>
+        <button class="link sound-toggle" data-action="toggle-sound">${this.muted ? "声音：关" : "声音：开"}</button>
         <div class="topbar-meta">
           <span>${started ? this.save.profile.name : "未建档"}</span>
           <span>${summary.rank.name}</span>
@@ -171,6 +176,13 @@ export class AdaptiveGameApp {
             <span class="rank-caption">综合能力值</span>
             <div class="rank-meter"><i style="width:${Math.min(100, (summary.total / 60) * 100)}%"></i></div>
             <p>已通关 ${summary.chapterCount} / 9 章</p>
+          </div>
+        </section>
+        <section class="scene-art">
+          <canvas class="power-board" id="power-board" aria-label="权力关系沙盘示意图"></canvas>
+          <div class="scene-caption">
+            <strong>权力关系沙盘</strong>
+            <span>每一次选择，都在重新绘制你与关键人物之间的连接。</span>
           </div>
         </section>
         <section class="menu-grid">
@@ -197,6 +209,10 @@ export class AdaptiveGameApp {
         </section>
       </main>
     `;
+    const powerBoard = this.root.querySelector<HTMLCanvasElement>("#power-board");
+    if (powerBoard) {
+      renderPowerBoard(powerBoard, this.save.playCount + 7);
+    }
   }
 
   private renderProfile(): void {
@@ -311,6 +327,9 @@ export class AdaptiveGameApp {
       </header>
       <main class="story-shell">
         <button class="link back-link" data-action="open-map">返回主线地图</button>
+        <section class="story-art">
+          <canvas id="story-art" aria-label="当前情境的局势示意图"></canvas>
+        </section>
         <section class="scenario-panel">
           <div class="scenario-meta">
             <span>第 ${chapter.code} 章 · ${chapter.title}</span>
@@ -346,6 +365,10 @@ export class AdaptiveGameApp {
         </section>
       </main>
     `;
+    const storyArt = this.root.querySelector<HTMLCanvasElement>("#story-art");
+    if (storyArt) {
+      renderPowerBoard(storyArt, node.id.length * 11 + node.chapterId * 13);
+    }
   }
 
   private renderAbility(): void {
@@ -364,6 +387,7 @@ export class AdaptiveGameApp {
             <p class="muted">综合能力值 ${summary.total}，下一段位需要 ${this.nextRankNeed(summary.total)} 点。</p>
           </div>
           <canvas class="radar" id="ability-radar"></canvas>
+          <button class="primary" data-action="open-report">查看复盘报告</button>
         </section>
         <section class="ability-grid">
           ${ABILITY_ORDER.map((id) => this.abilityCard(id)).join("")}
@@ -426,6 +450,7 @@ export class AdaptiveGameApp {
             <span><strong>${this.save.duelLosses}</strong> 负</span>
             <span><strong>${this.save.masteryPoints}</strong> 修炼点</span>
           </div>
+          <button data-action="reset-profile">重置档案</button>
         </section>
         <section class="report-grid">
           <div class="report-panel">
@@ -596,6 +621,11 @@ export class AdaptiveGameApp {
           (this.duelMode === "ai" && engine.winnerIndex === 0) ||
           (this.duelMode === "remote" &&
             engine.winnerIndex === this.remotePlayerIndex);
+        if (humanWon) {
+          this.audio.win();
+        } else {
+          this.audio.lose();
+        }
         const delta = Math.abs(engine.scores[0] - engine.scores[1]);
         recordDuelResult(this.save, humanWon, this.duelMode === "ai", delta);
       }
@@ -696,11 +726,13 @@ export class AdaptiveGameApp {
     if (!action) {
       return;
     }
+    this.audio.ensure();
 
     switch (action) {
       case "open-node": {
         const nodeId = actionTarget.dataset.node;
         if (nodeId) {
+          this.audio.ui();
           this.storyNodeId = nodeId;
           this.lastOutcome = undefined;
           this.lastOutcomeNodeId = undefined;
@@ -711,31 +743,43 @@ export class AdaptiveGameApp {
       case "select-chapter": {
         const chapterId = Number(actionTarget.dataset.chapter);
         if (this.save.unlockedChapters.includes(chapterId)) {
+          this.audio.ui();
           this.selectedChapter = chapterId;
           this.renderMap();
         }
         break;
       }
       case "select-role":
+        this.audio.ui();
         this.pendingRole = (actionTarget.dataset.role as RoleId) ?? "highPotential";
         this.renderProfile();
         break;
       case "open-menu":
+        this.audio.ui();
         this.show("menu");
         break;
       case "open-profile":
+        this.audio.ui();
         this.show("profile");
         break;
       case "open-map":
+        this.audio.ui();
         this.selectedChapter =
           this.save.unlockedChapters[this.save.unlockedChapters.length - 1] ?? 1;
         this.show("map");
         break;
       case "open-ability":
+        this.audio.ui();
         this.show("ability");
         break;
       case "open-report":
+        this.audio.ui();
         this.show("report");
+        break;
+      case "toggle-sound":
+        this.muted = !this.muted;
+        this.audio.setMuted(this.muted);
+        this.render();
         break;
       case "reset-profile":
         if (window.confirm("确定要清空当前档案和所有进度吗？")) {
@@ -745,9 +789,11 @@ export class AdaptiveGameApp {
         }
         break;
       case "open-duel":
+        this.audio.ui();
         this.show("duelLobby");
         break;
       case "open-duel-lobby":
+        this.audio.ui();
         this.cleanupRemote();
         this.show("duelLobby");
         break;
@@ -824,6 +870,8 @@ export class AdaptiveGameApp {
     const name = input?.value.trim() || "你";
     const profile = createProfile(name, this.pendingRole);
     activateProfile(this.save, profile);
+    this.audio.startAmbient();
+    this.audio.expert();
     this.selectedChapter = 1;
     this.show("map");
   }
@@ -836,12 +884,21 @@ export class AdaptiveGameApp {
     const outcome = applyStoryChoice(this.save, this.storyNodeId, optionIndex);
     this.lastOutcome = outcome;
     this.lastOutcomeNodeId = this.storyNodeId;
+    if (outcome.option.quality === "expert") {
+      this.audio.expert();
+    } else if (outcome.option.quality === "partial") {
+      this.audio.partial();
+    } else {
+      this.audio.risk();
+    }
     this.renderStory();
   }
 
   private startAiDuel(): void {
     const human = buildDuelProfile(this.save.profile, this.save.profile.name, "#41c7c0");
     const ai = buildAiProfile("founder", Math.min(3, this.duelRounds / 2));
+    this.audio.ensure();
+    this.audio.round();
     this.duelEngine = new DuelEngine(human, ai, this.duelRounds, duelSeed());
     this.duelRecorded = false;
     this.show("duel");
@@ -850,6 +907,8 @@ export class AdaptiveGameApp {
   private startLocalDuel(): void {
     const playerOne = buildDuelProfile(this.save.profile, `${this.save.profile.name} · 玩家一`, "#41c7c0");
     const playerTwo = buildDuelProfile(this.save.profile, "玩家二", "#e9826c");
+    this.audio.ensure();
+    this.audio.round();
     this.duelEngine = new DuelEngine(playerOne, playerTwo, this.duelRounds, duelSeed());
     this.hotSeatTurn = 0;
     this.localPassed = false;
@@ -860,6 +919,8 @@ export class AdaptiveGameApp {
   private async createRemote(): Promise<void> {
     this.cleanupRemote();
     const seed = duelSeed();
+    this.remoteStatus = "正在生成邀请码，请稍候…";
+    this.renderDuelLobby();
     try {
       const { peer, inviteCode } = await ManualRtcPeer.createHost(seed);
       this.remotePeer = peer;
@@ -885,6 +946,8 @@ export class AdaptiveGameApp {
       return;
     }
     this.cleanupRemote();
+    this.remoteStatus = "正在解析邀请码并生成应答，请稍候…";
+    this.renderDuelLobby();
     try {
       const { peer, answerCode } = await ManualRtcPeer.join(code);
       this.remotePeer = peer;
@@ -922,6 +985,7 @@ export class AdaptiveGameApp {
   private bindRemotePeer(peer: ManualRtcPeer): void {
     peer.onOpen = () => {
       this.remoteStatus = "通道已建立";
+      this.audio.remoteConnected();
       peer.send({
         kind: "hello",
         name: this.save.profile.name,
@@ -987,6 +1051,7 @@ export class AdaptiveGameApp {
     if (!engine) {
       return;
     }
+    this.audio.duelPick();
     const optionIndex = Number(target.dataset.option);
     if (this.duelMode === "ai") {
       engine.pick(0, optionIndex);
