@@ -21,6 +21,7 @@ export class GameScene extends Phaser.Scene {
   private startText?: Phaser.GameObjects.Text;
   private muteText?: Phaser.GameObjects.Text;
   private pauseText?: Phaser.GameObjects.Text;
+  private helpText?: Phaser.GameObjects.Text;
   private sfx = new Sfx();
   private muted = false;
   private paused = false;
@@ -142,6 +143,12 @@ export class GameScene extends Phaser.Scene {
       color: "#9fb3c8"
     }).setOrigin(1, 0).setStroke("#000000", 4);
 
+    this.add.text(24, 80, "H: Help  R: Restart", {
+      fontFamily: "Arial",
+      fontSize: "16px",
+      color: "#9fb3c8"
+    }).setStroke("#000000", 4);
+
     if (this.input.keyboard) {
       this.cursors = this.input.keyboard.createCursorKeys();
       this.wasd = this.input.keyboard.addKeys("W,A,S,D") as Record<
@@ -164,6 +171,7 @@ export class GameScene extends Phaser.Scene {
     this.input.keyboard?.on("keydown-M", () => this.toggleMute());
     this.input.keyboard?.on("keydown-P", () => this.togglePause());
     this.input.keyboard?.on("keydown-R", () => this.scene.restart());
+    this.input.keyboard?.on("keydown-H", () => this.toggleHelp());
 
     this.time.addEvent({
       delay: 60,
@@ -304,6 +312,27 @@ export class GameScene extends Phaser.Scene {
       this.pauseText?.destroy();
       this.pauseText = undefined;
     }
+  }
+
+  private toggleHelp() {
+    if (this.helpText) {
+      this.helpText.destroy();
+      this.helpText = undefined;
+      return;
+    }
+    this.helpText = this.add.text(
+      this.scale.width / 2,
+      this.scale.height / 2,
+      "Move: Arrows / WASD\nTouch: Hold and drag\nP: Pause  M: Mute  R: Restart\nH: Close Help",
+      {
+        fontFamily: "Arial",
+        fontSize: "22px",
+        color: "#ffffff",
+        align: "center",
+        backgroundColor: "#101820cc",
+        padding: { x: 24, y: 18 }
+      }
+    ).setOrigin(0.5).setDepth(10);
   }
 
   private collectGem(
