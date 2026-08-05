@@ -4,8 +4,8 @@
 
 - Playwright programmatic audit passed for horizontal overflow.
 - Desktop 1280x720: no scroll, canvas fills screen.
-- Phone 720x1280 and 1080x2400: no horizontal scroll, portrait letterboxing remains.
-- Next task: reduce portrait letterboxing before adding final art assets.
+- Phone 720x1280 and 1080x2400: no scroll, canvas fills screen after dynamic sizing.
+- Next task: add final art and audio assets.
 
 ## Latest Gameplay
 

@@ -1,5 +1,4 @@
 import Phaser from "phaser";
-import { GAME_WIDTH, GAME_HEIGHT } from "../config";
 import { Sfx } from "../audio";
 
 export class GameScene extends Phaser.Scene {
@@ -22,8 +21,10 @@ export class GameScene extends Phaser.Scene {
   }
 
   create() {
-    const centerX = GAME_WIDTH / 2;
-    const centerY = GAME_HEIGHT / 2;
+    const sceneWidth = this.scale.width;
+    const sceneHeight = this.scale.height;
+    const centerX = sceneWidth / 2;
+    const centerY = sceneHeight / 2;
 
     this.add.text(centerX, 56, "Neon Chase", {
       fontFamily: "Arial",
@@ -68,10 +69,21 @@ export class GameScene extends Phaser.Scene {
     );
 
     this.gems = this.physics.add.group();
-    for (let i = 0; i < 6; i += 1) {
+    const gemCount = 6;
+    const gemCols = sceneWidth < 700 ? 3 : 6;
+    const gemRows = Math.ceil(gemCount / gemCols);
+    const gemStartY = Math.min(140, sceneHeight * 0.22);
+    const gemSpacingX =
+      gemCols > 1 ? (sceneWidth - 120) / (gemCols - 1) : 0;
+    const gemSpacingY =
+      gemRows > 1 ? (sceneHeight - gemStartY * 2) / (gemRows - 1) : 0;
+
+    for (let i = 0; i < gemCount; i += 1) {
+      const col = i % gemCols;
+      const row = Math.floor(i / gemCols);
       const gem = this.add.circle(
-        70 + i * 150,
-        140 + (i % 3) * 120,
+        60 + col * gemSpacingX,
+        gemStartY + row * gemSpacingY,
         12,
         0xffd166
       );
@@ -154,8 +166,8 @@ export class GameScene extends Phaser.Scene {
         this.player.y += Math.sin(angle) * speed;
       }
     } else if (this.player) {
-      this.player.x = Phaser.Math.Clamp(this.player.x + dx * speed, 16, GAME_WIDTH - 16);
-      this.player.y = Phaser.Math.Clamp(this.player.y + dy * speed, 16, GAME_HEIGHT - 16);
+      this.player.x = Phaser.Math.Clamp(this.player.x + dx * speed, 16, this.scale.width - 16);
+      this.player.y = Phaser.Math.Clamp(this.player.y + dy * speed, 16, this.scale.height - 16);
     }
 
     if (this.player && this.enemy) {
@@ -250,8 +262,8 @@ export class GameScene extends Phaser.Scene {
     this.time.delayedCall(150, () => this.player?.setFillStyle(0x4fd1c5));
 
     this.add.text(
-      GAME_WIDTH / 2,
-      GAME_HEIGHT / 2,
+      this.scale.width / 2,
+      this.scale.height / 2,
       `Game Over\nHigh Score: ${this.highScore}`,
       {
         fontFamily: "Arial",

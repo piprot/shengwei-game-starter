@@ -15,8 +15,7 @@ for (const size of sizes) {
   await page.goto("http://127.0.0.1:5173", {
     waitUntil: "networkidle"
   });
-  await page.mouse.click(size.width / 2, size.height / 2);
-  await page.waitForTimeout(300);
+  await page.waitForTimeout(500);
 
   const result = await page.evaluate(() => {
     const canvas = document.querySelector("canvas");

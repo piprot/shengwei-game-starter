@@ -20,8 +20,7 @@ for (const size of sizes) {
   await page.goto("http://127.0.0.1:5173", {
     waitUntil: "networkidle"
   });
-  await page.mouse.click(size.width / 2, size.height / 2);
-  await page.waitForTimeout(400);
+  await page.waitForTimeout(500);
   await page.screenshot({
     path: `${outDir}/${size.name}.png`,
     fullPage: true
