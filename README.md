@@ -1,53 +1,56 @@
-# Neon Chase
+# 权变之路 · Adaptive Ascent
 
-Phaser 3 + Vite + TypeScript browser game starter.
+面向高管教练业务的在线 1v1 领导力情境游戏。玩家在真实职场情境中做决策，通过主线剧情、支线任务和 1v1 对决，训练识人、用人、驭人、谋权、掌权、固权与自我进化能力。
 
 [![CI](https://github.com/piprot/shengwei-game-starter/actions/workflows/ci.yml/badge.svg)](https://github.com/piprot/shengwei-game-starter/actions/workflows/ci.yml)
 
-## Run
+## 游戏特性
+
+- 9 章权力架构、18 个主线情境、3 个支线任务
+- 10 项领导力能力与 6 级成长体系
+- 情境高尔夫式专家基准评分
+- AI 陪练、本地双人、WebRTC 远程 1v1
+- 本地存档、能力雷达图、复盘报告
+- GitHub Pages 自动部署
+
+## 本地运行
 
 ```bash
 npm install
 npm run dev
 ```
 
-Open http://localhost:5173
+打开 http://localhost:5173
 
-## Build
+## 构建与测试
 
 ```bash
 npm run build
-npm run preview
-```
-
-## Test
-
-```bash
 npm test
 ```
 
-## Controls
+`npm test` 会自动启动 Vite，并完成建档、主线情境、AI 1v1 全流程冒烟验证。
 
-- Move: Arrow keys / WASD
-- Touch: Hold and drag
-- Difficulty: 1 Easy / 2 Normal / 3 Hard
-- Pause: P
-- Mute: M
-- Restart: R
-- Help: H
+## 远程对战
 
-## Structure
+1. 创建方点击“远程对战 > 创建房间”，复制邀请码
+2. 对方点击“加入房间”，粘贴邀请码并生成应答码
+3. 创建方粘贴应答码并点击“完成连接”
+4. 双方通过 WebRTC 数据通道同步回合选择
 
-- `src/main.ts`: Phaser game entry
-- `src/config.ts`: game canvas config
-- `src/scenes/BootScene.ts`: boot scene
-- `src/scenes/GameScene.ts`: main gameplay scene
-- `.github/workflows/ci.yml`: build CI
+## 项目结构
 
-## Gameplay
+- `src/core/types.ts`：领域类型
+- `src/core/abilities.ts`：能力谱系、角色、成长
+- `src/core/story.ts`：九章剧情与情境数据
+- `src/core/game.ts`：存档、决策、评分、进度
+- `src/core/duel.ts`：1v1 引擎与 AI
+- `src/net/rtc.ts`：WebRTC 手动信令
+- `src/ui/App.ts`：游戏界面与状态路由
+- `scripts/smoke.mjs`：端到端冒烟测试
 
-Collect gems, build combos, avoid chasing enemies, and survive increasing waves.
+## 文档
 
-## Repository
-
-https://github.com/piprot/shengwei-game-starter
+- [PRD.md](./PRD.md)
+- [PROJECT_PLAN.md](./PROJECT_PLAN.md)
+- [CODEX_HANDOFF.md](./CODEX_HANDOFF.md)

@@ -1,75 +1,49 @@
 # CODEX_HANDOFF
 
-## Latest Audit
-
-- Playwright programmatic audit passed for horizontal overflow.
-- Desktop 1280x720: no scroll, canvas fills screen.
-- Phone 720x1280 and 1080x2400: no scroll, canvas fills screen after dynamic sizing.
-- Next task: add final art and audio assets.
-
-## Latest Gameplay
-
-- High score persists in localStorage.
-- Start screen and game over screen show the current high score.
-- Procedural art pass: grid background, triangle player, diamond gems, pulsing enemy.
-- Wave system: each completed wave spawns more gems; Game Over shows reached wave.
-- Mute toggle: press M to mute/unmute sound; HUD shows current state.
-- Pause toggle: press P to pause/resume; player and enemy freeze while paused.
-- Procedural ambient background loop starts on play and stops on game over.
-- Combo system: collecting gems within 2.5s increases combo and bonus score.
-- Procedural starfield background texture generated at boot and reused by game scene.
-- Player movement emits a fading particle trail for stronger game feel.
-- Press R to restart the current run at any time.
-- Each completed wave spawns an additional chasing enemy.
-- Smoke test added via `npm test`; Arcade Physics config fixed and test passes.
-- Difficulty selection on start screen: 1=Easy, 2=Normal, 3=Hard; affects gem count and enemy speed.
-- Procedural canvas textures for player, gems, enemies, and particles.
-- Wave transition sound added to the audio layer.
-
 ## 当前项目目标
 
-用 vibe coding 构建一款可迭代的浏览器游戏工程，先从通用 2D 可玩原型开始，后续根据用户 Brief 替换玩法。
+把 `game-starter` 从 Neon Chase 原型重构为生产级在线 1v1 领导力情境游戏《权变之路》，可部署 GitHub Pages，服务高管教练、创业者与高潜人才三类玩家。
 
 ## 当前阶段
 
-Prototype
+P0 可玩生产闭环，已完成核心开发，进入验证与部署阶段。
 
 ## 最新完成
 
-- 建立 Phaser 3 + Vite + TypeScript 工程
-- 玩家移动：方向键 / WASD / 触摸拖拽
-- 宝石收集、计分、集齐重开
-- 敌人追踪、碰撞 Game Over、自动重开
-- 默认原型方向已固化为 `PRD.md`：Neon Chase
-- 正式开始界面
-- 敌人速度随得分提升，最大速度封顶
-- HUD 字号/边距做基础移动端检查，并输出 `UI-AUDIT.md`
-- 收集/失败音效、宝石粒子、震屏、玩家闪白反馈
-- 本地开发服务器运行中
+- 重写为 Vanilla TypeScript + Vite 单页应用，不再依赖 Phaser
+- 新增十项能力谱系、角色建档、资源系统、段位成长
+- 新增九章权力架构、18 个主线情境、3 个支线任务
+- 新增情境决策引擎、专家基准评分、章节星级、解锁与本地存档
+- 新增能力图谱雷达图、复盘报告
+- 新增 AI 陪练、本地双人、WebRTC 手动信令远程 1v1
+- 新增自动 Vite + Playwright 端到端冒烟测试
+- 桌面与手机布局溢出检查通过
+- `npm run build` 通过
 
 ## 重要文件
 
-- `src/main.ts`
-- `src/scenes/GameScene.ts`
-- `src/audio.ts`
-- `src/config.ts`
-- `PRD.md`
-- `UI-AUDIT.md`
-- `package.json`
-- `CODEX_HANDOFF.md`
+- `src/core/story.ts`：剧情与情境数据
+- `src/core/game.ts`：存档、成长、评分
+- `src/core/duel.ts`：1v1 引擎与 AI
+- `src/net/rtc.ts`：WebRTC 手动信令
+- `src/ui/App.ts`：全部游戏界面与状态路由
+- `PRD.md` / `PROJECT_PLAN.md` / `README.md`
+- `.github/workflows/ci.yml`：CI 与 Pages 部署
 
 ## 验证
 
 - `npm run build` 通过
-- 开发服务器：http://127.0.0.1:5173
+- `npm test` 自动完成建档 → 主线首情境 → AI 1v1 → 结果页
+- Playwright 桌面 1280x720、手机 390x844 均无横向溢出
+- 本地开发服务器当前运行于 `http://127.0.0.1:5173`
 
 ## 已知风险
 
-- 尚未确定具体游戏方向
-- 缺少美术、音频、存档、后端
-- 移动端 HUD 已做文档审计，但尚未在真机/截图矩阵中验证
-- Phaser bundle 体积较大，后续可做代码分包
+- WebRTC 远程对战使用手动信令，未做公网双端实测
+- 无服务端房间与账号系统，无法自动匹配或跨设备同步
+- 内容固定，规模化需要内容管线
+- 移动端仍需真机可读性审计
 
-## 下一步最安全任务
+## 下一项最安全任务
 
-在 720x1280、1080x2400 和真实手机分辨率下截图验证 HUD，然后进入正式美术/音效资产阶段。
+在公网部署后做一次真实双浏览器 WebRTC 联机测试；通过后再进入 P1 服务端房间与云端存档。
