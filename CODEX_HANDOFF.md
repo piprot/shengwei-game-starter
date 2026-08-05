@@ -21,6 +21,7 @@
 - Player movement emits a fading particle trail for stronger game feel.
 - Press R to restart the current run at any time.
 - Each completed wave spawns an additional chasing enemy.
+- Smoke test added via `npm test`; Arcade Physics config fixed and test passes.
 
 ## 当前项目目标
 
