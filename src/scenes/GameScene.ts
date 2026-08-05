@@ -16,7 +16,9 @@ export class GameScene extends Phaser.Scene {
   private started = false;
   private pointerTarget?: Phaser.Math.Vector2;
   private startText?: Phaser.GameObjects.Text;
+  private muteText?: Phaser.GameObjects.Text;
   private sfx = new Sfx();
+  private muted = false;
 
   constructor() {
     super("game");
@@ -121,6 +123,12 @@ export class GameScene extends Phaser.Scene {
       color: "#ffffff"
     }).setOrigin(1, 0).setStroke("#000000", 4);
 
+    this.muteText = this.add.text(sceneWidth - 24, 56, "M: Mute", {
+      fontFamily: "Arial",
+      fontSize: "16px",
+      color: "#9fb3c8"
+    }).setOrigin(1, 0).setStroke("#000000", 4);
+
     if (this.input.keyboard) {
       this.cursors = this.input.keyboard.createCursorKeys();
       this.wasd = this.input.keyboard.addKeys("W,A,S,D") as Record<
@@ -140,6 +148,7 @@ export class GameScene extends Phaser.Scene {
     });
     this.input.keyboard?.once("keydown-SPACE", () => this.startGame());
     this.input.keyboard?.once("keydown-ENTER", () => this.startGame());
+    this.input.keyboard?.on("keydown-M", () => this.toggleMute());
   }
 
   update() {
@@ -206,6 +215,12 @@ export class GameScene extends Phaser.Scene {
     this.started = true;
     this.sfx.ensure();
     this.startText?.setVisible(false);
+  }
+
+  private toggleMute() {
+    this.muted = !this.muted;
+    this.sfx.setMuted(this.muted);
+    this.muteText?.setText(this.muted ? "M: Unmute" : "M: Mute");
   }
 
   private collectGem(

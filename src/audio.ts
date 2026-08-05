@@ -1,5 +1,10 @@
 export class Sfx {
   private context?: AudioContext;
+  private muted = false;
+
+  setMuted(value: boolean) {
+    this.muted = value;
+  }
 
   ensure() {
     if (!this.context) {
@@ -30,7 +35,7 @@ export class Sfx {
     type: OscillatorType,
     volume: number
   ) {
-    if (!this.context) {
+    if (!this.context || this.muted) {
       return;
     }
     const oscillator = this.context.createOscillator();

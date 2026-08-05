@@ -13,6 +13,7 @@
 - Start screen and game over screen show the current high score.
 - Procedural art pass: grid background, triangle player, diamond gems, pulsing enemy.
 - Wave system: each completed wave spawns more gems; Game Over shows reached wave.
+- Mute toggle: press M to mute/unmute sound; HUD shows current state.
 
 ## 当前项目目标
 
