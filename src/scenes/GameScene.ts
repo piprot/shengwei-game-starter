@@ -2,7 +2,7 @@ import Phaser from "phaser";
 import { Sfx } from "../audio";
 
 export class GameScene extends Phaser.Scene {
-  private player?: Phaser.GameObjects.Rectangle;
+  private player?: Phaser.GameObjects.Triangle;
   private enemy?: Phaser.GameObjects.Arc;
   private cursors?: Phaser.Types.Input.Keyboard.CursorKeys;
   private wasd?: Record<string, Phaser.Input.Keyboard.Key>;
@@ -26,11 +26,22 @@ export class GameScene extends Phaser.Scene {
     const centerX = sceneWidth / 2;
     const centerY = sceneHeight / 2;
 
+    const grid = this.add.graphics();
+    grid.lineStyle(1, 0x264653, 0.35);
+    const step = 40;
+    for (let x = 0; x <= sceneWidth; x += step) {
+      grid.lineBetween(x, 0, x, sceneHeight);
+    }
+    for (let y = 0; y <= sceneHeight; y += step) {
+      grid.lineBetween(0, y, sceneWidth, y);
+    }
+    grid.setDepth(-1);
+
     this.add.text(centerX, 56, "Neon Chase", {
       fontFamily: "Arial",
       fontSize: "28px",
       color: "#ffffff"
-    }).setOrigin(0.5);
+    }).setOrigin(0.5).setStroke("#000000", 4);
 
     this.add.text(centerX, 86, "Collect gems. Avoid the chaser.", {
       fontFamily: "Arial",
@@ -50,7 +61,17 @@ export class GameScene extends Phaser.Scene {
       }
     ).setOrigin(0.5);
 
-    this.player = this.add.rectangle(centerX, centerY, 32, 32, 0x4fd1c5);
+    this.player = this.add.triangle(
+      centerX,
+      centerY,
+      0,
+      -16,
+      -12,
+      12,
+      12,
+      12,
+      0x4fd1c5
+    );
     this.physics.add.existing(this.player);
     const playerBody = this.player.body as Phaser.Physics.Arcade.Body;
     playerBody.setCollideWorldBounds(true);
@@ -59,6 +80,13 @@ export class GameScene extends Phaser.Scene {
     this.physics.add.existing(this.enemy);
     const enemyBody = this.enemy.body as Phaser.Physics.Arcade.Body;
     enemyBody.setCollideWorldBounds(true);
+    this.tweens.add({
+      targets: this.enemy,
+      scale: 1.2,
+      duration: 500,
+      yoyo: true,
+      repeat: -1
+    });
 
     this.physics.add.overlap(
       this.player,
@@ -81,10 +109,10 @@ export class GameScene extends Phaser.Scene {
     for (let i = 0; i < gemCount; i += 1) {
       const col = i % gemCols;
       const row = Math.floor(i / gemCols);
-      const gem = this.add.circle(
+      const gem = this.add.polygon(
         60 + col * gemSpacingX,
         gemStartY + row * gemSpacingY,
-        12,
+        [0, -10, 9, 0, 0, 10, -9, 0],
         0xffd166
       );
       this.physics.add.existing(gem);
@@ -103,7 +131,7 @@ export class GameScene extends Phaser.Scene {
       fontFamily: "Arial",
       fontSize: "24px",
       color: "#ffffff"
-    });
+    }).setStroke("#000000", 4);
 
     if (this.input.keyboard) {
       this.cursors = this.input.keyboard.createCursorKeys();
@@ -204,7 +232,7 @@ export class GameScene extends Phaser.Scene {
       | Phaser.Physics.Arcade.StaticBody
       | Phaser.Tilemaps.Tile
   ) {
-    const gemObject = gem as Phaser.GameObjects.Arc;
+    const gemObject = gem as Phaser.GameObjects.Polygon;
     gemObject.destroy();
     this.score += 1;
     if (this.score > this.highScore) {

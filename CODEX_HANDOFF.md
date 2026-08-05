@@ -11,6 +11,7 @@
 
 - High score persists in localStorage.
 - Start screen and game over screen show the current high score.
+- Procedural art pass: grid background, triangle player, diamond gems, pulsing enemy.
 
 ## 当前项目目标
 
