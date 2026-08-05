@@ -20,10 +20,17 @@ npm run build
 npm run preview
 ```
 
+## Test
+
+```bash
+npm test
+```
+
 ## Controls
 
 - Move: Arrow keys / WASD
 - Touch: Hold and drag
+- Difficulty: 1 Easy / 2 Normal / 3 Hard
 - Pause: P
 - Mute: M
 - Restart: R
@@ -40,3 +47,7 @@ npm run preview
 ## Gameplay
 
 Collect gems, build combos, avoid chasing enemies, and survive increasing waves.
+
+## Repository
+
+https://github.com/piprot/shengwei-game-starter
