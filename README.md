@@ -1,28 +1,42 @@
-# Web Game Starter
+# Neon Chase
 
-一个最小可运行的 Phaser 3 + Vite + TypeScript 游戏工程骨架。
+Phaser 3 + Vite + TypeScript browser game starter.
 
-## 运行
+[![CI](https://github.com/piprot/shengwei-game-starter/actions/workflows/ci.yml/badge.svg)](https://github.com/piprot/shengwei-game-starter/actions/workflows/ci.yml)
+
+## Run
 
 ```bash
 npm install
 npm run dev
 ```
 
-默认地址：`http://localhost:5173`
+Open http://localhost:5173
 
-## 构建
+## Build
 
 ```bash
 npm run build
 npm run preview
 ```
 
-## 结构
+## Controls
 
-- `src/main.ts`：Phaser 游戏入口
-- `src/config.ts`：画布尺寸等全局配置
-- `src/scenes/BootScene.ts`：启动场景
-- `src/scenes/GameScene.ts`：最小可玩场景，支持方向键和 WASD
+- Move: Arrow keys / WASD
+- Touch: Hold and drag
+- Pause: P
+- Mute: M
+- Restart: R
+- Help: H
 
-后续按游戏 Brief 扩场景、系统、素材、后端、测试即可。
+## Structure
+
+- `src/main.ts`: Phaser game entry
+- `src/config.ts`: game canvas config
+- `src/scenes/BootScene.ts`: boot scene
+- `src/scenes/GameScene.ts`: main gameplay scene
+- `.github/workflows/ci.yml`: build CI
+
+## Gameplay
+
+Collect gems, build combos, avoid chasing enemies, and survive increasing waves.

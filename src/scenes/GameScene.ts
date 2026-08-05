@@ -14,6 +14,9 @@ export class GameScene extends Phaser.Scene {
   private wave = 1;
   private combo = 1;
   private lastCollectTime = 0;
+  private difficulty = "Normal";
+  private difficultyMultiplier = 1;
+  private initialGemCount = 6;
   private highScore = Number(localStorage.getItem("neon-chase-high-score") || 0);
   private gameOver = false;
   private started = false;
@@ -67,7 +70,7 @@ export class GameScene extends Phaser.Scene {
     this.startText = this.add.text(
       centerX,
       300,
-      `Tap or Click to Start\nHigh Score: ${this.highScore}`,
+      `Tap or Click to Start\nDifficulty: ${this.difficulty} (1/2/3)\nHigh Score: ${this.highScore}`,
       {
         fontFamily: "Arial",
         fontSize: "22px",
@@ -103,7 +106,7 @@ export class GameScene extends Phaser.Scene {
     );
 
     this.gems = this.physics.add.group();
-    this.spawnGems(6);
+    this.spawnGems(this.initialGemCount);
 
     this.physics.add.overlap(
       this.player,
@@ -168,6 +171,15 @@ export class GameScene extends Phaser.Scene {
     });
     this.input.keyboard?.once("keydown-SPACE", () => this.startGame());
     this.input.keyboard?.once("keydown-ENTER", () => this.startGame());
+    this.input.keyboard?.once("keydown-DIGIT1", () =>
+      this.setDifficulty(0)
+    );
+    this.input.keyboard?.once("keydown-DIGIT2", () =>
+      this.setDifficulty(1)
+    );
+    this.input.keyboard?.once("keydown-DIGIT3", () =>
+      this.setDifficulty(2)
+    );
     this.input.keyboard?.on("keydown-M", () => this.toggleMute());
     this.input.keyboard?.on("keydown-P", () => this.togglePause());
     this.input.keyboard?.on("keydown-R", () => this.scene.restart());
@@ -260,7 +272,10 @@ export class GameScene extends Phaser.Scene {
     }
 
     if (this.player && this.enemies) {
-      const enemySpeed = Math.min(320, 150 + this.score * 12);
+      const enemySpeed = Math.min(
+        320,
+        (150 + this.score * 12) * this.difficultyMultiplier
+      );
       this.enemies.getChildren().forEach((enemyObject) => {
         const enemy = enemyObject as Phaser.GameObjects.Arc;
         const angle = Phaser.Math.Angle.Between(
@@ -286,6 +301,24 @@ export class GameScene extends Phaser.Scene {
     this.sfx.ensure();
     this.sfx.startAmbient();
     this.startText?.setVisible(false);
+  }
+
+  private setDifficulty(index: number) {
+    if (this.started) {
+      return;
+    }
+    const options = [
+      { name: "Easy", multiplier: 0.8, gems: 5 },
+      { name: "Normal", multiplier: 1, gems: 6 },
+      { name: "Hard", multiplier: 1.2, gems: 8 }
+    ];
+    const option = options[index];
+    this.difficulty = option.name;
+    this.difficultyMultiplier = option.multiplier;
+    this.initialGemCount = option.gems;
+    this.startText?.setText(
+      `Tap or Click to Start\nDifficulty: ${this.difficulty} (1/2/3)\nHigh Score: ${this.highScore}`
+    );
   }
 
   private toggleMute() {
@@ -380,7 +413,7 @@ export class GameScene extends Phaser.Scene {
     if (remaining === 0) {
       this.wave += 1;
       this.waveText?.setText(`Wave ${this.wave}`);
-      this.spawnGems(6 + this.wave * 2);
+      this.spawnGems(this.initialGemCount + this.wave * 2);
       this.spawnEnemy(
         Phaser.Math.Between(70, this.scale.width - 70),
         Phaser.Math.Between(70, this.scale.height - 70)
