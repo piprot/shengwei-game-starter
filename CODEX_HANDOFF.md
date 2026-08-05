@@ -12,6 +12,7 @@
 - High score persists in localStorage.
 - Start screen and game over screen show the current high score.
 - Procedural art pass: grid background, triangle player, diamond gems, pulsing enemy.
+- Wave system: each completed wave spawns more gems; Game Over shows reached wave.
 
 ## 当前项目目标
 

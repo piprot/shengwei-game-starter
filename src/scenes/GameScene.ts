@@ -8,7 +8,9 @@ export class GameScene extends Phaser.Scene {
   private wasd?: Record<string, Phaser.Input.Keyboard.Key>;
   private gems?: Phaser.Physics.Arcade.Group;
   private scoreText?: Phaser.GameObjects.Text;
+  private waveText?: Phaser.GameObjects.Text;
   private score = 0;
+  private wave = 1;
   private highScore = Number(localStorage.getItem("neon-chase-high-score") || 0);
   private gameOver = false;
   private started = false;
@@ -97,27 +99,7 @@ export class GameScene extends Phaser.Scene {
     );
 
     this.gems = this.physics.add.group();
-    const gemCount = 6;
-    const gemCols = sceneWidth < 700 ? 3 : 6;
-    const gemRows = Math.ceil(gemCount / gemCols);
-    const gemStartY = Math.min(140, sceneHeight * 0.22);
-    const gemSpacingX =
-      gemCols > 1 ? (sceneWidth - 120) / (gemCols - 1) : 0;
-    const gemSpacingY =
-      gemRows > 1 ? (sceneHeight - gemStartY * 2) / (gemRows - 1) : 0;
-
-    for (let i = 0; i < gemCount; i += 1) {
-      const col = i % gemCols;
-      const row = Math.floor(i / gemCols);
-      const gem = this.add.polygon(
-        60 + col * gemSpacingX,
-        gemStartY + row * gemSpacingY,
-        [0, -10, 9, 0, 0, 10, -9, 0],
-        0xffd166
-      );
-      this.physics.add.existing(gem);
-      this.gems.add(gem);
-    }
+    this.spawnGems(6);
 
     this.physics.add.overlap(
       this.player,
@@ -132,6 +114,12 @@ export class GameScene extends Phaser.Scene {
       fontSize: "24px",
       color: "#ffffff"
     }).setStroke("#000000", 4);
+
+    this.waveText = this.add.text(sceneWidth - 24, 24, "Wave 1", {
+      fontFamily: "Arial",
+      fontSize: "24px",
+      color: "#ffffff"
+    }).setOrigin(1, 0).setStroke("#000000", 4);
 
     if (this.input.keyboard) {
       this.cursors = this.input.keyboard.createCursorKeys();
@@ -259,7 +247,34 @@ export class GameScene extends Phaser.Scene {
 
     const remaining = this.gems?.countActive(true) ?? 0;
     if (remaining === 0) {
-      this.time.delayedCall(250, () => this.scene.restart());
+      this.wave += 1;
+      this.waveText?.setText(`Wave ${this.wave}`);
+      this.spawnGems(6 + this.wave * 2);
+    }
+  }
+
+  private spawnGems(count: number) {
+    const sceneWidth = this.scale.width;
+    const sceneHeight = this.scale.height;
+    const gemCols = sceneWidth < 700 ? 3 : 6;
+    const gemRows = Math.ceil(count / gemCols);
+    const gemStartY = Math.min(140, sceneHeight * 0.22);
+    const gemSpacingX =
+      gemCols > 1 ? (sceneWidth - 120) / (gemCols - 1) : 0;
+    const gemSpacingY =
+      gemRows > 1 ? (sceneHeight - gemStartY * 2) / (gemRows - 1) : 0;
+
+    for (let i = 0; i < count; i += 1) {
+      const col = i % gemCols;
+      const row = Math.floor(i / gemCols);
+      const gem = this.add.polygon(
+        60 + col * gemSpacingX,
+        gemStartY + row * gemSpacingY,
+        [0, -10, 9, 0, 0, 10, -9, 0],
+        0xffd166
+      );
+      this.physics.add.existing(gem);
+      this.gems?.add(gem);
     }
   }
 
@@ -292,7 +307,7 @@ export class GameScene extends Phaser.Scene {
     this.add.text(
       this.scale.width / 2,
       this.scale.height / 2,
-      `Game Over\nHigh Score: ${this.highScore}`,
+      `Game Over\nWave ${this.wave} - High Score: ${this.highScore}`,
       {
         fontFamily: "Arial",
         fontSize: "36px",
