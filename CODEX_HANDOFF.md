@@ -15,6 +15,7 @@
 - Wave system: each completed wave spawns more gems; Game Over shows reached wave.
 - Mute toggle: press M to mute/unmute sound; HUD shows current state.
 - Pause toggle: press P to pause/resume; player and enemy freeze while paused.
+- Procedural ambient background loop starts on play and stops on game over.
 
 ## 当前项目目标
 

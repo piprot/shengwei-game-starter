@@ -1,9 +1,43 @@
 export class Sfx {
   private context?: AudioContext;
   private muted = false;
+  private ambientOscillator?: OscillatorNode;
+  private ambientGain?: GainNode;
 
   setMuted(value: boolean) {
     this.muted = value;
+    if (this.ambientGain) {
+      this.ambientGain.gain.value = value ? 0 : 0.02;
+    }
+  }
+
+  startAmbient() {
+    this.ensure();
+    if (!this.context || this.ambientOscillator) {
+      return;
+    }
+    const oscillator = this.context.createOscillator();
+    const gain = this.context.createGain();
+    oscillator.type = "triangle";
+    oscillator.frequency.value = 110;
+    gain.gain.value = this.muted ? 0 : 0.02;
+    oscillator.connect(gain);
+    gain.connect(this.context.destination);
+    oscillator.start();
+    this.ambientOscillator = oscillator;
+    this.ambientGain = gain;
+  }
+
+  stopAmbient() {
+    if (this.ambientOscillator) {
+      this.ambientOscillator.stop();
+      this.ambientOscillator.disconnect();
+      this.ambientOscillator = undefined;
+    }
+    if (this.ambientGain) {
+      this.ambientGain.disconnect();
+      this.ambientGain = undefined;
+    }
   }
 
   ensure() {

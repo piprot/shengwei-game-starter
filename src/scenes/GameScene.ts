@@ -231,6 +231,7 @@ export class GameScene extends Phaser.Scene {
     }
     this.started = true;
     this.sfx.ensure();
+    this.sfx.startAmbient();
     this.startText?.setVisible(false);
   }
 
@@ -347,6 +348,7 @@ export class GameScene extends Phaser.Scene {
     }
     this.gameOver = true;
     this.sfx.gameOver();
+    this.sfx.stopAmbient();
     this.cameras.main.shake(150, 0.005);
 
     const playerBody = this.player?.body as Phaser.Physics.Arcade.Body | undefined;
