@@ -3,7 +3,7 @@ import { Sfx } from "../audio";
 
 export class GameScene extends Phaser.Scene {
   private player?: Phaser.GameObjects.Triangle;
-  private enemy?: Phaser.GameObjects.Arc;
+  private enemies?: Phaser.Physics.Arcade.Group;
   private cursors?: Phaser.Types.Input.Keyboard.CursorKeys;
   private wasd?: Record<string, Phaser.Input.Keyboard.Key>;
   private gems?: Phaser.Physics.Arcade.Group;
@@ -90,21 +90,12 @@ export class GameScene extends Phaser.Scene {
     const playerBody = this.player.body as Phaser.Physics.Arcade.Body;
     playerBody.setCollideWorldBounds(true);
 
-    this.enemy = this.add.circle(70, 70, 18, 0xef476f);
-    this.physics.add.existing(this.enemy);
-    const enemyBody = this.enemy.body as Phaser.Physics.Arcade.Body;
-    enemyBody.setCollideWorldBounds(true);
-    this.tweens.add({
-      targets: this.enemy,
-      scale: 1.2,
-      duration: 500,
-      yoyo: true,
-      repeat: -1
-    });
+    this.enemies = this.physics.add.group();
+    this.spawnEnemy(70, 70);
 
     this.physics.add.overlap(
       this.player,
-      this.enemy,
+      this.enemies,
       this.hitEnemy,
       undefined,
       this
@@ -209,17 +200,23 @@ export class GameScene extends Phaser.Scene {
 
     if (this.paused) {
       const playerBody = this.player?.body as Phaser.Physics.Arcade.Body | undefined;
-      const enemyBody = this.enemy?.body as Phaser.Physics.Arcade.Body | undefined;
       playerBody?.setVelocity(0, 0);
-      enemyBody?.setVelocity(0, 0);
+      this.enemies?.getChildren().forEach((enemy) => {
+        const body = (enemy as Phaser.GameObjects.Arc)
+          .body as Phaser.Physics.Arcade.Body;
+        body.setVelocity(0, 0);
+      });
       return;
     }
 
     if (!this.started) {
       const playerBody = this.player?.body as Phaser.Physics.Arcade.Body | undefined;
-      const enemyBody = this.enemy?.body as Phaser.Physics.Arcade.Body | undefined;
       playerBody?.setVelocity(0, 0);
-      enemyBody?.setVelocity(0, 0);
+      this.enemies?.getChildren().forEach((enemy) => {
+        const body = (enemy as Phaser.GameObjects.Arc)
+          .body as Phaser.Physics.Arcade.Body;
+        body.setVelocity(0, 0);
+      });
       return;
     }
 
@@ -254,16 +251,22 @@ export class GameScene extends Phaser.Scene {
       this.player.y = Phaser.Math.Clamp(this.player.y + dy * speed, 16, this.scale.height - 16);
     }
 
-    if (this.player && this.enemy) {
-      const angle = Phaser.Math.Angle.Between(
-        this.enemy.x,
-        this.enemy.y,
-        this.player.x,
-        this.player.y
-      );
-      const enemyBody = this.enemy.body as Phaser.Physics.Arcade.Body;
+    if (this.player && this.enemies) {
       const enemySpeed = Math.min(320, 150 + this.score * 12);
-      enemyBody.setVelocity(Math.cos(angle) * enemySpeed, Math.sin(angle) * enemySpeed);
+      this.enemies.getChildren().forEach((enemyObject) => {
+        const enemy = enemyObject as Phaser.GameObjects.Arc;
+        const angle = Phaser.Math.Angle.Between(
+          enemy.x,
+          enemy.y,
+          this.player!.x,
+          this.player!.y
+        );
+        const enemyBody = enemy.body as Phaser.Physics.Arcade.Body;
+        enemyBody.setVelocity(
+          Math.cos(angle) * enemySpeed,
+          Math.sin(angle) * enemySpeed
+        );
+      });
     }
   }
 
@@ -349,6 +352,10 @@ export class GameScene extends Phaser.Scene {
       this.wave += 1;
       this.waveText?.setText(`Wave ${this.wave}`);
       this.spawnGems(6 + this.wave * 2);
+      this.spawnEnemy(
+        Phaser.Math.Between(70, this.scale.width - 70),
+        Phaser.Math.Between(70, this.scale.height - 70)
+      );
     }
   }
 
@@ -377,6 +384,21 @@ export class GameScene extends Phaser.Scene {
     }
   }
 
+  private spawnEnemy(x: number, y: number) {
+    const enemy = this.add.circle(x, y, 18, 0xef476f);
+    this.physics.add.existing(enemy);
+    const body = enemy.body as Phaser.Physics.Arcade.Body;
+    body.setCollideWorldBounds(true);
+    this.tweens.add({
+      targets: enemy,
+      scale: 1.2,
+      duration: 500,
+      yoyo: true,
+      repeat: -1
+    });
+    this.enemies?.add(enemy);
+  }
+
   private hitEnemy(
     _player:
       | Phaser.GameObjects.GameObject
@@ -398,9 +420,12 @@ export class GameScene extends Phaser.Scene {
     this.cameras.main.shake(150, 0.005);
 
     const playerBody = this.player?.body as Phaser.Physics.Arcade.Body | undefined;
-    const enemyBody = this.enemy?.body as Phaser.Physics.Arcade.Body | undefined;
     playerBody?.setVelocity(0, 0);
-    enemyBody?.setVelocity(0, 0);
+    this.enemies?.getChildren().forEach((enemy) => {
+      const body = (enemy as Phaser.GameObjects.Arc)
+        .body as Phaser.Physics.Arcade.Body;
+      body.setVelocity(0, 0);
+    });
     this.player?.setFillStyle(0xffffff);
     this.time.delayedCall(150, () => this.player?.setFillStyle(0x4fd1c5));
 

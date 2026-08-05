@@ -20,6 +20,7 @@
 - Procedural starfield background texture generated at boot and reused by game scene.
 - Player movement emits a fading particle trail for stronger game feel.
 - Press R to restart the current run at any time.
+- Each completed wave spawns an additional chasing enemy.
 
 ## 当前项目目标
 
