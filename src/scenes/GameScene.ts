@@ -172,6 +172,33 @@ export class GameScene extends Phaser.Scene {
     this.input.keyboard?.once("keydown-ENTER", () => this.startGame());
     this.input.keyboard?.on("keydown-M", () => this.toggleMute());
     this.input.keyboard?.on("keydown-P", () => this.togglePause());
+
+    this.time.addEvent({
+      delay: 60,
+      loop: true,
+      callback: () => {
+        if (
+          this.started &&
+          !this.gameOver &&
+          !this.paused &&
+          this.player
+        ) {
+          const trail = this.add.circle(
+            this.player.x,
+            this.player.y,
+            4,
+            0x4fd1c5
+          );
+          this.tweens.add({
+            targets: trail,
+            alpha: 0,
+            scale: 0.4,
+            duration: 300,
+            onComplete: () => trail.destroy()
+          });
+        }
+      }
+    });
   }
 
   update() {

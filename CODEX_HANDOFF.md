@@ -18,6 +18,7 @@
 - Procedural ambient background loop starts on play and stops on game over.
 - Combo system: collecting gems within 2.5s increases combo and bonus score.
 - Procedural starfield background texture generated at boot and reused by game scene.
+- Player movement emits a fading particle trail for stronger game feel.
 
 ## 当前项目目标
 
