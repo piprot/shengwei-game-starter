@@ -35,6 +35,11 @@ export class GameScene extends Phaser.Scene {
     const centerX = sceneWidth / 2;
     const centerY = sceneHeight / 2;
 
+    this.add
+      .image(sceneWidth / 2, sceneHeight / 2, "starfield")
+      .setDisplaySize(sceneWidth, sceneHeight)
+      .setDepth(-2);
+
     const grid = this.add.graphics();
     grid.lineStyle(1, 0x264653, 0.35);
     const step = 40;

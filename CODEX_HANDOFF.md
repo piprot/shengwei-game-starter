@@ -17,6 +17,7 @@
 - Pause toggle: press P to pause/resume; player and enemy freeze while paused.
 - Procedural ambient background loop starts on play and stops on game over.
 - Combo system: collecting gems within 2.5s increases combo and bonus score.
+- Procedural starfield background texture generated at boot and reused by game scene.
 
 ## 当前项目目标
 
