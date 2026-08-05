@@ -17,8 +17,10 @@ export class GameScene extends Phaser.Scene {
   private pointerTarget?: Phaser.Math.Vector2;
   private startText?: Phaser.GameObjects.Text;
   private muteText?: Phaser.GameObjects.Text;
+  private pauseText?: Phaser.GameObjects.Text;
   private sfx = new Sfx();
   private muted = false;
+  private paused = false;
 
   constructor() {
     super("game");
@@ -129,6 +131,12 @@ export class GameScene extends Phaser.Scene {
       color: "#9fb3c8"
     }).setOrigin(1, 0).setStroke("#000000", 4);
 
+    this.add.text(sceneWidth - 24, 80, "P: Pause", {
+      fontFamily: "Arial",
+      fontSize: "16px",
+      color: "#9fb3c8"
+    }).setOrigin(1, 0).setStroke("#000000", 4);
+
     if (this.input.keyboard) {
       this.cursors = this.input.keyboard.createCursorKeys();
       this.wasd = this.input.keyboard.addKeys("W,A,S,D") as Record<
@@ -149,10 +157,19 @@ export class GameScene extends Phaser.Scene {
     this.input.keyboard?.once("keydown-SPACE", () => this.startGame());
     this.input.keyboard?.once("keydown-ENTER", () => this.startGame());
     this.input.keyboard?.on("keydown-M", () => this.toggleMute());
+    this.input.keyboard?.on("keydown-P", () => this.togglePause());
   }
 
   update() {
     if (this.gameOver) {
+      return;
+    }
+
+    if (this.paused) {
+      const playerBody = this.player?.body as Phaser.Physics.Arcade.Body | undefined;
+      const enemyBody = this.enemy?.body as Phaser.Physics.Arcade.Body | undefined;
+      playerBody?.setVelocity(0, 0);
+      enemyBody?.setVelocity(0, 0);
       return;
     }
 
@@ -221,6 +238,26 @@ export class GameScene extends Phaser.Scene {
     this.muted = !this.muted;
     this.sfx.setMuted(this.muted);
     this.muteText?.setText(this.muted ? "M: Unmute" : "M: Mute");
+  }
+
+  private togglePause() {
+    this.paused = !this.paused;
+    if (this.paused) {
+      this.pauseText = this.add.text(
+        this.scale.width / 2,
+        this.scale.height / 2,
+        "Paused",
+        {
+          fontFamily: "Arial",
+          fontSize: "42px",
+          color: "#ffffff",
+          align: "center"
+        }
+      ).setOrigin(0.5).setStroke("#000000", 4);
+    } else {
+      this.pauseText?.destroy();
+      this.pauseText = undefined;
+    }
   }
 
   private collectGem(

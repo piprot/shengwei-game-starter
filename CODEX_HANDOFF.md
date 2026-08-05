@@ -14,6 +14,7 @@
 - Procedural art pass: grid background, triangle player, diamond gems, pulsing enemy.
 - Wave system: each completed wave spawns more gems; Game Over shows reached wave.
 - Mute toggle: press M to mute/unmute sound; HUD shows current state.
+- Pause toggle: press P to pause/resume; player and enemy freeze while paused.
 
 ## 当前项目目标
 
