@@ -63,6 +63,11 @@ export class Sfx {
     this.tone(120, 0.35, "sawtooth", 0.06);
   }
 
+  wave() {
+    this.tone(220, 0.12, "triangle", 0.04);
+    this.tone(330, 0.14, "triangle", 0.03);
+  }
+
   private tone(
     frequency: number,
     duration: number,

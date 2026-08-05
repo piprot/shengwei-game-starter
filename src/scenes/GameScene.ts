@@ -2,7 +2,7 @@ import Phaser from "phaser";
 import { Sfx } from "../audio";
 
 export class GameScene extends Phaser.Scene {
-  private player?: Phaser.GameObjects.Triangle;
+  private player?: Phaser.GameObjects.Image;
   private enemies?: Phaser.Physics.Arcade.Group;
   private cursors?: Phaser.Types.Input.Keyboard.CursorKeys;
   private wasd?: Record<string, Phaser.Input.Keyboard.Key>;
@@ -79,17 +79,7 @@ export class GameScene extends Phaser.Scene {
       }
     ).setOrigin(0.5);
 
-    this.player = this.add.triangle(
-      centerX,
-      centerY,
-      0,
-      -16,
-      -12,
-      12,
-      12,
-      12,
-      0x4fd1c5
-    );
+    this.player = this.add.image(centerX, centerY, "player");
     this.physics.add.existing(this.player);
     const playerBody = this.player.body as Phaser.Physics.Arcade.Body;
     playerBody.setCollideWorldBounds(true);
@@ -195,12 +185,12 @@ export class GameScene extends Phaser.Scene {
           !this.paused &&
           this.player
         ) {
-          const trail = this.add.circle(
+          const trail = this.add.image(
             this.player.x,
             this.player.y,
-            4,
-            0x4fd1c5
+            "particle"
           );
+          trail.setTint(0x4fd1c5);
           this.tweens.add({
             targets: trail,
             alpha: 0,
@@ -380,7 +370,7 @@ export class GameScene extends Phaser.Scene {
       | Phaser.Physics.Arcade.StaticBody
       | Phaser.Tilemaps.Tile
   ) {
-    const gemObject = gem as Phaser.GameObjects.Polygon;
+    const gemObject = gem as Phaser.GameObjects.Image;
     gemObject.destroy();
     const now = this.time.now;
     this.combo = now - this.lastCollectTime < 2500 ? this.combo + 1 : 1;
@@ -394,7 +384,8 @@ export class GameScene extends Phaser.Scene {
     this.comboText?.setText(this.combo > 1 ? `Combo x${this.combo}` : "");
     this.sfx.collect();
 
-    const burst = this.add.circle(gemObject.x, gemObject.y, 8, 0xffd166);
+    const burst = this.add.image(gemObject.x, gemObject.y, "particle");
+    burst.setTint(0xffd166);
     this.tweens.add({
       targets: burst,
       scale: 3,
@@ -413,6 +404,7 @@ export class GameScene extends Phaser.Scene {
     if (remaining === 0) {
       this.wave += 1;
       this.waveText?.setText(`Wave ${this.wave}`);
+      this.sfx.wave();
       this.spawnGems(this.initialGemCount + this.wave * 2);
       this.spawnEnemy(
         Phaser.Math.Between(70, this.scale.width - 70),
@@ -435,11 +427,10 @@ export class GameScene extends Phaser.Scene {
     for (let i = 0; i < count; i += 1) {
       const col = i % gemCols;
       const row = Math.floor(i / gemCols);
-      const gem = this.add.polygon(
+      const gem = this.add.image(
         60 + col * gemSpacingX,
         gemStartY + row * gemSpacingY,
-        [0, -10, 9, 0, 0, 10, -9, 0],
-        0xffd166
+        "gem"
       );
       this.physics.add.existing(gem);
       this.gems?.add(gem);
@@ -447,7 +438,7 @@ export class GameScene extends Phaser.Scene {
   }
 
   private spawnEnemy(x: number, y: number) {
-    const enemy = this.add.circle(x, y, 18, 0xef476f);
+    const enemy = this.add.image(x, y, "enemy");
     this.physics.add.existing(enemy);
     const body = enemy.body as Phaser.Physics.Arcade.Body;
     body.setCollideWorldBounds(true);
@@ -488,8 +479,8 @@ export class GameScene extends Phaser.Scene {
         .body as Phaser.Physics.Arcade.Body;
       body.setVelocity(0, 0);
     });
-    this.player?.setFillStyle(0xffffff);
-    this.time.delayedCall(150, () => this.player?.setFillStyle(0x4fd1c5));
+    this.player?.setTint(0xffffff);
+    this.time.delayedCall(150, () => this.player?.clearTint());
 
     this.add.text(
       this.scale.width / 2,

@@ -22,6 +22,9 @@
 - Press R to restart the current run at any time.
 - Each completed wave spawns an additional chasing enemy.
 - Smoke test added via `npm test`; Arcade Physics config fixed and test passes.
+- Difficulty selection on start screen: 1=Easy, 2=Normal, 3=Hard; affects gem count and enemy speed.
+- Procedural canvas textures for player, gems, enemies, and particles.
+- Wave transition sound added to the audio layer.
 
 ## 当前项目目标
 
