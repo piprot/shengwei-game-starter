@@ -7,6 +7,11 @@
 - Phone 720x1280 and 1080x2400: no horizontal scroll, portrait letterboxing remains.
 - Next task: reduce portrait letterboxing before adding final art assets.
 
+## Latest Gameplay
+
+- High score persists in localStorage.
+- Start screen and game over screen show the current high score.
+
 ## 当前项目目标
 
 用 vibe coding 构建一款可迭代的浏览器游戏工程，先从通用 2D 可玩原型开始，后续根据用户 Brief 替换玩法。

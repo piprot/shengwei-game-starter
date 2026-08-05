@@ -10,6 +10,7 @@ export class GameScene extends Phaser.Scene {
   private gems?: Phaser.Physics.Arcade.Group;
   private scoreText?: Phaser.GameObjects.Text;
   private score = 0;
+  private highScore = Number(localStorage.getItem("neon-chase-high-score") || 0);
   private gameOver = false;
   private started = false;
   private pointerTarget?: Phaser.Math.Vector2;
@@ -36,11 +37,17 @@ export class GameScene extends Phaser.Scene {
       color: "#9fb3c8"
     }).setOrigin(0.5);
 
-    this.startText = this.add.text(centerX, 300, "Tap or Click to Start", {
-      fontFamily: "Arial",
-      fontSize: "22px",
-      color: "#ffd166"
-    }).setOrigin(0.5);
+    this.startText = this.add.text(
+      centerX,
+      300,
+      `Tap or Click to Start\nHigh Score: ${this.highScore}`,
+      {
+        fontFamily: "Arial",
+        fontSize: "22px",
+        color: "#ffd166",
+        align: "center"
+      }
+    ).setOrigin(0.5);
 
     this.player = this.add.rectangle(centerX, centerY, 32, 32, 0x4fd1c5);
     this.physics.add.existing(this.player);
@@ -188,6 +195,10 @@ export class GameScene extends Phaser.Scene {
     const gemObject = gem as Phaser.GameObjects.Arc;
     gemObject.destroy();
     this.score += 1;
+    if (this.score > this.highScore) {
+      this.highScore = this.score;
+      localStorage.setItem("neon-chase-high-score", String(this.highScore));
+    }
     this.scoreText?.setText(`Score: ${this.score}`);
     this.sfx.collect();
 
@@ -238,11 +249,17 @@ export class GameScene extends Phaser.Scene {
     this.player?.setFillStyle(0xffffff);
     this.time.delayedCall(150, () => this.player?.setFillStyle(0x4fd1c5));
 
-    this.add.text(GAME_WIDTH / 2, GAME_HEIGHT / 2, "Game Over", {
-      fontFamily: "Arial",
-      fontSize: "42px",
-      color: "#ef476f"
-    }).setOrigin(0.5);
+    this.add.text(
+      GAME_WIDTH / 2,
+      GAME_HEIGHT / 2,
+      `Game Over\nHigh Score: ${this.highScore}`,
+      {
+        fontFamily: "Arial",
+        fontSize: "36px",
+        color: "#ef476f",
+        align: "center"
+      }
+    ).setOrigin(0.5);
 
     this.time.delayedCall(1200, () => this.scene.restart());
   }
