@@ -19,6 +19,7 @@
 - Combo system: collecting gems within 2.5s increases combo and bonus score.
 - Procedural starfield background texture generated at boot and reused by game scene.
 - Player movement emits a fading particle trail for stronger game feel.
+- Press R to restart the current run at any time.
 
 ## 当前项目目标
 

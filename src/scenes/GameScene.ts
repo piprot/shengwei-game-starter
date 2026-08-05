@@ -172,6 +172,7 @@ export class GameScene extends Phaser.Scene {
     this.input.keyboard?.once("keydown-ENTER", () => this.startGame());
     this.input.keyboard?.on("keydown-M", () => this.toggleMute());
     this.input.keyboard?.on("keydown-P", () => this.togglePause());
+    this.input.keyboard?.on("keydown-R", () => this.scene.restart());
 
     this.time.addEvent({
       delay: 60,
