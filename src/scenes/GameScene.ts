@@ -9,8 +9,11 @@ export class GameScene extends Phaser.Scene {
   private gems?: Phaser.Physics.Arcade.Group;
   private scoreText?: Phaser.GameObjects.Text;
   private waveText?: Phaser.GameObjects.Text;
+  private comboText?: Phaser.GameObjects.Text;
   private score = 0;
   private wave = 1;
+  private combo = 1;
+  private lastCollectTime = 0;
   private highScore = Number(localStorage.getItem("neon-chase-high-score") || 0);
   private gameOver = false;
   private started = false;
@@ -124,6 +127,12 @@ export class GameScene extends Phaser.Scene {
       fontSize: "24px",
       color: "#ffffff"
     }).setOrigin(1, 0).setStroke("#000000", 4);
+
+    this.comboText = this.add.text(sceneWidth / 2, 24, "", {
+      fontFamily: "Arial",
+      fontSize: "22px",
+      color: "#ffd166"
+    }).setOrigin(0.5, 0).setStroke("#000000", 4);
 
     this.muteText = this.add.text(sceneWidth - 24, 56, "M: Mute", {
       fontFamily: "Arial",
@@ -275,12 +284,16 @@ export class GameScene extends Phaser.Scene {
   ) {
     const gemObject = gem as Phaser.GameObjects.Polygon;
     gemObject.destroy();
-    this.score += 1;
+    const now = this.time.now;
+    this.combo = now - this.lastCollectTime < 2500 ? this.combo + 1 : 1;
+    this.lastCollectTime = now;
+    this.score += this.combo;
     if (this.score > this.highScore) {
       this.highScore = this.score;
       localStorage.setItem("neon-chase-high-score", String(this.highScore));
     }
     this.scoreText?.setText(`Score: ${this.score}`);
+    this.comboText?.setText(this.combo > 1 ? `Combo x${this.combo}` : "");
     this.sfx.collect();
 
     const burst = this.add.circle(gemObject.x, gemObject.y, 8, 0xffd166);

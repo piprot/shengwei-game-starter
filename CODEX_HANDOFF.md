@@ -16,6 +16,7 @@
 - Mute toggle: press M to mute/unmute sound; HUD shows current state.
 - Pause toggle: press P to pause/resume; player and enemy freeze while paused.
 - Procedural ambient background loop starts on play and stops on game over.
+- Combo system: collecting gems within 2.5s increases combo and bonus score.
 
 ## 当前项目目标
 
