@@ -87,6 +87,38 @@ export const CHAPTER_REFLECTIONS: Record<number, string> = {
   9: "你完成了从做事到建立系统的转身。真正的成业，是你离开之后，组织仍然知道如何做对决策。"
 };
 
+export interface SideQuestArc {
+  id: string;
+  title: string;
+  summary: string;
+  intro: string;
+  nodes: string[];
+  conclusion: string;
+}
+
+export const SIDE_QUEST_ARCS: SideQuestArc[] = [
+  {
+    id: "trust_rebuild",
+    title: "信任重建",
+    summary: "在高压管理中保留人的温度，把一次帮助变成长期的团队信任。",
+    intro:
+      "你决定不只在制度和结果上建立权威，还愿意处理人的情绪、勇气和尊严。这条支线会考验你是否能把善意变成可持续的组织关系。",
+    nodes: ["s1", "s4", "s2"],
+    conclusion:
+      "当团队开始相信你不会在关键时刻缺席，他们的忠诚就不再是对权力的服从，而是对共同目标的承诺。"
+  },
+  {
+    id: "resilience",
+    title: "韧性组织",
+    summary: "在高压、疲惫和连续失败中，建立能保护产能又扛住危机的团队。",
+    intro:
+      "执行力不只是冲刺，更是知道何时保护精力、何时缩小问题范围、何时重新凝聚团队。这条支线会把你从个人救火带到组织韧性。",
+    nodes: ["s5", "s3", "s6"],
+    conclusion:
+      "当团队能在危机中先隔离风险、再共同复盘，而不是互相指责，你就真正建立了不依赖你个人的执行系统。"
+  }
+];
+
 export const STORY_NODES: StoryNode[] = [
   {
     id: "c1n1",

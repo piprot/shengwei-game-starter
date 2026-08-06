@@ -7,6 +7,7 @@
 ## 游戏特性
 
 - 9 章权力架构、18 个主线情境、6 个支线任务、9 段章节复盘
+- 2 条支线剧情弧：信任重建、韧性组织，带连续解锁与结局
 - 10 项领导力能力与 6 级成长体系
 - 10 题能力基线测评，生成个性化初始能力档案
 - 能力基线报告：优势能力、待提升能力、角色开局建议
@@ -62,4 +63,5 @@ npm run content-audit
 - [PRD.md](./PRD.md)
 - [PROJECT_PLAN.md](./PROJECT_PLAN.md)
 - [REQUIREMENTS_TRACEABILITY.md](./REQUIREMENTS_TRACEABILITY.md)
+- [NARRATIVE_PLAN.md](./NARRATIVE_PLAN.md)
 - [CODEX_HANDOFF.md](./CODEX_HANDOFF.md)

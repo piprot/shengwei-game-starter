@@ -39,6 +39,7 @@ import {
   CHAPTERS,
   CHAPTER_REFLECTIONS,
   NODE_INTEL,
+  SIDE_QUEST_ARCS,
   getChapter,
   getNode,
   getNodeForRole,
@@ -455,11 +456,6 @@ export class AdaptiveGameApp {
     const chapter = getChapter(this.selectedChapter);
     const mainNodes = chapter.nodeIds.map(getNode);
     const chapterDone = isChapterComplete(this.save, chapter.id);
-    const sideNodes = sideNodesForChapter(this.selectedChapter).filter(
-      (node) =>
-        !isNodeComplete(this.save, node.id) &&
-        mainNodes.some((mainNode) => isNodeComplete(this.save, mainNode.id))
-    );
     this.root.innerHTML = `
       <header class="topbar">
         <div class="brand">权变之路</div>
@@ -492,7 +488,6 @@ export class AdaptiveGameApp {
             </div>
             <div class="node-list">
               ${mainNodes.map((node) => this.nodeRow(node)).join("")}
-              ${sideNodes.length ? `<h3>支线任务</h3>${sideNodes.map((node) => this.nodeRow(node)).join("")}` : ""}
             </div>
             ${
               chapterDone
@@ -504,6 +499,11 @@ export class AdaptiveGameApp {
                 `
                 : ""
             }
+            <section class="quest-board">
+              <h3>支线剧情弧</h3>
+              <p class="muted">支线需要连续完成前置节点，才能解锁下一段情节。</p>
+              ${SIDE_QUEST_ARCS.map((arc) => this.questArcMarkup(arc)).join("")}
+            </section>
           </div>
           <aside class="map-side">
             <div class="mini-panel role-objective">
@@ -1591,6 +1591,60 @@ export class AdaptiveGameApp {
         <strong>${chapter.title}</strong>
       </button>
     `;
+  }
+
+  private questArcMarkup(arc: (typeof SIDE_QUEST_ARCS)[number]): string {
+    const doneCount = arc.nodes.filter((id) =>
+      isNodeComplete(this.save, id)
+    ).length;
+    const done = doneCount === arc.nodes.length;
+    return `
+      <div class="quest-arc ${done ? "complete" : ""}">
+        <div class="quest-arc-head">
+          <div>
+            <strong>${arc.title}</strong>
+            <span>${doneCount} / ${arc.nodes.length} 节点</span>
+          </div>
+          <small>${done ? "已完成" : "进行中"}</small>
+        </div>
+        <p class="quest-summary">${escapeHtml(arc.summary)}</p>
+        <p class="quest-intro">${escapeHtml(arc.intro)}</p>
+        <div class="quest-nodes">
+          ${arc.nodes
+            .map((nodeId, index) => {
+              const node = getNode(nodeId);
+              const unlocked = this.canEnterSideNode(nodeId);
+              const nodeDone = isNodeComplete(this.save, nodeId);
+              return `
+                <button class="quest-node ${nodeDone ? "done" : ""} ${unlocked ? "" : "locked"}" data-action="open-node" data-node="${nodeId}" ${unlocked ? "" : "disabled"}>
+                  <span>${index + 1}</span>
+                  <div>
+                    <strong>${escapeHtml(node.title)}</strong>
+                    <em>${nodeDone ? "已完成" : unlocked ? "可接取" : "前置未解锁"}</em>
+                  </div>
+                </button>
+              `;
+            })
+            .join("")}
+        </div>
+        ${done ? `<p class="quest-conclusion">${escapeHtml(arc.conclusion)}</p>` : ""}
+      </div>
+    `;
+  }
+
+  private canEnterSideNode(nodeId: string): boolean {
+    const arc = SIDE_QUEST_ARCS.find((item) => item.nodes.includes(nodeId));
+    if (!arc) {
+      return false;
+    }
+    const index = arc.nodes.indexOf(nodeId);
+    if (index > 0) {
+      return isNodeComplete(this.save, arc.nodes[index - 1]);
+    }
+    const node = getNode(nodeId);
+    return getChapter(node.chapterId).nodeIds.some((mainId) =>
+      isNodeComplete(this.save, mainId)
+    );
   }
 
   private nodeRow(node: StoryNode): string {

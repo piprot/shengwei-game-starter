@@ -3,6 +3,7 @@ import {
   CHAPTER_REFLECTIONS,
   NODE_INTEL,
   ROLE_NODE_VARIANTS,
+  SIDE_QUEST_ARCS,
   STORY_NODES
 } from "../src/core/story.ts";
 import {
@@ -85,6 +86,17 @@ if (ASSESSMENT_QUESTIONS.length !== 10) {
 for (const question of ASSESSMENT_QUESTIONS) {
   if (question.options.length !== 3) {
     problems.push(`${question.id} must have exactly 3 options`);
+  }
+}
+
+for (const arc of SIDE_QUEST_ARCS) {
+  if (arc.nodes.length < 3) {
+    problems.push(`${arc.id} must contain at least 3 nodes`);
+  }
+  for (const nodeId of arc.nodes) {
+    if (!STORY_NODES.some((node) => node.id === nodeId)) {
+      problems.push(`${arc.id} references missing node ${nodeId}`);
+    }
   }
 }
 

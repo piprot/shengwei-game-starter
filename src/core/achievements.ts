@@ -1,4 +1,5 @@
 import { totalAbilityLevels } from "./abilities.ts";
+import { SIDE_QUEST_ARCS } from "./story.ts";
 import type { SaveState } from "./types";
 
 export interface AchievementDef {
@@ -38,6 +39,18 @@ export const ACHIEVEMENTS: AchievementDef[] = [
     name: "支线收集者",
     description: "完成全部 6 个支线任务",
     icon: "13"
+  },
+  {
+    id: "side_trust_rebuild",
+    name: "信任重建者",
+    description: "完成“信任重建”支线剧情弧",
+    icon: "13"
+  },
+  {
+    id: "side_resilience",
+    name: "韧性组织者",
+    description: "完成“韧性组织”支线剧情弧",
+    icon: "14"
   },
   {
     id: "duel_winner",
@@ -93,6 +106,12 @@ export function isAchievementUnlocked(save: SaveState, id: string): boolean {
   }
   if (id === "all_side") {
     return save.completedSideQuests.length >= 6;
+  }
+  if (id.startsWith("side_")) {
+    const arc = SIDE_QUEST_ARCS.find((item) => item.id === id.replace("side_", ""));
+    return Boolean(
+      arc && arc.nodes.every((nodeId) => save.completedSideQuests.includes(nodeId))
+    );
   }
   if (id === "duel_winner") {
     return save.duelWins >= 1;
