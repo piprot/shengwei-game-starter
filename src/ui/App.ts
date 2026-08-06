@@ -779,6 +779,10 @@ export class AdaptiveGameApp {
             <span>决策画像</span>
             <strong>${ROLES[this.save.profile.role].shortName} · ${decision.identity}</strong>
           </div>
+          <div class="certification-badge ${summary.total >= 26 ? "passed" : ""}">
+            <span>能力认证</span>
+            <strong>${summary.total >= 26 ? `认证通过 · ${summary.rank.name}` : `训练中 · ${summary.rank.name}`}</strong>
+          </div>
           <button data-action="reset-profile">重置档案</button>
           <button data-action="export-save">导出存档</button>
           <button data-action="export-report">导出报告</button>
