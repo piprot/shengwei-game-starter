@@ -108,13 +108,23 @@ function jsonLeaderboard() {
       name: account.name,
       role: account.role,
       score: Object.values(account.save?.profile?.abilities || {}).reduce(
-        (sum, value) => sum + Number(value || 0),
+        (sum, value) => sum + abilityLevel(Number(value || 0)),
         0
       ),
       updatedAt: account.updatedAt
     }))
     .sort((a, b) => b.score - a.score)
     .slice(0, 50);
+}
+
+function abilityLevel(exp) {
+  const thresholds = [0, 4, 10, 18, 28, 40];
+  let level = 1;
+  for (const threshold of thresholds.slice(1)) {
+    if (exp >= threshold) level += 1;
+    else break;
+  }
+  return Math.min(6, level);
 }
 
 wss.on("connection", (socket) => {

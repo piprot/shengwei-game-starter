@@ -81,6 +81,7 @@ type View =
   | "relations"
   | "map"
   | "story"
+  | "chapterTransition"
   | "ability"
   | "report"
   | "duelLobby"
@@ -91,7 +92,7 @@ type DuelMode = "ai" | "local" | "remote";
 export class AdaptiveGameApp {
   private root: HTMLElement;
   private audio = new GameAudio();
-  private muted = false;
+  private muted = localStorage.getItem("adaptive-ascent-muted") === "1";
   private language: Language =
     localStorage.getItem("adaptive-ascent-lang") === "en" ? "en" : "zh";
   private save: SaveState;
@@ -104,6 +105,7 @@ export class AdaptiveGameApp {
   private storyNodeId?: string;
   private storyHintRevealed = false;
   private pendingBranchNodeId?: string;
+  private pendingChapterTransition?: number;
   private lastOutcome?: ChoiceOutcome;
   private lastOutcomeNodeId?: string;
   private duelMode: DuelMode = "ai";
@@ -147,6 +149,7 @@ export class AdaptiveGameApp {
   constructor(root: HTMLElement) {
     this.root = root;
     document.documentElement.lang = this.language;
+    this.audio.setMuted(this.muted);
     this.save = loadSave();
     this.restoreFromHash();
     this.root.addEventListener("click", (event) => this.handleClick(event));
@@ -208,6 +211,9 @@ export class AdaptiveGameApp {
         break;
       case "story":
         this.renderStory();
+        break;
+      case "chapterTransition":
+        this.renderChapterTransition();
         break;
       case "ability":
         this.renderAbility();
@@ -765,6 +771,47 @@ export class AdaptiveGameApp {
     if (storyArt) {
       renderPowerBoard(storyArt, node.id.length * 11 + node.chapterId * 13);
     }
+  }
+
+  private renderChapterTransition(): void {
+    if (!this.pendingChapterTransition) {
+      this.show("map");
+      return;
+    }
+    const chapter = getChapter(this.pendingChapterTransition);
+    const next = chapter.id < CHAPTERS.length ? CHAPTERS[chapter.id] : undefined;
+    this.root.innerHTML = `
+      <header class="topbar">
+        <div class="brand">${this.t("brand")}</div>
+        <button class="link sound-toggle" data-action="toggle-sound">${this.muted ? this.t("soundOff") : this.t("soundOn")}</button>
+        <button class="link language-toggle" data-action="toggle-language">${this.t("language")}</button>
+      </header>
+      <main class="transition-shell">
+        <section class="transition-panel">
+          <p class="eyebrow">第 ${chapter.code} 章完成</p>
+          <h1>${chapter.title}</h1>
+          <p class="transition-summary">${escapeHtml(CHAPTER_REFLECTIONS[chapter.id] ?? "")}</p>
+          ${
+            next
+              ? `
+                <div class="next-chapter">
+                  <span>下一章</span>
+                  <strong>第 ${next.code} 章 · ${next.title}</strong>
+                  <p>${next.subtitle}</p>
+                </div>
+              `
+              : `
+                <div class="next-chapter">
+                  <span>主线完成</span>
+                  <strong>九章权力架构已全部走完</strong>
+                  <p>查看复盘报告与角色结局。</p>
+                </div>
+              `
+          }
+          <button class="primary" data-action="continue-transition-map">继续主线</button>
+        </section>
+      </main>
+    `;
   }
 
   private renderAbility(): void {
@@ -1326,6 +1373,7 @@ export class AdaptiveGameApp {
           this.storyNodeId = nodeId;
           this.storyHintRevealed = false;
           this.pendingBranchNodeId = undefined;
+          this.pendingChapterTransition = undefined;
           this.lastOutcome = undefined;
           this.lastOutcomeNodeId = undefined;
           this.show("story");
@@ -1399,6 +1447,7 @@ export class AdaptiveGameApp {
         break;
       case "toggle-sound":
         this.muted = !this.muted;
+        localStorage.setItem("adaptive-ascent-muted", this.muted ? "1" : "0");
         this.audio.setMuted(this.muted);
         this.render();
         break;
@@ -1487,8 +1536,27 @@ export class AdaptiveGameApp {
         this.lastOutcome = undefined;
         this.lastOutcomeNodeId = undefined;
         this.pendingBranchNodeId = undefined;
+        this.pendingChapterTransition = undefined;
         this.show("map");
         break;
+      case "continue-transition":
+        if (this.pendingChapterTransition) {
+          this.audio.ui();
+          this.show("chapterTransition");
+        }
+        break;
+      case "continue-transition-map": {
+        const completed = this.pendingChapterTransition;
+        this.pendingChapterTransition = undefined;
+        this.lastOutcome = undefined;
+        this.lastOutcomeNodeId = undefined;
+        if (completed && completed < CHAPTERS.length) {
+          this.selectedChapter = completed + 1;
+        }
+        this.audio.ui();
+        this.show("map");
+        break;
+      }
       case "continue-branch": {
         const branchId = this.pendingBranchNodeId;
         if (branchId) {
@@ -1610,6 +1678,11 @@ export class AdaptiveGameApp {
     outcome.option = roleNode.options[optionIndex];
     this.lastOutcome = outcome;
     this.lastOutcomeNodeId = this.storyNodeId;
+    const baseNode = getNode(this.storyNodeId);
+    this.pendingChapterTransition =
+      baseNode.kind === "main" && isChapterComplete(this.save, baseNode.chapterId)
+        ? baseNode.chapterId
+        : undefined;
     this.pendingBranchNodeId =
       outcome.option.branchTo?.[this.save.profile.role];
     if (outcome.option.quality === "expert") {
@@ -2022,7 +2095,15 @@ export class AdaptiveGameApp {
             this.cloudStatus = "云端暂无存档";
           }
         } else if (this.pendingCloudAction === "sync") {
-          this.roomClient?.cloudSave(this.cloudToken, this.save);
+          const remote = message.account as { save?: SaveState };
+          if (
+            remote.save &&
+            (remote.save.playCount ?? 0) > this.save.playCount
+          ) {
+            this.cloudStatus = "云端进度较新，已停止覆盖；请使用云端载入";
+          } else {
+            this.roomClient?.cloudSave(this.cloudToken, this.save);
+          }
         }
         break;
       }
@@ -2398,6 +2479,17 @@ export class AdaptiveGameApp {
 
   private outcomeMarkup(outcome: ChoiceOutcome): string {
     const option = outcome.option;
+    const transitionId = this.pendingChapterTransition;
+    const action = transitionId
+      ? "continue-transition"
+      : this.pendingBranchNodeId
+        ? "continue-branch"
+        : "continue-story";
+    const actionLabel = transitionId
+      ? "查看章节过渡"
+      : this.pendingBranchNodeId
+        ? "进入角色分岔"
+        : "返回地图";
     const streak = this.expertStreak();
     const encouragement =
       option.quality === "expert"
@@ -2428,7 +2520,7 @@ export class AdaptiveGameApp {
             )
             .join("")}
         </div>
-        <button class="primary" data-action="${this.pendingBranchNodeId ? "continue-branch" : "continue-story"}">${this.pendingBranchNodeId ? "进入角色分岔" : "返回地图"}</button>
+        <button class="primary" data-action="${action}">${actionLabel}</button>
       </section>
     `;
   }

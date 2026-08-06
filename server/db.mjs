@@ -58,18 +58,30 @@ export async function leaderboard(limit = 50) {
     `
       SELECT name, role, save, updated_at
       FROM accounts
-      ORDER BY (save -> 'profile' -> 'abilities')::text DESC, updated_at DESC
-      LIMIT $1
+      LIMIT 500
     `,
-    [limit]
+    []
   );
-  return result.rows.map((row) => ({
-    name: row.name,
-    role: row.role,
-    score: Object.values(row.save?.profile?.abilities || {}).reduce(
-      (sum, value) => sum + Number(value || 0),
-      0
-    ),
-    updatedAt: row.updated_at
-  }));
+  return result.rows
+    .map((row) => ({
+      name: row.name,
+      role: row.role,
+      score: Object.values(row.save?.profile?.abilities || {}).reduce(
+        (sum, value) => sum + abilityLevel(Number(value || 0)),
+        0
+      ),
+      updatedAt: row.updated_at
+    }))
+    .sort((a, b) => b.score - a.score)
+    .slice(0, limit);
+}
+
+function abilityLevel(exp) {
+  const thresholds = [0, 4, 10, 18, 28, 40];
+  let level = 1;
+  for (const threshold of thresholds.slice(1)) {
+    if (exp >= threshold) level += 1;
+    else break;
+  }
+  return Math.min(6, level);
 }
