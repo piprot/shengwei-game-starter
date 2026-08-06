@@ -49,6 +49,7 @@ npm run test:server
 - Render：直接使用仓库根目录的 `render.yaml`
 - Docker：直接使用仓库根目录的 `Dockerfile`
 - GHCR：`.github/workflows/docker.yml` 会在每次推送时构建并发布镜像
+- Render 自动部署：配置 `RENDER_DEPLOY_HOOK_URL` 后，`.github/workflows/render-deploy.yml` 会在推送 main 时触发
 
 ## Render 一键部署
 

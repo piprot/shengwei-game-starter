@@ -1715,12 +1715,34 @@ export function getNodeForRole(
   if (!variant) {
     return base;
   }
+  const chapter = getChapter(base.chapterId);
+  const options = base.options.map((option, index) => {
+    const set = ROLE_OPTION_SETS[role][option.quality];
+    const variantIndex =
+      (stringHash(`${nodeId}-${role}-${index}`) + index) % set.length;
+    const view = set[variantIndex];
+    return {
+      ...option,
+      label: view.label,
+      summary: `${view.summary} 本章重点是「${chapter.title}」，你还需要判断：${base.stake}`,
+      feedback: `${view.feedback} 结合本章复盘：${CHAPTER_REFLECTIONS[chapter.id]}`
+    };
+  });
   return {
     ...base,
     title: variant.title ?? base.title,
     context: variant.context ?? base.context,
-    stake: variant.stake ?? base.stake
+    stake: variant.stake ?? base.stake,
+    options
   };
+}
+
+function stringHash(value: string): number {
+  let hash = 0;
+  for (let i = 0; i < value.length; i += 1) {
+    hash = (hash * 31 + value.charCodeAt(i)) % 997;
+  }
+  return hash;
 }
 
 const BRANCH_TEMPLATES: Record<

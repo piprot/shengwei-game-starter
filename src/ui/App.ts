@@ -721,8 +721,8 @@ export class AdaptiveGameApp {
                             <button class="option-card" data-action="choose-option" data-option="${index}">
                               <span class="option-letter">${String.fromCharCode(65 + index)}</span>
                               <span class="option-body">
-                                <strong>${escapeHtml(this.roleOptionLabel(option, index))}</strong>
-                                <em>${escapeHtml(this.roleOptionSummary(option, index))}</em>
+                                <strong>${escapeHtml(option.label)}</strong>
+                                <em>${escapeHtml(option.summary)}</em>
                                 <small class="role-move">${this.roleMove(option.quality)}</small>
                               </span>
                             </button>
@@ -1572,6 +1572,11 @@ export class AdaptiveGameApp {
     }
     const optionIndex = Number(target.dataset.option);
     const outcome = applyStoryChoice(this.save, this.storyNodeId, optionIndex);
+    const roleNode = getNodeForRole(
+      this.save.profile.role,
+      this.storyNodeId
+    );
+    outcome.option = roleNode.options[optionIndex];
     this.lastOutcome = outcome;
     this.lastOutcomeNodeId = this.storyNodeId;
     this.pendingBranchNodeId =
@@ -2375,8 +2380,8 @@ export class AdaptiveGameApp {
       <section class="outcome-panel">
         <span class="quality ${option.quality}">${optionQualityLabel(option.quality)}</span>
         <div class="positive-feedback">${encouragement}</div>
-        <h2>${escapeHtml(this.roleOptionLabel(option, outcome.optionIndex))}</h2>
-        <p>${escapeHtml(this.roleOptionFeedback(option, outcome.optionIndex))}</p>
+        <h2>${escapeHtml(option.label)}</h2>
+        <p>${escapeHtml(option.feedback)}</p>
         <blockquote>${escapeHtml(option.theory)}</blockquote>
         <div class="outcome-effects">
           <span><b>+${outcome.qualityScore}</b> 专家契合分</span>

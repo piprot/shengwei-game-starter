@@ -30,6 +30,7 @@
 - PWA：应用图标、安装清单与离线缓存 Service Worker
 - 服务端骨架：房间、自动匹配、账号、云存档、排行榜、WebSocket 信令
 - 服务端生产化：PostgreSQL 存储、Dockerfile、Render 一键部署配置
+- Render 自动部署：配置 `RENDER_DEPLOY_HOOK_URL` 后推送 main 自动触发
 - 报告页云端同步/载入/排行榜：可直接连接本地或已部署房间服务器
 - 1v1 大厅云端自动匹配：连接服务端后自动开房并转发回合
 - 角色数据级分支：关键选择可进入对应角色专属分岔节点
