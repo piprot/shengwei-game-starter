@@ -677,7 +677,7 @@ export class AdaptiveGameApp {
                       <button data-action="toggle-hint">${this.storyHintRevealed ? "收起教练提示" : "查看教练提示"}</button>
                       ${
                         this.storyHintRevealed
-                          ? `<p class="coach-hint">${escapeHtml(NODE_INTEL[node.id]?.[2] ?? "先看关键关系，再选最可能建立信任的行动。")}</p>`
+                          ? `<p class="coach-hint">${escapeHtml(this.adaptiveHint(node))}</p>`
                           : ""
                       }
                     </div>
@@ -1024,7 +1024,7 @@ export class AdaptiveGameApp {
               ? `
                 <div class="mode-note">
                   <h2>AI 陪练</h2>
-                  <p>系统会根据每道情境的专家基准和你的能力水平生成一个风格不同的对手。适合快速训练决策质量。</p>
+                  <p>系统会根据每道情境的专家基准和你的能力水平生成对手，并基于你的专家判断率动态调整难度。适合持续训练决策质量。</p>
                   <button class="primary" data-action="start-ai-duel">开始对战</button>
                 </div>
               `
@@ -1487,7 +1487,17 @@ export class AdaptiveGameApp {
 
   private startAiDuel(): void {
     const human = buildDuelProfile(this.save.profile, this.save.profile.name, "#41c7c0");
-    const ai = buildAiProfile("founder", Math.min(3, this.duelRounds / 2));
+    const history = this.save.decisionHistory;
+    const expertCount = history.filter(
+      (record) => record.quality === "expert"
+    ).length;
+    const expertRatio =
+      history.length > 0 ? expertCount / history.length : 0.33;
+    const strength = Math.max(
+      1,
+      Math.min(4, Math.round(expertRatio * 4 + this.save.duelWins * 0.15))
+    );
+    const ai = buildAiProfile("founder", strength);
     this.audio.ensure();
     this.audio.round();
     this.duelEngine = new DuelEngine(human, ai, this.duelRounds, duelSeed());
@@ -1977,6 +1987,26 @@ export class AdaptiveGameApp {
         <div class="ability-sources">${ability.sources.slice(0, 2).map((source) => `<span>${escapeHtml(source)}</span>`).join("")}</div>
       </div>
     `;
+  }
+
+  private adaptiveHint(node: StoryNode): string {
+    const relevant = [
+      ...new Set(
+        node.options.flatMap((option) =>
+          Object.keys(option.effects) as AbilityId[]
+        )
+      )
+    ];
+    if (relevant.length === 0) {
+      return "先看关键关系，再选最可能建立信任的行动。";
+    }
+    const weakest = relevant.sort(
+      (a, b) =>
+        abilityLevel(this.save.profile.abilities[a]) -
+        abilityLevel(this.save.profile.abilities[b])
+    )[0];
+    const ability = ABILITIES[weakest];
+    return `本局对你的「${ability.name}」要求较高：${ability.tagline} 建议：${ability.trainingPath}`;
   }
 
   private roleOptionLabel(option: StoryOption, index: number): string {
