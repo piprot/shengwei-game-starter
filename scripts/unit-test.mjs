@@ -43,6 +43,7 @@ assert(
 
 assert(CHAPTERS.length === 9, "chapters must be 9");
 assert(STORY_NODES.length >= 60, "story nodes should be 60+");
+assert(RANDOM_EVENT_IDS.length >= 20, "random events must be 20+");
 assert(
   RANDOM_EVENT_IDS.every((id) => RANDOM_EVENT_META[id]),
   "every random event must have metadata"
