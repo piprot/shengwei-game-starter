@@ -44,8 +44,8 @@ async function waitForOperational() {
   );
 }
 
-async function waitForHeadRun(head) {
-  const deadline = Date.now() + 5 * 60 * 1000;
+async function waitForHeadRun(head, waitMs) {
+  const deadline = Date.now() + waitMs;
   while (Date.now() < deadline) {
     const runs = JSON.parse(
       gh([
@@ -65,13 +65,21 @@ async function waitForHeadRun(head) {
     console.log("Waiting for CI run on current HEAD...");
     await new Promise((resolve) => setTimeout(resolve, 15000));
   }
-  throw new Error("No CI run found for current HEAD after recovery.");
+  return undefined;
 }
 
 try {
   await waitForOperational();
   const head = gh(["rev-parse", "HEAD"]).trim();
-  const target = await waitForHeadRun(head);
+  let target = await waitForHeadRun(head, 5 * 60 * 1000);
+  if (!target) {
+    console.log("No CI run found yet; dispatching CI workflow.");
+    gh(["workflow", "run", "ci.yml", "--repo", REPO, "--ref", "main"]);
+    target = await waitForHeadRun(head, 5 * 60 * 1000);
+  }
+  if (!target) {
+    throw new Error("No CI run found for current HEAD after dispatch.");
+  }
   if (target.conclusion === "failure") {
     gh([
       "run",
