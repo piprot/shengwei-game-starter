@@ -80,6 +80,8 @@ try {
     await page.click("text=创建档案");
     await page.fill("input[name=playerName]", "审计员");
     await page.click("text=开启征程");
+    await page.waitForSelector("text=能力基线测评");
+    await page.click("text=跳过测评");
     await page.waitForSelector("text=九章权力架构");
     const mapOverflow = await overflow(page);
 

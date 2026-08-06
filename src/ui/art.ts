@@ -1,4 +1,9 @@
-export function renderPowerBoard(canvas: HTMLCanvasElement, seed = 7): void {
+export function renderPowerBoard(
+  canvas: HTMLCanvasElement,
+  seed = 7,
+  title = "权力关系沙盘",
+  caption = "关键人物 · 信任连接 · 资源流动"
+): void {
   const dpr = Math.min(2, window.devicePixelRatio || 1);
   const width = canvas.clientWidth || 640;
   const height = canvas.clientHeight || 280;
@@ -72,10 +77,10 @@ export function renderPowerBoard(canvas: HTMLCanvasElement, seed = 7): void {
 
   ctx.fillStyle = "rgba(231, 238, 242, 0.9)";
   ctx.font = "700 13px 'Microsoft YaHei', sans-serif";
-  ctx.fillText("权力关系沙盘", 16, 22);
+  ctx.fillText(title, 16, 22);
   ctx.fillStyle = "rgba(159, 179, 200, 0.85)";
   ctx.font = "12px 'Microsoft YaHei', sans-serif";
-  ctx.fillText("关键人物 · 信任连接 · 资源流动", 16, 42);
+  ctx.fillText(caption, 16, 42);
 }
 
 function seededRandom(seed: number): () => number {

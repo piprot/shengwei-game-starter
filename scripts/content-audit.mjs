@@ -10,6 +10,7 @@ import {
   ABILITY_ORDER,
   ROLES
 } from "../src/core/abilities.ts";
+import { ASSESSMENT_QUESTIONS } from "../src/core/assessment.ts";
 
 const mainNodes = STORY_NODES.filter((node) => node.kind === "main");
 const sideNodes = STORY_NODES.filter((node) => node.kind === "side");
@@ -74,6 +75,15 @@ for (const id of ABILITY_ORDER) {
 for (const role of Object.values(ROLES)) {
   if (!role.objective || !role.lens || role.focusAbilities.length < 4) {
     problems.push(`${role.id} role objective/lens/focus is incomplete`);
+  }
+}
+
+if (ASSESSMENT_QUESTIONS.length !== 10) {
+  problems.push("assessment must contain exactly 10 questions");
+}
+for (const question of ASSESSMENT_QUESTIONS) {
+  if (question.options.length !== 3) {
+    problems.push(`${question.id} must have exactly 3 options`);
   }
 }
 

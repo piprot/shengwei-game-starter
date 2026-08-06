@@ -53,12 +53,14 @@ import type {
 } from "../core/types";
 import { ManualRtcPeer, type RtcMessage } from "../net/rtc";
 import { GameAudio } from "../audio";
+import { ASSESSMENT_QUESTIONS } from "../core/assessment";
 import { renderAbilityRadar } from "./charts";
 import { renderPowerBoard } from "./art";
 
 type View =
   | "menu"
   | "profile"
+  | "assessment"
   | "map"
   | "story"
   | "ability"
@@ -75,6 +77,9 @@ export class AdaptiveGameApp {
   private save: SaveState;
   private view: View = "menu";
   private pendingRole: RoleId = "highPotential";
+  private pendingProfile?: PlayerProfile;
+  private assessmentStep = 0;
+  private assessmentAnswers: number[] = [];
   private selectedChapter = 1;
   private storyNodeId?: string;
   private lastOutcome?: ChoiceOutcome;
@@ -132,6 +137,9 @@ export class AdaptiveGameApp {
         break;
       case "profile":
         this.renderProfile();
+        break;
+      case "assessment":
+        this.renderAssessment();
         break;
       case "map":
         this.renderMap();
@@ -256,6 +264,66 @@ export class AdaptiveGameApp {
         </section>
       </main>
     `;
+  }
+
+  private renderAssessment(): void {
+    if (!this.pendingProfile) {
+      this.show("profile");
+      return;
+    }
+    const question = ASSESSMENT_QUESTIONS[this.assessmentStep];
+    const selected = this.assessmentAnswers[this.assessmentStep];
+    this.root.innerHTML = `
+      <header class="topbar">
+        <div class="brand">权变之路</div>
+        <button class="link" data-action="open-profile">返回建档</button>
+        <button class="link sound-toggle" data-action="toggle-sound">${this.muted ? "声音：关" : "声音：开"}</button>
+      </header>
+      <main class="assessment-shell">
+        <section class="assessment-panel">
+          <div class="assessment-progress">
+            <span>能力基线测评</span>
+            <small>${this.assessmentStep + 1} / ${ASSESSMENT_QUESTIONS.length}</small>
+          </div>
+          <div class="assessment-bar"><i style="width:${((this.assessmentStep + 1) / ASSESSMENT_QUESTIONS.length) * 100}%"></i></div>
+          <h1>${escapeHtml(question.prompt)}</h1>
+          <p class="muted">${ABILITIES[question.abilityId].name} · ${ABILITIES[question.abilityId].tagline}</p>
+          <div class="assessment-art">
+            <canvas id="assessment-art" aria-label="能力基线图"></canvas>
+          </div>
+          <div class="assessment-options">
+            ${question.options
+              .map(
+                (option, index) => `
+                  <button class="assessment-option ${selected === index ? "selected" : ""}" data-action="assessment-option" data-option="${index}">
+                    ${escapeHtml(option.label)}
+                  </button>
+                `
+              )
+              .join("")}
+          </div>
+          <div class="assessment-actions">
+            <button data-action="assessment-prev" ${this.assessmentStep === 0 ? "disabled" : ""}>上一题</button>
+            ${
+              this.assessmentStep === ASSESSMENT_QUESTIONS.length - 1
+                ? `<button class="primary" data-action="assessment-submit">生成能力档案</button>`
+                : `<button class="primary" data-action="assessment-next">下一题</button>`
+            }
+            <button class="link" data-action="assessment-skip">跳过测评</button>
+          </div>
+        </section>
+      </main>
+    `;
+    const assessmentArt =
+      this.root.querySelector<HTMLCanvasElement>("#assessment-art");
+    if (assessmentArt) {
+      renderPowerBoard(
+        assessmentArt,
+        this.assessmentStep * 17 + 3,
+        "能力基线图",
+        `${ROLES[this.pendingProfile.role].shortName} · 十项能力倾向`
+      );
+    }
   }
 
   private renderMap(): void {
@@ -759,19 +827,23 @@ export class AdaptiveGameApp {
     }
 
     if (engine.finished) {
-      if (!this.duelRecorded && this.duelMode !== "local") {
+      if (!this.duelRecorded) {
         this.duelRecorded = true;
-        const humanWon =
-          (this.duelMode === "ai" && engine.winnerIndex === 0) ||
-          (this.duelMode === "remote" &&
-            engine.winnerIndex === this.remotePlayerIndex);
-        if (humanWon) {
-          this.audio.win();
+        if (this.duelMode === "local") {
+          this.audio.round();
         } else {
-          this.audio.lose();
+          const humanWon =
+            (this.duelMode === "ai" && engine.winnerIndex === 0) ||
+            (this.duelMode === "remote" &&
+              engine.winnerIndex === this.remotePlayerIndex);
+          if (humanWon) {
+            this.audio.win();
+          } else {
+            this.audio.lose();
+          }
+          const delta = Math.abs(engine.scores[0] - engine.scores[1]);
+          recordDuelResult(this.save, humanWon, this.duelMode === "ai", delta);
         }
-        const delta = Math.abs(engine.scores[0] - engine.scores[1]);
-        recordDuelResult(this.save, humanWon, this.duelMode === "ai", delta);
       }
       const result = engine.toResult();
       this.root.innerHTML = `
@@ -947,6 +1019,34 @@ export class AdaptiveGameApp {
       case "create-profile":
         this.createProfileFromForm();
         break;
+      case "assessment-option":
+        this.assessmentAnswers[this.assessmentStep] = Number(
+          actionTarget.dataset.option
+        );
+        this.audio.ui();
+        this.renderAssessment();
+        break;
+      case "assessment-next":
+        this.assessmentAnswers[this.assessmentStep] ??= 0;
+        this.assessmentStep = Math.min(
+          ASSESSMENT_QUESTIONS.length - 1,
+          this.assessmentStep + 1
+        );
+        this.audio.ui();
+        this.renderAssessment();
+        break;
+      case "assessment-prev":
+        this.assessmentStep = Math.max(0, this.assessmentStep - 1);
+        this.audio.ui();
+        this.renderAssessment();
+        break;
+      case "assessment-submit":
+        this.assessmentAnswers[this.assessmentStep] ??= 0;
+        this.finishProfile(true);
+        break;
+      case "assessment-skip":
+        this.finishProfile(false);
+        break;
       case "choose-option":
         this.chooseStoryOption(actionTarget);
         break;
@@ -1019,7 +1119,26 @@ export class AdaptiveGameApp {
     const input = this.root.querySelector<HTMLInputElement>("input[name='playerName']");
     const name = input?.value.trim() || "你";
     const profile = createProfile(name, this.pendingRole);
-    activateProfile(this.save, profile);
+    this.pendingProfile = profile;
+    this.assessmentAnswers = [];
+    this.assessmentStep = 0;
+    this.show("assessment");
+  }
+
+  private finishProfile(applyAssessment: boolean): void {
+    if (!this.pendingProfile) {
+      this.show("profile");
+      return;
+    }
+    if (applyAssessment) {
+      ASSESSMENT_QUESTIONS.forEach((question, index) => {
+        const answer = this.assessmentAnswers[index] ?? 0;
+        this.pendingProfile!.abilities[question.abilityId] +=
+          question.options[answer].points;
+      });
+    }
+    activateProfile(this.save, this.pendingProfile);
+    this.pendingProfile = undefined;
     this.audio.startAmbient();
     this.audio.expert();
     this.selectedChapter = 1;

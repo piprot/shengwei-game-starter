@@ -75,6 +75,8 @@ try {
   await page.fill("input[name=playerName]", "林远");
   await page.click("button[data-role=highPotential]");
   await page.click("text=开启征程");
+  await page.waitForSelector("text=能力基线测评");
+  await page.click("text=跳过测评");
   await page.waitForSelector("text=九章权力架构");
 
   await page.click("text=空降首周");
