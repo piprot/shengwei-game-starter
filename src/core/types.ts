@@ -115,6 +115,7 @@ export interface SaveState {
 
 export interface ChoiceOutcome {
   option: StoryOption;
+  optionIndex: number;
   gainedAbilityIds: AbilityId[];
   resourceDeltas: Partial<Record<ResourceKey, number>>;
   qualityScore: number;

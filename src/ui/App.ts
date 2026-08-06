@@ -48,7 +48,8 @@ import type {
   ResourceKey,
   RoleId,
   SaveState,
-  StoryNode
+  StoryNode,
+  StoryOption
 } from "../core/types";
 import { ManualRtcPeer, type RtcMessage } from "../net/rtc";
 import { GameAudio } from "../audio";
@@ -394,7 +395,7 @@ export class AdaptiveGameApp {
                             <button class="option-card" data-action="choose-option" data-option="${index}">
                               <span class="option-letter">${String.fromCharCode(65 + index)}</span>
                               <span class="option-body">
-                                <strong>${escapeHtml(option.label)}</strong>
+                                <strong>${escapeHtml(this.roleOptionLabel(option, index))}</strong>
                                 <em>${escapeHtml(option.summary)}</em>
                                 <small class="role-move">${this.roleMove(option.quality)}</small>
                               </span>
@@ -1390,6 +1391,66 @@ export class AdaptiveGameApp {
     `;
   }
 
+  private roleOptionLabel(option: StoryOption, index: number): string {
+    const labels: Record<
+      RoleId,
+      Record<OptionQuality, string[]>
+    > = {
+      parachute: {
+        expert: [
+          "先绘制权力地图，再公开行动",
+          "先访谈关键人物，再调整流程",
+          "先建立小胜利，再推动变革"
+        ],
+        partial: [
+          "先立住权威，再补齐信任",
+          "先完成交付，再处理关系",
+          "先争取高层背书，再启动变革"
+        ],
+        risk: [
+          "直接亮明底线，不等待共识",
+          "绕过阻力先行推动",
+          "用人事动作制造转折"
+        ]
+      },
+      founder: {
+        expert: [
+          "先验证现金流，再扩大投入",
+          "先跑通最小闭环，再谈规模化",
+          "先锁定关键客户，再优化组织"
+        ],
+        partial: [
+          "先保交付，再补体系",
+          "先推进业务，再处理内耗",
+          "先争取投资人支持，再调整方向"
+        ],
+        risk: [
+          "用创始人权力强推",
+          "快速押注新方向",
+          "先断旧业务，再谈转型"
+        ]
+      },
+      highPotential: {
+        expert: [
+          "先建立横向共识，再推动决策",
+          "先对齐关键人，再提出方案",
+          "先用证据影响决策，再扩大范围"
+        ],
+        partial: [
+          "先争取关键支持，再尝试落地",
+          "先保护项目，再处理关系",
+          "先借力资源，再推动执行"
+        ],
+        risk: [
+          "越级推动，绕过部门阻力",
+          "公开问题，逼组织表态",
+          "用数据质疑现有方案"
+        ]
+      }
+    };
+    return labels[this.save.profile.role][option.quality][index % 3];
+  }
+
   private roleMove(quality: OptionQuality): string {
     const role = this.save.profile.role;
     const label = ROLES[role].shortName;
@@ -1419,7 +1480,7 @@ export class AdaptiveGameApp {
     return `
       <section class="outcome-panel">
         <span class="quality ${option.quality}">${optionQualityLabel(option.quality)}</span>
-        <h2>${escapeHtml(option.label)}</h2>
+        <h2>${escapeHtml(this.roleOptionLabel(option, outcome.optionIndex))}</h2>
         <p>${escapeHtml(option.feedback)}</p>
         <blockquote>${escapeHtml(option.theory)}</blockquote>
         <div class="outcome-effects">

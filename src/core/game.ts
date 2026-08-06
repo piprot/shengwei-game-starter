@@ -146,7 +146,7 @@ export function applyStoryChoice(
 ): ChoiceOutcome {
   const node = getNode(nodeId);
   const option = node.options[optionIndex];
-  const outcome = buildOutcome(save, option);
+  const outcome = buildOutcome(save, option, optionIndex);
 
   const decisionRecord: DecisionRecord = {
     nodeId,
@@ -208,7 +208,11 @@ export function applyStoryChoice(
   return outcome;
 }
 
-function buildOutcome(save: SaveState, option: StoryOption): ChoiceOutcome {
+function buildOutcome(
+  save: SaveState,
+  option: StoryOption,
+  optionIndex: number
+): ChoiceOutcome {
   const gainedAbilityIds = (Object.entries(option.effects) as Array<
     [AbilityId, number]
   >)
@@ -216,6 +220,7 @@ function buildOutcome(save: SaveState, option: StoryOption): ChoiceOutcome {
     .map(([id]) => id);
   return {
     option,
+    optionIndex,
     gainedAbilityIds,
     resourceDeltas: option.resources,
     qualityScore: scoreQuality(option.quality, save.profile)
