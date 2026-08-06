@@ -51,3 +51,6 @@ npm run test:server
 - GitHub Pages is live at `https://piprot.github.io/shengwei-game-starter/`; Actions queue/OIDC deploy failures were transient and reruns are queued.
 - Render service is not deployed yet. Import `piprot/shengwei-game-starter` with Render Blueprint to create `adaptive-ascent-server` + `adaptive-ascent-db`.
 - New acceptance scripts: `npm run test:live` and `npm run test:rtc:public` cover public server health/account/rank/match and public dual-context WebRTC after deployment.
+## 2026-08-06 GitHub incident
+
+GitHub Status reported `Actions: major_outage` and `Pages: major_outage` at 2026-08-06 17:54 UTC. Queued runs are external and should be rerun after GitHub Status recovers. Git push/API remained operational after FastGithub restart.
