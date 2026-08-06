@@ -761,6 +761,7 @@ export class AdaptiveGameApp {
           </div>
           <button data-action="reset-profile">重置档案</button>
           <button data-action="export-save">导出存档</button>
+          <button data-action="export-report">导出报告</button>
           <label class="file-button">
             导入存档
             <input type="file" data-import-save accept="application/json" hidden />
@@ -1189,6 +1190,9 @@ export class AdaptiveGameApp {
       case "export-save":
         this.exportSave();
         break;
+      case "export-report":
+        this.exportReport();
+        break;
       case "toggle-sound":
         this.muted = !this.muted;
         this.audio.setMuted(this.muted);
@@ -1610,6 +1614,77 @@ export class AdaptiveGameApp {
     const anchor = document.createElement("a");
     anchor.href = url;
     anchor.download = `权变之路-${this.save.profile.name}-存档.json`;
+    anchor.click();
+    URL.revokeObjectURL(url);
+    this.audio.ui();
+  }
+
+  private exportReport(): void {
+    const summary = profileSummary(this.save);
+    const decision = decisionProfile(this.save);
+    const training = recommendedTraining(
+      this.save.profile.abilities,
+      this.save.profile.role
+    );
+    const strengths = ABILITY_ORDER.slice()
+      .sort(
+        (a, b) =>
+          abilityLevel(this.save.profile.abilities[b]) -
+          abilityLevel(this.save.profile.abilities[a])
+      )
+      .slice(0, 3);
+    const lines = [
+      `# ${this.save.profile.name} 领导力复盘报告`,
+      "",
+      `角色：${ROLES[this.save.profile.role].name}`,
+      `段位：${summary.rank.name}`,
+      `综合能力值：${summary.total}`,
+      `决策画像：${decision.identity}`,
+      "",
+      "## 能力现状",
+      ...ABILITY_ORDER.map(
+        (id) =>
+          `- ${ABILITIES[id].name} Lv.${abilityLevel(this.save.profile.abilities[id])}：${ABILITIES[id].tagline}`
+      ),
+      "",
+      "## 优势能力",
+      ...strengths.map((id) => `- ${ABILITIES[id].name}：${ABILITIES[id].tagline}`),
+      "",
+      "## 建议训练",
+      ...training.map((id) => `- ${ABILITIES[id].name}：${ABILITIES[id].trainingPath}`),
+      "",
+      "## 章节表现",
+      ...CHAPTERS.map((chapter) => {
+        const record = this.save.chapterRecords.find(
+          (item) => item.chapterId === chapter.id
+        );
+        return `- ${chapter.title}：${record && record.completedNodeIds.length >= 2 ? "已完成" : "未完成"}`;
+      }),
+      "",
+      "## 支线剧情弧",
+      ...SIDE_QUEST_ARCS.map(
+        (arc) =>
+          `- ${arc.title}：${arc.nodes.filter((id) => this.save.completedSideQuests.includes(id)).length}/${arc.nodes.length}`
+      ),
+      "",
+      "## 人物关系",
+      ...NPCS.map((npc) => {
+        const relation = npcRelation(this.save, npc);
+        return `- ${npc.name}（${npc.title}）：${relation.status}`;
+      }),
+      "",
+      "## 对决记录",
+      `- 胜场：${this.save.duelWins}`,
+      `- 负场：${this.save.duelLosses}`,
+      `- 修炼点：${this.save.masteryPoints}`
+    ];
+    const blob = new Blob([lines.join("\n")], {
+      type: "text/markdown;charset=utf-8"
+    });
+    const url = URL.createObjectURL(blob);
+    const anchor = document.createElement("a");
+    anchor.href = url;
+    anchor.download = `权变之路-${this.save.profile.name}-报告.md`;
     anchor.click();
     URL.revokeObjectURL(url);
     this.audio.ui();
