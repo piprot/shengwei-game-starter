@@ -1,4 +1,11 @@
-import type { ChapterDef, RoleId, StoryNode } from "./types";
+import type {
+  AbilityId,
+  ChapterDef,
+  OptionQuality,
+  RoleId,
+  StoryNode
+} from "./types";
+import { ROLE_OPTION_SETS } from "./roleOptions.ts";
 
 export const CHAPTERS: ChapterDef[] = [
   {
@@ -1715,6 +1722,137 @@ export function getNodeForRole(
     stake: variant.stake ?? base.stake
   };
 }
+
+const BRANCH_TEMPLATES: Record<
+  number,
+  { title: string; context: string; stake: string }
+> = {
+  2: {
+    title: "授权真空下的第一选择",
+    context:
+      "你在授权不完整时已经迈出第一步。现在团队正看着你会把第一份资源、第一个承诺投到哪里。",
+    stake: "你要用一次行动证明：即使在授权真空里，你也能建立可预期的判断。"
+  },
+  3: {
+    title: "人才配置的第一次落子",
+    context:
+      "你开始重组关键岗位。每个人都在猜自己是否安全，你的第一个人事动作会被当成未来规则。",
+    stake: "你要让组织看到：人才判断的标准不是亲疏，而是未来成果。"
+  },
+  4: {
+    title: "阻力面前的第一次同盟",
+    context:
+      "反对声开始出现。你没有选择压制，而是需要决定：让谁进入共同责任，又让谁保持监督。",
+    stake: "你要把阻力转成同盟，而不是把反对者变成更深的敌人。"
+  },
+  5: {
+    title: "目标落地的第一次拆解",
+    context:
+      "大目标已经摆在桌上。团队等待的不是又一次动员，而是第一份能被检查的关键结果。",
+    stake: "你要把口号变成每天可验收的行动，并让每个人知道自己的那部分。"
+  },
+  6: {
+    title: "权力边界的第一次固化",
+    context:
+      "有人开始绕过你决策。你要用制度重新定义边界，而不是只靠一次谈话。",
+    stake: "你要让组织形成“重大决策必须进入闭环”的默认规则。"
+  },
+  7: {
+    title: "组织能力的第一次沉淀",
+    context:
+      "你的个人判断正在支撑关键业务。你需要决定：哪些经验必须变成流程，哪些留给个人。",
+    stake: "你要让组织开始离开你也能运行，而不是继续依赖你的反应速度。"
+  },
+  8: {
+    title: "危机中的第一次隔离",
+    context:
+      "危机已经出现。你必须在信息不全时决定：先保护什么，先放弃什么，先让谁行动。",
+    stake: "你要用最快速度缩小风险范围，同时不让团队陷入恐慌。"
+  },
+  9: {
+    title: "成业前的最后一次选择",
+    context:
+      "你已经证明了能力，现在要证明系统。你留下的最后一个决策，会成为组织未来的判断模板。",
+    stake: "你要让组织记住的不是你的答案，而是你决策时使用的方法。"
+  }
+};
+
+const ROLE_IDS: RoleId[] = ["parachute", "founder", "highPotential"];
+const BRANCH_QUALITIES: OptionQuality[] = ["expert", "partial", "risk"];
+
+function buildBranchNodes(): void {
+  for (const chapter of CHAPTERS) {
+    if (chapter.id === 1) {
+      continue;
+    }
+    const template = BRANCH_TEMPLATES[chapter.id];
+    const entry = STORY_NODES.find((node) => node.id === `c${chapter.id}n1`);
+    if (entry?.options[0]) {
+      entry.options[0].branchTo = {
+        parachute: `c${chapter.id}b-parachute`,
+        founder: `c${chapter.id}b-founder`,
+        highPotential: `c${chapter.id}b-highPotential`
+      };
+    }
+    for (const role of ROLE_IDS) {
+      const id = `c${chapter.id}b-${role}`;
+      STORY_NODES.push({
+        id,
+        chapterId: chapter.id,
+        title: `${roleName(role)} · ${template.title}`,
+        kind: "side",
+        context: `${template.context} ${roleLens(role)}`,
+        stake: template.stake,
+        options: BRANCH_QUALITIES.map((quality, index) => {
+          const view = ROLE_OPTION_SETS[role][quality][index % 3];
+          const effects: Partial<Record<AbilityId, number>> =
+            quality === "expert"
+              ? { [chapter.focus[0]]: 3, [chapter.focus[1]]: 1 }
+              : quality === "partial"
+                ? { [chapter.focus[0]]: 2 }
+                : { recovery: 2 };
+          return {
+            label: view.label,
+            summary: view.summary,
+            quality,
+            effects,
+            resources:
+              quality === "expert"
+                ? { energy: -6, trust: 7, influence: 5 }
+                : quality === "partial"
+                  ? { energy: -6, trust: 2, influence: 2 }
+                  : { energy: -7, trust: -5, influence: -2 },
+            feedback: view.feedback,
+            theory: CHAPTER_REFLECTIONS[chapter.id]
+          };
+        })
+      });
+      NODE_INTEL[id] = [
+        chapter.title,
+        chapter.subtitle,
+        ROLE_OPTION_SETS[role].expert[0].summary
+      ];
+    }
+  }
+}
+
+function roleName(role: RoleId): string {
+  return role === "parachute"
+    ? "空降"
+    : role === "founder"
+      ? "创业"
+      : "高潜";
+}
+
+function roleLens(role: RoleId): string {
+  return role === "parachute"
+    ? "你更关注权力结构与可信度。"
+    : role === "founder"
+      ? "你更关注现金流与可验证结果。"
+      : "你更关注横向共识与影响力。";
+}
+
+buildBranchNodes();
 
 export function duelNodes(count: number, seed: number): StoryNode[] {
   const candidates = STORY_NODES.filter((node) => node.kind === "main");

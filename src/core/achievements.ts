@@ -105,7 +105,10 @@ export function isAchievementUnlocked(save: SaveState, id: string): boolean {
     return save.chapterRecords.some((record) => record.stars >= 220);
   }
   if (id === "all_side") {
-    return save.completedSideQuests.length >= 6;
+    const arcNodes = SIDE_QUEST_ARCS.flatMap((arc) => arc.nodes);
+    return arcNodes.every((nodeId) =>
+      save.completedSideQuests.includes(nodeId)
+    );
   }
   if (id.startsWith("side_")) {
     const arc = SIDE_QUEST_ARCS.find((item) => item.id === id.replace("side_", ""));

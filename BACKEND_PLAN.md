@@ -12,6 +12,7 @@
 - 1v1 回合转发：`pick`
 - WebRTC 信令转发：`signal`
 - 本地 JSON 持久化：`server/data/store.json`
+- PostgreSQL 正式存储：配置 `DATABASE_URL` 后自动使用 `server/db.mjs`
 
 ## 本地运行
 
@@ -42,8 +43,18 @@ npm run server
 
 - 启动命令：`npm run server`
 - 端口：`PORT=8080`
-- 持久化：当前使用本地 JSON，正式环境应替换为 PostgreSQL 或 Redis
+- 数据库：已提供 PostgreSQL 存储层、`server/schema.sql` 与 Render 自动创建数据库
 - 前端构建时注入 `VITE_ROOM_SERVER_URL`
+- Render：直接使用仓库根目录的 `render.yaml`
+- Docker：直接使用仓库根目录的 `Dockerfile`
+
+## Render 一键部署
+
+1. 将仓库导入 Render
+2. Render 会读取 `render.yaml`
+3. 自动创建 Web 服务与 PostgreSQL 数据库
+4. 将 `VITE_ROOM_SERVER_URL` 配置到前端构建环境
+5. 服务健康检查地址为 `/`
 
 ## 安全与生产化
 
@@ -58,4 +69,4 @@ npm run server
 
 ## 当前状态
 
-工程骨架已可本地运行，但尚未部署到公网，也尚未在正式环境接入数据库。
+工程已具备公网部署所需的 Docker、Render、PostgreSQL 与健康检查配置；尚未实际部署到公网账号。

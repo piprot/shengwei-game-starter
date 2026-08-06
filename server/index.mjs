@@ -1,8 +1,16 @@
 import { randomUUID } from "node:crypto";
 import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { createServer } from "node:http";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { WebSocketServer } from "ws";
+import {
+  dbEnabled,
+  getAccount,
+  initDb,
+  leaderboard as dbLeaderboard,
+  upsertAccount
+} from "./db.mjs";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const DATA_DIR = process.env.DATA_DIR || join(__dirname, "data");
@@ -22,9 +30,15 @@ function persist() {
   writeFileSync(DATA_FILE, JSON.stringify(store, null, 2));
 }
 
-const wss = new WebSocketServer({ port: PORT });
+const httpServer = createServer((_request, response) => {
+  response.writeHead(200, { "content-type": "text/plain; charset=utf-8" });
+  response.end("ok");
+});
+const wss = new WebSocketServer({ server: httpServer });
 const rooms = new Map();
 const matchQueue = [];
+
+await initDb();
 
 function send(socket, payload) {
   if (socket.readyState === 1) {
@@ -78,7 +92,7 @@ function accountForToken(token) {
   return store.accounts[token];
 }
 
-function leaderboard() {
+function jsonLeaderboard() {
   return Object.values(store.accounts)
     .map((account) => ({
       name: account.name,
@@ -96,7 +110,7 @@ function leaderboard() {
 wss.on("connection", (socket) => {
   send(socket, { type: "connected", message: "自适应领导力服务已连接" });
 
-  socket.on("message", (raw) => {
+  socket.on("message", async (raw) => {
     let message;
     try {
       message = JSON.parse(String(raw));
@@ -108,19 +122,34 @@ wss.on("connection", (socket) => {
     switch (message.type) {
       case "register": {
         const token = randomUUID();
-        store.accounts[token] = {
+        const account = {
           token,
           name: String(message.name || "玩家"),
           role: String(message.role || "highPotential"),
-          save: message.save || null,
-          updatedAt: new Date().toISOString()
+          save: message.save || null
         };
-        persist();
-        send(socket, { type: "registered", token, account: store.accounts[token] });
+        if (dbEnabled) {
+          await upsertAccount(
+            account.token,
+            account.name,
+            account.role,
+            account.save
+          );
+        } else {
+          store.accounts[token] = {
+            ...account,
+            updatedAt: new Date().toISOString()
+          };
+          persist();
+        }
+        send(socket, { type: "registered", token, account });
         break;
       }
       case "login": {
-        const account = accountForToken(String(message.token || ""));
+        const token = String(message.token || "");
+        const account = dbEnabled
+          ? await getAccount(token)
+          : accountForToken(token);
         if (!account) {
           send(socket, { type: "error", message: "账号不存在" });
           return;
@@ -130,19 +159,27 @@ wss.on("connection", (socket) => {
         break;
       }
       case "cloud_save": {
-        const account = accountForToken(String(message.token || ""));
+        const token = String(message.token || "");
+        const account = dbEnabled ? await getAccount(token) : accountForToken(token);
         if (!account) {
           send(socket, { type: "error", message: "账号不存在" });
           return;
         }
-        account.save = message.save;
-        account.updatedAt = new Date().toISOString();
-        persist();
+        if (dbEnabled) {
+          await upsertAccount(token, account.name, account.role, message.save);
+        } else {
+          account.save = message.save;
+          account.updatedAt = new Date().toISOString();
+          persist();
+        }
         send(socket, { type: "save_ok" });
         break;
       }
       case "leaderboard": {
-        send(socket, { type: "leaderboard", entries: leaderboard() });
+        send(socket, {
+          type: "leaderboard",
+          entries: dbEnabled ? await dbLeaderboard() : jsonLeaderboard()
+        });
         break;
       }
       case "create_room": {
@@ -241,4 +278,6 @@ function leaveRoom(socket) {
   }
 }
 
-console.log(`Adaptive Ascent server listening on ws://127.0.0.1:${PORT}`);
+httpServer.listen(PORT, () => {
+  console.log(`Adaptive Ascent server listening on ws://127.0.0.1:${PORT}`);
+});
