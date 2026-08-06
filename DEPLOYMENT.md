@@ -53,3 +53,10 @@ curl https://your-render-service.onrender.com/
 ```
 
 返回 `ok` 即服务正常。
+
+## Public verification after Render deploy
+
+After the Render service is live, run these commands from the repo root:
+
+- `npm run test:live` checks health, register, cloud save, leaderboard signature, and two-client match relay over the public WebSocket service.
+- `npm run test:rtc:public` runs a desktop/mobile dual-context WebRTC duel against the public GitHub Pages frontend.
