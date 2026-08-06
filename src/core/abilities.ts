@@ -122,6 +122,8 @@ export const ROLES: Record<RoleId, RoleDef> = {
     name: "空降管理者",
     shortName: "空降",
     description: "进入陌生组织，90 天内建立信任、识别关键人物、完成第一场变革。",
+    lens: "你是空降管理者，必须在陌生组织里先识别真实权力结构，再用最短时间建立可信度。",
+    focusAbilities: ["insight", "strategy", "communication", "authority"],
     startingAbilities: {
       insight: 3,
       strategy: 2,
@@ -135,6 +137,8 @@ export const ROLES: Record<RoleId, RoleDef> = {
     name: "创业者",
     shortName: "创业",
     description: "在资源有限、方向混沌的环境里快速试错、组织突围、保住现金流。",
+    lens: "你是创业者，必须在不依赖职位权威、资源有限的情况下，用行动、现金流和结果建立影响力。",
+    focusAbilities: ["structure", "execution", "recovery", "strategy"],
     startingAbilities: {
       execution: 3,
       structure: 2,
@@ -148,6 +152,8 @@ export const ROLES: Record<RoleId, RoleDef> = {
     name: "高潜人才",
     shortName: "高潜",
     description: "不靠职位权力，用专业、影响力和系统思考推动跨部门协作。",
+    lens: "你是高潜人才，不能直接发号施令，只能通过专业、关系和结构思考推动他人。",
+    focusAbilities: ["communication", "deploy", "insight", "structure"],
     startingAbilities: {
       communication: 3,
       insight: 2,

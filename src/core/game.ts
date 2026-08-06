@@ -219,7 +219,11 @@ export function scoreQuality(
 ): number {
   const base = quality === "expert" ? 100 : quality === "partial" ? 55 : 20;
   const best = bestAbilityLevel(profile) + abilityBonus;
-  return Math.round(base + Math.min(30, best * 3));
+  const roleFocus = ROLES[profile.role].focusAbilities;
+  const roleBest = Math.max(
+    ...roleFocus.map((id) => abilityLevel(profile.abilities[id]))
+  );
+  return Math.round(base + Math.min(30, best * 3) + Math.min(12, roleBest * 2));
 }
 
 function bestAbilityLevel(profile: PlayerProfile): number {

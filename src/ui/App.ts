@@ -342,6 +342,10 @@ export class AdaptiveGameApp {
                 <span>${node.kind === "side" ? "支线任务" : "主线情境"}</span>
               </div>
               <h1>${node.title}</h1>
+              <div class="role-lens">
+                <strong>${ROLES[this.save.profile.role].name}视角</strong>
+                <p>${escapeHtml(ROLES[this.save.profile.role].lens)}</p>
+              </div>
               <p class="scenario-context">${escapeHtml(node.context)}</p>
               <div class="stake">
                 <strong>当前考验</strong>
@@ -394,7 +398,10 @@ export class AdaptiveGameApp {
 
   private renderAbility(): void {
     const summary = profileSummary(this.save);
-    const training = recommendedTraining(this.save.profile.abilities);
+    const training = recommendedTraining(
+      this.save.profile.abilities,
+      this.save.profile.role
+    );
     this.root.innerHTML = `
       <header class="topbar">
         <div class="brand">权变之路</div>
@@ -406,6 +413,18 @@ export class AdaptiveGameApp {
             <p class="eyebrow">能力图谱</p>
             <h1>${summary.rank.name}</h1>
             <p class="muted">综合能力值 ${summary.total}，下一段位需要 ${this.nextRankNeed(summary.total)} 点。</p>
+            <div class="role-focus">
+              <strong>${ROLES[this.save.profile.role].name}重点</strong>
+              <div>
+                ${ROLES[this.save.profile.role].focusAbilities
+                  .map(
+                    (id) => `
+                      <span style="--dot:${ABILITIES[id].color}">${ABILITIES[id].name}</span>
+                    `
+                  )
+                  .join("")}
+              </div>
+            </div>
           </div>
           <canvas class="radar" id="ability-radar"></canvas>
           <button class="primary" data-action="open-report">查看复盘报告</button>
@@ -444,7 +463,10 @@ export class AdaptiveGameApp {
     const strengths = ABILITY_ORDER.filter(
       (id) => abilityLevel(this.save.profile.abilities[id]) >= 4
     );
-    const gaps = recommendedTraining(this.save.profile.abilities);
+    const gaps = recommendedTraining(
+      this.save.profile.abilities,
+      this.save.profile.role
+    );
     const chapterReports = CHAPTERS.map((chapter) => {
       const record = this.save.chapterRecords.find(
         (item) => item.chapterId === chapter.id
@@ -474,7 +496,7 @@ export class AdaptiveGameApp {
           </div>
           <div class="identity-badge">
             <span>决策画像</span>
-            <strong>${decision.identity}</strong>
+            <strong>${ROLES[this.save.profile.role].shortName} · ${decision.identity}</strong>
           </div>
           <button data-action="reset-profile">重置档案</button>
         </section>

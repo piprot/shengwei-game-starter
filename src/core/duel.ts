@@ -1,9 +1,10 @@
-import { ABILITY_ORDER, abilityLevel } from "./abilities";
+import { ABILITY_ORDER, ROLES, abilityLevel } from "./abilities";
 import { duelNodes } from "./story";
 import type {
   AbilityId,
   DuelProfile,
   DuelResult,
+  RoleId,
   StoryNode
 } from "./types";
 
@@ -117,9 +118,18 @@ export function duelSeed(): number {
 }
 
 export function recommendedTraining(
-  abilities: Record<AbilityId, number>
+  abilities: Record<AbilityId, number>,
+  role?: RoleId
 ): AbilityId[] {
+  const focus = role ? ROLES[role].focusAbilities : [];
   return ABILITY_ORDER.slice()
-    .sort((a, b) => abilityLevel(abilities[a]) - abilityLevel(abilities[b]))
+    .sort((a, b) => {
+      const focusDelta =
+        (focus.includes(b) ? 1 : 0) - (focus.includes(a) ? 1 : 0);
+      return (
+        focusDelta * 10 +
+        (abilityLevel(abilities[a]) - abilityLevel(abilities[b]))
+      );
+    })
     .slice(0, 3);
 }

@@ -61,6 +61,8 @@ export interface RoleDef {
   name: string;
   shortName: string;
   description: string;
+  lens: string;
+  focusAbilities: AbilityId[];
   startingAbilities: Partial<Record<AbilityId, number>>;
   startingResources: Record<ResourceKey, number>;
 }

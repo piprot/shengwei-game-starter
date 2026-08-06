@@ -737,6 +737,27 @@ h2 {
   font-size: clamp(26px, 4vw, 44px);
 }
 
+.role-lens {
+  margin-bottom: 14px;
+  padding: 12px 14px;
+  border: 1px solid rgba(242, 193, 78, 0.28);
+  border-radius: 8px;
+  background: rgba(242, 193, 78, 0.07);
+}
+
+.role-lens strong {
+  display: block;
+  color: var(--gold);
+  font-size: 13px;
+  margin-bottom: 4px;
+}
+
+.role-lens p {
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.7;
+}
+
 .scenario-context {
   color: var(--ink);
   font-size: 17px;
@@ -902,6 +923,44 @@ h2 {
   align-items: center;
   gap: 12px;
   margin: 0;
+}
+
+.role-focus {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.role-focus strong {
+  color: var(--gold);
+  font-size: 14px;
+}
+
+.role-focus div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.role-focus span {
+  padding: 5px 9px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--panel-2);
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.role-focus span::before {
+  content: "";
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  margin-right: 6px;
+  border-radius: 50%;
+  background: var(--dot);
 }
 
 .ability-head h3,
