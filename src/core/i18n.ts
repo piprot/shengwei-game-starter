@@ -30,7 +30,12 @@ export const UI_STRINGS = {
     cloudSync: "云端同步",
     cloudLoad: "云端载入",
     cloudLeaderboard: "云端排行",
-    importSave: "导入存档"
+    importSave: "导入存档",
+    abilityTitle: "能力图谱",
+    duelTitle: "1v1 对决",
+    achievementsTitle: "成就墙",
+    relationsTitle: "人物关系图",
+    returnHome: "返回主页"
   },
   en: {
     brand: "Adaptive Ascent",
@@ -61,7 +66,12 @@ export const UI_STRINGS = {
     cloudSync: "Cloud Sync",
     cloudLoad: "Cloud Load",
     cloudLeaderboard: "Leaderboard",
-    importSave: "Import Save"
+    importSave: "Import Save",
+    abilityTitle: "Ability Map",
+    duelTitle: "1v1 Duel",
+    achievementsTitle: "Achievements",
+    relationsTitle: "Relations",
+    returnHome: "Back to Home"
   }
 } as const;
 

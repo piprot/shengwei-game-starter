@@ -511,12 +511,12 @@ export class AdaptiveGameApp {
     this.root.innerHTML = `
       <header class="topbar">
         <div class="brand">权变之路</div>
-        <button class="link" data-action="open-menu">返回主页</button>
+        <button class="link" data-action="open-menu">${this.t("returnHome")}</button>
       </header>
       <main class="achievement-shell">
         <section class="achievement-hero">
           <div>
-            <p class="eyebrow">成就墙</p>
+            <p class="eyebrow">${this.t("achievementsTitle")}</p>
             <h1>${unlocked} / ${ACHIEVEMENTS.length} 已解锁</h1>
             <p class="muted">完成章节、支线、测评、1v1 与能力段位，解锁全部成就。</p>
           </div>
@@ -548,12 +548,12 @@ export class AdaptiveGameApp {
     this.root.innerHTML = `
       <header class="topbar">
         <div class="brand">权变之路</div>
-        <button class="link" data-action="open-menu">返回主页</button>
+        <button class="link" data-action="open-menu">${this.t("returnHome")}</button>
       </header>
       <main class="relation-shell">
         <section class="relation-hero">
           <div>
-            <p class="eyebrow">人物关系图</p>
+            <p class="eyebrow">${this.t("relationsTitle")}</p>
             <h1>${related} / ${NPCS.length} 人已进入你的关系网络</h1>
             <p class="muted">支线中真正面对过的 NPC，会从线索变成可延续的组织关系。</p>
           </div>
@@ -848,12 +848,12 @@ export class AdaptiveGameApp {
     this.root.innerHTML = `
       <header class="topbar">
         <div class="brand">权变之路</div>
-        <button class="link" data-action="open-menu">返回主页</button>
+        <button class="link" data-action="open-menu">${this.t("returnHome")}</button>
       </header>
       <main class="ability-shell">
         <section class="ability-head">
           <div>
-            <p class="eyebrow">能力图谱</p>
+            <p class="eyebrow">${this.t("abilityTitle")}</p>
             <h1>${summary.rank.name}</h1>
             <p class="muted">综合能力值 ${summary.total}，下一段位需要 ${this.nextRankNeed(summary.total)} 点。</p>
             <div class="role-focus">
@@ -1172,11 +1172,11 @@ export class AdaptiveGameApp {
     this.root.innerHTML = `
       <header class="topbar">
         <div class="brand">权变之路</div>
-        <button class="link" data-action="open-menu">返回主页</button>
+        <button class="link" data-action="open-menu">${this.t("returnHome")}</button>
       </header>
       <main class="duel-lobby">
         <section class="duel-hero">
-          <p class="eyebrow">1v1 情境对决</p>
+          <p class="eyebrow">${this.t("duelTitle")}</p>
           <h1>谁能在复杂局势中做出更好的判断？</h1>
           <p class="muted">每一回合都使用真实职场切片，选择会被专家基准评分。远程模式通过 WebRTC 点对点连接，无需服务器。</p>
           <div class="mode-switch">
