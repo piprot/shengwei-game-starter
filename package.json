@@ -8,7 +8,8 @@
     "build": "tsc && vite build",
     "preview": "vite preview",
     "test": "node scripts/smoke.mjs",
-    "audit": "node scripts/audit.mjs"
+    "audit": "node scripts/audit.mjs",
+    "content-audit": "node --experimental-strip-types scripts/content-audit.mjs"
   },
   "devDependencies": {
     "playwright": "^1.62.1",
