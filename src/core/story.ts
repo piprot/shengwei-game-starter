@@ -1687,6 +1687,120 @@ export const STORY_NODES: StoryNode[] = [
     ]
   },
   {
+    id: "c6b-parachute",
+    chapterId: 6,
+    title: "空降 · 权力边界的第一次固化",
+    kind: "branch",
+    context:
+      "你作为空降管理者发现有人绕过你决策。你没有选择公开对抗，而是准备用制度重新定义边界。",
+    stake: "你要让“重大决策进入闭环”成为组织默认规则。",
+    options: [
+      {
+        label: "建立联签和变更留痕机制",
+        summary: "用流程让绕过你变成不合规，而不是个人冲突。",
+        quality: "expert",
+        effects: { authority: 3, structure: 2 },
+        resources: { energy: -7, trust: 2, influence: 6 },
+        feedback: "你让权力边界从个人态度变成组织规则，冲突被流程吸收。",
+        theory: "《韩非子》：法度既立，虽庸主可治。"
+      },
+      {
+        label: "直接找越级者谈话",
+        summary: "用一次明确谈话让对方知道边界。",
+        quality: "partial",
+        effects: { authority: 2, communication: 1 },
+        resources: { energy: -5, trust: -2, influence: 3 },
+        feedback: "对方暂时收敛了，但没有制度约束，下一次会换个方式绕过。",
+        theory: "《权经》：权乃人授，授为大焉。"
+      },
+      {
+        label: "先让越级者承担一次失败",
+        summary: "等他出错后再处理，用事实证明你的边界。",
+        quality: "risk",
+        effects: { strategy: 2 },
+        resources: { energy: -5, trust: -5, influence: -2 },
+        feedback: "你可能等到了失败，但组织也承担了本可避免的损失。",
+        theory: "《孙子兵法》：先为不可胜，以待敌之可胜。"
+      }
+    ]
+  },
+  {
+    id: "c6b-founder",
+    chapterId: 6,
+    title: "创业 · 权力边界的第一次固化",
+    kind: "branch",
+    context:
+      "你作为创始人发现合伙人绕过你直接决策。你名义上是 CEO，实际决策正在被架空。",
+    stake: "你要重建决策机制，而不是让公司进入公开摊牌。",
+    options: [
+      {
+        label: "把重大决策纳入董事会机制",
+        summary: "用治理结构保护决策权，而不是靠个人对抗。",
+        quality: "expert",
+        effects: { structure: 3, authority: 2 },
+        resources: { energy: -6, trust: 3, influence: 6 },
+        feedback: "你让权力边界回到治理规则，合伙人无法再靠私人关系绕过你。",
+        theory: "《韩非子》：法、术、势并用。"
+      },
+      {
+        label: "与合伙人签订权责协议",
+        summary: "明确各自的决策范围，避免继续模糊。",
+        quality: "partial",
+        effects: { communication: 2, strategy: 1 },
+        resources: { energy: -5, trust: 2, influence: 3 },
+        feedback: "权责变清晰了，但执行时仍缺少强制检查。",
+        theory: "《权经》：权乃人授，授为大焉。"
+      },
+      {
+        label: "用 CEO 身份公开重申边界",
+        summary: "让团队知道所有决策必须经过你。",
+        quality: "risk",
+        effects: { authority: 3 },
+        resources: { energy: -5, trust: -7, influence: 2 },
+        feedback: "你夺回了表面权力，但合伙人开始在公司外寻找盟友。",
+        theory: "《孙子兵法》：令之以文，齐之以武。"
+      }
+    ]
+  },
+  {
+    id: "c6b-highPotential",
+    chapterId: 6,
+    title: "高潜 · 权力边界的第一次固化",
+    kind: "branch",
+    context:
+      "你作为高潜骨干的项目被更高层直接指挥，关键决定绕过了你，但结果仍要你负责。",
+    stake: "你要守住项目主导权，又不和高层正面冲突。",
+    options: [
+      {
+        label: "用项目章程固定决策与变更规则",
+        summary: "让所有关键变更进入统一流程，保护项目一致性。",
+        quality: "expert",
+        effects: { structure: 3, communication: 2 },
+        resources: { energy: -6, trust: 4, influence: 5 },
+        feedback: "你没有争夺头衔，而是让项目本身有了可执行的决策规则。",
+        theory: "《韩非子》：使事不相干，使士不兼官。"
+      },
+      {
+        label: "私下向更高层解释风险",
+        summary: "用风险说明让高层愿意听你的判断。",
+        quality: "partial",
+        effects: { strategy: 2 },
+        resources: { energy: -5, trust: 2, influence: 2 },
+        feedback: "高层暂时接受了，但绕过行为没有变成制度约束。",
+        theory: "《权经》：揣为上，事次之。"
+      },
+      {
+        label: "拒绝为未经你确认的决策负责",
+        summary: "公开划清责任边界，防止自己被架空。",
+        quality: "risk",
+        effects: { authority: 2 },
+        resources: { energy: -5, trust: -6, influence: -3 },
+        feedback: "你守住了责任边界，却被视为不配合高层。",
+        theory: "《论语》：君子求诸己，小人求诸人。"
+      }
+    ]
+  },
+  {
     id: "r1",
     chapterId: 2,
     title: "电梯偶遇",
@@ -2706,6 +2820,18 @@ export const NODE_INTEL: Record<string, string[]> = {
   "c5b-highPotential": [
     "各部门都担心目标变成自己部门独自承担",
     "有一张现成的项目看板模板可以复用"
+  ],
+  "c6b-parachute": [
+    "系统里已经有一个可用的审批流模板",
+    "CFO 愿意支持联签，但不想公开表态"
+  ],
+  "c6b-founder": [
+    "合伙人最近两次绕过的都是同一类决策",
+    "董事会章程里已经预留了联签条款"
+  ],
+  "c6b-highPotential": [
+    "高层直接指挥的内容集中在两个交付节点",
+    "项目章程尚未被正式发布"
   ],
   r1: [
     "CEO 最近最担心的是组织是否开始失去方向",
