@@ -1345,6 +1345,120 @@ export const STORY_NODES: StoryNode[] = [
     ]
   },
   {
+    id: "c3b-parachute",
+    chapterId: 3,
+    title: "空降 · 人才配置的第一次落子",
+    kind: "branch",
+    context:
+      "你作为空降管理者开始重组关键岗位。团队最担心的是你会不会用亲疏替代能力。",
+    stake: "你的第一个人事动作会成为未来规则的样本。",
+    options: [
+      {
+        label: "先定义岗位成果，再评估人选",
+        summary: "让人才判断从印象变成岗位匹配证据。",
+        quality: "expert",
+        effects: { deploy: 3, structure: 2 },
+        resources: { energy: -7, trust: 6, influence: 5 },
+        feedback: "你让人事决定变得可解释，团队开始用成果而非关系理解你。",
+        theory: "《贞观政要》：用非其才，必难致治。"
+      },
+      {
+        label: "先稳住核心客户负责人",
+        summary: "优先保护掌握客户的老人，避免业务波动。",
+        quality: "partial",
+        effects: { execution: 2, strategy: 1 },
+        resources: { energy: -5, trust: 3, influence: 2 },
+        feedback: "业务暂时稳定，但团队认为你被核心客户绑架。",
+        theory: "《权经》：携为上，功次之。"
+      },
+      {
+        label: "先替换最反对你的老将",
+        summary: "用人事动作立威，让其他人快速表态。",
+        quality: "risk",
+        effects: { authority: 3 },
+        resources: { energy: -6, trust: -8, influence: 2 },
+        feedback: "你获得了短期服从，但组织开始为自保而隐藏信息。",
+        theory: "《孙子兵法》：先为不可胜，以待敌之可胜。"
+      }
+    ]
+  },
+  {
+    id: "c3b-founder",
+    chapterId: 3,
+    title: "创业 · 人才配置的第一次落子",
+    kind: "branch",
+    context:
+      "你作为创始人开始重组团队。公司最依赖的人正控制核心客户，但管理能力不足。",
+    stake: "你要在依赖与组织健康之间做第一次取舍。",
+    options: [
+      {
+        label: "把核心客户拆成可复制的客户体系",
+        summary: "不让客户只属于一个人，先建立关键客户管理流程。",
+        quality: "expert",
+        effects: { structure: 3, deploy: 2 },
+        resources: { energy: -7, trust: 5, influence: 5 },
+        feedback: "你没有直接开人，而是让组织不再被单个明星绑架。",
+        theory: "德鲁克：用人之所长，同时让成果可复制。"
+      },
+      {
+        label: "继续依赖明星员工",
+        summary: "先保业绩，等公司稳定后再处理结构问题。",
+        quality: "partial",
+        effects: { execution: 2 },
+        resources: { energy: -5, trust: 2, influence: -1 },
+        feedback: "短期业绩稳定，但组织对人的依赖正在加深。",
+        theory: "《韩非子》：明主之道，使智者尽其虑。"
+      },
+      {
+        label: "立刻架空明星员工",
+        summary: "用新人接管客户，防止权力失控。",
+        quality: "risk",
+        effects: { authority: 2 },
+        resources: { energy: -7, trust: -7, influence: 1 },
+        feedback: "你削弱了个人依赖，但客户流失风险在交接期爆发。",
+        theory: "《孙子兵法》：善战者，先为不可胜。"
+      }
+    ]
+  },
+  {
+    id: "c3b-highPotential",
+    chapterId: 3,
+    title: "高潜 · 人才配置的第一次落子",
+    kind: "branch",
+    context:
+      "你作为高潜骨干参与人才盘点。部门负责人希望你给结论，但所有人都在等你说出谁该被留下。",
+    stake: "你要给出不偏私、又能被组织接受的判断。",
+    options: [
+      {
+        label: "用岗位成果模型公开评估",
+        summary: "先让所有人都看到评估标准，再给出人选建议。",
+        quality: "expert",
+        effects: { structure: 3, communication: 2 },
+        resources: { energy: -6, trust: 6, influence: 5 },
+        feedback: "你没有制造派系，而是让组织开始用共同标准讨论人。",
+        theory: "《人物志》：观其外而知其内，察其行而辨其品。"
+      },
+      {
+        label: "先私下给部门负责人结论",
+        summary: "避免公开得罪人，让负责人决定是否采纳。",
+        quality: "partial",
+        effects: { strategy: 2 },
+        resources: { energy: -5, trust: 2, influence: 2 },
+        feedback: "你保护了自己，但结论缺少公开依据，容易被推翻。",
+        theory: "《权经》：揣为上，事次之。"
+      },
+      {
+        label: "公开点出能力不足的人",
+        summary: "用数据直接说明谁不适合当前岗位。",
+        quality: "risk",
+        effects: { authority: 2 },
+        resources: { energy: -5, trust: -6, influence: 2 },
+        feedback: "你指出了事实，却让被点名者成为靶子，讨论开始转向人身。",
+        theory: "《论语》：君子成人之美，不成人之恶。"
+      }
+    ]
+  },
+  {
     id: "r1",
     chapterId: 2,
     title: "电梯偶遇",
@@ -2328,6 +2442,18 @@ export const NODE_INTEL: Record<string, string[]> = {
   "c2b-highPotential": [
     "各部门最缺的不是方案，而是共同验收标准",
     "财务愿意提供数据，但不想承担最终决策责任"
+  ],
+  "c3b-parachute": [
+    "HR 已经准备好一份岗位成果模板",
+    "核心客户负责人正在同时接触外部机会"
+  ],
+  "c3b-founder": [
+    "明星员工上周拒绝了一次新客户分工",
+    "销售后台已经有半年客户接触记录"
+  ],
+  "c3b-highPotential": [
+    "部门负责人真正想保护的人是自己的旧下属",
+    "另一名候选人在两个关键项目中有完整证据"
   ],
   r1: [
     "CEO 最近最担心的是组织是否开始失去方向",
