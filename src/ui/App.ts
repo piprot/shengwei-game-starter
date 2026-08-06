@@ -636,14 +636,14 @@ export class AdaptiveGameApp {
           </div>
           <aside class="map-side">
             <div class="mini-panel role-objective">
-              <h3>本角色目标</h3>
+              <h3>${this.t("roleObjective")}</h3>
               <p>${ROLES[this.save.profile.role].objective}</p>
             </div>
             <div class="mini-panel">
-              <h3>当前局势摘要</h3>
+              <h3>${this.t("situation")}</h3>
               <p>已完成 ${summary.chapterCount}/9 章，支线 ${this.save.completedSideQuests.length}/6，随机事件 ${this.save.completedRandomEvents.length}，最近决策 ${this.latestDecisionText()}。</p>
             </div>
-            <button data-action="toggle-pressure">${this.save.highPressureMode ? "退出高压模式" : "开启高压模式"}</button>
+            <button data-action="toggle-pressure">${this.save.highPressureMode ? this.t("highPressureOff") : this.t("highPressureOn")}</button>
             <div class="challenge-panel">
               <h3>当日行动任务</h3>
               ${dailyChallenges(this.save)
@@ -668,7 +668,7 @@ export class AdaptiveGameApp {
                 .join("")}
             </div>
             <div class="random-event-panel">
-              <h3>随机事件</h3>
+              <h3>${this.t("randomEvent")}</h3>
               ${
                 availableRandom
                   ? `
@@ -1204,6 +1204,7 @@ export class AdaptiveGameApp {
                   <h2>AI 陪练</h2>
                   <p>系统会根据每道情境的专家基准和你的能力水平生成对手，并基于你的专家判断率动态调整难度。适合持续训练决策质量。</p>
                   <button class="primary" data-action="start-ai-duel">开始对战</button>
+                  <button data-action="start-challenge-duel">7 回合挑战赛</button>
                 </div>
               `
               : this.duelMode === "local"
@@ -1653,6 +1654,9 @@ export class AdaptiveGameApp {
       case "start-ai-duel":
         this.startAiDuel();
         break;
+      case "start-challenge-duel":
+        this.startChallengeDuel();
+        break;
       case "start-local-duel":
         this.startLocalDuel();
         break;
@@ -1798,6 +1802,16 @@ export class AdaptiveGameApp {
     this.audio.ensure();
     this.audio.round();
     this.duelEngine = new DuelEngine(human, ai, this.duelRounds, duelSeed());
+    this.duelRecorded = false;
+    this.show("duel");
+  }
+
+  private startChallengeDuel(): void {
+    const human = buildDuelProfile(this.save.profile, this.save.profile.name, "#41c7c0");
+    const ai = buildAiProfile("founder", 4);
+    this.audio.ensure();
+    this.audio.round();
+    this.duelEngine = new DuelEngine(human, ai, 7, duelSeed());
     this.duelRecorded = false;
     this.show("duel");
   }

@@ -15,7 +15,12 @@ export const UI_STRINGS = {
     relations: "人物关系图",
     soundOn: "声音：开",
     soundOff: "声音：关",
-    language: "EN"
+    language: "EN",
+    roleObjective: "本角色目标",
+    situation: "当前局势摘要",
+    highPressureOn: "开启高压模式",
+    highPressureOff: "退出高压模式",
+    randomEvent: "随机事件"
   },
   en: {
     brand: "Adaptive Ascent",
@@ -31,7 +36,12 @@ export const UI_STRINGS = {
     relations: "Relations",
     soundOn: "Sound: On",
     soundOff: "Sound: Off",
-    language: "中文"
+    language: "中文",
+    roleObjective: "Role Objective",
+    situation: "Current Situation",
+    highPressureOn: "Enable Pressure Mode",
+    highPressureOff: "Exit Pressure Mode",
+    randomEvent: "Random Event"
   }
 } as const;
 
