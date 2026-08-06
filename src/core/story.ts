@@ -1571,10 +1571,124 @@ export const STORY_NODES: StoryNode[] = [
         theory: "《资治通鉴》：不塞隙穴，则暴雨疾风必坏。"
       }
     ]
+  },
+  {
+    id: "r10",
+    chapterId: 5,
+    title: "客户要私下回扣",
+    kind: "random",
+    context:
+      "一位关键客户私下提出，如果价格再降 5%，他可以私下给你个人感谢费。这个提议没有任何书面记录。",
+    stake: "你需要在短期业绩和个人底线之间做出选择。",
+    options: [
+      {
+        label: "明确拒绝，并提出合规优惠方案",
+        summary: "守住底线，同时给出一个可公开的商务方案。",
+        quality: "expert",
+        effects: { authority: 3, structure: 2 },
+        resources: { energy: -5, trust: 5, influence: 4 },
+        feedback: "你拒绝了灰色空间，但保住了长期合作与组织安全。",
+        theory: "《论语》：君子爱财，取之有道。"
+      },
+      {
+        label: "先拖住，再让商务负责人处理",
+        summary: "不直接表态，把问题转给专业团队。",
+        quality: "partial",
+        effects: { communication: 2 },
+        resources: { energy: -4, trust: 2, influence: 2 },
+        feedback: "你避免了直接冲突，但客户可能把沉默当成默许。",
+        theory: "《权经》：权惟用，不为大也。"
+      },
+      {
+        label: "接受私下安排保订单",
+        summary: "先保住业绩，再想办法处理风险。",
+        quality: "risk",
+        effects: { execution: 2 },
+        resources: { energy: -4, trust: -8, influence: 2 },
+        feedback: "订单暂时保住了，但组织风险已经转移到你个人身上。",
+        theory: "《孙子兵法》：先为不可胜，以待敌之可胜。"
+      }
+    ]
+  },
+  {
+    id: "r11",
+    chapterId: 3,
+    title: "老员工公开质疑新人",
+    kind: "random",
+    context:
+      "周会上，一位老员工公开说新来的高潜员工是“关系户”，新人脸色很难看，其他人开始附和。",
+    stake: "你的一句话会决定团队是否允许公开羞辱。",
+    options: [
+      {
+        label: "叫停质疑，重新用事实评价",
+        summary: "不点名批评，把讨论拉回业绩与行为证据。",
+        quality: "expert",
+        effects: { mobilize: 3, communication: 2 },
+        resources: { energy: -5, trust: 7, influence: 5 },
+        feedback: "你保护了新人，也教会老员工用证据而非身份评价人。",
+        theory: "《人物志》：观其外而知其内，察其行而辨其品。"
+      },
+      {
+        label: "私下再处理老员工",
+        summary: "不公开打断，避免会议失控。",
+        quality: "partial",
+        effects: { authority: 2 },
+        resources: { energy: -4, trust: -3, influence: 2 },
+        feedback: "场面没失控，但新人已经公开受伤，下一次更难开口。",
+        theory: "《论语》：君子成人之美，不成人之恶。"
+      },
+      {
+        label: "让新人当场证明自己",
+        summary: "要求新人用业绩回应质疑。",
+        quality: "risk",
+        effects: { execution: 2 },
+        resources: { energy: -4, trust: -5, influence: -2 },
+        feedback: "新人被逼到证明自己的位置，团队开始把公开羞辱当成正常管理。",
+        theory: "《孙子兵法》：上下同欲者胜。"
+      }
+    ]
+  },
+  {
+    id: "r12",
+    chapterId: 8,
+    title: "投资人要求裁员",
+    kind: "random",
+    context:
+      "投资人明确要求你裁掉一个部门来降低成本，否则暂缓下一轮投资。你知道这个部门里有三个关键人才。",
+    stake: "你要在生存压力和组织长期能力之间做判断。",
+    options: [
+      {
+        label: "重新测算成本结构，提出替代方案",
+        summary: "不直接接受裁员，先找出真正浪费的部分。",
+        quality: "expert",
+        effects: { structure: 3, communication: 2 },
+        resources: { energy: -7, trust: 5, influence: 6 },
+        feedback: "你没有用短期裁员掩盖真实问题，投资人开始看到你的经营判断。",
+        theory: "《卓有成效的管理者》：把资源集中在真正重要的任务上。"
+      },
+      {
+        label: "先裁掉部分岗位回应投资人",
+        summary: "用行动证明你愿意降本，保住下一轮融资。",
+        quality: "partial",
+        effects: { execution: 2 },
+        resources: { energy: -6, trust: -6, influence: 3 },
+        feedback: "融资暂时保住了，但组织开始担心你是谁都能砍的人。",
+        theory: "《权经》：权惟用，不为大也。"
+      },
+      {
+        label: "拒绝裁员并准备放弃融资",
+        summary: "坚持长期能力，不向投资人妥协。",
+        quality: "risk",
+        effects: { authority: 2, recovery: 1 },
+        resources: { energy: -5, trust: 2, influence: -5 },
+        feedback: "你守住了组织价值，但现金流风险可能压垮整个公司。",
+        theory: "《孙子兵法》：善战者，先为不可胜。"
+      }
+    ]
   }
 ];
 
-export const RANDOM_EVENT_IDS = ["r1", "r2", "r3", "r4", "r5", "r6", "r7", "r8", "r9"];
+export const RANDOM_EVENT_IDS = ["r1", "r2", "r3", "r4", "r5", "r6", "r7", "r8", "r9", "r10", "r11", "r12"];
 for (const id of RANDOM_EVENT_IDS) {
   const node = STORY_NODES.find((item) => item.id === id);
   if (node) node.kind = "random";
@@ -1589,7 +1703,10 @@ export const RANDOM_EVENT_META: Record<string, { weight: number; chapterId: numb
   r6: { weight: 5, chapterId: 9 },
   r7: { weight: 3, chapterId: 2 },
   r8: { weight: 4, chapterId: 4 },
-  r9: { weight: 4, chapterId: 7 }
+  r9: { weight: 4, chapterId: 7 },
+  r10: { weight: 4, chapterId: 5 },
+  r11: { weight: 3, chapterId: 3 },
+  r12: { weight: 5, chapterId: 8 }
 };
 
 export function nextRandomEvent(save: {
@@ -1806,6 +1923,18 @@ export const NODE_INTEL: Record<string, string[]> = {
   r9: [
     "项目负责人已经连续三次调整内部计划",
     "团队担心报风险会被视为能力不足"
+  ],
+  r10: [
+    "这位客户过去两年换过三家供应商",
+    "他更在意的是长期供应稳定性，而不是这次价格"
+  ],
+  r11: [
+    "老员工曾经有过一次类似冲突记录",
+    "新人上周提交的方案里包含一个关键数据错误"
+  ],
+  r12: [
+    "投资人真正担心的是现金流模型，不是某个部门",
+    "被要求裁掉的部门里有三个客户关系核心节点"
   ]
 };
 
