@@ -74,6 +74,9 @@ jobs:
   deploy:
     needs: [build, test]
     runs-on: ubuntu-latest
+    concurrency:
+      group: pages-deploy-${{ github.ref }}
+      cancel-in-progress: false
     permissions:
       contents: read
       pages: write
