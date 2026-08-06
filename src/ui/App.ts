@@ -23,6 +23,7 @@ import {
   buildAiProfile,
   buildDuelProfile,
   chapterStarCount,
+  clamp,
   createProfile,
   decisionProfile,
   importSaveJson,
@@ -34,7 +35,9 @@ import {
   recordDuelResult,
   resetSave,
   resolveCloudConflict,
-  saveState
+  roundDurationMsForDifficulty,
+  saveState,
+  scoreQuality
 } from "../core/game";
 import {
   CHAPTERS,
@@ -218,6 +221,68 @@ export class AdaptiveGameApp {
       window.clearInterval(this.roundTimerId);
       this.roundTimerId = undefined;
     }
+  }
+
+  /**
+   * 启动当前决策回合的时限计时器（高压/极限档有效，标准档不计时）。
+   * 按 effectiveDifficulty 取时长：pressure=22s，extreme=14s，normal=0（不计时）。
+   * 倒计时通过 #round-timer 元素实时显示；归零时停止计时并施加轻量后果。
+   */
+  private startRoundTimer(): void {
+    this.stopRoundTimer();
+    this.lastTimedOut = false;
+    this.roundDurationMs = roundDurationMsForDifficulty(this.save.difficulty);
+    if (this.roundDurationMs <= 0) {
+      this.roundDeadline = 0;
+      this.updateRoundTimerDisplay();
+      return;
+    }
+    this.roundDeadline = Date.now() + this.roundDurationMs;
+    this.updateRoundTimerDisplay();
+    this.roundTimerId = window.setInterval(() => {
+      const remaining = this.roundDeadline - Date.now();
+      if (remaining <= 0) {
+        this.stopRoundTimer();
+        this.handleRoundTimeout();
+      } else {
+        this.updateRoundTimerDisplay();
+      }
+    }, 250);
+  }
+
+  /** 把剩余秒数写进 #round-timer（标准档隐藏）。无该元素时静默跳过。 */
+  private updateRoundTimerDisplay(): void {
+    const el = this.root.querySelector<HTMLElement>("#round-timer");
+    if (!el) return;
+    if (this.roundDurationMs <= 0) {
+      el.textContent = "";
+      el.style.display = "none";
+      return;
+    }
+    const seconds = Math.ceil(Math.max(0, this.roundDeadline - Date.now()) / 1000);
+    el.style.display = "";
+    el.textContent = `${this.t("roundTimer")}：${seconds}s`;
+  }
+
+  /**
+   * 回合超时处理：停止计时，并施加一个轻量且安全的后果——
+   * 自动采用当前最稳妥的选项应对（复用 applyStoryChoice 的资源结算机制），
+   * 不引入新的崩溃路径。同时给出"超时"反馈（timedOutNote）。
+   */
+  private handleRoundTimeout(): void {
+    if (this.lastTimedOut || !this.storyNodeId) return;
+    this.lastTimedOut = true;
+    const node = getNodeForRole(this.save.profile.role, this.storyNodeId);
+    let bestIndex = 0;
+    let bestScore = Number.NEGATIVE_INFINITY;
+    node.options.forEach((option, index) => {
+      const score = scoreQuality(option.quality, this.save.profile);
+      if (score > bestScore) {
+        bestScore = score;
+        bestIndex = index;
+      }
+    });
+    this.resolveStoryOption(bestIndex);
   }
 
   show(view: View): void {
@@ -1020,7 +1085,10 @@ export class AdaptiveGameApp {
     this.root.innerHTML = `
       <header class="topbar">
         <div class="brand">${this.t("brand")}</div>
-        <div class="topbar-meta">${this.resourceChips(this.save.profile)}</div>
+        <div class="topbar-meta">
+          ${this.resourceChips(this.save.profile)}
+          <span id="round-timer" class="round-timer" style="display:none"></span>
+        </div>
       </header>
       <main class="story-shell">
         <button class="link back-link" data-action="open-map">${this.t("backToMap")}</button>
@@ -1035,6 +1103,16 @@ export class AdaptiveGameApp {
                 <span>${node.kind === "side" ? this.t("storyKindSide") : node.kind === "branch" ? this.t("storyKindBranch") : node.kind === "random" ? this.t("storyKindRandom") : this.t("storyKindMain")}</span>
               </div>
               <h1>${node.title}</h1>
+              ${
+                this.interferenceText
+                  ? `
+                    <div class="interference-banner" role="alert">
+                      <strong>${this.t("interferenceTitle")}</strong>
+                      <span>${escapeHtml(this.interferenceText)}</span>
+                    </div>
+                  `
+                  : ""
+              }
               ${
                 showOnboarding
                   ? `
@@ -1073,6 +1151,11 @@ export class AdaptiveGameApp {
                 showingOutcome && this.lastOutcome
                   ? this.outcomeMarkup(this.lastOutcome)
                   : `
+                    ${
+                      this.lastTimedOut
+                        ? `<p class="timed-out-note">${escapeHtml(this.t("timedOutNote"))}</p>`
+                        : ""
+                    }
                     <div class="hint-controls">
                       <button data-action="toggle-hint">${this.storyHintRevealed ? this.t("hideHint") : this.t("showHint")}</button>
                       ${
@@ -1757,7 +1840,16 @@ export class AdaptiveGameApp {
           this.lastUnlockedAchievement = undefined;
           this.lastOutcome = undefined;
           this.lastOutcomeNodeId = undefined;
+          // D3：派发随机事件时展示"突发干扰"横幅；普通节点清空。
+          try {
+            this.interferenceText =
+              getNode(nodeId).kind === "random" ? this.t("interferenceNote") : undefined;
+          } catch {
+            this.interferenceText = undefined;
+          }
           this.show("story");
+          // D2：每个决策回合开始时启动时限计时器（标准档不计时）。
+          this.startRoundTimer();
         }
         break;
       }
@@ -1785,6 +1877,7 @@ export class AdaptiveGameApp {
         break;
       case "open-map":
         this.audio.ui();
+        this.interferenceText = undefined;
         this.selectedChapter =
           this.save.unlockedChapters[this.save.unlockedChapters.length - 1] ?? 1;
         this.show("map");
@@ -1934,6 +2027,18 @@ export class AdaptiveGameApp {
         this.audio.ui();
         this.renderMap();
         break;
+      case "set-difficulty": {
+        // D1：把难度选择器写入存档，重渲染地图让按钮高亮与说明立即反映所选档位；
+        // 资源缩放由 applyStoryChoice 以 save.difficulty 为准，下个决策即生效。
+        const difficulty = actionTarget.dataset.difficulty;
+        if (difficulty === "normal" || difficulty === "pressure" || difficulty === "extreme") {
+          this.audio.ui();
+          this.save.difficulty = difficulty;
+          saveState(this.save);
+          this.renderMap();
+        }
+        break;
+      }
       case "toggle-hint":
         this.storyHintRevealed = !this.storyHintRevealed;
         this.audio.ui();
@@ -1948,6 +2053,7 @@ export class AdaptiveGameApp {
         this.lastUnlockedAchievement = undefined;
         this.pendingBranchNodeId = undefined;
         this.pendingChapterTransition = undefined;
+        this.interferenceText = undefined;
         this.show("map");
         break;
       case "continue-transition":
@@ -1977,8 +2083,10 @@ export class AdaptiveGameApp {
           this.pendingBranchNodeId = undefined;
           this.lastOutcome = undefined;
           this.lastOutcomeNodeId = undefined;
+          this.interferenceText = undefined;
           this.audio.ui();
           this.show("story");
+          this.startRoundTimer();
         }
         break;
       }
@@ -2081,10 +2189,17 @@ export class AdaptiveGameApp {
   }
 
   private chooseStoryOption(target: HTMLElement): void {
+    const optionIndex = Number(target.dataset.option);
+    this.resolveStoryOption(optionIndex);
+  }
+
+  /** 结算某个选项（手动点击或回合超时自动采用最稳妥选项共用此路径）。 */
+  private resolveStoryOption(optionIndex: number): void {
+    this.stopRoundTimer();
+    this.interferenceText = undefined;
     if (!this.storyNodeId) {
       return;
     }
-    const optionIndex = Number(target.dataset.option);
     const beforeIds = ACHIEVEMENTS.filter((achievement) =>
       isAchievementUnlocked(this.save, achievement.id)
     ).map((achievement) => achievement.id);

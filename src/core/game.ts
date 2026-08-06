@@ -33,6 +33,15 @@ export const PRESSURE_FACTORS: Record<
   extreme: { neg: 1.8, pos: 0.5 }
 };
 
+/** 各难度档位的每回合决策时限（毫秒）。标准档不计时（返回 0）。 */
+export function roundDurationMsForDifficulty(
+  difficulty: "normal" | "pressure" | "extreme"
+): number {
+  if (difficulty === "pressure") return 22000;
+  if (difficulty === "extreme") return 14000;
+  return 0;
+}
+
 export const DEFAULT_SAVE: SaveState = {
   version: 1,
   profileCreated: false,

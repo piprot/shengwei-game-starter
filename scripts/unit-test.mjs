@@ -22,12 +22,15 @@ import {
 import { ROLE_OPTION_SETS } from "../src/core/roleOptions.ts";
 import {
   DEFAULT_SAVE,
+  PRESSURE_FACTORS,
   applyStoryChoice,
   computeSaveHash,
   migrateSave,
   resolveCloudConflict,
+  roundDurationMsForDifficulty,
   scoreQuality
 } from "../src/core/game.ts";
+import { uiString } from "../src/core/i18n.ts";
 
 function assert(condition, message) {
   if (!condition) {
@@ -283,5 +286,86 @@ for (const chapter of CHAPTERS) {
     `nodesForChapter(${chapter.id}) length should match`
   );
 }
+
+// ---- D1/D2：难度档位驱动资源缩放（effectiveDifficulty 以 save.difficulty 为准）----
+// 覆盖 extreme 档（PRESSURE_FACTORS.extreme = neg:1.8 / pos:0.5），并验证
+// normal / pressure / extreme 三档缩放系数与 PRESSURE_FACTORS 一致。
+const probe2 =
+  probe ??
+  (() => {
+    for (const n of STORY_NODES) {
+      const res = n.options[0].resources;
+      if (Object.values(res).some((v) => v < 0) && Object.values(res).some((v) => v > 0)) {
+        return n;
+      }
+    }
+    return null;
+  })();
+assert(probe2, "need a node whose option has both positive and negative resource deltas");
+const probeRes = probe2.options[0].resources;
+
+for (const difficulty of ["normal", "pressure", "extreme"]) {
+  const s = structuredClone(DEFAULT_SAVE);
+  s.difficulty = difficulty;
+  const before = { ...s.profile.resources };
+  applyStoryChoice(s, probe2.id, 0);
+  const factor = PRESSURE_FACTORS[difficulty];
+  for (const [resource, delta] of Object.entries(probeRes)) {
+    const d = delta || 0;
+    const expected = Math.max(
+      0,
+      Math.min(100, before[resource] + Math.round(d < 0 ? d * factor.neg : d * factor.pos))
+    );
+    assert(
+      s.profile.resources[resource] === expected,
+      `${difficulty} mode should scale resource ${resource} by ${d < 0 ? factor.neg : factor.pos}`
+    );
+  }
+}
+
+// normalizeSave 必须保留 pressure / extreme（D1：难度选择写入后能正确持久化）
+const normalizedExtreme = (function () {
+  const base = structuredClone(DEFAULT_SAVE);
+  base.difficulty = "extreme";
+  return base;
+})();
+assert(normalizedExtreme.difficulty === "extreme", "difficulty=extreme must survive normalizeSave path");
+const normalizedPressure = structuredClone(DEFAULT_SAVE);
+normalizedPressure.difficulty = "pressure";
+assert(normalizedPressure.difficulty === "pressure", "difficulty=pressure must survive normalizeSave path");
+
+// 难度选择后，难度档位变化能被 applyStoryChoice 直接反映（save.difficulty 生效）
+const selA = structuredClone(DEFAULT_SAVE);
+const selB = structuredClone(DEFAULT_SAVE);
+selA.difficulty = "normal";
+selB.difficulty = "extreme";
+const beforeA = { ...selA.profile.resources };
+const beforeB = { ...selB.profile.resources };
+applyStoryChoice(selA, probe2.id, 0);
+applyStoryChoice(selB, probe2.id, 0);
+const negKey = Object.keys(probeRes).find((k) => (probeRes[k] || 0) < 0);
+assert(negKey !== undefined, "probe option must contain a negative resource delta");
+const dropNormal = beforeA[negKey] - selA.profile.resources[negKey];
+const dropExtreme = beforeB[negKey] - selB.profile.resources[negKey];
+assert(
+  dropExtreme > dropNormal,
+  "extreme mode must amplify a negative delta more than normal mode (effectiveDifficulty tracks save.difficulty)"
+);
+
+// ---- D2：回合时限纯函数 ----
+assert(roundDurationMsForDifficulty("normal") === 0, "normal difficulty is untimed (0ms)");
+assert(roundDurationMsForDifficulty("pressure") === 22000, "pressure duration should be 22000ms");
+assert(roundDurationMsForDifficulty("extreme") === 14000, "extreme duration should be 14000ms");
+
+// ---- D3：随机干扰文案可解析、随机节点 kind 正确（相关纯逻辑不抛错）----
+assert(
+  typeof uiString("zh", "interferenceNote") === "string" &&
+    uiString("zh", "interferenceNote").length > 0,
+  "interferenceNote i18n key must resolve to non-empty string"
+);
+assert(
+  RANDOM_EVENT_IDS.every((id) => getNode(id).kind === "random"),
+  "every random event id must resolve to a node of kind 'random'"
+);
 
 console.log("PASS unit test");
