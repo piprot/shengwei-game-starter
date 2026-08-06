@@ -1,0 +1,177 @@
+import { resolve } from "node:path";
+
+// Local network proxies may terminate TLS for test endpoints.
+process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
+
+const root = resolve(import.meta.dirname, "..");
+const healthUrl =
+  process.env.HEALTH_URL || "https://adaptive-ascent-server.onrender.com/";
+const roomUrl =
+  process.env.ROOM_SERVER_URL || "wss://adaptive-ascent-server.onrender.com";
+
+const validSave = {
+  version: 1,
+  profileCreated: true,
+  profile: {
+    name: "Live QA",
+    role: "founder",
+    abilities: {
+      insight: 0,
+      deploy: 0,
+      mobilize: 0,
+      strategy: 0,
+      authority: 0,
+      stability: 0,
+      recovery: 0,
+      execution: 5,
+      structure: 0,
+      communication: 0
+    },
+    resources: { energy: 75, trust: 60, influence: 40, capital: 45 }
+  },
+  chapterRecords: [],
+  unlockedChapters: [1],
+  completedSideQuests: [],
+  achievements: [],
+  duelWins: 0,
+  duelLosses: 0,
+  playCount: 0,
+  masteryPoints: 0,
+  decisionHistory: [],
+  duelHistory: [],
+  claimedChallenges: [],
+  assessmentScore: 0,
+  completedRandomEvents: [],
+  completedBranchNodes: [],
+  highPressureMode: false
+};
+
+async function checkHealth() {
+  const response = await fetch(healthUrl);
+  const body = await response.json().catch(() => ({}));
+  if (response.ok && body.status === "ok") {
+    return;
+  }
+  throw new Error(
+    `Live server health check failed (${response.status}). Render service is not deployed or not healthy.`
+  );
+}
+
+async function connect(name) {
+  const ws = new WebSocket(roomUrl);
+  await new Promise((resolvePromise, reject) => {
+    ws.onopen = resolvePromise;
+    ws.onerror = () => reject(new Error("WebSocket connect failed"));
+  });
+  const wait = (type) =>
+    new Promise((resolvePromise, reject) => {
+      const timer = setTimeout(
+        () => reject(new Error(`timeout waiting ${type}`)),
+        10000
+      );
+      ws.onmessage = (event) => {
+        const message = JSON.parse(String(event.data));
+        if (message.type === type) {
+          clearTimeout(timer);
+          resolvePromise(message);
+        }
+      };
+    });
+  return { ws, wait };
+}
+
+async function runAccountFlow() {
+  const { ws, wait } = await connect("Live QA");
+  ws.send(
+    JSON.stringify({
+      type: "register",
+      name: "Live QA",
+      role: "founder",
+      save: validSave
+    })
+  );
+  const registered = await wait("registered");
+  ws.send(
+    JSON.stringify({
+      type: "cloud_save",
+      token: registered.token,
+      save: { invalid: true }
+    })
+  );
+  await wait("error");
+  ws.send(
+    JSON.stringify({
+      type: "cloud_save",
+      token: registered.token,
+      save: {
+        ...validSave,
+        profile: {
+          ...validSave.profile,
+          abilities: { ...validSave.profile.abilities, execution: 9 }
+        }
+      }
+    })
+  );
+  await wait("save_ok");
+  ws.send(JSON.stringify({ type: "leaderboard" }));
+  const board = await wait("leaderboard");
+  if (!Array.isArray(board.entries) || board.entries.length === 0) {
+    throw new Error("Leaderboard empty");
+  }
+  if (
+    !board.entries.every(
+      (entry) =>
+        typeof entry.score === "number" && typeof entry.signature === "string"
+    )
+  ) {
+    throw new Error("Leaderboard entries missing score/signature");
+  }
+  ws.close();
+}
+
+async function runMatchFlow() {
+  const left = await connect("Live A");
+  const right = await connect("Live B");
+  left.ws.send(
+    JSON.stringify({
+      type: "match",
+      name: "Live A",
+      role: "founder",
+      save: null,
+      rounds: 3
+    })
+  );
+  right.ws.send(
+    JSON.stringify({
+      type: "match",
+      name: "Live B",
+      role: "highPotential",
+      save: null,
+      rounds: 3
+    })
+  );
+  const [start0, start1] = await Promise.all([
+    left.wait("match_started"),
+    right.wait("match_started")
+  ]);
+  if (start0.opponentName !== "Live B" || start1.opponentName !== "Live A") {
+    throw new Error("Opponent names were not relayed correctly");
+  }
+  left.ws.send(JSON.stringify({ type: "pick", optionIndex: 2 }));
+  const received = await right.wait("pick");
+  if (received.optionIndex !== 2) {
+    throw new Error("Pick was not relayed correctly");
+  }
+  left.ws.close();
+  right.ws.close();
+}
+
+try {
+  await checkHealth();
+  await runAccountFlow();
+  await runMatchFlow();
+  console.log("PASS public live audit");
+} catch (error) {
+  console.error(`FAIL public live audit: ${error.message}`);
+  process.exit(1);
+}
