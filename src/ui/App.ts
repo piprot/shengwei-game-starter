@@ -59,9 +59,13 @@ import type {
 } from "../core/types";
 import { ManualRtcPeer, type RtcMessage } from "../net/rtc";
 import { GameAudio } from "../audio";
-import { ASSESSMENT_QUESTIONS } from "../core/assessment";
+import {
+  ASSESSMENT_QUESTIONS,
+  certificationLevel
+} from "../core/assessment";
 import { NPCS, npcRelation } from "../core/npcs";
 import { dailyChallenges } from "../core/challenges";
+import { ROLE_OPTION_SETS } from "../core/roleOptions";
 import { renderAbilityRadar } from "./charts";
 import { renderPowerBoard } from "./art";
 
@@ -94,6 +98,7 @@ export class AdaptiveGameApp {
   private selectedChapter = 1;
   private storyNodeId?: string;
   private storyHintRevealed = false;
+  private pendingBranchNodeId?: string;
   private lastOutcome?: ChoiceOutcome;
   private lastOutcomeNodeId?: string;
   private duelMode: DuelMode = "ai";
@@ -379,6 +384,7 @@ export class AdaptiveGameApp {
 
   private renderAssessmentResult(): void {
     const summary = profileSummary(this.save);
+    const cert = certificationLevel(this.save);
     const training = recommendedTraining(
       this.save.profile.abilities,
       this.save.profile.role
@@ -433,6 +439,26 @@ export class AdaptiveGameApp {
               )
               .join("")}
           </div>
+        </section>
+        <section class="baseline-detail">
+          <h2>能力基线明细</h2>
+          <div class="baseline-list">
+            ${ABILITY_ORDER.map((id) => {
+              const level = abilityLevel(this.save.profile.abilities[id]);
+              const grade = level >= 3 ? "A" : level === 2 ? "B" : "C";
+              return `
+                <div class="baseline-row">
+                  <span style="--dot:${ABILITIES[id].color}"></span>
+                  <strong>${ABILITIES[id].name}</strong>
+                  <em>Lv.${level}</em>
+                  <small>${grade} 级</small>
+                </div>
+              `;
+            }).join("")}
+          </div>
+          <p class="cert-note">
+            认证状态：${cert.level}（${cert.score} / 60）${cert.next}
+          </p>
         </section>
         <section class="role-start-panel">
           <h2>本角色开局建议</h2>
@@ -689,7 +715,7 @@ export class AdaptiveGameApp {
                               <span class="option-letter">${String.fromCharCode(65 + index)}</span>
                               <span class="option-body">
                                 <strong>${escapeHtml(this.roleOptionLabel(option, index))}</strong>
-                                <em>${escapeHtml(option.summary)}</em>
+                                <em>${escapeHtml(this.roleOptionSummary(option, index))}</em>
                                 <small class="role-move">${this.roleMove(option.quality)}</small>
                               </span>
                             </button>
@@ -774,6 +800,7 @@ export class AdaptiveGameApp {
   private renderReport(): void {
     const summary = profileSummary(this.save);
     const decision = decisionProfile(this.save);
+    const cert = certificationLevel(this.save);
     const strengths = ABILITY_ORDER.filter(
       (id) => abilityLevel(this.save.profile.abilities[id]) >= 4
     );
@@ -812,9 +839,9 @@ export class AdaptiveGameApp {
             <span>决策画像</span>
             <strong>${ROLES[this.save.profile.role].shortName} · ${decision.identity}</strong>
           </div>
-          <div class="certification-badge ${summary.total >= 26 ? "passed" : ""}">
+          <div class="certification-badge ${cert.passed ? "passed" : ""}">
             <span>能力认证</span>
-            <strong>${summary.total >= 26 ? `认证通过 · ${summary.rank.name}` : `训练中 · ${summary.rank.name}`}</strong>
+            <strong>${cert.passed ? `认证通过 · ${cert.level}` : `未认证 · ${cert.next}`}</strong>
           </div>
           <button data-action="reset-profile">重置档案</button>
           <button data-action="export-save">导出存档</button>
@@ -1232,6 +1259,7 @@ export class AdaptiveGameApp {
           this.audio.ui();
           this.storyNodeId = nodeId;
           this.storyHintRevealed = false;
+          this.pendingBranchNodeId = undefined;
           this.lastOutcome = undefined;
           this.lastOutcomeNodeId = undefined;
           this.show("story");
@@ -1373,8 +1401,22 @@ export class AdaptiveGameApp {
       case "continue-story":
         this.lastOutcome = undefined;
         this.lastOutcomeNodeId = undefined;
+        this.pendingBranchNodeId = undefined;
         this.show("map");
         break;
+      case "continue-branch": {
+        const branchId = this.pendingBranchNodeId;
+        if (branchId) {
+          this.storyNodeId = branchId;
+          this.storyHintRevealed = false;
+          this.pendingBranchNodeId = undefined;
+          this.lastOutcome = undefined;
+          this.lastOutcomeNodeId = undefined;
+          this.audio.ui();
+          this.show("story");
+        }
+        break;
+      }
       case "set-duel-mode":
         this.duelMode = (actionTarget.dataset.mode as DuelMode) ?? "ai";
         this.renderDuelLobby();
@@ -1451,11 +1493,14 @@ export class AdaptiveGameApp {
       return;
     }
     if (applyAssessment) {
+      let score = 0;
       ASSESSMENT_QUESTIONS.forEach((question, index) => {
         const answer = this.assessmentAnswers[index] ?? 0;
-        this.pendingProfile!.abilities[question.abilityId] +=
-          question.options[answer].points;
+        const points = question.options[answer].points;
+        this.pendingProfile!.abilities[question.abilityId] += points;
+        score += points;
       });
+      this.save.assessmentScore = score;
       this.save.achievements.push("assessment_done");
       this.save.achievements = [...new Set(this.save.achievements)];
     }
@@ -1475,6 +1520,8 @@ export class AdaptiveGameApp {
     const outcome = applyStoryChoice(this.save, this.storyNodeId, optionIndex);
     this.lastOutcome = outcome;
     this.lastOutcomeNodeId = this.storyNodeId;
+    this.pendingBranchNodeId =
+      outcome.option.branchTo?.[this.save.profile.role];
     if (outcome.option.quality === "expert") {
       this.audio.expert();
     } else if (outcome.option.quality === "partial") {
@@ -2010,63 +2057,24 @@ export class AdaptiveGameApp {
   }
 
   private roleOptionLabel(option: StoryOption, index: number): string {
-    const labels: Record<
-      RoleId,
-      Record<OptionQuality, string[]>
-    > = {
-      parachute: {
-        expert: [
-          "先绘制权力地图，再公开行动",
-          "先访谈关键人物，再调整流程",
-          "先建立小胜利，再推动变革"
-        ],
-        partial: [
-          "先立住权威，再补齐信任",
-          "先完成交付，再处理关系",
-          "先争取高层背书，再启动变革"
-        ],
-        risk: [
-          "直接亮明底线，不等待共识",
-          "绕过阻力先行推动",
-          "用人事动作制造转折"
-        ]
-      },
-      founder: {
-        expert: [
-          "先验证现金流，再扩大投入",
-          "先跑通最小闭环，再谈规模化",
-          "先锁定关键客户，再优化组织"
-        ],
-        partial: [
-          "先保交付，再补体系",
-          "先推进业务，再处理内耗",
-          "先争取投资人支持，再调整方向"
-        ],
-        risk: [
-          "用创始人权力强推",
-          "快速押注新方向",
-          "先断旧业务，再谈转型"
-        ]
-      },
-      highPotential: {
-        expert: [
-          "先建立横向共识，再推动决策",
-          "先对齐关键人，再提出方案",
-          "先用证据影响决策，再扩大范围"
-        ],
-        partial: [
-          "先争取关键支持，再尝试落地",
-          "先保护项目，再处理关系",
-          "先借力资源，再推动执行"
-        ],
-        risk: [
-          "越级推动，绕过部门阻力",
-          "公开问题，逼组织表态",
-          "用数据质疑现有方案"
-        ]
-      }
-    };
-    return labels[this.save.profile.role][option.quality][index % 3];
+    return this.roleOptionView(option, index).label;
+  }
+
+  private roleOptionSummary(option: StoryOption, index: number): string {
+    return this.roleOptionView(option, index).summary;
+  }
+
+  private roleOptionFeedback(option: StoryOption, index: number): string {
+    return this.roleOptionView(option, index).feedback;
+  }
+
+  private roleOptionView(
+    option: StoryOption,
+    index: number
+  ): (typeof ROLE_OPTION_SETS)[RoleId][OptionQuality][number] {
+    return ROLE_OPTION_SETS[this.save.profile.role][option.quality][
+      index % 3
+    ];
   }
 
   private roleMove(quality: OptionQuality): string {
@@ -2109,7 +2117,7 @@ export class AdaptiveGameApp {
         <span class="quality ${option.quality}">${optionQualityLabel(option.quality)}</span>
         <div class="positive-feedback">${encouragement}</div>
         <h2>${escapeHtml(this.roleOptionLabel(option, outcome.optionIndex))}</h2>
-        <p>${escapeHtml(option.feedback)}</p>
+        <p>${escapeHtml(this.roleOptionFeedback(option, outcome.optionIndex))}</p>
         <blockquote>${escapeHtml(option.theory)}</blockquote>
         <div class="outcome-effects">
           <span><b>+${outcome.qualityScore}</b> 专家契合分</span>
@@ -2125,7 +2133,7 @@ export class AdaptiveGameApp {
             )
             .join("")}
         </div>
-        <button class="primary" data-action="continue-story">返回地图</button>
+        <button class="primary" data-action="${this.pendingBranchNodeId ? "continue-branch" : "continue-story"}">${this.pendingBranchNodeId ? "进入角色分岔" : "返回地图"}</button>
       </section>
     `;
   }

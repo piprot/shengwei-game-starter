@@ -19,7 +19,7 @@ export const ACHIEVEMENTS: AchievementDef[] = [
   {
     id: "assessment_done",
     name: "能力画像",
-    description: "完成 10 题能力基线测评",
+    description: "完成 30 题能力基线测评",
     icon: "02"
   },
   ...Array.from({ length: 9 }, (_, index) => ({

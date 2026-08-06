@@ -91,6 +91,10 @@ try {
     await page.waitForSelector("text=当前考验");
     await page.click(".option-card");
     await page.waitForSelector("text=专家级应对");
+    await page.click("text=进入角色分岔");
+    await page.waitForSelector("text=当前考验");
+    await page.click(".option-card");
+    await page.waitForSelector("text=返回地图");
     const storyOverflow = await overflow(page);
     await page.click("text=返回地图");
 

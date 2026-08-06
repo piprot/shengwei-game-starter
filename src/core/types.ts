@@ -35,6 +35,7 @@ export interface StoryOption {
   resources: Partial<Record<ResourceKey, number>>;
   feedback: string;
   theory: string;
+  branchTo?: Partial<Record<RoleId, string>>;
 }
 
 export interface StoryNode {
@@ -121,6 +122,7 @@ export interface SaveState {
   decisionHistory: DecisionRecord[];
   duelHistory: DuelHistoryEntry[];
   claimedChallenges: string[];
+  assessmentScore: number;
 }
 
 export interface ChoiceOutcome {

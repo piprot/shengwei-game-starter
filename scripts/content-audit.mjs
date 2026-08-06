@@ -14,6 +14,7 @@ import {
 import { ASSESSMENT_QUESTIONS } from "../src/core/assessment.ts";
 import { ACHIEVEMENTS } from "../src/core/achievements.ts";
 import { NPCS } from "../src/core/npcs.ts";
+import { ROLE_OPTION_SETS } from "../src/core/roleOptions.ts";
 
 const mainNodes = STORY_NODES.filter((node) => node.kind === "main");
 const sideNodes = STORY_NODES.filter((node) => node.kind === "side");
@@ -49,6 +50,13 @@ for (const node of STORY_NODES) {
     if (Object.keys(option.effects).length === 0) {
       problems.push(`${node.id} option has no ability effects`);
     }
+    if (option.branchTo) {
+      for (const branchId of Object.values(option.branchTo)) {
+        if (!STORY_NODES.some((item) => item.id === branchId)) {
+          problems.push(`${node.id} option references missing branch ${branchId}`);
+        }
+      }
+    }
   }
 }
 
@@ -81,8 +89,8 @@ for (const role of Object.values(ROLES)) {
   }
 }
 
-if (ASSESSMENT_QUESTIONS.length !== 10) {
-  problems.push("assessment must contain exactly 10 questions");
+if (ASSESSMENT_QUESTIONS.length !== 30) {
+  problems.push("assessment must contain exactly 30 questions");
 }
 for (const question of ASSESSMENT_QUESTIONS) {
   if (question.options.length !== 3) {
@@ -97,6 +105,14 @@ for (const arc of SIDE_QUEST_ARCS) {
   for (const nodeId of arc.nodes) {
     if (!STORY_NODES.some((node) => node.id === nodeId)) {
       problems.push(`${arc.id} references missing node ${nodeId}`);
+    }
+  }
+}
+
+for (const role of Object.keys(ROLE_OPTION_SETS)) {
+  for (const quality of ["expert", "partial", "risk"]) {
+    if (ROLE_OPTION_SETS[role][quality].length !== 3) {
+      problems.push(`${role}/${quality} role option set must contain 3 options`);
     }
   }
 }

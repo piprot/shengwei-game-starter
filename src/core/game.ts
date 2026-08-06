@@ -42,7 +42,8 @@ export const DEFAULT_SAVE: SaveState = {
   masteryPoints: 0,
   decisionHistory: [],
   duelHistory: [],
-  claimedChallenges: []
+  claimedChallenges: [],
+  assessmentScore: 0
 };
 
 export function createProfile(name: string, role: RoleId): PlayerProfile {
@@ -116,7 +117,8 @@ function normalizeSave(save: SaveState): SaveState {
     duelHistory: Array.isArray(save.duelHistory) ? save.duelHistory : [],
     claimedChallenges: Array.isArray(save.claimedChallenges)
       ? save.claimedChallenges
-      : []
+      : [],
+    assessmentScore: Number(save.assessmentScore) || 0
   };
 }
 

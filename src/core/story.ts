@@ -137,7 +137,12 @@ export const STORY_NODES: StoryNode[] = [
         resources: { energy: -8, trust: 8, influence: 4 },
         feedback:
           "你通过非正式访谈摸清了真实权力地图，也给了对方表达的空间。数据缺口背后不是流程问题，而是信任问题。",
-        theory: "《人物志》八观：观察人在不同情境中的取舍，才能看见真实动机。"
+        theory: "《人物志》八观：观察人在不同情境中的取舍，才能看见真实动机。",
+        branchTo: {
+          parachute: "c1b-parachute",
+          founder: "c1b-founder",
+          highPotential: "c1b-highPotential"
+        }
       },
       {
         label: "直接要求全量数据",
@@ -1103,6 +1108,120 @@ export const STORY_NODES: StoryNode[] = [
         theory: "《孙子兵法》：令之以文，齐之以武，但文武必须并用。"
       }
     ]
+  },
+  {
+    id: "c1b-parachute",
+    chapterId: 1,
+    title: "权力地图",
+    kind: "side",
+    context:
+      "你选择先做权力地图。行政主管愿意配合，但财务经理仍保持距离，你需要判断谁是你的第一联盟。",
+    stake: "你要把第一轮访谈变成可信的联盟基础。",
+    options: [
+      {
+        label: "先与行政主管共建信息网络",
+        summary: "把行政主管变成你的组织雷达，但不让她承担风险。",
+        quality: "expert",
+        effects: { insight: 3, communication: 2 },
+        resources: { energy: -6, trust: 8, influence: 5 },
+        feedback: "你把第一个盟友放进了正确位置，组织信息开始流向你。",
+        theory: "《人物志》：观其外而知其内，察其行而辨其品。"
+      },
+      {
+        label: "先争取财务经理",
+        summary: "用透明度换取财务数据，先建立专业信任。",
+        quality: "partial",
+        effects: { authority: 2, structure: 2 },
+        resources: { energy: -7, trust: 5, influence: 3 },
+        feedback: "你拿到了数据，但行政主管开始觉得你绕过了她。",
+        theory: "《权经》：权乃人授，授为大焉。"
+      },
+      {
+        label: "自己组建临时信息小组",
+        summary: "绕过双方，从一线骨干收集信息。",
+        quality: "risk",
+        effects: { execution: 2 },
+        resources: { energy: -9, trust: -4, influence: 1 },
+        feedback: "你信息更全面了，但也在第一周制造了两个潜在的反对者。",
+        theory: "《孙子兵法》：先为不可胜，以待敌之可胜。"
+      }
+    ]
+  },
+  {
+    id: "c1b-founder",
+    chapterId: 1,
+    title: "现金流最小验证",
+    kind: "side",
+    context:
+      "你决定先用访谈建立信任，但创始人直觉提醒你：如果没有现金流验证，团队只会继续内耗。",
+    stake: "你要在信任和现金流之间找到第一个可验证的突破口。",
+    options: [
+      {
+        label: "选一个 48 小时可验证的现金流动作",
+        summary: "把访谈结论压缩成一个最小验证，让团队看到数据变化。",
+        quality: "expert",
+        effects: { execution: 3, structure: 2 },
+        resources: { energy: -8, trust: 5, influence: 6 },
+        feedback: "你用一个可验证动作把关系访谈变成了业务推进。",
+        theory: "德鲁克：管理者的成果是贡献，不是忙碌。"
+      },
+      {
+        label: "先补齐团队信息再验证",
+        summary: "等访谈完成，信息足够后再行动。",
+        quality: "partial",
+        effects: { communication: 2 },
+        resources: { energy: -5, trust: 3, influence: 2 },
+        feedback: "团队觉得你重视他们，但业务仍没有新的变化。",
+        theory: "《权经》：揣为上，事次之。"
+      },
+      {
+        label: "跳过访谈直接做验证",
+        summary: "用创始人直觉先跑一个动作，不浪费时间。",
+        quality: "risk",
+        effects: { execution: 3, strategy: 1 },
+        resources: { energy: -7, trust: -6, influence: 2 },
+        feedback: "你可能验证了业务，却让团队认为你并不真的听他们。",
+        theory: "《孙子兵法》：兵贵胜，不贵久。"
+      }
+    ]
+  },
+  {
+    id: "c1b-highPotential",
+    chapterId: 1,
+    title: "横向共识会",
+    kind: "side",
+    context:
+      "你没有正式任命，决定先用访谈建立横向共识。现在你需要让这轮共识变成一个能被各部门认可的行动计划。",
+    stake: "你要让每个部门都觉得自己参与了，而不是被通知。",
+    options: [
+      {
+        label: "把访谈结论转成共同行动计划",
+        summary: "让每个关键人都带一个自己愿意负责的动作进入计划。",
+        quality: "expert",
+        effects: { communication: 3, mobilize: 2 },
+        resources: { energy: -7, trust: 8, influence: 6 },
+        feedback: "计划不再是你一个人的，各部门开始主动认领责任。",
+        theory: "毛泽东《党委会的工作方法》：互通情报，取得共同语言。"
+      },
+      {
+        label: "先向更高层汇报结论",
+        summary: "用高层支持推动部门执行。",
+        quality: "partial",
+        effects: { strategy: 3 },
+        resources: { energy: -5, trust: -3, influence: 4 },
+        feedback: "你获得了背书，却削弱了横向共识的主动性。",
+        theory: "《权经》：携为上，功次之。"
+      },
+      {
+        label: "直接发出执行清单",
+        summary: "自己整理清单，要求各部门配合。",
+        quality: "risk",
+        effects: { execution: 2, authority: 1 },
+        resources: { energy: -6, trust: -6, influence: 2 },
+        feedback: "清单很快被各部门当成别人家的事。",
+        theory: "《论语》：不患人之不己知，患不知人也。"
+      }
+    ]
   }
 ];
 
@@ -1247,6 +1366,18 @@ export const NODE_INTEL: Record<string, string[]> = {
   s6: [
     "提出辞职的人并不是最失望的人，而是最沉默的人",
     "团队上周已经提交过一份风险预警，但没有被重视"
+  ],
+  "c1b-parachute": [
+    "行政主管愿意合作，但不想公开站队",
+    "财务经理更在意专业证据"
+  ],
+  "c1b-founder": [
+    "团队需要看到业务动作，而不只是新的会议",
+    "48 小时内可验证的现金流动作只有三个"
+  ],
+  "c1b-highPotential": [
+    "各部门愿意认领自己提出的动作",
+    "直接下发清单会让他们退回本位"
   ]
 };
 

@@ -693,6 +693,66 @@ h2 {
   gap: 16px;
 }
 
+.baseline-detail {
+  margin-top: 18px;
+  padding: 20px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--panel);
+}
+
+.baseline-detail h2 {
+  margin-bottom: 14px;
+  font-size: 22px;
+}
+
+.baseline-list {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.baseline-row {
+  display: grid;
+  grid-template-columns: 10px minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--panel-2);
+}
+
+.baseline-row span {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--dot);
+}
+
+.baseline-row strong {
+  font-size: 14px;
+}
+
+.baseline-row em,
+.baseline-row small {
+  color: var(--muted);
+  font-style: normal;
+}
+
+.baseline-row small {
+  color: var(--gold);
+}
+
+.cert-note {
+  margin: 14px 0 0;
+  padding: 12px;
+  border-left: 3px solid var(--gold);
+  background: rgba(242, 193, 78, 0.08);
+  color: var(--muted);
+  line-height: 1.7;
+}
+
 .role-start-panel {
   margin-top: 18px;
   padding: 22px;
@@ -2369,6 +2429,10 @@ h2 {
   }
 
   .relation-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .baseline-list {
     grid-template-columns: 1fr;
   }
 
