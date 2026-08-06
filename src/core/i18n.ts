@@ -20,7 +20,17 @@ export const UI_STRINGS = {
     situation: "当前局势摘要",
     highPressureOn: "开启高压模式",
     highPressureOff: "退出高压模式",
-    randomEvent: "随机事件"
+    randomEvent: "随机事件",
+    reportTitle: "复盘报告",
+    leadershipTrajectory: "领导力轨迹",
+    resetProfile: "重置档案",
+    exportSave: "导出存档",
+    exportReport: "导出报告",
+    copySaveLink: "复制存档链接",
+    cloudSync: "云端同步",
+    cloudLoad: "云端载入",
+    cloudLeaderboard: "云端排行",
+    importSave: "导入存档"
   },
   en: {
     brand: "Adaptive Ascent",
@@ -41,7 +51,17 @@ export const UI_STRINGS = {
     situation: "Current Situation",
     highPressureOn: "Enable Pressure Mode",
     highPressureOff: "Exit Pressure Mode",
-    randomEvent: "Random Event"
+    randomEvent: "Random Event",
+    reportTitle: "Review Report",
+    leadershipTrajectory: "Leadership Trajectory",
+    resetProfile: "Reset Profile",
+    exportSave: "Export Save",
+    exportReport: "Export Report",
+    copySaveLink: "Copy Save Link",
+    cloudSync: "Cloud Sync",
+    cloudLoad: "Cloud Load",
+    cloudLeaderboard: "Leaderboard",
+    importSave: "Import Save"
   }
 } as const;
 

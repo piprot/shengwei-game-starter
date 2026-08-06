@@ -930,8 +930,8 @@ export class AdaptiveGameApp {
       <main class="report-shell">
         <section class="report-hero">
           <div>
-            <p class="eyebrow">复盘报告</p>
-            <h1>${this.save.profile.name} 的领导力轨迹</h1>
+            <p class="eyebrow">${this.t("reportTitle")}</p>
+            <h1>${this.save.profile.name} · ${this.t("leadershipTrajectory")}</h1>
             <p class="muted">段位：${summary.rank.name} · 综合能力值：${summary.total} · 主线 ${summary.chapterCount}/9</p>
           </div>
           <div class="duel-stats">
@@ -947,13 +947,13 @@ export class AdaptiveGameApp {
             <span>能力认证</span>
             <strong>${cert.passed ? `认证通过 · ${cert.level}` : `未认证 · ${cert.next}`}</strong>
           </div>
-          <button data-action="reset-profile">重置档案</button>
-          <button data-action="export-save">导出存档</button>
-          <button data-action="export-report">导出报告</button>
-          <button data-action="copy-save-link">复制存档链接</button>
-          <button data-action="cloud-sync">云端同步</button>
-          <button data-action="cloud-load">云端载入</button>
-          <button data-action="cloud-leaderboard">云端排行</button>
+          <button data-action="reset-profile">${this.t("resetProfile")}</button>
+          <button data-action="export-save">${this.t("exportSave")}</button>
+          <button data-action="export-report">${this.t("exportReport")}</button>
+          <button data-action="copy-save-link">${this.t("copySaveLink")}</button>
+          <button data-action="cloud-sync">${this.t("cloudSync")}</button>
+          <button data-action="cloud-load">${this.t("cloudLoad")}</button>
+          <button data-action="cloud-leaderboard">${this.t("cloudLeaderboard")}</button>
           <span class="cloud-status" role="status" aria-live="polite">${this.cloudStatus}</span>
           ${
             this.cloudConflict
@@ -967,7 +967,7 @@ export class AdaptiveGameApp {
               : ""
           }
           <label class="file-button">
-            导入存档
+            ${this.t("importSave")}
             <input type="file" data-import-save accept="application/json" hidden />
           </label>
         </section>
