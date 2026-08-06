@@ -1685,10 +1685,317 @@ export const STORY_NODES: StoryNode[] = [
         theory: "《孙子兵法》：善战者，先为不可胜。"
       }
     ]
+  },
+  {
+    id: "r13",
+    chapterId: 5,
+    title: "预算突然被砍",
+    kind: "random",
+    context:
+      "你负责的项目预算在季度中段被砍掉 30%，没有任何提前预警。团队已经按原计划投入了三周。",
+    stake: "你要在资源收缩时重新定义交付范围。",
+    options: [
+      {
+        label: "重排范围并明确不可砍项",
+        summary: "用关键结果反推必须保留的部分，主动汇报取舍。",
+        quality: "expert",
+        effects: { structure: 3, execution: 2 },
+        resources: { energy: -6, trust: 4, influence: 5 },
+        feedback: "你没有被动接受砍预算，而是让高层看到你如何管理取舍。",
+        theory: "德鲁克：把资源集中在真正重要的少数任务上。"
+      },
+      {
+        label: "先按原计划做，再补预算",
+        summary: "暂时不改变范围，期望业绩能换回预算。",
+        quality: "partial",
+        effects: { execution: 2 },
+        resources: { energy: -8, trust: -2, influence: 1 },
+        feedback: "团队继续冲刺，但资源缺口会很快变成交付风险。",
+        theory: "《孙子兵法》：先为不可胜，以待敌之可胜。"
+      },
+      {
+        label: "直接暂停项目",
+        summary: "以预算不足为由暂停，避免仓促交付。",
+        quality: "risk",
+        effects: { authority: 1 },
+        resources: { energy: -4, trust: -5, influence: -4 },
+        feedback: "你避免了乱做，但高层可能认为你缺少在约束下推进的能力。",
+        theory: "《权经》：权惟用，不为大也。"
+      }
+    ]
+  },
+  {
+    id: "r14",
+    chapterId: 2,
+    title: "有人打小报告",
+    kind: "random",
+    context:
+      "你得知有人向 CEO 汇报说你在会议上“打压不同意见”。你并没有打压，但确有两次打断了发言。",
+    stake: "你要处理的是真相，还是别人感受到的真相。",
+    options: [
+      {
+        label: "主动向 CEO 澄清事实",
+        summary: "不带指责地说明会议场景，并承认表达方式可改进。",
+        quality: "expert",
+        effects: { communication: 3, authority: 1 },
+        resources: { energy: -5, trust: 5, influence: 5 },
+        feedback: "你没有追查告密者，而是直接消除了信息差。",
+        theory: "毛泽东《党委会的工作方法》：互通情报，取得共同语言。"
+      },
+      {
+        label: "找会议参与者核实",
+        summary: "先确认当时真实发生了什么，再决定是否回应。",
+        quality: "partial",
+        effects: { structure: 2 },
+        resources: { energy: -6, trust: 2, influence: 2 },
+        feedback: "你掌握了事实，但 CEO 可能已经形成了初步判断。",
+        theory: "《实践论》：从感性材料上升到理性认识。"
+      },
+      {
+        label: "忽略谣言，继续做好事",
+        summary: "认为只要结果好，误解会自然消失。",
+        quality: "risk",
+        effects: { recovery: 1 },
+        resources: { energy: -3, trust: -3, influence: -3 },
+        feedback: "误解不会自动消失，反而会在沉默中变成默认结论。",
+        theory: "《论语》：不患人之不己知，患不知人也。"
+      }
+    ]
+  },
+  {
+    id: "r15",
+    chapterId: 4,
+    title: "客户要你的个人手机号",
+    kind: "random",
+    context:
+      "关键客户在会议上当众向你要个人手机号，说“以后有事直接找你”。你不想绕开团队，也不想让客户失望。",
+    stake: "你的回应会决定客户如何看待你们组织的协作边界。",
+    options: [
+      {
+        label: "提供专属支持群，不提供私人号码",
+        summary: "给客户更直接的响应入口，同时保留组织边界。",
+        quality: "expert",
+        effects: { communication: 3, authority: 1 },
+        resources: { energy: -4, trust: 6, influence: 5 },
+        feedback: "客户得到了便利，团队也没有被绕开，边界反而更清晰。",
+        theory: "《韩非子》：使事不相干，使士不兼官。"
+      },
+      {
+        label: "当场给他号码",
+        summary: "先满足客户，私下再说明哪些事找谁。",
+        quality: "partial",
+        effects: { communication: 2 },
+        resources: { energy: -5, trust: 3, influence: -2 },
+        feedback: "客户满意了，但团队开始不确定谁才是真正的接口。",
+        theory: "《权经》：权乃人授，授为大焉。"
+      },
+      {
+        label: "拒绝并强调流程",
+        summary: "明确所有问题必须通过团队接口。",
+        quality: "risk",
+        effects: { authority: 2 },
+        resources: { energy: -3, trust: -5, influence: -3 },
+        feedback: "你守住了流程，却可能让客户觉得你不够重视。",
+        theory: "《论语》：君子信而后劳其民。"
+      }
+    ]
+  },
+  {
+    id: "r16",
+    chapterId: 6,
+    title: "新流程没人执行",
+    kind: "random",
+    context:
+      "你花了两周设计的新流程已经发布，但两周后实际使用率不足 20%，也没有人正式反对。",
+    stake: "你需要找到“没人反对但没人执行”的真正原因。",
+    options: [
+      {
+        label: "访谈一线执行者找卡点",
+        summary: "不追责，先找出流程与真实工作之间的冲突。",
+        quality: "expert",
+        effects: { insight: 3, structure: 2 },
+        resources: { energy: -6, trust: 6, influence: 4 },
+        feedback: "你发现流程缺少两个关键节点，而不是团队不愿执行。",
+        theory: "《实践论》：从实践中找规律。"
+      },
+      {
+        label: "增加强制检查节点",
+        summary: "用系统卡点保证流程必须被执行。",
+        quality: "partial",
+        effects: { authority: 2, execution: 1 },
+        resources: { energy: -5, trust: -3, influence: 3 },
+        feedback: "执行率上升了，但团队开始用绕过系统的方式完成工作。",
+        theory: "《韩非子》：法度既立，虽庸主可治。"
+      },
+      {
+        label: "再发一次全员通知",
+        summary: "强调新流程的重要性，要求各部门重视。",
+        quality: "risk",
+        effects: { communication: 1 },
+        resources: { energy: -3, trust: -2, influence: -2 },
+        feedback: "通知越多，团队越觉得这是形式主义。",
+        theory: "《论语》：不患人之不己知，患不知人也。"
+      }
+    ]
+  },
+  {
+    id: "r17",
+    chapterId: 7,
+    title: "核心员工要转岗",
+    kind: "random",
+    context:
+      "你最重要的项目骨干申请转岗到另一个部门，理由是想接触新业务。你知道他离开会让项目延期。",
+    stake: "你要留住的是人，还是让他成长。",
+    options: [
+      {
+        label: "为他设计内部成长路径",
+        summary: "在项目内给他新的判断空间，满足成长需求。",
+        quality: "expert",
+        effects: { deploy: 3, communication: 2 },
+        resources: { energy: -6, trust: 7, influence: 5 },
+        feedback: "你把他想离开的动机转成了组织可用的成长设计。",
+        theory: "德鲁克：用人之所长，让人才持续成长。"
+      },
+      {
+        label: "用晋升挽留他",
+        summary: "先给职位和薪资，让他继续留任。",
+        quality: "partial",
+        effects: { authority: 2 },
+        resources: { energy: -5, trust: 3, influence: 2 },
+        feedback: "他暂时留下了，但下次遇到成长瓶颈会更难处理。",
+        theory: "《贞观政要》：用非其才，必难致治。"
+      },
+      {
+        label: "立即批准转岗",
+        summary: "尊重选择，尽快启动交接。",
+        quality: "risk",
+        effects: { recovery: 1 },
+        resources: { energy: -3, trust: -4, influence: -3 },
+        feedback: "你避免了拉扯，但项目延期风险没有提前化解。",
+        theory: "《人物志》：审其变而见其性。"
+      }
+    ]
+  },
+  {
+    id: "r18",
+    chapterId: 8,
+    title: "媒体负面报道",
+    kind: "random",
+    context:
+      "一家媒体发布了关于你公司的负面报道，内容有失实之处，但已经开始影响客户信心。",
+    stake: "你要决定是否回应、如何回应、让谁回应。",
+    options: [
+      {
+        label: "先内部核实，再统一回应",
+        summary: "不急于反驳，先确认哪些事实是真的。",
+        quality: "expert",
+        effects: { structure: 3, communication: 2 },
+        resources: { energy: -7, trust: 5, influence: 6 },
+        feedback: "你没有让危机被情绪放大，而是用事实重新建立控制。",
+        theory: "《实践论》：从感性材料上升到理性认识。"
+      },
+      {
+        label: "立即发布官方澄清",
+        summary: "快速否认失实内容，防止客户误解。",
+        quality: "partial",
+        effects: { authority: 2 },
+        resources: { energy: -5, trust: -3, influence: 3 },
+        feedback: "回应很快，但如果内部还有未核实的问题，会被进一步放大。",
+        theory: "《孙子兵法》：先为不可胜，以待敌之可胜。"
+      },
+      {
+        label: "保持沉默，等热度过去",
+        summary: "不回应媒体报道，让事件自然降温。",
+        quality: "risk",
+        effects: { recovery: 1 },
+        resources: { energy: -3, trust: -5, influence: -5 },
+        feedback: "沉默让失实内容看起来更像真相，客户开始主动询问。",
+        theory: "《论语》：不患人之不己知，患不知人也。"
+      }
+    ]
+  },
+  {
+    id: "r19",
+    chapterId: 3,
+    title: "供应商要求提前付款",
+    kind: "random",
+    context:
+      "一个关键供应商突然要求把账期从 60 天缩到 30 天，否则暂停供货。你怀疑对方听到了一些公司传闻。",
+    stake: "你要在现金流与供应链稳定之间做判断。",
+    options: [
+      {
+        label: "核实付款能力和替代供应商",
+        summary: "先掌握财务与备选方案，再决定是否让步。",
+        quality: "expert",
+        effects: { structure: 3, execution: 2 },
+        resources: { energy: -6, trust: 3, influence: 5 },
+        feedback: "你没有被要挟，也没有忽视风险，供应链主动权回到你手里。",
+        theory: "《孙子兵法》：先为不可胜，以待敌之可胜。"
+      },
+      {
+        label: "接受提前付款保供应",
+        summary: "先满足供应商要求，避免生产中断。",
+        quality: "partial",
+        effects: { execution: 2 },
+        resources: { energy: -5, trust: 2, influence: -2 },
+        feedback: "供应保住了，但其他供应商可能开始提出同样要求。",
+        theory: "《权经》：权惟用，不为大也。"
+      },
+      {
+        label: "拒绝让步，寻找新供应商",
+        summary: "坚持原账期，宁可更换供应商。",
+        quality: "risk",
+        effects: { authority: 2 },
+        resources: { energy: -7, trust: -4, influence: 1 },
+        feedback: "你守住了账期，但切换供应商的时间和风险可能更大。",
+        theory: "《孙子兵法》：善战者，求之于势。"
+      }
+    ]
+  },
+  {
+    id: "r20",
+    chapterId: 9,
+    title: "CEO 临时要你接手新业务",
+    kind: "random",
+    context:
+      "CEO 临时要求你接手一个高风险新业务，同时不减少你现有职责。你刚完成一次重要的交接。",
+    stake: "你要在承接新机会与守住现有成果之间做选择。",
+    options: [
+      {
+        label: "先确认新业务边界和退出条件",
+        summary: "不拒绝机会，但把资源、授权和止损标准谈清楚。",
+        quality: "expert",
+        effects: { strategy: 3, authority: 2 },
+        resources: { energy: -7, trust: 6, influence: 6 },
+        feedback: "你没有简单接受，也没有拒绝，而是让新业务变成可管理的任务。",
+        theory: "《权经》：权乃人授，授为大焉。"
+      },
+      {
+        label: "立即接受并全力投入",
+        summary: "先接住机会，再调整现有工作。",
+        quality: "partial",
+        effects: { execution: 2 },
+        resources: { energy: -9, trust: 3, influence: 3 },
+        feedback: "你展示了担当，但现有职责可能开始出现风险。",
+        theory: "《孙子兵法》：兵贵胜，不贵久。"
+      },
+      {
+        label: "拒绝接手",
+        summary: "明确说明精力已满，要求只保留现有职责。",
+        quality: "risk",
+        effects: { recovery: 2 },
+        resources: { energy: -3, trust: -6, influence: -4 },
+        feedback: "你保护了自己，但高层可能认为你缺乏承担更大责任的意愿。",
+        theory: "《论语》：君子求诸己，小人求诸人。"
+      }
+    ]
   }
 ];
 
-export const RANDOM_EVENT_IDS = ["r1", "r2", "r3", "r4", "r5", "r6", "r7", "r8", "r9", "r10", "r11", "r12"];
+export const RANDOM_EVENT_IDS = [
+  "r1", "r2", "r3", "r4", "r5", "r6", "r7", "r8", "r9", "r10",
+  "r11", "r12", "r13", "r14", "r15", "r16", "r17", "r18", "r19", "r20"
+];
 for (const id of RANDOM_EVENT_IDS) {
   const node = STORY_NODES.find((item) => item.id === id);
   if (node) node.kind = "random";
@@ -1706,7 +2013,15 @@ export const RANDOM_EVENT_META: Record<string, { weight: number; chapterId: numb
   r9: { weight: 4, chapterId: 7 },
   r10: { weight: 4, chapterId: 5 },
   r11: { weight: 3, chapterId: 3 },
-  r12: { weight: 5, chapterId: 8 }
+  r12: { weight: 5, chapterId: 8 },
+  r13: { weight: 4, chapterId: 5 },
+  r14: { weight: 3, chapterId: 2 },
+  r15: { weight: 4, chapterId: 4 },
+  r16: { weight: 4, chapterId: 6 },
+  r17: { weight: 4, chapterId: 7 },
+  r18: { weight: 5, chapterId: 8 },
+  r19: { weight: 4, chapterId: 3 },
+  r20: { weight: 5, chapterId: 9 }
 };
 
 export function nextRandomEvent(save: {
@@ -1935,6 +2250,38 @@ export const NODE_INTEL: Record<string, string[]> = {
   r12: [
     "投资人真正担心的是现金流模型，不是某个部门",
     "被要求裁掉的部门里有三个客户关系核心节点"
+  ],
+  r13: [
+    "预算被砍与上一季度交付延期有关",
+    "团队里有两个项目可以低成本合并"
+  ],
+  r14: [
+    "CEO 听到的版本来自一位未参加会议的人",
+    "你两次打断发言的对象恰好在客户现场"
+  ],
+  r15: [
+    "客户真正担心的是响应速度，而不是私人关系",
+    "团队里已经有人负责他所在区域的日常支持"
+  ],
+  r16: [
+    "新流程在系统里需要三次手工录入",
+    "一线主管没有收到任何培训"
+  ],
+  r17: [
+    "这位骨干想要的新业务其实可以拆成项目内子任务",
+    "转岗申请已经提交到 HR，正式流程尚未启动"
+  ],
+  r18: [
+    "报道中有一个数据来自你们公开的旧版本年报",
+    "客户服务热线已经收到十多个相关咨询"
+  ],
+  r19: [
+    "供应商听到了公司资金链的传闻，但来源不明确",
+    "采购部上周刚完成两个替代供应商评估"
+  ],
+  r20: [
+    "CEO 更想看到你如何管理边界，而不是简单接受",
+    "新业务有一半资源可以来自现有团队冗余"
   ]
 };
 
