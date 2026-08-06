@@ -44,29 +44,34 @@ async function waitForOperational() {
   );
 }
 
+async function waitForHeadRun(head) {
+  const deadline = Date.now() + 5 * 60 * 1000;
+  while (Date.now() < deadline) {
+    const runs = JSON.parse(
+      gh([
+        "run",
+        "list",
+        "--repo",
+        REPO,
+        "--workflow=CI",
+        "--limit",
+        "30",
+        "--json",
+        "databaseId,headSha,status,conclusion"
+      ])
+    );
+    const target = runs.find((run) => run.headSha === head);
+    if (target) return target;
+    console.log("Waiting for CI run on current HEAD...");
+    await new Promise((resolve) => setTimeout(resolve, 15000));
+  }
+  throw new Error("No CI run found for current HEAD after recovery.");
+}
+
 try {
   await waitForOperational();
   const head = gh(["rev-parse", "HEAD"]).trim();
-  const runs = JSON.parse(
-    gh([
-      "run",
-      "list",
-      "--repo",
-      REPO,
-      "--workflow=CI",
-      "--limit",
-      "30",
-      "--json",
-      "databaseId,headSha,status,conclusion"
-    ])
-  );
-  const target =
-    runs.find((run) => run.headSha === head) ||
-    runs.find((run) => run.status === "queued" || run.status === "in_progress") ||
-    runs[0];
-  if (!target) {
-    throw new Error("No CI run found to recover.");
-  }
+  const target = await waitForHeadRun(head);
   if (target.conclusion === "failure") {
     gh([
       "run",
