@@ -2029,6 +2029,120 @@ export const STORY_NODES: StoryNode[] = [
     ]
   },
   {
+    id: "c9b-parachute",
+    chapterId: 9,
+    title: "空降 · 成业前的最后一次选择",
+    kind: "branch",
+    context:
+      "你作为空降管理者已证明能力。CEO 想让你进入更高层，但你知道离开会留下交接断层。",
+    stake: "你要让成功在离开后延续，而不是只属于你个人。",
+    options: [
+      {
+        label: "完成交接后再上升",
+        summary: "把接班人、知识库、风险预案全部落地。",
+        quality: "expert",
+        effects: { stability: 3, deploy: 2 },
+        resources: { energy: -7, trust: 8, influence: 8 },
+        feedback: "你让组织知道你离开后依然能运行，晋升反而变得更安全。",
+        theory: "《贞观政要》：善始慎终。"
+      },
+      {
+        label: "先抓住晋升机会",
+        summary: "不等待完美交接，先进入更高平台。",
+        quality: "partial",
+        effects: { authority: 2, execution: 2 },
+        resources: { energy: -5, trust: -4, influence: 5 },
+        feedback: "你抓住了机会，但组织可能因交接断层退回原样。",
+        theory: "《孙子兵法》：将能而君不御者胜。"
+      },
+      {
+        label: "拒绝晋升留在原地",
+        summary: "继续掌控你最熟悉的战场。",
+        quality: "risk",
+        effects: { stability: 2, recovery: 1 },
+        resources: { energy: -3, trust: -2, influence: -6 },
+        feedback: "你保住了安全区，却限制了组织的人才流动。",
+        theory: "《权经》：权惟用，不为大也。"
+      }
+    ]
+  },
+  {
+    id: "c9b-founder",
+    chapterId: 9,
+    title: "创业 · 成业前的最后一次选择",
+    kind: "branch",
+    context:
+      "你作为创始人公司终于稳定，投资人想让你去做更大平台，但你担心创始团队会失控。",
+    stake: "你要完成个人与组织的权力交接。",
+    options: [
+      {
+        label: "建立创始团队决策机制",
+        summary: "让方向、资源和风险由机制承接，而不是你一人。",
+        quality: "expert",
+        effects: { stability: 3, strategy: 2 },
+        resources: { energy: -7, trust: 7, influence: 7 },
+        feedback: "你把创始人控制权变成了团队治理，公司开始不依赖你也能决策。",
+        theory: "毛泽东《党委会的工作方法》：民主集中制。"
+      },
+      {
+        label: "先培养一位 CEO",
+        summary: "把权力交给一个可信的人，自己保留方向。",
+        quality: "partial",
+        effects: { deploy: 2 },
+        resources: { energy: -6, trust: 3, influence: 3 },
+        feedback: "你减轻了管理负担，但公司仍依赖一个人做关键判断。",
+        theory: "《权经》：授能干者，授忠诚者。"
+      },
+      {
+        label: "继续亲自掌控公司",
+        summary: "避免放权风险，保持创始人主导。",
+        quality: "risk",
+        effects: { authority: 2 },
+        resources: { energy: -7, trust: -2, influence: -2 },
+        feedback: "公司稳定在你手里，但增长被你的精力锁死。",
+        theory: "《贞观政要》：创业难，守成更难。"
+      }
+    ]
+  },
+  {
+    id: "c9b-highPotential",
+    chapterId: 9,
+    title: "高潜 · 成业前的最后一次选择",
+    kind: "branch",
+    context:
+      "你即将晋升，但接替你的人还未完全准备好，项目也正处在关键节点。",
+    stake: "你要安全完成交接，同时让组织看到你能承担更大责任。",
+    options: [
+      {
+        label: "把关键决策做成交接手册",
+        summary: "让接替者能通过手册理解判断依据和风险清单。",
+        quality: "expert",
+        effects: { stability: 3, deploy: 2 },
+        resources: { energy: -6, trust: 7, influence: 6 },
+        feedback: "你不仅完成了交接，还让组织第一次拥有了可传承的判断能力。",
+        theory: "毛泽东《党委会的工作方法》：制度建党。"
+      },
+      {
+        label: "只带接替者做一遍关键项目",
+        summary: "用实践交接代替文档。",
+        quality: "partial",
+        effects: { execution: 2 },
+        resources: { energy: -6, trust: 3, influence: 2 },
+        feedback: "接替者学到了做法，但组织仍缺少可复用的判断规则。",
+        theory: "《权经》：授能干者，授忠诚者。"
+      },
+      {
+        label: "先完成晋升，交接交给他人",
+        summary: "不拖慢个人机会，让新负责人处理交接。",
+        quality: "risk",
+        effects: { authority: 1 },
+        resources: { energy: -4, trust: -5, influence: -3 },
+        feedback: "你抓住了机会，却让项目在交接期承受风险。",
+        theory: "《贞观政要》：善始慎终。"
+      }
+    ]
+  },
+  {
     id: "r1",
     chapterId: 2,
     title: "电梯偶遇",
@@ -3084,6 +3198,18 @@ export const NODE_INTEL: Record<string, string[]> = {
   "c8b-highPotential": [
     "预算被砍的部门里有一个可合并项目",
     "客户最关心的交付模块已经完成 80%"
+  ],
+  "c9b-parachute": [
+    "接班人已经完成 60% 的关键交接项",
+    "CEO 愿意等待一个季度陪跑"
+  ],
+  "c9b-founder": [
+    "投资人更看重治理结构，而不是个人能力",
+    "创始团队里已有两人具备跨部门决策经验"
+  ],
+  "c9b-highPotential": [
+    "接替者已经独立处理过两次关键危机",
+    "项目手册只覆盖了流程，没有覆盖判断依据"
   ],
   r1: [
     "CEO 最近最担心的是组织是否开始失去方向",
