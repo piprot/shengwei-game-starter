@@ -12,6 +12,7 @@ import type {
   AbilityId,
   ChoiceOutcome,
   DecisionRecord,
+  DuelHistoryEntry,
   OptionQuality,
   PlayerProfile,
   ResourceKey,
@@ -39,7 +40,8 @@ export const DEFAULT_SAVE: SaveState = {
   duelLosses: 0,
   playCount: 0,
   masteryPoints: 0,
-  decisionHistory: []
+  decisionHistory: [],
+  duelHistory: []
 };
 
 export function createProfile(name: string, role: RoleId): PlayerProfile {
@@ -109,7 +111,8 @@ function normalizeSave(save: SaveState): SaveState {
     masteryPoints: Number(save.masteryPoints) || 0,
     decisionHistory: Array.isArray(save.decisionHistory)
       ? save.decisionHistory
-      : []
+      : [],
+    duelHistory: Array.isArray(save.duelHistory) ? save.duelHistory : []
   };
 }
 
@@ -289,7 +292,10 @@ export function recordDuelResult(
   save: SaveState,
   won: boolean,
   humanIsPlayerOne: boolean,
-  scoreDelta: number
+  scoreDelta: number,
+  opponentName: string,
+  playerScore: number,
+  opponentScore: number
 ): SaveState {
   if (won) {
     save.duelWins += 1;
@@ -312,6 +318,13 @@ export function recordDuelResult(
   }
   save.achievements.push("first_duel");
   save.achievements = [...new Set(save.achievements)];
+  save.duelHistory.push({
+    opponentName,
+    playerScore,
+    opponentScore,
+    won,
+    timestamp: Date.now()
+  });
   saveState(save);
   return save;
 }

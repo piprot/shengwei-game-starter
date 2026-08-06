@@ -810,6 +810,31 @@ export class AdaptiveGameApp {
             <span>决策总分</span>
           </div>
         </section>
+        <section class="duel-history">
+          <h2>近期对决</h2>
+          ${
+            this.save.duelHistory.length === 0
+              ? '<p class="muted">还没有对决记录，进入 1v1 后会自动保存。</p>'
+              : `
+                <div class="duel-history-list">
+                  ${this.save.duelHistory
+                    .slice(-5)
+                    .reverse()
+                    .map(
+                      (entry) => `
+                        <div class="duel-history-row ${entry.won ? "won" : "lost"}">
+                          <span>${entry.won ? "胜" : "负"}</span>
+                          <strong>${escapeHtml(entry.opponentName)}</strong>
+                          <em>${entry.playerScore} : ${entry.opponentScore}</em>
+                          <small>${new Date(entry.timestamp).toLocaleDateString()}</small>
+                        </div>
+                      `
+                    )
+                    .join("")}
+                </div>
+              `
+          }
+        </section>
         <section class="report-grid">
           <div class="report-panel">
             <h2>优势能力</h2>
@@ -1054,7 +1079,18 @@ export class AdaptiveGameApp {
             this.audio.lose();
           }
           const delta = Math.abs(engine.scores[0] - engine.scores[1]);
-          recordDuelResult(this.save, humanWon, this.duelMode === "ai", delta);
+          const playerIndex =
+            this.duelMode === "remote" ? this.remotePlayerIndex : 0;
+          const opponentIndex = playerIndex === 0 ? 1 : 0;
+          recordDuelResult(
+            this.save,
+            humanWon,
+            playerIndex === 0,
+            delta,
+            engine.players[opponentIndex].name,
+            engine.scores[playerIndex],
+            engine.scores[opponentIndex]
+          );
         }
       }
       const result = engine.toResult();
@@ -1704,7 +1740,13 @@ export class AdaptiveGameApp {
       "## 对决记录",
       `- 胜场：${this.save.duelWins}`,
       `- 负场：${this.save.duelLosses}`,
-      `- 修炼点：${this.save.masteryPoints}`
+      `- 修炼点：${this.save.masteryPoints}`,
+      "",
+      "## 近期对决",
+      ...this.save.duelHistory.slice(-5).map(
+        (entry) =>
+          `- ${entry.won ? "胜" : "负"} ${entry.opponentName} ${entry.playerScore}:${entry.opponentScore}`
+      )
     ];
     const blob = new Blob([lines.join("\n")], {
       type: "text/markdown;charset=utf-8"

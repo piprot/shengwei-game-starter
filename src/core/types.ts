@@ -98,6 +98,14 @@ export interface DecisionRecord {
   chapterId: number;
 }
 
+export interface DuelHistoryEntry {
+  opponentName: string;
+  playerScore: number;
+  opponentScore: number;
+  won: boolean;
+  timestamp: number;
+}
+
 export interface SaveState {
   version: number;
   profileCreated: boolean;
@@ -111,6 +119,7 @@ export interface SaveState {
   playCount: number;
   masteryPoints: number;
   decisionHistory: DecisionRecord[];
+  duelHistory: DuelHistoryEntry[];
 }
 
 export interface ChoiceOutcome {

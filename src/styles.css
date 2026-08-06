@@ -1666,6 +1666,72 @@ h2 {
   font-size: 13px;
 }
 
+.duel-history {
+  margin-bottom: 18px;
+  padding: 20px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--panel);
+}
+
+.duel-history h2 {
+  margin-bottom: 14px;
+  font-size: 22px;
+}
+
+.duel-history-list {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.duel-history-row {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 6px 10px;
+  align-items: center;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--panel-2);
+}
+
+.duel-history-row > span {
+  grid-row: 1 / 3;
+  display: inline-grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  font-weight: 900;
+}
+
+.duel-history-row.won > span {
+  background: rgba(87, 199, 163, 0.15);
+  color: #57c7a3;
+}
+
+.duel-history-row.lost > span {
+  background: rgba(233, 130, 108, 0.15);
+  color: var(--coral);
+}
+
+.duel-history-row strong,
+.duel-history-row em,
+.duel-history-row small {
+  display: block;
+}
+
+.duel-history-row em {
+  color: var(--gold);
+  font-style: normal;
+}
+
+.duel-history-row small {
+  color: var(--muted);
+  font-size: 11px;
+}
+
 .report-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -2178,6 +2244,10 @@ h2 {
   }
 
   .relation-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .duel-history-list {
     grid-template-columns: 1fr;
   }
 
