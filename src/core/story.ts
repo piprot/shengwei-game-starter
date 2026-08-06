@@ -1229,8 +1229,238 @@ export const STORY_NODES: StoryNode[] = [
         theory: "《论语》：不患人之不己知，患不知人也。"
       }
     ]
+  },
+  {
+    id: "r1",
+    chapterId: 2,
+    title: "电梯偶遇",
+    kind: "side",
+    context:
+      "你在电梯里遇到 CEO。他只给你一句话的时间，问你对新组织的第一个判断是什么。",
+    stake: "你的一句话会影响他对你的第一印象。",
+    options: [
+      {
+        label: "给一个具体判断，而不是空表态",
+        summary: "说出你观察到的关键矛盾，并点出下一步动作。",
+        quality: "expert",
+        effects: { insight: 2, communication: 2 },
+        resources: { energy: -3, trust: 4, influence: 5 },
+        feedback: "CEO 记住的不是你的态度，而是你能看见问题并准备行动。",
+        theory: "《权经》：权乃人授，授为大焉。"
+      },
+      {
+        label: "先表达决心",
+        summary: "让 CEO 看到你有信心解决问题。",
+        quality: "partial",
+        effects: { authority: 2 },
+        resources: { energy: -2, trust: 2, influence: 2 },
+        feedback: "他看到了你的信心，但没有看到具体判断。",
+        theory: "《孙子兵法》：先为不可胜，以待敌之可胜。"
+      },
+      {
+        label: "等电梯结束再说",
+        summary: "不在公开场合谈组织问题，避免风险。",
+        quality: "risk",
+        effects: { strategy: 1 },
+        resources: { energy: -2, trust: -1, influence: -3 },
+        feedback: "谨慎保护了信息，却可能让 CEO 觉得你还没有准备。",
+        theory: "《韩非子》：事以密成，语以泄败。"
+      }
+    ]
+  },
+  {
+    id: "r2",
+    chapterId: 3,
+    title: "报销单异常",
+    kind: "side",
+    context:
+      "你偶然看到一张金额异常大的报销单，签名是核心骨干，用途栏被涂改过。",
+    stake: "你需要在没有完整证据时决定是否追查。",
+    options: [
+      {
+        label: "先核流程和用途，再决定是否谈话",
+        summary: "先看审批链、合同和交付物，形成事实基础。",
+        quality: "expert",
+        effects: { structure: 3, insight: 1 },
+        resources: { energy: -5, trust: 2, influence: 3 },
+        feedback: "你没有让直觉变成指控，而是先把事实链闭合。",
+        theory: "《实践论》：从感性材料上升到理性认识。"
+      },
+      {
+        label: "直接约谈核实",
+        summary: "给本人解释机会，避免暗中猜疑。",
+        quality: "partial",
+        effects: { communication: 2 },
+        resources: { energy: -4, trust: 3, influence: 1 },
+        feedback: "直接沟通减少了猜疑，但你可能还没掌握足够细节。",
+        theory: "《论语》：不患人之不己知，患不知人也。"
+      },
+      {
+        label: "暂时装作没看见",
+        summary: "避免破坏团队关系，等更多证据出现。",
+        quality: "risk",
+        effects: { recovery: 1 },
+        resources: { energy: -2, trust: -2, influence: -2 },
+        feedback: "你避开了冲突，但也可能让不合规行为继续发生。",
+        theory: "《资治通鉴》：不塞隙穴，则暴雨疾风必坏。"
+      }
+    ]
+  },
+  {
+    id: "r3",
+    chapterId: 5,
+    title: "客户深夜来电",
+    kind: "side",
+    context:
+      "晚上 11 点，关键客户打电话说下周要看一个你们尚未准备的功能演示。",
+    stake: "你要决定如何回应客户的临时要求。",
+    options: [
+      {
+        label: "先确认真实需求，再承诺时间",
+        summary: "问清客户想看什么决策场景，再给出可验证交付。",
+        quality: "expert",
+        effects: { communication: 3, execution: 1 },
+        resources: { energy: -4, trust: 5, influence: 4 },
+        feedback: "你没有盲目答应，也没有让客户失望，而是重新定义了演示目标。",
+        theory: "德鲁克：管理者的成果是贡献，不是忙碌。"
+      },
+      {
+        label: "立即答应并组织加班",
+        summary: "先让客户安心，再让团队赶制演示。",
+        quality: "partial",
+        effects: { execution: 2 },
+        resources: { energy: -8, trust: 2, influence: 2 },
+        feedback: "客户安心了，但团队被临时承诺拖入疲劳。",
+        theory: "《孙子兵法》：兵贵胜，不贵久。"
+      },
+      {
+        label: "先拒绝，再约时间",
+        summary: "强调时间不足，希望客户改期。",
+        quality: "risk",
+        effects: { authority: 1 },
+        resources: { energy: -2, trust: -4, influence: -3 },
+        feedback: "你保护了团队，却可能让关键客户重新评估合作关系。",
+        theory: "《论语》：信而后劳其民。"
+      }
+    ]
+  },
+  {
+    id: "r4",
+    chapterId: 6,
+    title: "办公区流言",
+    kind: "side",
+    context:
+      "你路过茶水间，听见有人在传你要大规模裁员。消息源头不明，但已经开始影响团队。",
+    stake: "你需要在真相和情绪之间做出回应。",
+    options: [
+      {
+        label: "用公开信息澄清，并解释决策原则",
+        summary: "不点名字，但明确组织现在真正在做什么。",
+        quality: "expert",
+        effects: { communication: 3, mobilize: 2 },
+        resources: { energy: -5, trust: 6, influence: 5 },
+        feedback: "你没有追查传话人，而是用透明信息切断了恐慌。",
+        theory: "毛泽东《党委会的工作方法》：互通情报，取得共同语言。"
+      },
+      {
+        label: "让直属主管分别安抚",
+        summary: "避免公开回应，让管理层私下解释。",
+        quality: "partial",
+        effects: { deploy: 2 },
+        resources: { energy: -4, trust: 2, influence: 2 },
+        feedback: "团队暂时稳定，但不同主管说法不一，信息开始失真。",
+        theory: "《韩非子》：明主之道，使智者尽其虑。"
+      },
+      {
+        label: "不回应，让流言自然过去",
+        summary: "认为越回应越容易强化传闻。",
+        quality: "risk",
+        effects: { recovery: 1 },
+        resources: { energy: -2, trust: -5, influence: -3 },
+        feedback: "流言没有自动消失，反而在沉默中变得更加可信。",
+        theory: "《论语》：不患人之不己知，患不知人也。"
+      }
+    ]
+  },
+  {
+    id: "r5",
+    chapterId: 8,
+    title: "复盘会被问难",
+    kind: "side",
+    context:
+      "季度复盘会上，一位资深负责人当面问：你的变革到底带来了什么？现场安静下来。",
+    stake: "你的回答会成为团队判断你领导力的样本。",
+    options: [
+      {
+        label: "用数据回应，同时承认未完成项",
+        summary: "给出可验证的成果，也坦诚还有哪些没做好。",
+        quality: "expert",
+        effects: { structure: 3, communication: 2 },
+        resources: { energy: -6, trust: 6, influence: 5 },
+        feedback: "你既没有防御，也没有空谈，团队开始接受复杂真实的结果。",
+        theory: "《实践论》：错误常常是正确的先导。"
+      },
+      {
+        label: "把问题转给团队代表回答",
+        summary: "让一线负责人说明实际变化，避免自我辩护。",
+        quality: "partial",
+        effects: { deploy: 2 },
+        resources: { energy: -4, trust: 2, influence: 2 },
+        feedback: "你展示了团队能力，但资深负责人可能觉得你在回避。",
+        theory: "《权经》：权惟用，不为大也。"
+      },
+      {
+        label: "现场反击提问者",
+        summary: "强调对方也没有带来成果。",
+        quality: "risk",
+        effects: { authority: 2 },
+        resources: { energy: -4, trust: -6, influence: -2 },
+        feedback: "你赢得了场面，却输掉了复盘会最重要的信任。",
+        theory: "《孙子兵法》：致人而不致于人，但不能以伤人为目的。"
+      }
+    ]
+  },
+  {
+    id: "r6",
+    chapterId: 9,
+    title: "离职面谈",
+    kind: "side",
+    context:
+      "一位你曾重点培养的骨干提出离职。他说不是薪资问题，而是觉得自己的成长已经到头。",
+    stake: "你的回应可能决定他是离开还是重新投入。",
+    options: [
+      {
+        label: "帮他规划下一步挑战",
+        summary: "不急着挽留，而是先确认他想要的成长到底是什么。",
+        quality: "expert",
+        effects: { deploy: 3, communication: 2 },
+        resources: { energy: -5, trust: 7, influence: 4 },
+        feedback: "你把人看得比留住人更重要，他反而开始考虑留下。",
+        theory: "德鲁克：用人之所长，让人才持续成长。"
+      },
+      {
+        label: "用新项目留住他",
+        summary: "立即给他更有挑战的岗位和资源。",
+        quality: "partial",
+        effects: { execution: 2 },
+        resources: { energy: -4, trust: 3, influence: 2 },
+        feedback: "他暂时留了下来，但下一次成长瓶颈会更快出现。",
+        theory: "《贞观政要》：用非其才，必难致治。"
+      },
+      {
+        label: "直接批准离职",
+        summary: "尊重选择，不增加挽留成本。",
+        quality: "risk",
+        effects: { recovery: 2 },
+        resources: { energy: -3, trust: -3, influence: -3 },
+        feedback: "你没有制造阻力，但也可能错过了一个本可重新激活的高潜人才。",
+        theory: "《人物志》：审其变而见其性。"
+      }
+    ]
   }
 ];
+
+export const RANDOM_EVENT_IDS = ["r1", "r2", "r3", "r4", "r5", "r6"];
 
 export function getChapter(id: number): ChapterDef {
   const chapter = CHAPTERS.find((item) => item.id === id);
@@ -1385,6 +1615,30 @@ export const NODE_INTEL: Record<string, string[]> = {
   "c1b-highPotential": [
     "各部门愿意认领自己提出的动作",
     "直接下发清单会让他们退回本位"
+  ],
+  r1: [
+    "CEO 最近最担心的是组织是否开始失去方向",
+    "他给你一句话的机会，其实是在测试你是否已经进入状态"
+  ],
+  r2: [
+    "报销审批链里有人刻意跳过了常规检查",
+    "这笔报销与最近一个新供应商有关"
+  ],
+  r3: [
+    "客户真正想确认的是你们的演示能否支持他们内部决策",
+    "现有功能中已经有一个可用的替代场景"
+  ],
+  r4: [
+    "流言来源与最近一次高管会议有关",
+    "最焦虑的是没有直属主管的基层员工"
+  ],
+  r5: [
+    "资深负责人手里有一组真实数据可以验证你的说法",
+    "团队更想听到的是你会如何修正，而不是如何辩护"
+  ],
+  r6: [
+    "这位骨干最近两次主动承担了超出岗位的任务",
+    "他真正在意的不是职位，而是有没有更大的判断空间"
   ]
 };
 

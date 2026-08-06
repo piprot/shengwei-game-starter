@@ -39,6 +39,7 @@ import {
   CHAPTERS,
   CHAPTER_REFLECTIONS,
   NODE_INTEL,
+  RANDOM_EVENT_IDS,
   SIDE_QUEST_ARCS,
   getChapter,
   getNode,
@@ -67,6 +68,7 @@ import {
 import { NPCS, npcRelation } from "../core/npcs";
 import { dailyChallenges } from "../core/challenges";
 import { ROLE_OPTION_SETS } from "../core/roleOptions";
+import { uiString, type Language } from "../core/i18n";
 import { renderAbilityRadar } from "./charts";
 import { renderPowerBoard } from "./art";
 
@@ -90,6 +92,8 @@ export class AdaptiveGameApp {
   private root: HTMLElement;
   private audio = new GameAudio();
   private muted = false;
+  private language: Language =
+    localStorage.getItem("adaptive-ascent-lang") === "en" ? "en" : "zh";
   private save: SaveState;
   private view: View = "menu";
   private pendingRole: RoleId = "highPotential";
@@ -142,6 +146,7 @@ export class AdaptiveGameApp {
 
   constructor(root: HTMLElement) {
     this.root = root;
+    document.documentElement.lang = this.language;
     this.save = loadSave();
     this.restoreFromHash();
     this.root.addEventListener("click", (event) => this.handleClick(event));
@@ -172,6 +177,10 @@ export class AdaptiveGameApp {
   show(view: View): void {
     this.view = view;
     this.render();
+  }
+
+  private t(key: Parameters<typeof uiString>[1]): string {
+    return uiString(this.language, key);
   }
 
   private render(): void {
@@ -220,8 +229,9 @@ export class AdaptiveGameApp {
     const started = this.save.profileCreated;
     this.root.innerHTML = `
       <header class="topbar">
-        <div class="brand">权变之路</div>
-        <button class="link sound-toggle" data-action="toggle-sound">${this.muted ? "声音：关" : "声音：开"}</button>
+        <div class="brand">${this.t("brand")}</div>
+        <button class="link sound-toggle" data-action="toggle-sound">${this.muted ? this.t("soundOff") : this.t("soundOn")}</button>
+        <button class="link language-toggle" data-action="toggle-language">${this.t("language")}</button>
         <div class="topbar-meta">
           <span>${started ? this.save.profile.name : "未建档"}</span>
           <span>${summary.rank.name}</span>
@@ -231,11 +241,11 @@ export class AdaptiveGameApp {
         <section class="hero-strip">
           <div class="hero-copy">
             <p class="eyebrow">自适应领导力情境游戏</p>
-            <h1>${started ? "继续你的权力与成长之路" : "在真实职场情境中进化领导力"}</h1>
+            <h1>${started ? this.t("menuContinue") : this.t("menuTitle")}</h1>
             <p>基于《权经》九章架构、Heifetz 自适应领导力与情境高尔夫方法，通过主线剧情、支线任务和 1v1 对决，训练识人、用人、驭人、谋权、掌权、固权与自我进化能力。</p>
             <div class="hero-actions">
-              <button class="primary" data-action="${started ? "open-map" : "open-profile"}">${started ? "继续主线" : "创建档案"}</button>
-              <button data-action="open-duel">进入 1v1</button>
+              <button class="primary" data-action="${started ? "open-map" : "open-profile"}">${started ? this.t("menuContinue") : this.t("createProfile")}</button>
+              <button data-action="open-duel">${this.t("enterDuel")}</button>
             </div>
           </div>
           <div class="rank-panel">
@@ -256,32 +266,32 @@ export class AdaptiveGameApp {
         <section class="menu-grid">
           <button class="menu-card" data-action="open-map">
             <span class="card-index">01</span>
-            <h2>主线征途</h2>
+            <h2>${this.t("mainQuest")}</h2>
             <p>九章权力架构，18 个真实职场情境，每一次选择都在改变你的能力图谱。</p>
           </button>
           <button class="menu-card" data-action="open-duel">
             <span class="card-index">02</span>
-            <h2>1v1 对决</h2>
+            <h2>${this.t("duel")}</h2>
             <p>AI 陪练、本地双人或远程对战，用情境高尔夫基准判断谁更能应对复杂局势。</p>
           </button>
           <button class="menu-card" data-action="open-ability">
             <span class="card-index">03</span>
-            <h2>能力图谱</h2>
+            <h2>${this.t("ability")}</h2>
             <p>十项能力、五级段位、经典理论支撑，随时查看你的优势、短板和成长路径。</p>
           </button>
           <button class="menu-card" data-action="open-report">
             <span class="card-index">04</span>
-            <h2>复盘报告</h2>
+            <h2>${this.t("report")}</h2>
             <p>从游戏表现反推训练建议，把决策反馈迁移回真实工作。</p>
           </button>
           <button class="menu-card" data-action="open-achievements">
             <span class="card-index">05</span>
-            <h2>成就墙</h2>
+            <h2>${this.t("achievements")}</h2>
             <p>追踪章节、支线、测评、1v1 与能力段位的完成进度。</p>
           </button>
           <button class="menu-card" data-action="open-relations">
             <span class="card-index">06</span>
-            <h2>人物关系图</h2>
+            <h2>${this.t("relations")}</h2>
             <p>查看主线与支线中结识的关键人物，以及关系是否已经转化为组织能力。</p>
           </button>
         </section>
@@ -559,6 +569,9 @@ export class AdaptiveGameApp {
     const chapter = getChapter(this.selectedChapter);
     const mainNodes = chapter.nodeIds.map(getNode);
     const chapterDone = isChapterComplete(this.save, chapter.id);
+    const availableRandom = RANDOM_EVENT_IDS.find(
+      (id) => !isNodeComplete(this.save, id)
+    );
     this.root.innerHTML = `
       <header class="topbar">
         <div class="brand">权变之路</div>
@@ -635,6 +648,17 @@ export class AdaptiveGameApp {
                   `
                 )
                 .join("")}
+            </div>
+            <div class="random-event-panel">
+              <h3>随机事件</h3>
+              ${
+                availableRandom
+                  ? `
+                    <p>今天出现了一个意料之外的情境，可能影响团队对你的判断。</p>
+                    <button data-action="open-node" data-node="${availableRandom}">处理随机事件</button>
+                  `
+                  : "<p class=\"muted\">你已处理完当前随机事件。</p>"
+              }
             </div>
             <div class="mini-panel">
               <h3>当前进度</h3>
@@ -858,7 +882,7 @@ export class AdaptiveGameApp {
           <button data-action="cloud-sync">云端同步</button>
           <button data-action="cloud-load">云端载入</button>
           <button data-action="cloud-leaderboard">云端排行</button>
-          <span class="cloud-status">${this.cloudStatus}</span>
+          <span class="cloud-status" role="status" aria-live="polite">${this.cloudStatus}</span>
           <label class="file-button">
             导入存档
             <input type="file" data-import-save accept="application/json" hidden />
@@ -1376,6 +1400,13 @@ export class AdaptiveGameApp {
       case "toggle-sound":
         this.muted = !this.muted;
         this.audio.setMuted(this.muted);
+        this.render();
+        break;
+      case "toggle-language":
+        this.language = this.language === "zh" ? "en" : "zh";
+        localStorage.setItem("adaptive-ascent-lang", this.language);
+        document.documentElement.lang = this.language;
+        this.audio.ui();
         this.render();
         break;
       case "reset-profile":

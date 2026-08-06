@@ -2,6 +2,7 @@ import {
   CHAPTERS,
   CHAPTER_REFLECTIONS,
   NODE_INTEL,
+  RANDOM_EVENT_IDS,
   ROLE_NODE_VARIANTS,
   SIDE_QUEST_ARCS,
   STORY_NODES
@@ -106,6 +107,12 @@ for (const arc of SIDE_QUEST_ARCS) {
     if (!STORY_NODES.some((node) => node.id === nodeId)) {
       problems.push(`${arc.id} references missing node ${nodeId}`);
     }
+  }
+}
+
+for (const eventId of RANDOM_EVENT_IDS) {
+  if (!STORY_NODES.some((node) => node.id === eventId)) {
+    problems.push(`random event ${eventId} is missing`);
   }
 }
 
