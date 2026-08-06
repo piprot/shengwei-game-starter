@@ -2,6 +2,8 @@ export class GameAudio {
   private context?: AudioContext;
   private master?: GainNode;
   private ambientGain?: GainNode;
+  private musicTimer?: number;
+  private musicNodes: AudioNode[] = [];
   private muted = false;
 
   ensure(): void {
@@ -95,27 +97,47 @@ export class GameAudio {
     const second = this.context.createOscillator();
     second.type = "triangle";
     second.frequency.value = 82.41;
+    const third = this.context.createOscillator();
+    third.type = "sine";
+    third.frequency.value = 110;
     const filter = this.context.createBiquadFilter();
     filter.type = "lowpass";
     filter.frequency.value = 320;
     oscillator.connect(filter);
     second.connect(filter);
+    third.connect(filter);
     filter.connect(gain);
     gain.connect(this.master);
     oscillator.start();
     second.start();
+    third.start();
     this.ambientGain = gain;
+    this.musicNodes = [oscillator, second, third, filter, gain];
+
+    const playPhrase = () => {
+      if (!this.context || !this.master || this.muted) return;
+      const start = this.context.currentTime + 0.03;
+      const notes = [220, 261.63, 329.63, 261.63];
+      notes.forEach((freq, index) => {
+        this.tone(freq, 1.7, "sine", 0.008, index * 0.55);
+      });
+    };
+    playPhrase();
+    this.musicTimer = window.setInterval(playPhrase, 5200);
   }
 
   stopAmbient(): void {
-    if (!this.context || !this.ambientGain) {
-      return;
+    if (this.musicTimer !== undefined) {
+      window.clearInterval(this.musicTimer);
+      this.musicTimer = undefined;
     }
-    this.ambientGain.gain.setTargetAtTime(0, this.context.currentTime, 0.2);
-    window.setTimeout(() => {
-      this.ambientGain?.disconnect();
-      this.ambientGain = undefined;
-    }, 500);
+    if (this.context && this.ambientGain) {
+      this.ambientGain.gain.setTargetAtTime(0, this.context.currentTime, 0.2);
+      window.setTimeout(() => {
+        this.ambientGain?.disconnect();
+        this.ambientGain = undefined;
+      }, 500);
+    }
   }
 
   private tone(

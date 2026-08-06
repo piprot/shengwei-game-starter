@@ -1,5 +1,9 @@
 import { createHmac, timingSafeEqual } from "node:crypto";
 
+if (process.env.NODE_ENV === "production" && !process.env.JWT_SECRET) {
+  throw new Error("Production requires JWT_SECRET");
+}
+
 const secret = process.env.JWT_SECRET || "dev-only-secret-change-me";
 const MAX_AGE_MS = Number(
   process.env.TOKEN_MAX_AGE_MS || 7 * 24 * 60 * 60 * 1000
@@ -36,4 +40,9 @@ export function verifyToken(token) {
   } catch {
     return null;
   }
+}
+
+export function createScoreSignature(score, name, role, updatedAt) {
+  const payload = JSON.stringify({ score, name, role, updatedAt });
+  return createHmac("sha256", secret).update(payload).digest("base64url");
 }

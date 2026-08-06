@@ -4,14 +4,20 @@ import { createServer } from "node:http";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { WebSocketServer } from "ws";
-import { createToken, verifyToken } from "./auth.mjs";
+import {
+  createScoreSignature,
+  createToken,
+  verifyToken
+} from "./auth.mjs";
 import {
   dbEnabled,
+  dbHealth,
   getAccount,
   initDb,
   leaderboard as dbLeaderboard,
   upsertAccount
 } from "./db.mjs";
+import { cleanSave, serverAbilityScore, validateSave } from "./validation.mjs";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const DATA_DIR = process.env.DATA_DIR || join(__dirname, "data");
@@ -40,12 +46,13 @@ function persist() {
   writeFileSync(DATA_FILE, JSON.stringify(store, null, 2));
 }
 
-const httpServer = createServer((_request, response) => {
+const httpServer = createServer(async (_request, response) => {
+  const healthy = await dbHealth();
   response.writeHead(200, { "content-type": "application/json; charset=utf-8" });
   response.end(
     JSON.stringify({
-      status: "ok",
-      db: dbEnabled,
+      status: dbEnabled && !healthy ? "degraded" : "ok",
+      db: healthy,
       uptime: process.uptime()
     })
   );
@@ -56,6 +63,19 @@ const wss = new WebSocketServer({
 });
 const rooms = new Map();
 const matchQueue = [];
+const rateBuckets = new Map();
+
+function consumeRate(key, limit, windowMs) {
+  const now = Date.now();
+  const current = rateBuckets.get(key);
+  if (!current || now - current.windowStart > windowMs) {
+    rateBuckets.set(key, { windowStart: now, count: 1 });
+    return true;
+  }
+  if (current.count >= limit) return false;
+  current.count += 1;
+  return true;
+}
 
 await initDb();
 
@@ -72,15 +92,6 @@ function cleanRole(value) {
 function cleanRounds(value) {
   const rounds = Number(value);
   return VALID_ROUNDS.has(rounds) ? rounds : 3;
-}
-
-function cleanSave(save) {
-  if (!save || typeof save !== "object" || Array.isArray(save)) return null;
-  try {
-    return JSON.stringify(save).length > MAX_SAVE_BYTES ? null : save;
-  } catch {
-    return null;
-  }
 }
 
 function send(socket, payload) {
@@ -123,6 +134,8 @@ function createRoom(player, rounds) {
     rounds: Number(rounds) || 3,
     status: "waiting",
     createdAt: Date.now(),
+    round: 1,
+    picks: [null, null],
     players: []
   };
   rooms.set(roomId, room);
@@ -162,11 +175,10 @@ function jsonLeaderboard() {
     .map((account) => ({
       name: account.name,
       role: account.role,
-      score: Object.values(account.save?.profile?.abilities || {}).reduce(
-        (sum, value) => sum + abilityLevel(Number(value || 0)),
-        0
-      ),
-      updatedAt: account.updatedAt
+      score: Number(account.score ?? serverAbilityScore(account.save)),
+      signature: account.scoreSig || "",
+      updatedAt: account.updatedAt,
+      save: account.save
     }))
     .sort((a, b) => b.score - a.score)
     .slice(0, 50);
@@ -176,22 +188,17 @@ function jsonLeaderboard() {
   }));
 }
 
-function abilityLevel(exp) {
-  const thresholds = [0, 4, 10, 18, 28, 40];
-  let level = 1;
-  for (const threshold of thresholds.slice(1)) {
-    if (exp >= threshold) level += 1;
-    else break;
-  }
-  return Math.min(6, level);
-}
-
-wss.on("connection", (socket) => {
+wss.on("connection", (socket, request) => {
+  socket.remoteIp = request.socket.remoteAddress || "unknown";
   socket.rateCount = 0;
   socket.rateWindow = Date.now();
   send(socket, { type: "connected", message: "自适应领导力服务已连接" });
 
   socket.on("message", async (raw) => {
+    if (!consumeRate(`ip:${socket.remoteIp}`, 300, 10_000)) {
+      send(socket, { type: "error", message: "消息过于频繁，请稍后再试" });
+      return;
+    }
     const now = Date.now();
     if (now - socket.rateWindow > 10000) {
       socket.rateCount = 0;
@@ -217,9 +224,20 @@ wss.on("connection", (socket) => {
 
     switch (message.type) {
       case "register": {
+        if (!consumeRate(`auth:${socket.remoteIp}`, 20, 60_000)) {
+          send(socket, { type: "error", message: "注册过于频繁，请稍后再试" });
+          return;
+        }
         const name = cleanName(message.name);
         const role = cleanRole(message.role);
         const save = cleanSave(message.save);
+        if (message.save && !save) {
+          send(socket, { type: "error", message: "存档格式无效" });
+          return;
+        }
+        const score = serverAbilityScore(save);
+        const updatedAt = new Date().toISOString();
+        const scoreSig = createScoreSignature(score, name, role, updatedAt);
         const token = createToken(
           name,
           role
@@ -228,19 +246,24 @@ wss.on("connection", (socket) => {
           token,
           name,
           role,
-          save
+          save,
+          score,
+          scoreSig,
+          updatedAt
         };
         if (dbEnabled) {
           await upsertAccount(
             account.token,
             account.name,
             account.role,
-            account.save
+            account.save,
+            account.score,
+            account.scoreSig
           );
         } else {
           store.accounts[token] = {
             ...account,
-            updatedAt: new Date().toISOString()
+            updatedAt
           };
           persist();
         }
@@ -248,6 +271,10 @@ wss.on("connection", (socket) => {
         break;
       }
       case "login": {
+        if (!consumeRate(`auth:${socket.remoteIp}`, 20, 60_000)) {
+          send(socket, { type: "error", message: "登录过于频繁，请稍后再试" });
+          return;
+        }
         const token = String(message.token || "");
         if (!verifyToken(token)) {
           send(socket, { type: "error", message: "Token 无效或已过期" });
@@ -258,6 +285,10 @@ wss.on("connection", (socket) => {
           : accountForToken(token);
         if (!account) {
           send(socket, { type: "error", message: "账号不存在" });
+          return;
+        }
+        if (!consumeRate(`acct:${token}`, 120, 10_000)) {
+          send(socket, { type: "error", message: "账号操作过于频繁，请稍后再试" });
           return;
         }
         socket.accountToken = account.token;
@@ -275,16 +306,37 @@ wss.on("connection", (socket) => {
           send(socket, { type: "error", message: "账号不存在" });
           return;
         }
+        if (!consumeRate(`acct:${token}`, 120, 10_000)) {
+          send(socket, { type: "error", message: "账号操作过于频繁，请稍后再试" });
+          return;
+        }
         const save = cleanSave(message.save);
         if (!save) {
           send(socket, { type: "error", message: "存档格式无效或过大" });
           return;
         }
+        const score = serverAbilityScore(save);
+        const updatedAt = new Date().toISOString();
+        const scoreSig = createScoreSignature(
+          score,
+          account.name,
+          account.role,
+          updatedAt
+        );
         if (dbEnabled) {
-          await upsertAccount(token, account.name, account.role, save);
+          await upsertAccount(
+            token,
+            account.name,
+            account.role,
+            save,
+            score,
+            scoreSig
+          );
         } else {
           account.save = save;
-          account.updatedAt = new Date().toISOString();
+          account.score = score;
+          account.scoreSig = scoreSig;
+          account.updatedAt = updatedAt;
           persist();
         }
         send(socket, { type: "save_ok" });
@@ -301,6 +353,10 @@ wss.on("connection", (socket) => {
         const name = cleanName(message.name);
         const role = cleanRole(message.role);
         const save = cleanSave(message.save);
+        if (message.save && !save) {
+          send(socket, { type: "error", message: "存档格式无效" });
+          return;
+        }
         createRoom(
           {
             socket,
@@ -318,20 +374,30 @@ wss.on("connection", (socket) => {
           send(socket, { type: "error", message: "房间不存在或已满" });
           return;
         }
+        const save = cleanSave(message.save);
+        if (message.save && !save) {
+          send(socket, { type: "error", message: "存档格式无效" });
+          return;
+        }
         addToRoom(room.id, {
           socket,
           name: cleanName(message.name),
           role: cleanRole(message.role),
-          save: cleanSave(message.save)
+          save
         });
         break;
       }
       case "match": {
+        const save = cleanSave(message.save);
+        if (message.save && !save) {
+          send(socket, { type: "error", message: "存档格式无效" });
+          return;
+        }
         tryAutoMatch({
           socket,
           name: cleanName(message.name),
           role: cleanRole(message.role),
-          save: cleanSave(message.save),
+          save,
           rounds: cleanRounds(message.rounds)
         });
         break;
@@ -346,9 +412,40 @@ wss.on("connection", (socket) => {
         if (!player?.roomId) return;
         const room = roomById(player.roomId);
         if (!room) return;
+        if (room.status !== "playing") {
+          send(socket, { type: "error", message: "对局尚未开始或已结束" });
+          return;
+        }
+        const playerIndex = room.players.findIndex(
+          (item) => item.socket === socket
+        );
+        if (playerIndex < 0) return;
+        if (room.picks[playerIndex] !== null) {
+          send(socket, { type: "error", message: "本回合已选择" });
+          return;
+        }
+        room.picks[playerIndex] = optionIndex;
         const opponent = room.players.find((item) => item.socket !== socket);
         if (opponent) {
           send(opponent.socket, { type: "pick", optionIndex });
+        }
+        if (room.picks[0] !== null && room.picks[1] !== null) {
+          room.picks = [null, null];
+          room.round += 1;
+          if (room.round > room.rounds) {
+            room.status = "finished";
+            for (const item of room.players) {
+              send(item.socket, { type: "duel_end", roomId: room.id });
+            }
+          } else {
+            for (const item of room.players) {
+              send(item.socket, {
+                type: "round_complete",
+                roomId: room.id,
+                round: room.round
+              });
+            }
+          }
         }
         break;
       }
@@ -357,6 +454,10 @@ wss.on("connection", (socket) => {
         if (!player?.roomId) return;
         const room = roomById(player.roomId);
         if (!room) return;
+        if (room.status !== "playing") {
+          send(socket, { type: "error", message: "对局尚未开始或已结束" });
+          return;
+        }
         const opponent = room.players.find((item) => item.socket !== socket);
         if (opponent) {
           send(opponent.socket, { type: "signal", signal: message.signal });

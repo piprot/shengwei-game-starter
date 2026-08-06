@@ -140,7 +140,8 @@ export class AdaptiveGameApp {
   private localPassed = false;
   private remotePeer?: ManualRtcPeer;
   private remotePlayerIndex: 0 | 1 = 0;
-  private remoteOpponentName = "等待对手";
+  private remoteOpponentName =
+    this.language === "en" ? "Waiting for opponent" : "等待对手";
   private remoteOpponentReady = false;
   private remoteOpponentAbilities: Record<AbilityId, number> = {
     insight: 2,
@@ -162,11 +163,13 @@ export class AdaptiveGameApp {
   } as Record<ResourceKey, number>;
   private remoteInviteCode = "";
   private remoteAnswerCode = "";
-  private remoteStatus = "尚未建立连接";
+  private remoteStatus =
+    this.language === "en" ? "Not connected" : "尚未建立连接";
   private duelRecorded = false;
   private roomClient?: RoomClient;
   private cloudToken = localStorage.getItem("adaptive-ascent-cloud-token") || "";
-  private cloudStatus = "未连接云端";
+  private cloudStatus =
+    this.language === "en" ? "Cloud not connected" : "未连接云端";
   private cloudEntries: Array<{
     name: string;
     role: string;
@@ -194,7 +197,36 @@ export class AdaptiveGameApp {
     this.root.addEventListener("click", (event) => this.handleClick(event));
     this.root.addEventListener("submit", (event) => this.handleSubmit(event));
     this.root.addEventListener("change", (event) => this.handleChange(event));
+    document.addEventListener("keydown", (event) => this.handleShortcut(event));
     this.show("menu");
+  }
+
+  private handleShortcut(event: KeyboardEvent): void {
+    if (event.ctrlKey || event.metaKey || event.altKey) return;
+    const target = event.target as HTMLElement | null;
+    if (
+      target &&
+      (target.tagName === "INPUT" ||
+        target.tagName === "TEXTAREA" ||
+        target.tagName === "SELECT" ||
+        target.isContentEditable)
+    ) {
+      return;
+    }
+    const key = event.key.toLowerCase();
+    const routes: Record<string, View> = {
+      h: "menu",
+      m: "map",
+      a: "ability",
+      r: "report",
+      d: "duelLobby"
+    };
+    const view = routes[key];
+    if (!view) return;
+    if (view === "map" && !this.save.profileCreated) return;
+    event.preventDefault();
+    this.audio.ui();
+    this.show(view);
   }
 
   private restoreFromHash(): void {
@@ -583,7 +615,7 @@ export class AdaptiveGameApp {
           <span>${summary.rank.name}</span>
         </div>
       </header>
-      <main class="menu-shell">
+      <main class="menu-shell" aria-label="${this.language === "en" ? "Main menu" : "主菜单"}">
         <section class="hero-strip">
           <div class="hero-copy">
             <p class="eyebrow">自适应领导力情境游戏</p>
@@ -597,48 +629,48 @@ export class AdaptiveGameApp {
           <div class="rank-panel">
             <span class="rank-name">${summary.rank.name}</span>
             <strong>${summary.total}</strong>
-            <span class="rank-caption">综合能力值</span>
+            <span class="rank-caption">${this.t("totalAbility")}</span>
             <div class="rank-meter"><i style="width:${Math.min(100, (summary.total / 60) * 100)}%"></i></div>
-            <p>已通关 ${summary.chapterCount} / 9 章</p>
+            <p>${this.language === "en" ? `Completed ${summary.chapterCount} / 9 chapters` : `已通关 ${summary.chapterCount} / 9 章`}</p>
           </div>
         </section>
         <section class="scene-art">
           <canvas class="power-board" id="power-board" aria-label="${this.language === "en" ? "Power relationship sandbox diagram" : "权力关系沙盘示意图"}"></canvas>
           <div class="scene-caption">
-            <strong>权力关系沙盘</strong>
-            <span>每一次选择，都在重新绘制你与关键人物之间的连接。</span>
+            <strong>${this.language === "en" ? "Power Relationship Sandbox" : "权力关系沙盘"}</strong>
+            <span>${this.language === "en" ? "Every choice redraws your connection with key people." : "每一次选择，都在重新绘制你与关键人物之间的连接。"}</span>
           </div>
         </section>
         <section class="menu-grid">
-          <button class="menu-card" data-action="open-map">
+          <button class="menu-card" data-action="open-map" aria-keyshortcuts="M">
             <span class="card-index">01</span>
             <h2>${this.t("mainQuest")}</h2>
-            <p>九章权力架构，18 个真实职场情境，每一次选择都在改变你的能力图谱。</p>
+            <p>${this.language === "en" ? "Nine chapters of power, 18 real workplace scenarios, and choices that reshape your ability map." : "九章权力架构，18 个真实职场情境，每一次选择都在改变你的能力图谱。"}</p>
           </button>
-          <button class="menu-card" data-action="open-duel">
+          <button class="menu-card" data-action="open-duel" aria-keyshortcuts="D">
             <span class="card-index">02</span>
             <h2>${this.t("duel")}</h2>
-            <p>AI 陪练、本地双人或远程对战，用情境高尔夫基准判断谁更能应对复杂局势。</p>
+            <p>${this.language === "en" ? "AI practice, local duo, or remote duels use scenario-golf baselines to judge who handles complexity better." : "AI 陪练、本地双人或远程对战，用情境高尔夫基准判断谁更能应对复杂局势。"}</p>
           </button>
-          <button class="menu-card" data-action="open-ability">
+          <button class="menu-card" data-action="open-ability" aria-keyshortcuts="A">
             <span class="card-index">03</span>
             <h2>${this.t("ability")}</h2>
-            <p>十项能力、五级段位、经典理论支撑，随时查看你的优势、短板和成长路径。</p>
+            <p>${this.language === "en" ? "Ten abilities, five ranks, and classic theory support let you see strengths, gaps, and growth paths." : "十项能力、五级段位、经典理论支撑，随时查看你的优势、短板和成长路径。"}</p>
           </button>
-          <button class="menu-card" data-action="open-report">
+          <button class="menu-card" data-action="open-report" aria-keyshortcuts="R">
             <span class="card-index">04</span>
             <h2>${this.t("report")}</h2>
-            <p>从游戏表现反推训练建议，把决策反馈迁移回真实工作。</p>
+            <p>${this.language === "en" ? "Turn in-game performance into training advice you can transfer back to real work." : "从游戏表现反推训练建议，把决策反馈迁移回真实工作。"}</p>
           </button>
           <button class="menu-card" data-action="open-achievements">
             <span class="card-index">05</span>
             <h2>${this.t("achievements")}</h2>
-            <p>追踪章节、支线、测评、1v1 与能力段位的完成进度。</p>
+            <p>${this.language === "en" ? "Track chapters, side quests, assessments, duels, and rank milestones." : "追踪章节、支线、测评、1v1 与能力段位的完成进度。"}</p>
           </button>
           <button class="menu-card" data-action="open-relations">
             <span class="card-index">06</span>
             <h2>${this.t("relations")}</h2>
-            <p>查看主线与支线中结识的关键人物，以及关系是否已经转化为组织能力。</p>
+            <p>${this.language === "en" ? "See key people from the campaign and side quests, and whether those relationships became organizational capability." : "查看主线与支线中结识的关键人物，以及关系是否已经转化为组织能力。"}</p>
           </button>
         </section>
       </main>
@@ -656,7 +688,7 @@ export class AdaptiveGameApp {
         <div class="brand">${this.t("brand")}</div>
         <button class="link" data-action="open-menu">${this.t("returnHome")}</button>
       </header>
-      <main class="narrow-shell">
+      <main class="narrow-shell" aria-label="${this.language === "en" ? "Profile creation" : "创建档案"}">
         <section class="panel profile-panel">
           <p class="eyebrow">${en ? "Build Your Leadership Profile" : "建立领导力档案"}</p>
           <h1>${en ? "Choose Your Starting Identity" : "选择你的初始身份"}</h1>
@@ -704,7 +736,7 @@ export class AdaptiveGameApp {
         <button class="link" data-action="open-profile">${en ? "Back to Profile" : "返回建档"}</button>
         <button class="link sound-toggle" data-action="toggle-sound" aria-label="${this.language === "en" ? "Toggle sound" : "切换声音"}">${this.muted ? this.t("soundOff") : this.t("soundOn")}</button>
       </header>
-      <main class="assessment-shell">
+      <main class="assessment-shell" aria-label="${this.language === "en" ? "Ability assessment" : "能力测评"}">
         <section class="assessment-panel">
           <div class="assessment-progress">
             <span>${en ? "Ability Baseline Assessment" : "能力基线测评"}</span>
@@ -773,7 +805,7 @@ export class AdaptiveGameApp {
         <div class="brand">${this.t("brand")}</div>
         <button class="link sound-toggle" data-action="toggle-sound" aria-label="${this.language === "en" ? "Toggle sound" : "切换声音"}">${this.muted ? this.t("soundOff") : this.t("soundOn")}</button>
       </header>
-      <main class="assessment-result-shell">
+      <main class="assessment-result-shell" aria-label="${this.language === "en" ? "Assessment report" : "测评报告"}">
         <section class="assessment-result-hero">
           <div>
             <p class="eyebrow">${en ? "Ability Baseline Report" : "能力基线报告"}</p>
@@ -853,7 +885,7 @@ export class AdaptiveGameApp {
         <div class="brand">${this.t("brand")}</div>
         <button class="link" data-action="open-menu">${this.t("returnHome")}</button>
       </header>
-      <main class="achievement-shell">
+      <main class="achievement-shell" aria-label="${this.language === "en" ? "Achievements" : "成就墙"}">
         <section class="achievement-hero">
           <div>
             <p class="eyebrow">${this.t("achievementsTitle")}</p>
@@ -891,7 +923,7 @@ export class AdaptiveGameApp {
         <div class="brand">${this.t("brand")}</div>
         <button class="link" data-action="open-menu">${this.t("returnHome")}</button>
       </header>
-      <main class="relation-shell">
+      <main class="relation-shell" aria-label="${this.language === "en" ? "Relationships" : "人物关系图"}">
         <section class="relation-hero">
           <div>
             <p class="eyebrow">${this.t("relationsTitle")}</p>
@@ -936,7 +968,7 @@ export class AdaptiveGameApp {
           <span>${summary.rank.name}</span>
         </div>
       </header>
-      <main class="map-shell">
+      <main class="map-shell" aria-label="${this.language === "en" ? "Campaign map" : "主线地图"}">
         <section class="map-head">
           <div>
             <p class="eyebrow">${this.t("mainQuest")}</p>
@@ -1059,10 +1091,16 @@ export class AdaptiveGameApp {
       .join("");
     const note =
       this.save.difficulty === "normal"
-        ? "资源不缩放、无决策时限"
+        ? this.language === "en"
+          ? "No resource scaling, no decision timer"
+          : "资源不缩放、无决策时限"
         : this.save.difficulty === "pressure"
-          ? "资源缩放、每回合 22 秒、偶发干扰"
-          : "强缩放、每回合 14 秒、干扰频繁";
+          ? this.language === "en"
+            ? "Resource scaling, 22 seconds per round, occasional disruptions"
+            : "资源缩放、每回合 22 秒、偶发干扰"
+          : this.language === "en"
+            ? "Strong scaling, 14 seconds per round, frequent disruptions"
+            : "强缩放、每回合 14 秒、干扰频繁";
     return `
       <div class="mini-panel difficulty-panel">
         <h3>${this.t("difficultyLabel")}</h3>
@@ -1090,7 +1128,7 @@ export class AdaptiveGameApp {
           <span id="round-timer" class="round-timer" style="display:none"></span>
         </div>
       </header>
-      <main class="story-shell">
+      <main class="story-shell" aria-label="${this.language === "en" ? "Story scenario" : "剧情情境"}">
         <button class="link back-link" data-action="open-map">${this.t("backToMap")}</button>
         <section class="story-art">
           <canvas id="story-art" aria-label="${this.language === "en" ? "Diagram of the current situation" : "当前情境的局势示意图"}"></canvas>
@@ -1206,7 +1244,7 @@ export class AdaptiveGameApp {
         <button class="link sound-toggle" data-action="toggle-sound" aria-label="${this.language === "en" ? "Toggle sound" : "切换声音"}">${this.muted ? this.t("soundOff") : this.t("soundOn")}</button>
         <button class="link language-toggle" data-action="toggle-language" aria-label="${this.language === "en" ? "Switch language" : "切换语言"}">${this.t("language")}</button>
       </header>
-      <main class="transition-shell">
+      <main class="transition-shell" aria-label="${this.language === "en" ? "Chapter transition" : "章节过渡"}">
         <section class="transition-panel">
           <p class="eyebrow">${this.language === "en" ? `Chapter ${chapter.code} ${this.t("chapterComplete")}` : `第 ${chapter.code} 章完成`}</p>
           <h1>${this.chapterDisplay(chapter).title}</h1>
@@ -1242,10 +1280,10 @@ export class AdaptiveGameApp {
     );
     this.root.innerHTML = `
       <header class="topbar">
-        <div class="brand">权变之路</div>
+        <div class="brand">${this.t("brand")}</div>
         <button class="link" data-action="open-menu">${this.t("returnHome")}</button>
       </header>
-      <main class="ability-shell">
+      <main class="ability-shell" aria-label="${this.language === "en" ? "Ability map" : "能力图谱"}">
         <section class="ability-head">
           <div>
             <p class="eyebrow">${this.t("abilityTitle")}</p>
@@ -1322,7 +1360,7 @@ export class AdaptiveGameApp {
         <button class="link" data-action="open-menu">${this.t("returnHome")}</button>
         <button class="link sound-toggle" data-action="toggle-sound" aria-label="${this.language === "en" ? "Toggle sound" : "切换声音"}">${this.muted ? this.t("soundOff") : this.t("soundOn")}</button>
       </header>
-      <main class="report-shell">
+      <main class="report-shell" aria-label="${this.language === "en" ? "Review report" : "复盘报告"}">
         <section class="report-hero">
           <div>
             <p class="eyebrow">${this.t("reportTitle")}</p>
@@ -1587,10 +1625,10 @@ export class AdaptiveGameApp {
     const summary = profileSummary(this.save);
     this.root.innerHTML = `
       <header class="topbar">
-        <div class="brand">权变之路</div>
+        <div class="brand">${this.t("brand")}</div>
         <button class="link" data-action="open-menu">${this.t("returnHome")}</button>
       </header>
-      <main class="duel-lobby">
+      <main class="duel-lobby" aria-label="${this.language === "en" ? "Duel lobby" : "1v1 大厅"}">
         <section class="duel-hero">
           <p class="eyebrow">${this.t("duelTitle")}</p>
           <h1>${this.language === "en" ? "Who can make the better call in a complex situation?" : "谁能在复杂局势中做出更好的判断？"}</h1>
@@ -1690,7 +1728,7 @@ export class AdaptiveGameApp {
     const engine = this.duelEngine;
     if (!engine) {
       this.root.innerHTML = `
-        <main class="duel-waiting">
+        <main class="duel-waiting" aria-label="${this.language === "en" ? "Waiting for opponent" : "等待对手"}">
           <h1>${this.remoteStatus}</h1>
           <p>${this.language === "en" ? "Waiting for your opponent. Keep this page open." : "等待对手加入。请保持页面打开。"}</p>
         </main>
@@ -1730,7 +1768,7 @@ export class AdaptiveGameApp {
       }
       const result = engine.toResult();
       this.root.innerHTML = `
-        <main class="duel-result">
+        <main class="duel-result" aria-label="${this.language === "en" ? "Duel result" : "对决结果"}">
           <section class="result-hero">
             <p class="eyebrow">${this.language === "en" ? "Duel Complete" : "对决结束"}</p>
             <h1>${escapeHtml(result.winnerName)} ${this.language === "en" ? "wins" : "获胜"}</h1>
@@ -1759,7 +1797,7 @@ export class AdaptiveGameApp {
           <span style="--dot:${engine.players[1].color}"><strong>${engine.players[1].name}</strong> ${engine.scores[1]}</span>
         </div>
       </header>
-      <main class="duel-shell" data-round-key="${roundKey}">
+      <main class="duel-shell" data-round-key="${roundKey}" aria-label="${this.language === "en" ? "Duel round" : "对决回合"}">
         ${
           lastResult
             ? `
@@ -1921,11 +1959,13 @@ export class AdaptiveGameApp {
           try {
             this.save = importSaveJson(JSON.stringify(this.cloudRemoteSave));
             this.cloudConflict = false;
-            this.cloudStatus = "已使用云端存档";
+            this.cloudStatus =
+              this.language === "en" ? "Cloud save applied" : "已使用云端存档";
             this.audio.expert();
             this.show("report");
           } catch {
-            this.cloudStatus = "云端存档无法解析";
+            this.cloudStatus =
+              this.language === "en" ? "Cloud save could not be parsed" : "云端存档无法解析";
             this.cloudConflict = false;
             this.renderReport();
           }
@@ -1935,7 +1975,8 @@ export class AdaptiveGameApp {
         if (this.roomClient && this.cloudToken) {
           this.cloudConflict = false;
           this.roomClient.cloudSave(this.cloudToken, this.save);
-          this.cloudStatus = "正在上传本地存档";
+          this.cloudStatus =
+            this.language === "en" ? "Uploading local save" : "正在上传本地存档";
           this.renderReport();
         }
         break;
@@ -1956,7 +1997,13 @@ export class AdaptiveGameApp {
         this.render();
         break;
       case "reset-profile":
-        if (window.confirm("确定要清空当前档案和所有进度吗？")) {
+        if (
+          window.confirm(
+            this.language === "en"
+              ? "Clear the current profile and all progress?"
+              : "确定要清空当前档案和所有进度吗？"
+          )
+        ) {
           this.save = resetSave();
           this.pendingRole = "highPotential";
           this.show("profile");
@@ -2127,7 +2174,13 @@ export class AdaptiveGameApp {
         this.renderDuel();
         break;
       case "reset-profile":
-        if (window.confirm("确定要清空当前档案和所有进度吗？")) {
+        if (
+          window.confirm(
+            this.language === "en"
+              ? "Clear the current profile and all progress?"
+              : "确定要清空当前档案和所有进度吗？"
+          )
+        ) {
           this.save = resetSave();
           this.show("profile");
         }
@@ -2155,7 +2208,8 @@ export class AdaptiveGameApp {
 
   private createProfileFromForm(): void {
     const input = this.root.querySelector<HTMLInputElement>("input[name='playerName']");
-    const name = input?.value.trim() || "你";
+    const name =
+      input?.value.trim() || (this.language === "en" ? "You" : "你");
     const profile = createProfile(name, this.pendingRole);
     this.pendingProfile = profile;
     this.assessmentAnswers = [];
@@ -2267,8 +2321,18 @@ export class AdaptiveGameApp {
   }
 
   private startLocalDuel(): void {
-    const playerOne = buildDuelProfile(this.save.profile, `${this.save.profile.name} · 玩家一`, "#41c7c0");
-    const playerTwo = buildDuelProfile(this.save.profile, "玩家二", "#e9826c");
+    const playerOne = buildDuelProfile(
+      this.save.profile,
+      this.language === "en"
+        ? `${this.save.profile.name} · Player One`
+        : `${this.save.profile.name} · 玩家一`,
+      "#41c7c0"
+    );
+    const playerTwo = buildDuelProfile(
+      this.save.profile,
+      this.language === "en" ? "Player Two" : "玩家二",
+      "#e9826c"
+    );
     this.audio.ensure();
     this.audio.round();
     this.duelEngine = new DuelEngine(playerOne, playerTwo, this.duelRounds, duelSeed());
@@ -2281,20 +2345,23 @@ export class AdaptiveGameApp {
   private async createRemote(): Promise<void> {
     this.cleanupRemote();
     const seed = duelSeed();
-    this.remoteStatus = "正在生成邀请码，请稍候…";
+    this.remoteStatus =
+      this.language === "en" ? "Generating invite code..." : "正在生成邀请码，请稍候…";
     this.renderDuelLobby();
     try {
       const { peer, inviteCode } = await ManualRtcPeer.createHost(seed);
       this.remotePeer = peer;
       this.remotePlayerIndex = 0;
       this.remoteInviteCode = inviteCode;
-      this.remoteOpponentName = "等待对手";
+      this.remoteOpponentName =
+        this.language === "en" ? "Waiting for opponent" : "等待对手";
       this.remoteOpponentReady = false;
-      this.remoteStatus = "邀请码已生成，等待对方应答";
+      this.remoteStatus =
+        this.language === "en" ? "Invite generated. Waiting for answer." : "邀请码已生成，等待对方应答";
       this.bindRemotePeer(peer);
       this.renderDuelLobby();
     } catch (error) {
-      this.remoteStatus = error instanceof Error ? error.message : "创建房间失败";
+      this.remoteStatus = error instanceof Error ? error.message : this.language === "en" ? "Failed to create room" : "创建房间失败";
       this.renderDuelLobby();
     }
   }
@@ -2303,32 +2370,37 @@ export class AdaptiveGameApp {
     const input = this.root.querySelector<HTMLTextAreaElement>("textarea[data-remote-input]");
     const code = input?.value.trim() ?? "";
     if (!code) {
-      this.remoteStatus = "请先粘贴邀请码";
+      this.remoteStatus =
+        this.language === "en" ? "Paste the invite code first." : "请先粘贴邀请码";
       this.renderDuelLobby();
       return;
     }
     this.cleanupRemote();
-    this.remoteStatus = "正在解析邀请码并生成应答，请稍候…";
+    this.remoteStatus =
+      this.language === "en" ? "Parsing invite and generating answer..." : "正在解析邀请码并生成应答，请稍候…";
     this.renderDuelLobby();
     try {
       const { peer, answerCode } = await ManualRtcPeer.join(code);
       this.remotePeer = peer;
       this.remotePlayerIndex = 1;
       this.remoteAnswerCode = answerCode;
-      this.remoteOpponentName = "等待对手";
+      this.remoteOpponentName =
+        this.language === "en" ? "Waiting for opponent" : "等待对手";
       this.remoteOpponentReady = false;
-      this.remoteStatus = "应答码已生成，请发送给创建方";
+      this.remoteStatus =
+        this.language === "en" ? "Answer generated. Send it to the creator." : "应答码已生成，请发送给创建方";
       this.bindRemotePeer(peer);
       this.renderDuelLobby();
     } catch (error) {
-      this.remoteStatus = error instanceof Error ? error.message : "加入房间失败";
+      this.remoteStatus = error instanceof Error ? error.message : this.language === "en" ? "Failed to join room" : "加入房间失败";
       this.renderDuelLobby();
     }
   }
 
   private async finishRemote(): Promise<void> {
     if (!this.remotePeer || this.remotePlayerIndex !== 0) {
-      this.remoteStatus = "请先创建房间";
+      this.remoteStatus =
+        this.language === "en" ? "Create a room first." : "请先创建房间";
       this.renderDuelLobby();
       return;
     }
@@ -2336,17 +2408,19 @@ export class AdaptiveGameApp {
     const code = input?.value.trim() ?? "";
     try {
       await this.remotePeer.acceptAnswer(code);
-      this.remoteStatus = "连接信息已提交，等待点对点通道建立";
+      this.remoteStatus =
+        this.language === "en" ? "Connection submitted. Waiting for the peer channel." : "连接信息已提交，等待点对点通道建立";
       this.renderDuelLobby();
     } catch (error) {
-      this.remoteStatus = error instanceof Error ? error.message : "连接失败";
+      this.remoteStatus = error instanceof Error ? error.message : this.language === "en" ? "Connection failed" : "连接失败";
       this.renderDuelLobby();
     }
   }
 
   private bindRemotePeer(peer: ManualRtcPeer): void {
     peer.onOpen = () => {
-      this.remoteStatus = "通道已建立";
+      this.remoteStatus =
+        this.language === "en" ? "Channel established" : "通道已建立";
       this.audio.remoteConnected();
       peer.send({
         kind: "hello",
@@ -2495,7 +2569,8 @@ export class AdaptiveGameApp {
     this.remoteInviteCode = "";
     this.remoteAnswerCode = "";
     this.remoteOpponentReady = false;
-    this.remoteStatus = "尚未建立连接";
+    this.remoteStatus =
+      this.language === "en" ? "Not connected" : "尚未建立连接";
     this.duelEngine = undefined;
     this.usingCloudMatch = false;
   }
@@ -2507,7 +2582,7 @@ export class AdaptiveGameApp {
     const url = URL.createObjectURL(blob);
     const anchor = document.createElement("a");
     anchor.href = url;
-    anchor.download = `权变之路-${this.save.profile.name}-存档.json`;
+    anchor.download = `${this.language === "en" ? "Adaptive-Ascent" : "权变之路"}-${this.save.profile.name}-${this.language === "en" ? "save" : "存档"}.json`;
     anchor.click();
     URL.revokeObjectURL(url);
     this.audio.ui();
@@ -2612,7 +2687,8 @@ export class AdaptiveGameApp {
     const url = `${location.origin}${location.pathname}#save=${encoded}`;
     void navigator.clipboard?.writeText(url);
     const original = target.textContent;
-    target.textContent = "链接已复制";
+    target.textContent =
+      this.language === "en" ? "Link copied" : "链接已复制";
     window.setTimeout(() => {
       target.textContent = original;
     }, 1400);
@@ -2858,7 +2934,7 @@ export class AdaptiveGameApp {
     if (!value) return;
     void navigator.clipboard?.writeText(value);
     const original = target.textContent;
-    target.textContent = "已复制";
+    target.textContent = this.language === "en" ? "Copied" : "已复制";
     window.setTimeout(() => {
       target.textContent = original;
     }, 1200);
@@ -2981,6 +3057,7 @@ export class AdaptiveGameApp {
     const exp = this.save.profile.abilities[id];
     const level = abilityLevel(exp);
     const ability = ABILITIES[id];
+    const detail = this.abilityDetailDisplay(id);
     return `
       <div class="ability-card">
         <div class="ability-head">
@@ -2993,9 +3070,9 @@ export class AdaptiveGameApp {
         </div>
         <p>${this.abilityDisplay(id).tagline}</p>
         <div class="ability-bar"><i style="width:${Math.min(100, (level / 6) * 100)}%"></i></div>
-        <div class="subskill-list">${ability.subSkills.map((skill) => `<span>${escapeHtml(skill)}</span>`).join("")}</div>
-        <p class="training-path">${escapeHtml(ability.trainingPath)}</p>
-        <div class="ability-sources">${ability.sources.slice(0, 2).map((source) => `<span>${escapeHtml(source)}</span>`).join("")}</div>
+        <div class="subskill-list">${detail.subSkills.map((skill) => `<span>${escapeHtml(skill)}</span>`).join("")}</div>
+        <p class="training-path">${escapeHtml(detail.trainingPath)}</p>
+        <div class="ability-sources">${detail.sources.slice(0, 2).map((source) => `<span>${escapeHtml(source)}</span>`).join("")}</div>
       </div>
     `;
   }
@@ -3138,7 +3215,7 @@ export class AdaptiveGameApp {
             ? "You acted under pressure; that courage is part of leadership."
             : "你敢于在高压中行动，这份胆识也是领导力的一部分。";
     return `
-      <section class="outcome-panel">
+      <section class="outcome-panel" role="status" aria-live="polite">
         <span class="quality ${option.quality}">${this.qualityLabel(option.quality)}</span>
         <div class="positive-feedback">${encouragement}</div>
         ${

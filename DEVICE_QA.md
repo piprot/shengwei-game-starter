@@ -32,6 +32,8 @@
 ## 当前自动化覆盖
 
 - `npm run audit`：桌面/手机无溢出、无控制台错误
+- `npm run test:device-screenshots`：720x1280 / 1080x2400 中英文菜单/地图/剧情/报告截图
+- `npm run test:rtc`：两个本地浏览器页面完成 WebRTC 远程对局
 - `npm run test:server`：服务端端到端
 - `npm run content-audit`：内容完整性
 

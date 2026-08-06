@@ -19,6 +19,7 @@ import { NPCS } from "../src/core/npcs.ts";
 import { ROLE_OPTION_SETS } from "../src/core/roleOptions.ts";
 import {
   ABILITY_EN,
+  ABILITY_DETAIL_EN,
   ACHIEVEMENT_EN,
   ASSESSMENT_EN,
   BRANCH_NODE_EN,
@@ -117,6 +118,16 @@ for (const id of ABILITY_ORDER) {
   }
   if (!ability.trainingPath) {
     problems.push(`${id} missing training path`);
+  }
+  const en = ABILITY_DETAIL_EN[id];
+  if (
+    !en?.subSkills ||
+    en.subSkills.length < ability.subSkills.length ||
+    !en.trainingPath ||
+    !en.sources ||
+    en.sources.length < 2
+  ) {
+    problems.push(`${id} missing English ability detail text`);
   }
 }
 

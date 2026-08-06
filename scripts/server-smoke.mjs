@@ -7,6 +7,43 @@ const root = resolve(import.meta.dirname, "..");
 const port = 8090;
 const dataDir = mkdtempSync(join(tmpdir(), "adaptive-ascent-server-"));
 
+const validSave = {
+  version: 1,
+  profileCreated: true,
+  profile: {
+    name: "服务端测试",
+    role: "founder",
+    abilities: {
+      insight: 0,
+      deploy: 0,
+      mobilize: 0,
+      strategy: 0,
+      authority: 0,
+      stability: 0,
+      recovery: 0,
+      execution: 5,
+      structure: 0,
+      communication: 0
+    },
+    resources: { energy: 75, trust: 60, influence: 40, capital: 45 }
+  },
+  chapterRecords: [],
+  unlockedChapters: [1],
+  completedSideQuests: [],
+  achievements: [],
+  duelWins: 0,
+  duelLosses: 0,
+  playCount: 0,
+  masteryPoints: 0,
+  decisionHistory: [],
+  duelHistory: [],
+  claimedChallenges: [],
+  assessmentScore: 0,
+  completedRandomEvents: [],
+  completedBranchNodes: [],
+  highPressureMode: false
+};
+
 const server = spawn(process.execPath, ["server/index.mjs"], {
   cwd: root,
   windowsHide: true,
@@ -60,7 +97,7 @@ async function runClient() {
       type: "register",
       name: "服务端测试",
       role: "founder",
-      save: { profile: { abilities: { execution: 5 } } }
+      save: validSave
     })
   );
   const registered = await wait("registered");
@@ -68,7 +105,21 @@ async function runClient() {
     JSON.stringify({
       type: "cloud_save",
       token: registered.token,
-      save: { profile: { abilities: { execution: 9 } } }
+      save: { invalid: true }
+    })
+  );
+  await wait("error");
+  ws.send(
+    JSON.stringify({
+      type: "cloud_save",
+      token: registered.token,
+      save: {
+        ...validSave,
+        profile: {
+          ...validSave.profile,
+          abilities: { ...validSave.profile.abilities, execution: 9 }
+        }
+      }
     })
   );
   await wait("save_ok");
@@ -76,6 +127,13 @@ async function runClient() {
   const board = await wait("leaderboard");
   if (!Array.isArray(board.entries) || board.entries.length === 0) {
     throw new Error("Leaderboard empty");
+  }
+  if (
+    !board.entries.every(
+      (entry) => typeof entry.score === "number" && typeof entry.signature === "string"
+    )
+  ) {
+    throw new Error("Leaderboard entries missing score/signature");
   }
   ws.close();
 }

@@ -27,6 +27,18 @@
 
 > 2026-08-06 已通过 GitHub API（`gh`）直接落地 A、B 两项，无需再手动点控制台。
 
+### 0. GitHub CLI 重新授权（本机未登录时）
+
+```powershell
+gh auth login -h github.com -p https -w --skip-ssh-key --clipboard
+```
+
+完成后确认：
+
+```powershell
+gh auth status
+```
+
 ### A. GitHub Pages 来源（必须）
 1. 打开 `https://github.com/piprot/shengwei-game-starter/settings/pages`
 2. **Source** 设为 **GitHub Actions**
@@ -74,9 +86,11 @@ cd D:/Backup/Documents/shengwei/game-starter
 npm ci
 npm run test:server   # 服务端：register/cloud_save/leaderboard/match 往返
 npm test              # 端到端：Playwright + Edge 走完整主线→1v1
+npm run deploy:check  # Render/Docker/CI 部署前置条件自检
 ```
 
 - `npm run test:server` 通过 = 服务端逻辑绿。
+- `npm run deploy:check` 通过 = Render Blueprint、Dockerfile、CI 注入与生产守卫均就绪。
 - `npm test` 通过 = 前端完整闭环绿。
 - 另：`npm run test:unit` 为核心逻辑单测，`npm run audit` / `npm run content-audit` 为质量审计。
 

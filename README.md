@@ -55,10 +55,15 @@ npm run build
 npm test
 npm run audit
 npm run content-audit
+npm run i18n-audit
+npm run test:i18n-browser
+npm run test:device-screenshots
+npm run test:rtc
 npm run test:server
+npm run deploy:check
 ```
 
-`npm test` 会自动启动 Vite，并完成建档、主线情境、AI 1v1 全流程冒烟验证；`npm run audit` 会检查桌面/手机全页面布局与控制台错误；`npm run content-audit` 会检查章节、情境、选项、情报、角色变体与能力数据完整性；`npm run test:server` 会启动服务端并验证注册、云存档、排行榜、自动匹配与回合转发。
+`npm test` 会自动启动 Vite，并完成建档、主线情境、AI 1v1 全流程冒烟验证；`npm run audit` 会检查桌面/手机全页面布局与控制台错误；`npm run content-audit` 会检查章节、情境、选项、情报、角色变体与能力数据完整性；`npm run i18n-audit` 会检查全部剧情节点、NPC、成就、测评、能力与每日挑战的英文覆盖；`npm run test:i18n-browser` 会验证英文随机事件和角色分岔的真实渲染；`npm run test:device-screenshots` 会生成 720x1280 / 1080x2400 中英文关键页截图；`npm run test:rtc` 会在两个本地浏览器页面之间完成 WebRTC 远程对局；`npm run test:server` 会启动服务端并验证注册、云存档、排行榜、自动匹配与回合转发；`npm run deploy:check` 会检查 Render/Docker/CI 部署前置条件。
 
 ## 远程对战
 

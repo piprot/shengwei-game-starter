@@ -16,6 +16,26 @@ export function renderPowerBoard(
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
   ctx.clearRect(0, 0, width, height);
 
+  const background = ctx.createLinearGradient(0, 0, width, height);
+  background.addColorStop(0, "#111a2a");
+  background.addColorStop(0.55, "#17243a");
+  background.addColorStop(1, "#0d1420");
+  ctx.fillStyle = background;
+  ctx.fillRect(0, 0, width, height);
+
+  const glow = ctx.createRadialGradient(
+    width * 0.5,
+    height * 0.5,
+    10,
+    width * 0.5,
+    height * 0.5,
+    Math.min(width, height) * 0.55
+  );
+  glow.addColorStop(0, "rgba(65, 199, 192, 0.18)");
+  glow.addColorStop(1, "rgba(13, 20, 32, 0)");
+  ctx.fillStyle = glow;
+  ctx.fillRect(0, 0, width, height);
+
   const random = seededRandom(seed);
   const nodes = Array.from({ length: 12 }, (_, index) => {
     const angle = (index / 12) * Math.PI * 2 + random() * 0.3;
@@ -53,16 +73,32 @@ export function renderPowerBoard(
       ctx.beginPath();
       ctx.moveTo(node.x, node.y);
       ctx.lineTo(target.x, target.y);
-      ctx.strokeStyle = "rgba(65, 199, 192, 0.16)";
+      ctx.strokeStyle = "rgba(65, 199, 192, 0.14)";
       ctx.lineWidth = 1;
       ctx.stroke();
+      ctx.beginPath();
+      ctx.setLineDash([2, 6]);
+      ctx.strokeStyle = "rgba(242, 193, 78, 0.12)";
+      ctx.moveTo(node.x, node.y);
+      ctx.lineTo(target.x, target.y);
+      ctx.stroke();
+      ctx.setLineDash([]);
     });
 
+    ctx.shadowColor = node.color;
+    ctx.shadowBlur = 14;
     ctx.beginPath();
     ctx.arc(node.x, node.y, node.size, 0, Math.PI * 2);
     ctx.fillStyle = node.color;
     ctx.fill();
+    ctx.shadowBlur = 0;
     ctx.strokeStyle = "rgba(255,255,255,0.5)";
+    ctx.lineWidth = 1;
+    ctx.stroke();
+
+    ctx.beginPath();
+    ctx.arc(node.x, node.y, node.size + 3, 0, Math.PI * 2);
+    ctx.strokeStyle = "rgba(255,255,255,0.12)";
     ctx.lineWidth = 1;
     ctx.stroke();
 
@@ -75,12 +111,15 @@ export function renderPowerBoard(
     }
   });
 
+  ctx.shadowColor = "rgba(0, 0, 0, 0.8)";
+  ctx.shadowBlur = 8;
   ctx.fillStyle = "rgba(231, 238, 242, 0.9)";
   ctx.font = "700 13px 'Microsoft YaHei', sans-serif";
   ctx.fillText(title, 16, 22);
   ctx.fillStyle = "rgba(159, 179, 200, 0.85)";
   ctx.font = "12px 'Microsoft YaHei', sans-serif";
   ctx.fillText(caption, 16, 42);
+  ctx.shadowBlur = 0;
 }
 
 function seededRandom(seed: number): () => number {

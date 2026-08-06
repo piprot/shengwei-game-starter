@@ -23,22 +23,42 @@ export async function initDb() {
       name TEXT NOT NULL,
       role TEXT NOT NULL,
       save JSONB NOT NULL,
+      score INTEGER NOT NULL DEFAULT 0,
+      score_sig TEXT NOT NULL DEFAULT '',
       updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
     );
   `);
+  await pool.query(`
+    ALTER TABLE accounts
+    ADD COLUMN IF NOT EXISTS score INTEGER NOT NULL DEFAULT 0
+  `);
+  await pool.query(`
+    ALTER TABLE accounts
+    ADD COLUMN IF NOT EXISTS score_sig TEXT NOT NULL DEFAULT ''
+  `);
 }
 
-export async function upsertAccount(token, name, role, save) {
+export async function dbHealth() {
+  if (!pool) return false;
+  try {
+    await pool.query("SELECT 1");
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+export async function upsertAccount(token, name, role, save, score, scoreSig) {
   if (!pool) return null;
   const result = await pool.query(
     `
-      INSERT INTO accounts (token, name, role, save, updated_at)
-      VALUES ($1, $2, $3, $4::jsonb, now())
+      INSERT INTO accounts (token, name, role, save, score, score_sig, updated_at)
+      VALUES ($1, $2, $3, $4::jsonb, $5, $6, now())
       ON CONFLICT (token)
-      DO UPDATE SET name = EXCLUDED.name, role = EXCLUDED.role, save = EXCLUDED.save, updated_at = now()
-      RETURNING token, name, role, save, updated_at
+      DO UPDATE SET name = EXCLUDED.name, role = EXCLUDED.role, save = EXCLUDED.save, score = EXCLUDED.score, score_sig = EXCLUDED.score_sig, updated_at = now()
+      RETURNING token, name, role, save, score, score_sig, updated_at
     `,
-    [token, name, role, JSON.stringify(save)]
+    [token, name, role, JSON.stringify(save), score, scoreSig]
   );
   return result.rows[0] || null;
 }
@@ -46,7 +66,7 @@ export async function upsertAccount(token, name, role, save) {
 export async function getAccount(token) {
   if (!pool) return null;
   const result = await pool.query(
-    `SELECT token, name, role, save, updated_at FROM accounts WHERE token = $1`,
+    `SELECT token, name, role, save, score, score_sig, updated_at FROM accounts WHERE token = $1`,
     [token]
   );
   return result.rows[0] || null;
@@ -56,7 +76,7 @@ export async function leaderboard(limit = 50) {
   if (!pool) return [];
   const result = await pool.query(
     `
-      SELECT name, role, save, updated_at
+      SELECT name, role, save, score, score_sig, updated_at
       FROM accounts
       LIMIT 500
     `,
@@ -66,11 +86,10 @@ export async function leaderboard(limit = 50) {
     .map((row) => ({
       name: row.name,
       role: row.role,
-      score: Object.values(row.save?.profile?.abilities || {}).reduce(
-        (sum, value) => sum + abilityLevel(Number(value || 0)),
-        0
-      ),
-      updatedAt: row.updated_at
+      score: Number(row.score ?? 0),
+      signature: row.score_sig || "",
+      updatedAt: row.updated_at,
+      save: row.save
     }))
     .sort((a, b) => b.score - a.score)
     .slice(0, limit);

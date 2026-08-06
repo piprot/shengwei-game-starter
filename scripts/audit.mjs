@@ -105,6 +105,11 @@ try {
     await page.waitForSelector("text=领导力轨迹");
     const reportOverflow = await overflow(page);
     await page.click("text=返回主页");
+    await page.keyboard.press("a");
+    await page.waitForSelector("text=综合能力值");
+    const shortcutAbilityOverflow = await overflow(page);
+    await page.keyboard.press("h");
+    await page.waitForSelector("text=权变之路");
 
     await page.click("text=进入 1v1");
     await page.waitForSelector("text=谁能在复杂局势中做出更好的判断");
@@ -130,6 +135,37 @@ try {
     await page.waitForSelector("text=Current Test");
     const englishStoryOverflow = await overflow(page);
     const englishErrors = errors.length - errorsBeforeEnglish;
+    const accessibility = await page.evaluate(() => {
+      const buttons = Array.from(document.querySelectorAll("button"));
+      const missingButtonNames = buttons.filter(
+        (button) =>
+          !button.textContent.trim() &&
+          !button.getAttribute("aria-label") &&
+          !button.getAttribute("aria-labelledby")
+      ).length;
+      const missingCanvasLabels = Array.from(
+        document.querySelectorAll("canvas")
+      ).filter((canvas) => !canvas.getAttribute("aria-label")).length;
+      const missingMainLabels = Array.from(
+        document.querySelectorAll("main")
+      ).filter((main) => !main.getAttribute("aria-label")).length;
+      return {
+        missingButtonNames,
+        missingCanvasLabels,
+        missingMainLabels,
+        mainCount: document.querySelectorAll("main").length
+      };
+    });
+    if (
+      accessibility.missingButtonNames > 0 ||
+      accessibility.missingCanvasLabels > 0 ||
+      accessibility.missingMainLabels > 0 ||
+      accessibility.mainCount === 0
+    ) {
+      throw new Error(
+        `Accessibility audit failed: ${JSON.stringify(accessibility)}`
+      );
+    }
 
     results.push({
       size: size.name,
@@ -166,7 +202,8 @@ try {
       reportOverflow > 0 ||
       duelOverflow > 0 ||
       englishMapOverflow > 0 ||
-      englishStoryOverflow > 0
+      englishStoryOverflow > 0 ||
+      shortcutAbilityOverflow > 0
     ) {
       throw new Error(
         `${size.name} horizontal overflow detected: ${JSON.stringify({
@@ -177,7 +214,8 @@ try {
           report: reportOverflow,
           duel: duelOverflow,
           englishMap: englishMapOverflow,
-          englishStory: englishStoryOverflow
+          englishStory: englishStoryOverflow,
+          shortcutAbility: shortcutAbilityOverflow
         })}`
       );
     }
