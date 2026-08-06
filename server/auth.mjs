@@ -1,6 +1,9 @@
 import { createHmac, timingSafeEqual } from "node:crypto";
 
 const secret = process.env.JWT_SECRET || "dev-only-secret-change-me";
+const MAX_AGE_MS = Number(
+  process.env.TOKEN_MAX_AGE_MS || 7 * 24 * 60 * 60 * 1000
+);
 
 export function createToken(name, role) {
   const payload = Buffer.from(
@@ -25,7 +28,11 @@ export function verifyToken(token) {
     return null;
   }
   try {
-    return JSON.parse(Buffer.from(payload, "base64url").toString("utf8"));
+    const parsed = JSON.parse(Buffer.from(payload, "base64url").toString("utf8"));
+    if (parsed.iat && Date.now() - Number(parsed.iat) > MAX_AGE_MS) {
+      return null;
+    }
+    return parsed;
   } catch {
     return null;
   }

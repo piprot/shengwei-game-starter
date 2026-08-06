@@ -108,7 +108,7 @@ function accountForToken(token) {
 }
 
 function jsonLeaderboard() {
-  return Object.values(store.accounts)
+  const rows = Object.values(store.accounts)
     .map((account) => ({
       name: account.name,
       role: account.role,
@@ -120,6 +120,10 @@ function jsonLeaderboard() {
     }))
     .sort((a, b) => b.score - a.score)
     .slice(0, 50);
+  return rows.map((row, index) => ({
+    ...row,
+    percentile: Math.round(((rows.length - index - 1) / rows.length) * 100)
+  }));
 }
 
 function abilityLevel(exp) {
@@ -133,9 +137,21 @@ function abilityLevel(exp) {
 }
 
 wss.on("connection", (socket) => {
+  socket.rateCount = 0;
+  socket.rateWindow = Date.now();
   send(socket, { type: "connected", message: "自适应领导力服务已连接" });
 
   socket.on("message", async (raw) => {
+    const now = Date.now();
+    if (now - socket.rateWindow > 10000) {
+      socket.rateCount = 0;
+      socket.rateWindow = now;
+    }
+    socket.rateCount += 1;
+    if (socket.rateCount > 120) {
+      send(socket, { type: "error", message: "消息过于频繁，请稍后再试" });
+      return;
+    }
     let message;
     try {
       message = JSON.parse(String(raw));

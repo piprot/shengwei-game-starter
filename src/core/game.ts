@@ -45,7 +45,8 @@ export const DEFAULT_SAVE: SaveState = {
   claimedChallenges: [],
   assessmentScore: 0,
   completedRandomEvents: [],
-  completedBranchNodes: []
+  completedBranchNodes: [],
+  highPressureMode: false
 };
 
 export function createProfile(name: string, role: RoleId): PlayerProfile {
@@ -126,7 +127,8 @@ function normalizeSave(save: SaveState): SaveState {
       : [],
     completedBranchNodes: Array.isArray(save.completedBranchNodes)
       ? save.completedBranchNodes
-      : []
+      : [],
+    highPressureMode: Boolean(save.highPressureMode)
   };
 }
 
@@ -182,8 +184,13 @@ export function applyStoryChoice(
   for (const [resource, delta] of Object.entries(option.resources) as Array<
     [ResourceKey, number]
   >) {
+    const adjustedDelta = save.highPressureMode
+      ? delta < 0
+        ? Math.round(delta * 1.4)
+        : Math.round(delta * 0.7)
+      : delta;
     save.profile.resources[resource] = clamp(
-      save.profile.resources[resource] + delta,
+      save.profile.resources[resource] + adjustedDelta,
       0,
       100
     );

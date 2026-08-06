@@ -1633,6 +1633,16 @@ h2 {
   line-height: 1.6;
 }
 
+.achievement-unlock {
+  margin: 10px 0;
+  padding: 10px 12px;
+  border: 1px solid rgba(242, 193, 78, 0.45);
+  border-radius: 8px;
+  background: rgba(242, 193, 78, 0.1);
+  color: var(--gold);
+  font-weight: 800;
+}
+
 .outcome-effects {
   display: flex;
   flex-wrap: wrap;

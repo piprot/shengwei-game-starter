@@ -5,7 +5,15 @@ export type RoomServerMessage =
   | { type: "registered"; token: string; account: unknown }
   | { type: "logged_in"; account: unknown }
   | { type: "save_ok" }
-  | { type: "leaderboard"; entries: Array<{ name: string; role: string; score: number }> }
+  | {
+      type: "leaderboard";
+      entries: Array<{
+        name: string;
+        role: string;
+        score: number;
+        percentile?: number;
+      }>;
+    }
   | { type: "room_created"; roomId: string }
   | { type: "match_started"; roomId: string; playerIndex: number; opponentName?: string }
   | { type: "queued" }

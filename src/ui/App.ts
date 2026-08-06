@@ -107,6 +107,7 @@ export class AdaptiveGameApp {
   private storyHintRevealed = false;
   private pendingBranchNodeId?: string;
   private pendingChapterTransition?: number;
+  private lastUnlockedAchievement?: string;
   private lastOutcome?: ChoiceOutcome;
   private lastOutcomeNodeId?: string;
   private duelMode: DuelMode = "ai";
@@ -143,7 +144,12 @@ export class AdaptiveGameApp {
   private roomClient?: RoomClient;
   private cloudToken = localStorage.getItem("adaptive-ascent-cloud-token") || "";
   private cloudStatus = "未连接云端";
-  private cloudEntries: Array<{ name: string; role: string; score: number }> = [];
+  private cloudEntries: Array<{
+    name: string;
+    role: string;
+    score: number;
+    percentile?: number;
+  }> = [];
   private pendingCloudAction: "sync" | "load" | "match" = "sync";
   private usingCloudMatch = false;
   private cloudConflict = false;
@@ -633,6 +639,11 @@ export class AdaptiveGameApp {
               <h3>本角色目标</h3>
               <p>${ROLES[this.save.profile.role].objective}</p>
             </div>
+            <div class="mini-panel">
+              <h3>当前局势摘要</h3>
+              <p>已完成 ${summary.chapterCount}/9 章，支线 ${this.save.completedSideQuests.length}/6，随机事件 ${this.save.completedRandomEvents.length}，最近决策 ${this.latestDecisionText()}。</p>
+            </div>
+            <button data-action="toggle-pressure">${this.save.highPressureMode ? "退出高压模式" : "开启高压模式"}</button>
             <div class="challenge-panel">
               <h3>当日行动任务</h3>
               ${dailyChallenges(this.save)
@@ -996,7 +1007,7 @@ export class AdaptiveGameApp {
                           <span>${index + 1}</span>
                           <strong>${escapeHtml(entry.name)}</strong>
                           <em>${ROLES[entry.role as RoleId]?.shortName ?? entry.role}</em>
-                          <small>${entry.score}</small>
+                          <small>${entry.score}${entry.percentile !== undefined ? ` · P${entry.percentile}` : ""}</small>
                         </div>
                       `
                     )
@@ -1407,6 +1418,7 @@ export class AdaptiveGameApp {
           this.storyHintRevealed = false;
           this.pendingBranchNodeId = undefined;
           this.pendingChapterTransition = undefined;
+          this.lastUnlockedAchievement = undefined;
           this.lastOutcome = undefined;
           this.lastOutcomeNodeId = undefined;
           this.show("story");
@@ -1580,6 +1592,12 @@ export class AdaptiveGameApp {
         }
         break;
       }
+      case "toggle-pressure":
+        this.save.highPressureMode = !this.save.highPressureMode;
+        saveState(this.save);
+        this.audio.ui();
+        this.renderMap();
+        break;
       case "toggle-hint":
         this.storyHintRevealed = !this.storyHintRevealed;
         this.audio.ui();
@@ -1591,6 +1609,7 @@ export class AdaptiveGameApp {
       case "continue-story":
         this.lastOutcome = undefined;
         this.lastOutcomeNodeId = undefined;
+        this.lastUnlockedAchievement = undefined;
         this.pendingBranchNodeId = undefined;
         this.pendingChapterTransition = undefined;
         this.show("map");
@@ -1606,6 +1625,7 @@ export class AdaptiveGameApp {
         this.pendingChapterTransition = undefined;
         this.lastOutcome = undefined;
         this.lastOutcomeNodeId = undefined;
+        this.lastUnlockedAchievement = undefined;
         if (completed && completed < CHAPTERS.length) {
           this.selectedChapter = completed + 1;
         }
@@ -1726,7 +1746,18 @@ export class AdaptiveGameApp {
       return;
     }
     const optionIndex = Number(target.dataset.option);
+    const beforeIds = ACHIEVEMENTS.filter((achievement) =>
+      isAchievementUnlocked(this.save, achievement.id)
+    ).map((achievement) => achievement.id);
     const outcome = applyStoryChoice(this.save, this.storyNodeId, optionIndex);
+    const afterIds = ACHIEVEMENTS.filter((achievement) =>
+      isAchievementUnlocked(this.save, achievement.id)
+    ).map((achievement) => achievement.id);
+    const newAchievementId = afterIds.find((id) => !beforeIds.includes(id));
+    this.lastUnlockedAchievement = newAchievementId
+      ? ACHIEVEMENTS.find((achievement) => achievement.id === newAchievementId)
+          ?.name
+      : undefined;
     const roleNode = getNodeForRole(
       this.save.profile.role,
       this.storyNodeId
@@ -2564,6 +2595,11 @@ export class AdaptiveGameApp {
       <section class="outcome-panel">
         <span class="quality ${option.quality}">${optionQualityLabel(option.quality)}</span>
         <div class="positive-feedback">${encouragement}</div>
+        ${
+          this.lastUnlockedAchievement
+            ? `<div class="achievement-unlock">新成就解锁：${escapeHtml(this.lastUnlockedAchievement)}</div>`
+            : ""
+        }
         <h2>${escapeHtml(option.label)}</h2>
         <p>${escapeHtml(option.feedback)}</p>
         <blockquote>${escapeHtml(option.theory)}</blockquote>
@@ -2596,6 +2632,11 @@ export class AdaptiveGameApp {
       }
     }
     return streak;
+  }
+
+  private latestDecisionText(): string {
+    const last = this.save.decisionHistory[this.save.decisionHistory.length - 1];
+    return last ? optionQualityLabel(last.quality) : "尚未决策";
   }
 
   private nextRankNeed(total: number): number {

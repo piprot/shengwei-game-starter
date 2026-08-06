@@ -62,7 +62,7 @@ export async function leaderboard(limit = 50) {
     `,
     []
   );
-  return result.rows
+  const rows = result.rows
     .map((row) => ({
       name: row.name,
       role: row.role,
@@ -74,6 +74,10 @@ export async function leaderboard(limit = 50) {
     }))
     .sort((a, b) => b.score - a.score)
     .slice(0, limit);
+  return rows.map((row, index) => ({
+    ...row,
+    percentile: Math.round(((rows.length - index - 1) / rows.length) * 100)
+  }));
 }
 
 function abilityLevel(exp) {

@@ -125,6 +125,7 @@ export interface SaveState {
   assessmentScore: number;
   completedRandomEvents: string[];
   completedBranchNodes: string[];
+  highPressureMode: boolean;
 }
 
 export interface ChoiceOutcome {
