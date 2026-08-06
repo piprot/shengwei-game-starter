@@ -41,6 +41,7 @@ import type {
   AbilityId,
   ChapterDef,
   ChoiceOutcome,
+  OptionQuality,
   PlayerProfile,
   ResourceKey,
   RoleId,
@@ -382,6 +383,7 @@ export class AdaptiveGameApp {
                               <span class="option-body">
                                 <strong>${escapeHtml(option.label)}</strong>
                                 <em>${escapeHtml(option.summary)}</em>
+                                <small class="role-move">${this.roleMove(option.quality)}</small>
                               </span>
                             </button>
                           `
@@ -1306,6 +1308,30 @@ export class AdaptiveGameApp {
         <div class="ability-sources">${ability.sources.slice(0, 2).map((source) => `<span>${escapeHtml(source)}</span>`).join("")}</div>
       </div>
     `;
+  }
+
+  private roleMove(quality: OptionQuality): string {
+    const role = this.save.profile.role;
+    const label = ROLES[role].shortName;
+    if (role === "parachute") {
+      return quality === "expert"
+        ? `${label}打法：先诊断权力结构，再公开行动`
+        : quality === "partial"
+          ? `${label}打法：先建立权威，再补关系`
+          : `${label}打法：快速立威，不等待共识`;
+    }
+    if (role === "founder") {
+      return quality === "expert"
+        ? `${label}打法：先验证现金流，再规模化`
+        : quality === "partial"
+          ? `${label}打法：先保交付，再谈体系`
+          : `${label}打法：用创始人权力强推，快速试错`;
+    }
+    return quality === "expert"
+      ? `${label}打法：先建立横向共识，再推动决策`
+      : quality === "partial"
+        ? `${label}打法：先争取关键支持，再尝试落地`
+        : `${label}打法：越级推动，绕过部门阻力`;
   }
 
   private outcomeMarkup(outcome: ChoiceOutcome): string {
