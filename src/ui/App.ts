@@ -835,10 +835,24 @@ export class AdaptiveGameApp {
       balanced:
         "你在激进与保守之间保持了平衡，组织最终获得了一种可解释的稳定，也保留了继续进化的弹性。"
     };
+    const arcLegacy: Record<string, string> = {
+      trust_rebuild:
+        "你救下的个体后来成了组织中最敢表达真实问题的人，这份信任成为变革最深的根基。",
+      resilience:
+        "你在危机中建立的复盘机制，让团队在离开你之后仍能自己修复错误，执行系统真正脱离了个人依赖。"
+    };
+    const legacy = SIDE_QUEST_ARCS.filter((arc) =>
+      arc.nodes.every((nodeId) =>
+        this.save.completedSideQuests.includes(nodeId)
+      )
+    )
+      .map((arc) => arcLegacy[arc.id])
+      .filter(Boolean)
+      .join(" ");
     return `
       <section class="ending-panel">
         <h2>${ROLES[role].name} · ${styleLabels[style]}结局</h2>
-        <p>${endings[role]} ${styleEndings[style]}</p>
+        <p>${endings[role]} ${styleEndings[style]} ${legacy}</p>
       </section>
     `;
   }
