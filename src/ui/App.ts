@@ -299,6 +299,10 @@ export class AdaptiveGameApp {
             </div>
           </div>
           <aside class="map-side">
+            <div class="mini-panel role-objective">
+              <h3>本角色目标</h3>
+              <p>${ROLES[this.save.profile.role].objective}</p>
+            </div>
             <div class="mini-panel">
               <h3>当前进度</h3>
               <strong>${summary.chapterCount} / 9</strong>

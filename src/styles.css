@@ -609,6 +609,13 @@ h2 {
   margin-bottom: 0;
 }
 
+.mini-panel.role-objective {
+  border-color: rgba(242, 193, 78, 0.35);
+  background:
+    linear-gradient(150deg, rgba(242, 193, 78, 0.08), transparent 70%),
+    var(--panel-2);
+}
+
 .story-shell {
   width: min(1180px, 100%);
 }

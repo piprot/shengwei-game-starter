@@ -65,6 +65,12 @@ for (const id of ABILITY_ORDER) {
   }
 }
 
+for (const role of Object.values(ROLES)) {
+  if (!role.objective || !role.lens || role.focusAbilities.length < 4) {
+    problems.push(`${role.id} role objective/lens/focus is incomplete`);
+  }
+}
+
 if (problems.length > 0) {
   console.error("CONTENT AUDIT FAILED");
   console.error(problems.join("\n"));
