@@ -22,6 +22,12 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      # 注入房间服务器地址：优先用仓库 Variable VITE_ROOM_SERVER_URL，
+      # 未设置时兜底到 render.yaml 中定义的服务名 adaptive-ascent-server。
+      # 不注入会导致部署到 GitHub Pages 的公网前端连不上 localhost。
+      - name: Inject room server URL
+        run: echo "VITE_ROOM_SERVER_URL=${{ vars.VITE_ROOM_SERVER_URL || 'wss://adaptive-ascent-server.onrender.com' }}" >> "$GITHUB_ENV"
+
       - name: Build
         run: npm run build
 
@@ -34,8 +40,39 @@ jobs:
           name: game-build
           path: dist
 
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      # 1) 服务端冒烟：启动 server/index.mjs，验证 register/cloud_save/leaderboard/match
+      - name: Server smoke test
+        run: npm run test:server
+
+      # 2) 核心逻辑单元测试（node --experimental-strip-types，无浏览器）
+      - name: Unit tests
+        run: npm run test:unit
+
+      # 3) 端到端冒烟：Playwright + Microsoft Edge 频道
+      - name: Install Playwright browser (Microsoft Edge)
+        run: npx playwright install --with-deps msedge
+
+      - name: End-to-end smoke test
+        run: npm test
+
   deploy:
-    needs: build
+    needs: [build, test]
     runs-on: ubuntu-latest
     permissions:
       contents: read

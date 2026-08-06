@@ -1915,6 +1915,120 @@ export const STORY_NODES: StoryNode[] = [
     ]
   },
   {
+    id: "c8b-parachute",
+    chapterId: 8,
+    title: "空降 · 危机中的第一次隔离",
+    kind: "branch",
+    context:
+      "你作为空降管理者遭遇现金流危机。财务只给了 48 小时，团队开始恐慌。",
+    stake: "你要在信息不全时先隔离风险，再寻找机会。",
+    options: [
+      {
+        label: "先建危机作战室，分三条线处理",
+        summary: "隔离风险、回款、融资三条线同时推进。",
+        quality: "expert",
+        effects: { structure: 3, execution: 2, recovery: 1 },
+        resources: { energy: -7, trust: 6, influence: 6 },
+        feedback: "你没有让恐慌扩散，而是把危机拆成可管理的任务。",
+        theory: "《矛盾论》：抓住主要矛盾，其他问题才能迎刃而解。"
+      },
+      {
+        label: "先公开现金流缺口",
+        summary: "用透明度换取团队信任，共同想办法。",
+        quality: "partial",
+        effects: { communication: 2, mobilize: 2 },
+        resources: { energy: -6, trust: 4, influence: 2 },
+        feedback: "团队开始行动，但恐慌和离职风险也被同步放大。",
+        theory: "《孙子兵法》：上下同欲者胜。"
+      },
+      {
+        label: "先让高层垫资",
+        summary: "把问题交给更有资源的人。",
+        quality: "risk",
+        effects: { strategy: 2 },
+        resources: { energy: -5, trust: -3, influence: -4 },
+        feedback: "你可能拿到了钱，却把主导权也交给了别人。",
+        theory: "《权经》：权乃人授，授为大焉。"
+      }
+    ]
+  },
+  {
+    id: "c8b-founder",
+    chapterId: 8,
+    title: "创业 · 危机中的第一次隔离",
+    kind: "branch",
+    context:
+      "你作为创始人遭遇最大客户暂停付款。账上现金只够一个月，团队开始猜测公司要完。",
+    stake: "你要同时解决现金流和客户关系，而不是只处理一个。",
+    options: [
+      {
+        label: "先隔离客户问题，再盘点回款",
+        summary: "把客户争议和账期问题分开，找出最快回款路径。",
+        quality: "expert",
+        effects: { structure: 3, execution: 2 },
+        resources: { energy: -7, trust: 5, influence: 6 },
+        feedback: "你把危机拆成两条线，团队第一次看到现金流可以恢复的路径。",
+        theory: "《实践论》：从感性材料上升到理性认识。"
+      },
+      {
+        label: "全员一起砍成本",
+        summary: "立即削减一切非必要支出，保住现金。",
+        quality: "partial",
+        effects: { execution: 2 },
+        resources: { energy: -6, trust: 2, influence: 2 },
+        feedback: "成本降了，但团队也看到了你对未来的不安全感。",
+        theory: "《孙子兵法》：兵贵胜，不贵久。"
+      },
+      {
+        label: "只盯最大客户道歉",
+        summary: "把所有精力放在挽回客户上。",
+        quality: "risk",
+        effects: { communication: 2 },
+        resources: { energy: -8, trust: 1, influence: 1 },
+        feedback: "客户可能回来，但其他现金流风险没有被隔离。",
+        theory: "《孙子兵法》：先为不可胜。"
+      }
+    ]
+  },
+  {
+    id: "c8b-highPotential",
+    chapterId: 8,
+    title: "高潜 · 危机中的第一次隔离",
+    kind: "branch",
+    context:
+      "你作为高潜骨干负责的项目被砍预算，团队和供应商同时向你要答案。",
+    stake: "你要在资源收缩时保护核心交付。",
+    options: [
+      {
+        label: "重新定义最小可行交付",
+        summary: "先保住客户最需要的核心结果，再讨论扩展。",
+        quality: "expert",
+        effects: { structure: 3, execution: 2 },
+        resources: { energy: -6, trust: 5, influence: 5 },
+        feedback: "你没有让项目塌掉，而是让团队清楚知道什么必须保住。",
+        theory: "德鲁克：要事优先。"
+      },
+      {
+        label: "先向更高层争取预算",
+        summary: "用项目重要性说服组织恢复资源。",
+        quality: "partial",
+        effects: { strategy: 2 },
+        resources: { energy: -5, trust: 1, influence: 2 },
+        feedback: "你可能争取到资源，但团队仍在等待答案。",
+        theory: "《权经》：携为上，功次之。"
+      },
+      {
+        label: "暂停交付，等待新预算",
+        summary: "避免在资源不足时承诺交付。",
+        quality: "risk",
+        effects: { recovery: 1 },
+        resources: { energy: -3, trust: -5, influence: -4 },
+        feedback: "你保护了团队，却让客户重新评估项目价值。",
+        theory: "《论语》：信而后劳其民。"
+      }
+    ]
+  },
+  {
     id: "r1",
     chapterId: 2,
     title: "电梯偶遇",
@@ -2958,6 +3072,18 @@ export const NODE_INTEL: Record<string, string[]> = {
   "c7b-highPotential": [
     "项目关键人只认可你的口头确认",
     "有一份会议记录模板可以升级为协作地图"
+  ],
+  "c8b-parachute": [
+    "现金流缺口里有一笔可快速催收的应收账款",
+    "财务团队已经准备好三套融资方案"
+  ],
+  "c8b-founder": [
+    "最大客户暂停付款是因为内部审计，不是不满",
+    "账上还有两笔未催收的应收账款"
+  ],
+  "c8b-highPotential": [
+    "预算被砍的部门里有一个可合并项目",
+    "客户最关心的交付模块已经完成 80%"
   ],
   r1: [
     "CEO 最近最担心的是组织是否开始失去方向",
