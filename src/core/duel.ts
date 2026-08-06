@@ -1,12 +1,12 @@
-import { ABILITY_ORDER, ROLES, abilityLevel } from "./abilities";
-import { duelNodes } from "./story";
+import { ABILITY_ORDER, ROLES, abilityLevel } from "./abilities.ts";
+import { duelNodes } from "./story.ts";
 import type {
   AbilityId,
   DuelProfile,
   DuelResult,
   RoleId,
   StoryNode
-} from "./types";
+} from "./types.ts";
 
 export class DuelEngine {
   readonly players: [DuelProfile, DuelProfile];

@@ -17,6 +17,11 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 const DATA_DIR = process.env.DATA_DIR || join(__dirname, "data");
 const DATA_FILE = join(DATA_DIR, "store.json");
 const PORT = Number(process.env.PORT || 8080);
+const MAX_MESSAGE_BYTES = Number(process.env.MAX_MESSAGE_BYTES || 64 * 1024);
+const MAX_SAVE_BYTES = Number(process.env.MAX_SAVE_BYTES || 256 * 1024);
+const ROOM_TTL_MS = Number(process.env.ROOM_TTL_MS || 10 * 60 * 1000);
+const VALID_ROLES = new Set(["parachute", "founder", "highPotential"]);
+const VALID_ROUNDS = new Set([3, 5, 7]);
 
 if (process.env.NODE_ENV === "production" && !process.env.DATABASE_URL) {
   throw new Error("Production requires DATABASE_URL");
@@ -36,14 +41,47 @@ function persist() {
 }
 
 const httpServer = createServer((_request, response) => {
-  response.writeHead(200, { "content-type": "text/plain; charset=utf-8" });
-  response.end("ok");
+  response.writeHead(200, { "content-type": "application/json; charset=utf-8" });
+  response.end(
+    JSON.stringify({
+      status: "ok",
+      db: dbEnabled,
+      uptime: process.uptime()
+    })
+  );
 });
-const wss = new WebSocketServer({ server: httpServer });
+const wss = new WebSocketServer({
+  server: httpServer,
+  maxPayload: MAX_MESSAGE_BYTES
+});
 const rooms = new Map();
 const matchQueue = [];
 
 await initDb();
+
+function cleanName(value) {
+  const name = String(value || "").trim().slice(0, 24);
+  return name || "Player";
+}
+
+function cleanRole(value) {
+  const role = String(value || "highPotential");
+  return VALID_ROLES.has(role) ? role : "highPotential";
+}
+
+function cleanRounds(value) {
+  const rounds = Number(value);
+  return VALID_ROUNDS.has(rounds) ? rounds : 3;
+}
+
+function cleanSave(save) {
+  if (!save || typeof save !== "object" || Array.isArray(save)) return null;
+  try {
+    return JSON.stringify(save).length > MAX_SAVE_BYTES ? null : save;
+  } catch {
+    return null;
+  }
+}
 
 function send(socket, payload) {
   if (socket.readyState === 1) {
@@ -84,6 +122,7 @@ function createRoom(player, rounds) {
     id: roomId,
     rounds: Number(rounds) || 3,
     status: "waiting",
+    createdAt: Date.now(),
     players: []
   };
   rooms.set(roomId, room);
@@ -102,6 +141,17 @@ function tryAutoMatch(player) {
   const room = createRoom(opponent, player.rounds || 3);
   addToRoom(room.id, player);
 }
+
+const roomCleanup = setInterval(() => {
+  const now = Date.now();
+  for (const [roomId, room] of rooms) {
+    if (room.status === "waiting" && now - room.createdAt > ROOM_TTL_MS) {
+      send(room.players[0]?.socket, { type: "room_expired", roomId });
+      leaveRoom(room.players[0]?.socket);
+    }
+  }
+}, 60_000);
+roomCleanup.unref?.();
 
 function accountForToken(token) {
   return store.accounts[token];
@@ -154,7 +204,12 @@ wss.on("connection", (socket) => {
     }
     let message;
     try {
-      message = JSON.parse(String(raw));
+      const text = String(raw);
+      if (Buffer.byteLength(text, "utf8") > MAX_MESSAGE_BYTES) {
+        send(socket, { type: "error", message: "消息过大，请分步操作" });
+        return;
+      }
+      message = JSON.parse(text);
     } catch {
       send(socket, { type: "error", message: "无法解析消息" });
       return;
@@ -162,15 +217,18 @@ wss.on("connection", (socket) => {
 
     switch (message.type) {
       case "register": {
+        const name = cleanName(message.name);
+        const role = cleanRole(message.role);
+        const save = cleanSave(message.save);
         const token = createToken(
-          String(message.name || "玩家"),
-          String(message.role || "highPotential")
+          name,
+          role
         );
         const account = {
           token,
-          name: String(message.name || "玩家"),
-          role: String(message.role || "highPotential"),
-          save: message.save || null
+          name,
+          role,
+          save
         };
         if (dbEnabled) {
           await upsertAccount(
@@ -217,10 +275,15 @@ wss.on("connection", (socket) => {
           send(socket, { type: "error", message: "账号不存在" });
           return;
         }
+        const save = cleanSave(message.save);
+        if (!save) {
+          send(socket, { type: "error", message: "存档格式无效或过大" });
+          return;
+        }
         if (dbEnabled) {
-          await upsertAccount(token, account.name, account.role, message.save);
+          await upsertAccount(token, account.name, account.role, save);
         } else {
-          account.save = message.save;
+          account.save = save;
           account.updatedAt = new Date().toISOString();
           persist();
         }
@@ -235,14 +298,17 @@ wss.on("connection", (socket) => {
         break;
       }
       case "create_room": {
+        const name = cleanName(message.name);
+        const role = cleanRole(message.role);
+        const save = cleanSave(message.save);
         createRoom(
           {
             socket,
-            name: String(message.name || "玩家"),
-            role: String(message.role || "highPotential"),
-            save: message.save || null
+            name,
+            role,
+            save
           },
-          message.rounds
+          cleanRounds(message.rounds)
         );
         break;
       }
@@ -254,30 +320,35 @@ wss.on("connection", (socket) => {
         }
         addToRoom(room.id, {
           socket,
-          name: String(message.name || "玩家"),
-          role: String(message.role || "highPotential"),
-          save: message.save || null
+          name: cleanName(message.name),
+          role: cleanRole(message.role),
+          save: cleanSave(message.save)
         });
         break;
       }
       case "match": {
         tryAutoMatch({
           socket,
-          name: String(message.name || "玩家"),
-          role: String(message.role || "highPotential"),
-          save: message.save || null,
-          rounds: message.rounds
+          name: cleanName(message.name),
+          role: cleanRole(message.role),
+          save: cleanSave(message.save),
+          rounds: cleanRounds(message.rounds)
         });
         break;
       }
       case "pick": {
+        const optionIndex = Number(message.optionIndex);
+        if (![0, 1, 2].includes(optionIndex)) {
+          send(socket, { type: "error", message: "选项索引无效" });
+          return;
+        }
         const player = findPlayer(socket);
         if (!player?.roomId) return;
         const room = roomById(player.roomId);
         if (!room) return;
         const opponent = room.players.find((item) => item.socket !== socket);
         if (opponent) {
-          send(opponent.socket, { type: "pick", optionIndex: message.optionIndex });
+          send(opponent.socket, { type: "pick", optionIndex });
         }
         break;
       }
@@ -333,3 +404,14 @@ function leaveRoom(socket) {
 httpServer.listen(PORT, () => {
   console.log(`Adaptive Ascent server listening on ws://127.0.0.1:${PORT}`);
 });
+
+function shutdown(signal) {
+  console.log(`Adaptive Ascent server shutting down (${signal})`);
+  clearInterval(roomCleanup);
+  wss.close();
+  httpServer.close(() => process.exit(0));
+  setTimeout(() => process.exit(1), 5000).unref();
+}
+
+process.on("SIGTERM", () => shutdown("SIGTERM"));
+process.on("SIGINT", () => shutdown("SIGINT"));

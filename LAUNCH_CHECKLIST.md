@@ -23,22 +23,30 @@
 
 ---
 
-## 二、需在 GitHub 仓库控制台操作（你来做 ⏳）
+## 二、GitHub 仓库控制台（A/B 已完成 ✅，C 待 Render）
+
+> 2026-08-06 已通过 GitHub API（`gh`）直接落地 A、B 两项，无需再手动点控制台。
 
 ### A. GitHub Pages 来源（必须）
 1. 打开 `https://github.com/piprot/shengwei-game-starter/settings/pages`
 2. **Source** 设为 **GitHub Actions**
 3. 未设置时，`deploy` job 会跳过/失败，Pages 不会更新。
 
+✅ **2026-08-06 已确认**：`gh api /repos/.../pages` 返回 `"build_type":"workflow"`，即 Source 已是 GitHub Actions，无需再操作。
+
 ### B. 仓库变量（推荐，可改 URL 无需改代码）
 1. `Settings → Secrets and variables → Actions → Variables`
 2. 新增：`VITE_ROOM_SERVER_URL` = `wss://adaptive-ascent-server.onrender.com`
 3. 不设也能跑（CI 有兜底默认值），但设了之后换域名/服务名不用改 `ci.yml`。
 
+✅ **2026-08-06 已写入**：`gh variable set VITE_ROOM_SERVER_URL --repo piprot/shengwei-game-starter --body "wss://adaptive-ascent-server.onrender.com"` 执行成功，`gh variable list` 已可见。
+
 ### C. 仓库 Secrets（Render 自动重部署用）
 1. `Settings → Secrets and variables → Actions → Secrets`
 2. 新增：`RENDER_DEPLOY_HOOK_URL` = <Render 控制台 Deploy Hooks 复制的 URL>
 3. 不填则 `render-deploy.yml` 不会触发 Render 重部署（首次部署仍由 Blueprint 完成）。
+
+⏳ **待 Render 导入 Blueprint 并创建 Deploy Hook 后回填**（见三·6）。此 Secret 的值只能从 Render 控制台拿到，无法用 API 预填。你复制好 Hook URL 后可直接贴给我，我用 `gh secret set RENDER_DEPLOY_HOOK_URL --repo piprot/shengwei-game-starter --body "<URL>"` 写入；或你自己填也行。
 
 ---
 

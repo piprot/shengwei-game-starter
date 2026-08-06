@@ -126,6 +126,12 @@ export interface SaveState {
   completedRandomEvents: string[];
   completedBranchNodes: string[];
   highPressureMode: boolean;
+  /** 难度档位：标准 / 高压 / 极限。驱动资源缩放、回合时限与突发干扰。 */
+  difficulty: "normal" | "pressure" | "extreme";
+  /** 最近一次本地保存的时间戳（毫秒）。用于云端同步冲突判定。 */
+  lastSavedAt?: number;
+  /** 存档核心进度的内容哈希。用于云端同步冲突判定（同游玩次数但内容不同也能识别）。 */
+  saveHash?: string;
 }
 
 export interface ChoiceOutcome {

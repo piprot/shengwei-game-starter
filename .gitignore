@@ -3,3 +3,6 @@ dist/
 .vite/
 *.log
 server/data/
+
+# build workaround artifacts (sandbox safe-delete shim)
+dist.bak-*/

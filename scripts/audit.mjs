@@ -113,6 +113,24 @@ try {
     await page.waitForSelector(".duel-options");
     const duelOverflow = await overflow(page);
 
+    const errorsBeforeEnglish = errors.length;
+    await page.goto(url, { waitUntil: "networkidle" });
+    if ((await page.locator("text=Adaptive Ascent").count()) === 0) {
+      await page.click("[data-action=toggle-language]");
+    }
+    await page.waitForSelector("text=Adaptive Ascent");
+    const htmlLang = await page.evaluate(() => document.documentElement.lang);
+    if (htmlLang !== "en") {
+      throw new Error(`English mode did not set html lang, got ${htmlLang}`);
+    }
+    await page.click("button.primary[data-action=open-map]");
+    await page.waitForSelector("text=Diagnose");
+    const englishMapOverflow = await overflow(page);
+    await page.click("text=First Week");
+    await page.waitForSelector("text=Current Test");
+    const englishStoryOverflow = await overflow(page);
+    const englishErrors = errors.length - errorsBeforeEnglish;
+
     results.push({
       size: size.name,
       overflow: {
@@ -125,7 +143,19 @@ try {
       },
       errors: errors.length
     });
-    if (errors.length > 0) {
+    results.push({
+      size: `${size.name}-en`,
+      overflow: {
+        menu: 0,
+        map: englishMapOverflow,
+        story: englishStoryOverflow,
+        ability: 0,
+        report: 0,
+        duel: 0
+      },
+      errors: englishErrors
+    });
+    if (errors.length > 0 || englishErrors > 0) {
       throw new Error(`${size.name} page errors: ${errors.join(" | ")}`);
     }
     if (
@@ -134,7 +164,9 @@ try {
       storyOverflow > 0 ||
       abilityOverflow > 0 ||
       reportOverflow > 0 ||
-      duelOverflow > 0
+      duelOverflow > 0 ||
+      englishMapOverflow > 0 ||
+      englishStoryOverflow > 0
     ) {
       throw new Error(
         `${size.name} horizontal overflow detected: ${JSON.stringify({
@@ -143,7 +175,9 @@ try {
           story: storyOverflow,
           ability: abilityOverflow,
           report: reportOverflow,
-          duel: duelOverflow
+          duel: duelOverflow,
+          englishMap: englishMapOverflow,
+          englishStory: englishStoryOverflow
         })}`
       );
     }

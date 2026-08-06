@@ -13,6 +13,8 @@
 - WebRTC 信令转发：`signal`
 - 本地 JSON 持久化：`server/data/store.json`
 - PostgreSQL 正式存储：配置 `DATABASE_URL` 后自动使用 `server/db.mjs`
+- 健康检查：`GET /` 返回 `{ status: "ok", db, uptime }`
+- 基础生产化：消息大小限制、输入清洗、房间 TTL、优雅退出
 
 ## 本地运行
 
@@ -61,12 +63,19 @@ npm run test:server
 
 ## 安全与生产化
 
-上线前必须补齐：
+已补齐：
 
-- Token 签名与刷新
+- Token HMAC 签名与过期校验
+- WebSocket 消息大小限制与 JSON 解析保护
+- 玩家名、角色、回合数、存档格式与大小校验
+- 等待房间过期清理
+- 优雅关闭与健康检查
+
+上线前仍需补齐：
+
+- Token 刷新与会话撤销
 - HTTPS / WSS
-- 房间生命周期清理
-- 数据校验与限流
+- 按 IP/账号的更细粒度限流
 - 数据库迁移与备份
 - 排行榜防刷
 

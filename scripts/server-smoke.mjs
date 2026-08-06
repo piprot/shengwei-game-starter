@@ -129,6 +129,10 @@ async function runMatchTest() {
 
 try {
   await waitForServer();
+  const health = await (await fetch(`http://127.0.0.1:${port}`)).json();
+  if (health.status !== "ok") {
+    throw new Error("Health endpoint did not return ok");
+  }
   await runClient();
   await runMatchTest();
   console.log("PASS server smoke test");

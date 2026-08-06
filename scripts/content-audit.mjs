@@ -17,6 +17,23 @@ import { ASSESSMENT_QUESTIONS } from "../src/core/assessment.ts";
 import { ACHIEVEMENTS } from "../src/core/achievements.ts";
 import { NPCS } from "../src/core/npcs.ts";
 import { ROLE_OPTION_SETS } from "../src/core/roleOptions.ts";
+import {
+  ABILITY_EN,
+  ACHIEVEMENT_EN,
+  BRANCH_NODE_EN,
+  CHAPTER_EN,
+  CHAPTER_REFLECTION_EN,
+  CHALLENGE_EN,
+  MAIN_NODE_EN,
+  MAIN_NODE_THEORY_EN,
+  NPC_EN,
+  RANDOM_NODE_EN,
+  RESOURCE_EN,
+  ROLE_EN,
+  ROLE_OPTION_EN,
+  SIDE_ARC_EN,
+  SIDE_NODE_EN
+} from "../src/core/translations.ts";
 
 const mainNodes = STORY_NODES.filter((node) => node.kind === "main");
 const sideNodes = STORY_NODES.filter((node) => node.kind === "side");
@@ -29,6 +46,9 @@ if (CHAPTERS.length !== 9) {
 for (const chapter of CHAPTERS) {
   if (!CHAPTER_REFLECTIONS[chapter.id]) {
     problems.push(`chapter ${chapter.id} missing reflection`);
+  }
+  if (!CHAPTER_EN[chapter.id]?.title || !CHAPTER_EN[chapter.id]?.subtitle) {
+    problems.push(`chapter ${chapter.id} missing English title/subtitle`);
   }
 }
 if (mainNodes.length !== 18) {
@@ -88,6 +108,9 @@ for (const node of mainNodes) {
 
 for (const id of ABILITY_ORDER) {
   const ability = ABILITIES[id];
+  if (!ABILITY_EN[id]?.name || !ABILITY_EN[id]?.tagline) {
+    problems.push(`${id} missing English ability text`);
+  }
   if (ability.subSkills.length < 4) {
     problems.push(`${id} must have at least 4 sub-skills`);
   }
@@ -97,8 +120,107 @@ for (const id of ABILITY_ORDER) {
 }
 
 for (const role of Object.values(ROLES)) {
+  if (!ROLE_EN[role.id]?.name || !ROLE_EN[role.id]?.lens || !ROLE_EN[role.id]?.objective) {
+    problems.push(`${role.id} missing English role text`);
+  }
   if (!role.objective || !role.lens || role.focusAbilities.length < 4) {
     problems.push(`${role.id} role objective/lens/focus is incomplete`);
+  }
+}
+
+for (const key of ["energy", "trust", "influence", "capital"]) {
+  if (!RESOURCE_EN[key]) {
+    problems.push(`resource ${key} missing English label`);
+  }
+}
+
+for (const node of mainNodes) {
+  const en = MAIN_NODE_EN[node.id];
+  if (!en?.title || !en?.context || !en?.stake) {
+    problems.push(`${node.id} missing English scenario text`);
+  }
+  if (
+    !MAIN_NODE_THEORY_EN[node.id] ||
+    MAIN_NODE_THEORY_EN[node.id].length !== node.options.length
+  ) {
+    problems.push(`${node.id} missing English theory translations`);
+  }
+}
+
+for (const node of sideNodes) {
+  const en = SIDE_NODE_EN[node.id];
+  if (!en?.title || !en?.context || !en?.stake || en.intel.length < 2) {
+    problems.push(`${node.id} missing English side scenario text`);
+  }
+  if (
+    !en?.options ||
+    en.options.length !== node.options.length ||
+    en.options.some((item) => !item.label || !item.summary || !item.feedback || !item.theory)
+  ) {
+    problems.push(`${node.id} missing English side option text`);
+  }
+}
+
+for (const node of STORY_NODES.filter((item) => item.kind === "branch")) {
+  const en = BRANCH_NODE_EN[node.id];
+  if (!en?.title || !en?.context || !en?.stake) {
+    problems.push(`${node.id} missing English branch scenario text`);
+  }
+}
+
+for (const node of STORY_NODES.filter((item) => item.kind === "random")) {
+  const en = RANDOM_NODE_EN[node.id];
+  if (!en?.title || !en?.context || !en?.stake || en.intel.length < 2) {
+    problems.push(`${node.id} missing English random event text`);
+  }
+  if (
+    !en?.options ||
+    en.options.length !== node.options.length ||
+    en.options.some((item) => !item.label || !item.summary || !item.feedback || !item.theory)
+  ) {
+    problems.push(`${node.id} missing English random event option text`);
+  }
+}
+
+for (const arc of SIDE_QUEST_ARCS) {
+  const en = SIDE_ARC_EN[arc.id];
+  if (!en?.title || !en?.summary || !en?.intro || !en?.conclusion) {
+    problems.push(`${arc.id} missing English arc text`);
+  }
+}
+
+for (const npc of NPCS) {
+  const en = NPC_EN[npc.id];
+  if (!en?.name || !en?.title || !en?.description) {
+    problems.push(`${npc.id} missing English NPC text`);
+  }
+}
+
+for (const achievement of ACHIEVEMENTS) {
+  const en = ACHIEVEMENT_EN[achievement.id];
+  if (!en?.name || !en?.description) {
+    problems.push(`${achievement.id} missing English achievement text`);
+  }
+}
+
+for (const id of ["expert_3", "side_1", "duel_1", "chapter_1", "rank_20"]) {
+  if (!CHALLENGE_EN[id]?.title || !CHALLENGE_EN[id]?.description) {
+    problems.push(`${id} missing English challenge text`);
+  }
+}
+
+for (const chapter of CHAPTERS) {
+  if (!CHAPTER_REFLECTION_EN[chapter.id]) {
+    problems.push(`chapter ${chapter.id} missing English reflection`);
+  }
+}
+
+for (const role of ["parachute", "founder", "highPotential"]) {
+  for (const quality of ["expert", "partial", "risk"]) {
+    const set = ROLE_OPTION_EN[role]?.[quality];
+    if (!set || set.length !== 3 || set.some((item) => !item.label || !item.summary || !item.feedback)) {
+      problems.push(`${role}/${quality} missing English role option text`);
+    }
   }
 }
 
@@ -175,6 +297,19 @@ console.log(
       intelEntries: Object.keys(NODE_INTEL).length,
       roleVariantNodes: Object.keys(ROLE_NODE_VARIANTS).length,
       abilities: ABILITY_ORDER.length,
+      translatedMainNodes: mainNodes.filter((node) => MAIN_NODE_EN[node.id]).length,
+      translatedSideNodes: sideNodes.filter((node) => SIDE_NODE_EN[node.id]).length,
+      translatedBranchNodes: STORY_NODES.filter(
+        (node) => node.kind === "branch" && BRANCH_NODE_EN[node.id]
+      ).length,
+      translatedRandomNodes: STORY_NODES.filter(
+        (node) => node.kind === "random" && RANDOM_NODE_EN[node.id]
+      ).length,
+      translatedNpcs: NPCS.filter((npc) => NPC_EN[npc.id]).length,
+      translatedAchievements: ACHIEVEMENTS.filter(
+        (achievement) => ACHIEVEMENT_EN[achievement.id]
+      ).length,
+      translatedRoleOptions: Object.keys(ROLE_OPTION_EN).length * 9,
       subSkills: ABILITY_ORDER.reduce(
         (sum, id) => sum + ABILITIES[id].subSkills.length,
         0

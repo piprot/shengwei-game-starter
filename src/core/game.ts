@@ -6,8 +6,8 @@ import {
   createDefaultAbilities,
   rankForTotal,
   totalAbilityLevels
-} from "./abilities";
-import { getNode } from "./story";
+} from "./abilities.ts";
+import { getNode } from "./story.ts";
 import type {
   AbilityId,
   ChoiceOutcome,
@@ -19,9 +19,19 @@ import type {
   RoleId,
   SaveState,
   StoryOption
-} from "./types";
+} from "./types.ts";
 
 const SAVE_KEY = "adaptive-ascent-save-v1";
+
+/** 难度档位对应的资源缩放系数（负面 delta 放大、正面 delta 收窄）。 */
+export const PRESSURE_FACTORS: Record<
+  "normal" | "pressure" | "extreme",
+  { neg: number; pos: number }
+> = {
+  normal: { neg: 1, pos: 1 },
+  pressure: { neg: 1.4, pos: 0.7 },
+  extreme: { neg: 1.8, pos: 0.5 }
+};
 
 export const DEFAULT_SAVE: SaveState = {
   version: 1,
@@ -46,7 +56,8 @@ export const DEFAULT_SAVE: SaveState = {
   assessmentScore: 0,
   completedRandomEvents: [],
   completedBranchNodes: [],
-  highPressureMode: false
+  highPressureMode: false,
+  difficulty: "normal"
 };
 
 export function createProfile(name: string, role: RoleId): PlayerProfile {
@@ -73,7 +84,7 @@ export function loadSave(): SaveState {
     }
     const parsed = JSON.parse(raw) as SaveState;
     if (parsed.version !== DEFAULT_SAVE.version) {
-      return structuredClone(DEFAULT_SAVE);
+      return migrateSave(parsed);
     }
     return normalizeSave(parsed);
   } catch {
@@ -128,12 +139,64 @@ function normalizeSave(save: SaveState): SaveState {
     completedBranchNodes: Array.isArray(save.completedBranchNodes)
       ? save.completedBranchNodes
       : [],
-    highPressureMode: Boolean(save.highPressureMode)
+    highPressureMode: Boolean(save.highPressureMode),
+    difficulty:
+      save.difficulty === "pressure" || save.difficulty === "extreme"
+        ? save.difficulty
+        : "normal"
   };
 }
 
+/**
+ * 计算存档核心进度的内容哈希（确定性）。
+ * 刻意排除 lastSavedAt / saveHash 本身，避免每次保存都改变哈希。
+ */
+export function computeSaveHash(save: SaveState): string {
+  const projection = {
+    v: save.version,
+    p: save.profile,
+    cr: save.chapterRecords,
+    uc: save.unlockedChapters,
+    csq: save.completedSideQuests,
+    ach: save.achievements,
+    dw: save.duelWins,
+    dl: save.duelLosses,
+    pc: save.playCount,
+    mp: save.masteryPoints,
+    dh: (save.decisionHistory ?? []).map((d) => [d.nodeId, d.optionIndex, d.qualityScore]),
+    duh: (save.duelHistory ?? []).length,
+    cc: save.claimedChallenges,
+    as: save.assessmentScore,
+    cre: save.completedRandomEvents,
+    cbn: save.completedBranchNodes,
+    diff: save.difficulty
+  };
+  const json = JSON.stringify(projection);
+  let hash = 5381;
+  for (let i = 0; i < json.length; i += 1) {
+    hash = ((hash << 5) + hash + json.charCodeAt(i)) | 0;
+  }
+  return (hash >>> 0).toString(36);
+}
+
 export function saveState(save: SaveState): void {
+  save.lastSavedAt = Date.now();
+  save.saveHash = computeSaveHash(save);
   localStorage.setItem(SAVE_KEY, JSON.stringify(save));
+}
+
+/**
+ * 版本不符时向前/向后兼容迁移：保留已知字段、默认缺失字段、
+ * 保留未知字段（旧存档遇到新增字段不再被清空）。
+ */
+export function migrateSave(parsed: any): SaveState {
+  const base = normalizeSave({ ...structuredClone(DEFAULT_SAVE), ...parsed } as SaveState);
+  const result: any = { ...base };
+  for (const key of Object.keys(parsed)) {
+    if (!(key in base)) result[key] = parsed[key];
+  }
+  result.version = DEFAULT_SAVE.version;
+  return result as SaveState;
 }
 
 export function resetSave(): SaveState {
@@ -144,10 +207,8 @@ export function resetSave(): SaveState {
 
 export function importSaveJson(text: string): SaveState {
   const parsed = JSON.parse(text) as SaveState;
-  if (parsed.version !== DEFAULT_SAVE.version) {
-    throw new Error("存档版本不匹配，无法导入");
-  }
-  const save = normalizeSave(parsed);
+  const save =
+    parsed.version === DEFAULT_SAVE.version ? normalizeSave(parsed) : migrateSave(parsed);
   saveState(save);
   return save;
 }
@@ -184,11 +245,17 @@ export function applyStoryChoice(
   for (const [resource, delta] of Object.entries(option.resources) as Array<
     [ResourceKey, number]
   >) {
-    const adjustedDelta = save.highPressureMode
-      ? delta < 0
-        ? Math.round(delta * 1.4)
-        : Math.round(delta * 0.7)
-      : delta;
+    const effectiveDifficulty =
+      save.difficulty !== "normal"
+        ? save.difficulty
+        : save.highPressureMode
+          ? "pressure"
+          : "normal";
+    const factor = PRESSURE_FACTORS[effectiveDifficulty];
+    const adjustedDelta =
+      delta < 0
+        ? Math.round(delta * factor.neg)
+        : Math.round(delta * factor.pos);
     save.profile.resources[resource] = clamp(
       save.profile.resources[resource] + adjustedDelta,
       0,
@@ -442,4 +509,35 @@ export function optionQualityLabel(quality: OptionQuality): string {
   if (quality === "expert") return "专家级应对";
   if (quality === "partial") return "部分有效";
   return "高风险应对";
+}
+
+export type CloudConflictResolution =
+  | "local-newer"
+  | "remote-newer"
+  | "conflict"
+  | "equal"
+  | "no-remote";
+
+/**
+ * 云端同步冲突判定：用「时间戳 + 内容哈希」双校验。
+ * 相比原先只比 playCount，能在「同一游玩次数但内容不同」时正确识别冲突，
+ * 避免本地无脑覆盖远端进度。
+ */
+export function resolveCloudConflict(
+  local: SaveState | null,
+  remote: SaveState | null
+): CloudConflictResolution {
+  if (!remote) return "no-remote";
+  if (!local) return "remote-newer";
+  const localTime = local.lastSavedAt ?? 0;
+  const remoteTime = remote.lastSavedAt ?? 0;
+  if (remoteTime > localTime) return "remote-newer";
+  if (localTime > remoteTime) return "local-newer";
+  // 时间戳相同或缺失 → 退化为内容哈希 / playCount
+  if (local.saveHash && remote.saveHash) {
+    return local.saveHash === remote.saveHash ? "equal" : "conflict";
+  }
+  if (remote.playCount > local.playCount) return "remote-newer";
+  if (local.playCount > remote.playCount) return "local-newer";
+  return "conflict";
 }

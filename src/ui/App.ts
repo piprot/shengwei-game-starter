@@ -33,6 +33,7 @@ import {
   profileSummary,
   recordDuelResult,
   resetSave,
+  resolveCloudConflict,
   saveState
 } from "../core/game";
 import {
@@ -70,6 +71,23 @@ import { NPCS, npcRelation } from "../core/npcs";
 import { dailyChallenges } from "../core/challenges";
 import { ROLE_OPTION_SETS } from "../core/roleOptions";
 import { uiString, type Language } from "../core/i18n";
+import {
+  ABILITY_EN,
+  ACHIEVEMENT_EN,
+  BRANCH_NODE_EN,
+  CHAPTER_EN,
+  CHAPTER_REFLECTION_EN,
+  CHALLENGE_EN,
+  MAIN_NODE_EN,
+  MAIN_NODE_THEORY_EN,
+  NPC_EN,
+  RANDOM_NODE_EN,
+  RESOURCE_EN,
+  ROLE_OPTION_EN,
+  ROLE_EN,
+  SIDE_ARC_EN,
+  SIDE_NODE_EN
+} from "../core/translations";
 import { renderAbilityRadar } from "./charts";
 import { renderPowerBoard } from "./art";
 
@@ -154,6 +172,13 @@ export class AdaptiveGameApp {
   private usingCloudMatch = false;
   private cloudConflict = false;
   private cloudRemoteSave?: SaveState;
+  // 高压/极限模式的回合时限与突发干扰状态
+  private roundTimerId?: number;
+  private roundDeadline = 0;
+  private roundDurationMs = 0;
+  private activeDecisionNodeId?: string;
+  private interferenceText?: string;
+  private lastTimedOut = false;
 
   constructor(root: HTMLElement) {
     this.root = root;
@@ -186,13 +211,228 @@ export class AdaptiveGameApp {
     }
   }
 
+  private stopRoundTimer(): void {
+    if (this.roundTimerId !== undefined) {
+      window.clearInterval(this.roundTimerId);
+      this.roundTimerId = undefined;
+    }
+  }
+
   show(view: View): void {
+    this.stopRoundTimer();
     this.view = view;
     this.render();
   }
 
   private t(key: Parameters<typeof uiString>[1]): string {
     return uiString(this.language, key);
+  }
+
+  private chapterDisplay(chapter: ChapterDef): ChapterDef {
+    if (this.language !== "en") return chapter;
+    const en = CHAPTER_EN[chapter.id];
+    return en ? { ...chapter, title: en.title, subtitle: en.subtitle } : chapter;
+  }
+
+  private abilityDisplay(id: AbilityId): { name: string; tagline: string } {
+    const ability = ABILITIES[id];
+    const en = ABILITY_EN[id];
+    return this.language === "en" && en
+      ? { name: en.name, tagline: en.tagline }
+      : { name: ability.name, tagline: ability.tagline };
+  }
+
+  private roleDisplay(role: RoleId): { name: string; shortName: string } {
+    const def = ROLES[role];
+    const en = ROLE_EN[role];
+    return this.language === "en" && en
+      ? { name: en.name, shortName: en.shortName }
+      : { name: def.name, shortName: def.shortName };
+  }
+
+  private resourceDisplay(key: ResourceKey): string {
+    return this.language === "en" ? RESOURCE_EN[key] : RESOURCE_NAMES[key];
+  }
+
+  private storyNodeDisplay(node: StoryNode): StoryNode {
+    if (this.language !== "en") return node;
+    if (node.kind === "side") {
+      const side = SIDE_NODE_EN[node.id];
+      if (!side) return node;
+      return {
+        ...node,
+        title: side.title,
+        context: side.context,
+        stake: side.stake,
+        options: node.options.map((option, index) => ({
+          ...option,
+          ...(side.options[index] ?? {})
+        }))
+      };
+    }
+    if (node.kind === "random") {
+      const random = RANDOM_NODE_EN[node.id];
+      if (!random) return node;
+      return {
+        ...node,
+        title: random.title,
+        context: random.context,
+        stake: random.stake,
+        options: node.options.map((option, index) => ({
+          ...option,
+          ...(random.options[index] ?? {})
+        }))
+      };
+    }
+    if (node.kind === "branch") {
+      const branch = BRANCH_NODE_EN[node.id];
+      if (!branch) return node;
+      return {
+        ...node,
+        title: branch.title,
+        context: branch.context,
+        stake: branch.stake,
+        options: node.options.map((option, index) => {
+          const set = ROLE_OPTION_EN[this.save.profile.role][option.quality];
+          const sourceSet =
+            ROLE_OPTION_SETS[this.save.profile.role][option.quality];
+          const sourceIndex = sourceSet.findIndex(
+            (view) => view.label === option.label
+          );
+          const qualityIndex = node.options
+            .slice(0, index)
+            .filter((item) => item.quality === option.quality).length;
+          const view = set[
+            sourceIndex >= 0 ? sourceIndex : qualityIndex % set.length
+          ];
+          return {
+            ...option,
+            label: view.label,
+            summary: view.summary,
+            feedback: view.feedback
+          };
+        })
+      };
+    }
+    const en = MAIN_NODE_EN[node.id];
+    const theories = MAIN_NODE_THEORY_EN[node.id];
+    return en
+      ? {
+          ...node,
+          title: en.title,
+          context: en.context,
+          stake: en.stake,
+          options: node.options.map((option, index) => {
+            const set = ROLE_OPTION_EN[this.save.profile.role][option.quality];
+            const sourceSet =
+              ROLE_OPTION_SETS[this.save.profile.role][option.quality];
+            const sourceIndex = sourceSet.findIndex(
+              (view) => view.label === option.label
+            );
+            const qualityIndex = node.options
+              .slice(0, index)
+              .filter((item) => item.quality === option.quality).length;
+            const view = set[
+              sourceIndex >= 0 ? sourceIndex : qualityIndex % set.length
+            ];
+            return {
+              ...option,
+              label: view.label,
+              summary: view.summary,
+              feedback: view.feedback,
+              theory: theories?.[index] ?? option.theory
+            };
+          })
+        }
+      : node;
+  }
+
+  private nodeIntel(node: StoryNode): string[] {
+    const fallback = NODE_INTEL[node.id] ?? [];
+    if (this.language !== "en") return fallback;
+    if (node.kind === "side") return SIDE_NODE_EN[node.id]?.intel ?? fallback;
+    if (node.kind === "random") {
+      return RANDOM_NODE_EN[node.id]?.intel ?? fallback;
+    }
+    if (node.kind === "branch") {
+      const branch = BRANCH_NODE_EN[node.id];
+      if (!branch) return fallback;
+      const chapter = getChapter(node.chapterId);
+      const role = this.save.profile.role;
+      return [
+        this.chapterDisplay(chapter).title,
+        this.chapterDisplay(chapter).subtitle,
+        ROLE_OPTION_EN[role].expert[0].summary
+      ];
+    }
+    return fallback;
+  }
+
+  private npcDisplay(npc: (typeof NPCS)[number]) {
+    const en = NPC_EN[npc.id];
+    return this.language === "en" && en
+      ? { name: en.name, title: en.title, description: en.description }
+      : { name: npc.name, title: npc.title, description: npc.description };
+  }
+
+  private relationStatusText(status: string): string {
+    if (this.language !== "en") return status;
+    if (status === "已建立关系") return "Established";
+    if (status === "存在线索") return "Lead Found";
+    return "Not Contacted";
+  }
+
+  private relationNoteText(npc: (typeof NPCS)[number]): string {
+    if (this.language !== "en") return npcRelation(this.save, npc).note;
+    if (
+      npc.nodeId.startsWith("s") &&
+      this.save.completedSideQuests.includes(npc.nodeId)
+    ) {
+      return "You faced this person directly in a side quest, and the relationship became organizational capability.";
+    }
+    if (npc.nodeId.startsWith("c")) {
+      const chapterId = Number(npc.nodeId.slice(1, 2));
+      const record = this.save.chapterRecords.find(
+        (item) => item.chapterId === chapterId
+      );
+      if (record && record.completedNodeIds.includes(npc.nodeId)) {
+        return "You met them in this scenario, but a long-term relationship has not yet formed.";
+      }
+    }
+    return "Complete the related main or side scenario to bring them into your relationship network.";
+  }
+
+  private achievementDisplay(id: string) {
+    const fallback = ACHIEVEMENTS.find((item) => item.id === id);
+    const en = ACHIEVEMENT_EN[id];
+    return this.language === "en" && en
+      ? { name: en.name, description: en.description }
+      : {
+          name: fallback?.name ?? id,
+          description: fallback?.description ?? ""
+        };
+  }
+
+  private sideArcDisplay(arc: (typeof SIDE_QUEST_ARCS)[number]) {
+    const en = SIDE_ARC_EN[arc.id];
+    return this.language === "en" && en
+      ? { title: en.title, summary: en.summary, intro: en.intro, conclusion: en.conclusion }
+      : { title: arc.title, summary: arc.summary, intro: arc.intro, conclusion: arc.conclusion };
+  }
+
+  private challengeDisplay(
+    challenge: ReturnType<typeof dailyChallenges>[number]
+  ) {
+    const en = CHALLENGE_EN[challenge.id];
+    return this.language === "en" && en
+      ? { ...challenge, title: en.title, description: en.description }
+      : challenge;
+  }
+
+  private chapterReflectionText(chapterId: number): string {
+    return this.language === "en"
+      ? CHAPTER_REFLECTION_EN[chapterId] ?? ""
+      : CHAPTER_REFLECTIONS[chapterId] ?? "";
   }
 
   private render(): void {
@@ -245,8 +485,8 @@ export class AdaptiveGameApp {
     this.root.innerHTML = `
       <header class="topbar">
         <div class="brand">${this.t("brand")}</div>
-        <button class="link sound-toggle" data-action="toggle-sound">${this.muted ? this.t("soundOff") : this.t("soundOn")}</button>
-        <button class="link language-toggle" data-action="toggle-language">${this.t("language")}</button>
+        <button class="link sound-toggle" data-action="toggle-sound" aria-label="${this.language === "en" ? "Toggle sound" : "切换声音"}">${this.muted ? this.t("soundOff") : this.t("soundOn")}</button>
+        <button class="link language-toggle" data-action="toggle-language" aria-label="${this.language === "en" ? "Switch language" : "切换语言"}">${this.t("language")}</button>
         <div class="topbar-meta">
           <span>${started ? this.save.profile.name : "未建档"}</span>
           <span>${summary.rank.name}</span>
@@ -272,7 +512,7 @@ export class AdaptiveGameApp {
           </div>
         </section>
         <section class="scene-art">
-          <canvas class="power-board" id="power-board" aria-label="权力关系沙盘示意图"></canvas>
+          <canvas class="power-board" id="power-board" aria-label="${this.language === "en" ? "Power relationship sandbox diagram" : "权力关系沙盘示意图"}"></canvas>
           <div class="scene-caption">
             <strong>权力关系沙盘</strong>
             <span>每一次选择，都在重新绘制你与关键人物之间的连接。</span>
@@ -319,35 +559,39 @@ export class AdaptiveGameApp {
   }
 
   private renderProfile(): void {
+    const en = this.language === "en";
     this.root.innerHTML = `
       <header class="topbar">
-        <div class="brand">权变之路</div>
-        <button class="link" data-action="open-menu">返回主页</button>
+        <div class="brand">${this.t("brand")}</div>
+        <button class="link" data-action="open-menu">${this.t("returnHome")}</button>
       </header>
       <main class="narrow-shell">
         <section class="panel profile-panel">
-          <p class="eyebrow">建立领导力档案</p>
-          <h1>选择你的初始身份</h1>
-          <p class="muted">身份决定起点资源与初始能力，不决定最终上限。</p>
+          <p class="eyebrow">${en ? "Build Your Leadership Profile" : "建立领导力档案"}</p>
+          <h1>${en ? "Choose Your Starting Identity" : "选择你的初始身份"}</h1>
+          <p class="muted">${en ? "Your identity sets starting resources and abilities, not your final ceiling." : "身份决定起点资源与初始能力，不决定最终上限。"}</p>
           <form class="profile-form" data-form="profile">
             <label class="field">
-              <span>你的名字</span>
-              <input name="playerName" maxlength="12" placeholder="例如：林远" value="${escapeAttr(this.save.profile.name === "你" ? "" : this.save.profile.name)}" />
+              <span>${en ? "Your Name" : "你的名字"}</span>
+              <input name="playerName" maxlength="12" placeholder="${en ? "e.g. Alex" : "例如：林远"}" value="${escapeAttr(this.save.profile.name === "你" ? "" : this.save.profile.name)}" />
             </label>
             <div class="role-grid">
               ${(Object.values(ROLES) as Array<(typeof ROLES)[RoleId]>)
                 .map(
-                  (role) => `
+                  (role) => {
+                    const roleView = this.roleDisplay(role.id);
+                    return `
                     <button type="button" class="role-card ${this.pendingRole === role.id ? "selected" : ""}" data-action="select-role" data-role="${role.id}">
-                      <span class="role-name">${role.name}</span>
-                      <span class="role-desc">${role.description}</span>
-                      <span class="role-start">起点：${role.startingResources.energy} 精力 / ${role.startingResources.trust} 信任</span>
+                      <span class="role-name">${roleView.name}</span>
+                      <span class="role-desc">${en ? ROLE_EN[role.id].description : role.description}</span>
+                      <span class="role-start">${en ? `Start: ${role.startingResources.energy} Energy / ${role.startingResources.trust} Trust` : `起点：${role.startingResources.energy} 精力 / ${role.startingResources.trust} 信任`}</span>
                     </button>
-                  `
+                  `;
+                  }
                 )
                 .join("")}
             </div>
-            <button class="primary" data-action="create-profile">开启征程</button>
+            <button class="primary" data-action="create-profile">${en ? "Start Your Journey" : "开启征程"}</button>
           </form>
         </section>
       </main>
@@ -365,7 +609,7 @@ export class AdaptiveGameApp {
       <header class="topbar">
         <div class="brand">权变之路</div>
         <button class="link" data-action="open-profile">返回建档</button>
-        <button class="link sound-toggle" data-action="toggle-sound">${this.muted ? "声音：关" : "声音：开"}</button>
+        <button class="link sound-toggle" data-action="toggle-sound" aria-label="${this.language === "en" ? "Toggle sound" : "切换声音"}">${this.muted ? this.t("soundOff") : this.t("soundOn")}</button>
       </header>
       <main class="assessment-shell">
         <section class="assessment-panel">
@@ -431,7 +675,7 @@ export class AdaptiveGameApp {
     this.root.innerHTML = `
       <header class="topbar">
         <div class="brand">权变之路</div>
-        <button class="link sound-toggle" data-action="toggle-sound">${this.muted ? "声音：关" : "声音：开"}</button>
+        <button class="link sound-toggle" data-action="toggle-sound" aria-label="${this.language === "en" ? "Toggle sound" : "切换声音"}">${this.muted ? this.t("soundOff") : this.t("soundOn")}</button>
       </header>
       <main class="assessment-result-shell">
         <section class="assessment-result-hero">
@@ -510,29 +754,30 @@ export class AdaptiveGameApp {
     const unlocked = unlockedCount(this.save);
     this.root.innerHTML = `
       <header class="topbar">
-        <div class="brand">权变之路</div>
+        <div class="brand">${this.t("brand")}</div>
         <button class="link" data-action="open-menu">${this.t("returnHome")}</button>
       </header>
       <main class="achievement-shell">
         <section class="achievement-hero">
           <div>
             <p class="eyebrow">${this.t("achievementsTitle")}</p>
-            <h1>${unlocked} / ${ACHIEVEMENTS.length} 已解锁</h1>
-            <p class="muted">完成章节、支线、测评、1v1 与能力段位，解锁全部成就。</p>
+            <h1>${unlocked} / ${ACHIEVEMENTS.length} ${this.language === "en" ? "Unlocked" : "已解锁"}</h1>
+            <p class="muted">${this.language === "en" ? "Complete chapters, side quests, assessments, duels, and rank milestones to unlock every achievement." : "完成章节、支线、测评、1v1 与能力段位，解锁全部成就。"}</p>
           </div>
           <div class="achievement-progress"><i style="width:${(unlocked / ACHIEVEMENTS.length) * 100}%"></i></div>
         </section>
         <section class="achievement-grid">
           ${ACHIEVEMENTS.map((achievement) => {
             const done = isAchievementUnlocked(this.save, achievement.id);
+            const view = this.achievementDisplay(achievement.id);
             return `
               <div class="achievement-card ${done ? "unlocked" : "locked"}">
                 <span class="achievement-icon">${achievement.icon}</span>
                 <div>
-                  <h2>${achievement.name}</h2>
-                  <p>${achievement.description}</p>
+                  <h2>${view.name}</h2>
+                  <p>${view.description}</p>
                 </div>
-                <small>${done ? "已解锁" : "未解锁"}</small>
+                <small>${done ? (this.language === "en" ? "Unlocked" : "已解锁") : (this.language === "en" ? "Locked" : "未解锁")}</small>
               </div>
             `;
           }).join("")}
@@ -547,30 +792,31 @@ export class AdaptiveGameApp {
     ).length;
     this.root.innerHTML = `
       <header class="topbar">
-        <div class="brand">权变之路</div>
+        <div class="brand">${this.t("brand")}</div>
         <button class="link" data-action="open-menu">${this.t("returnHome")}</button>
       </header>
       <main class="relation-shell">
         <section class="relation-hero">
           <div>
             <p class="eyebrow">${this.t("relationsTitle")}</p>
-            <h1>${related} / ${NPCS.length} 人已进入你的关系网络</h1>
-            <p class="muted">支线中真正面对过的 NPC，会从线索变成可延续的组织关系。</p>
+            <h1>${related} / ${NPCS.length} ${this.language === "en" ? "people in your network" : "人已进入你的关系网络"}</h1>
+            <p class="muted">${this.language === "en" ? "NPCs you faced directly in side quests evolve from leads into lasting organizational relationships." : "支线中真正面对过的 NPC，会从线索变成可延续的组织关系。"}</p>
           </div>
         </section>
         <section class="relation-grid">
           ${NPCS.map((npc) => {
             const relation = npcRelation(this.save, npc);
+            const view = this.npcDisplay(npc);
             return `
               <div class="npc-card ${relation.status === "已建立关系" ? "trusted" : relation.status === "存在线索" ? "known" : "hidden"}">
-                <span class="npc-avatar">${npc.name.slice(0, 1)}</span>
+                <span class="npc-avatar">${view.name.slice(0, 1)}</span>
                 <div>
-                  <h2>${npc.name}</h2>
-                  <small>${npc.title}</small>
-                  <p>${npc.description}</p>
+                  <h2>${view.name}</h2>
+                  <small>${view.title}</small>
+                  <p>${view.description}</p>
                 </div>
-                <span class="npc-status">${relation.status}</span>
-                <em>${relation.note}</em>
+                <span class="npc-status">${this.relationStatusText(relation.status)}</span>
+                <em>${this.relationNoteText(npc)}</em>
               </div>
             `;
           }).join("")}
@@ -587,8 +833,8 @@ export class AdaptiveGameApp {
     const availableRandom = nextRandomEvent(this.save);
     this.root.innerHTML = `
       <header class="topbar">
-        <div class="brand">权变之路</div>
-        <button class="link" data-action="open-menu">返回主页</button>
+        <div class="brand">${this.t("brand")}</div>
+        <button class="link" data-action="open-menu">${this.t("returnHome")}</button>
         <div class="topbar-meta">
           <span>${this.save.profile.name}</span>
           <span>${summary.rank.name}</span>
@@ -597,9 +843,9 @@ export class AdaptiveGameApp {
       <main class="map-shell">
         <section class="map-head">
           <div>
-            <p class="eyebrow">主线征途</p>
-            <h1>九章权力架构</h1>
-            <p class="muted">通关章节解锁下一章。支线任务不会解锁章节，但会补充精力和信任。</p>
+            <p class="eyebrow">${this.t("mainQuest")}</p>
+            <h1>${this.t("campaignTitle")}</h1>
+            <p class="muted">${this.t("mapHint")}</p>
           </div>
           <div class="resource-strip">
             ${this.resourceChips(this.save.profile)}
@@ -611,9 +857,9 @@ export class AdaptiveGameApp {
         <section class="map-body">
           <div class="chapter-detail">
             <div class="chapter-title">
-              <span class="chapter-code">第 ${chapter.code} 章</span>
-              <h2>${chapter.title}</h2>
-              <p>${chapter.subtitle}</p>
+              <span class="chapter-code">${this.language === "en" ? `Chapter ${chapter.code}` : `第 ${chapter.code} 章`}</span>
+              <h2>${this.chapterDisplay(chapter).title}</h2>
+              <p>${this.chapterDisplay(chapter).subtitle}</p>
             </div>
             <div class="node-list">
               ${mainNodes.map((node) => this.nodeRow(node)).join("")}
@@ -622,48 +868,51 @@ export class AdaptiveGameApp {
               chapterDone
                 ? `
                   <section class="chapter-reflection">
-                    <h3>本章复盘</h3>
-                    <p>${escapeHtml(CHAPTER_REFLECTIONS[chapter.id] ?? "")}</p>
+                    <h3>${this.t("chapterReflectionTitle")}</h3>
+                    <p>${escapeHtml(this.chapterReflectionText(chapter.id))}</p>
                   </section>
                 `
                 : ""
             }
             <section class="quest-board">
-              <h3>支线剧情弧</h3>
-              <p class="muted">支线需要连续完成前置节点，才能解锁下一段情节。</p>
+              <h3>${this.t("sideQuestArcsTitle")}</h3>
+              <p class="muted">${this.t("sideQuestHint")}</p>
               ${SIDE_QUEST_ARCS.map((arc) => this.questArcMarkup(arc)).join("")}
             </section>
           </div>
           <aside class="map-side">
             <div class="mini-panel role-objective">
               <h3>${this.t("roleObjective")}</h3>
-              <p>${ROLES[this.save.profile.role].objective}</p>
+              <p>${this.language === "en" ? ROLE_EN[this.save.profile.role].objective : ROLES[this.save.profile.role].objective}</p>
             </div>
             <div class="mini-panel">
               <h3>${this.t("situation")}</h3>
-              <p>已完成 ${summary.chapterCount}/9 章，支线 ${this.save.completedSideQuests.length}/6，随机事件 ${this.save.completedRandomEvents.length}，最近决策 ${this.latestDecisionText()}。</p>
+              <p>${this.language === "en" ? `Completed ${summary.chapterCount}/9 chapters, ${this.save.completedSideQuests.length}/6 side quests, ${this.save.completedRandomEvents.length} random events. Latest decision: ${this.latestDecisionText()}.` : `已完成 ${summary.chapterCount}/9 章，支线 ${this.save.completedSideQuests.length}/6，随机事件 ${this.save.completedRandomEvents.length}，最近决策 ${this.latestDecisionText()}。`}</p>
             </div>
-            <button data-action="toggle-pressure">${this.save.highPressureMode ? this.t("highPressureOff") : this.t("highPressureOn")}</button>
+            ${this.difficultySelectorMarkup()}
             <div class="challenge-panel">
-              <h3>当日行动任务</h3>
+              <h3>${this.t("dailyTitle")}</h3>
               ${dailyChallenges(this.save)
                 .map(
-                  (challenge) => `
+                  (challenge) => {
+                    const view = this.challengeDisplay(challenge);
+                    return `
                     <div class="challenge-row ${challenge.done ? "done" : ""}">
                       <div>
-                        <strong>${escapeHtml(challenge.title)}</strong>
+                        <strong>${escapeHtml(view.title)}</strong>
                         <span>${challenge.current} / ${challenge.target}</span>
-                        <p>${escapeHtml(challenge.description)}</p>
+                        <p>${escapeHtml(view.description)}</p>
                       </div>
                       ${
                         challenge.done && !this.save.claimedChallenges.includes(challenge.id)
-                          ? `<button data-action="claim-challenge" data-challenge="${challenge.id}">领取 +${challenge.reward}</button>`
+                          ? `<button data-action="claim-challenge" data-challenge="${challenge.id}">${this.t("claim")}${challenge.reward}</button>`
                           : this.save.claimedChallenges.includes(challenge.id)
-                            ? `<small>已领取</small>`
-                            : `<small>进行中</small>`
+                            ? `<small>${this.t("claimed")}</small>`
+                            : `<small>${this.t("inProgress")}</small>`
                       }
                     </div>
-                  `
+                  `;
+                  }
                 )
                 .join("")}
             </div>
@@ -672,28 +921,58 @@ export class AdaptiveGameApp {
               ${
                 availableRandom
                   ? `
-                    <p>今天出现了一个意料之外的情境，可能影响团队对你的判断。</p>
-                    <button data-action="open-node" data-node="${availableRandom}">处理随机事件</button>
+                    <p>${this.t("randomAvailable")}</p>
+                    <button data-action="open-node" data-node="${availableRandom}">${this.t("handleRandomEvent")}</button>
                   `
-                  : "<p class=\"muted\">你已处理完当前随机事件。</p>"
+                  : `<p class="muted">${this.t("randomDone")}</p>`
               }
             </div>
             <div class="mini-panel">
-              <h3>当前进度</h3>
+              <h3>${this.t("currentProgress")}</h3>
               <strong>${summary.chapterCount} / 9</strong>
-              <p>综合能力值 ${summary.total}</p>
+              <p>${this.t("totalAbility")} ${summary.total}</p>
             </div>
             <div class="mini-panel">
-              <h3>已解锁</h3>
-              <p>${this.save.unlockedChapters.map((id) => getChapter(id).title).join("、")}</p>
+              <h3>${this.t("unlockedTitle")}</h3>
+              <p>${this.save.unlockedChapters.map((id) => this.chapterDisplay(getChapter(id)).title).join(this.language === "en" ? ", " : "、")}</p>
             </div>
-            <button class="primary" data-action="open-report">查看复盘报告</button>
-            <button data-action="open-duel">进入 1v1</button>
-            <button data-action="open-ability">能力图谱</button>
+            <button class="primary" data-action="open-report">${this.t("viewReport")}</button>
+            <button data-action="open-duel">${this.t("enterDuel")}</button>
+            <button data-action="open-ability">${this.t("ability")}</button>
           </aside>
         </section>
       </main>
     `;
+  }
+
+  private difficultySelectorMarkup(): string {
+    const options: Array<{ id: "normal" | "pressure" | "extreme"; label: string }> = [
+      { id: "normal", label: this.t("difficultyNormal") },
+      { id: "pressure", label: this.t("difficultyPressure") },
+      { id: "extreme", label: this.t("difficultyExtreme") }
+    ];
+    const buttons = options
+      .map(
+        (option) => `
+          <button
+            class="diff-btn ${this.save.difficulty === option.id ? "active" : ""}"
+            data-action="set-difficulty"
+            data-difficulty="${option.id}"
+          >${escapeHtml(option.label)}</button>`
+      )
+      .join("");
+    const note =
+      this.save.difficulty === "normal"
+        ? "资源不缩放、无决策时限"
+        : this.save.difficulty === "pressure"
+          ? "资源缩放、每回合 22 秒、偶发干扰"
+          : "强缩放、每回合 14 秒、干扰频繁";
+    return `
+      <div class="mini-panel difficulty-panel">
+        <h3>${this.t("difficultyLabel")}</h3>
+        <div class="diff-row">${buttons}</div>
+        <p class="muted">${escapeHtml(note)}</p>
+      </div>`;
   }
 
   private renderStory(): void {
@@ -701,47 +980,49 @@ export class AdaptiveGameApp {
       this.show("map");
       return;
     }
-    const node = getNodeForRole(this.save.profile.role, this.storyNodeId);
-    const chapter = getChapter(node.chapterId);
+    const node = this.storyNodeDisplay(
+      getNodeForRole(this.save.profile.role, this.storyNodeId)
+    );
+    const chapter = this.chapterDisplay(getChapter(node.chapterId));
     const showingOutcome = this.lastOutcomeNodeId === node.id && this.lastOutcome;
     const showOnboarding = this.save.playCount === 0 && !showingOutcome;
     this.root.innerHTML = `
       <header class="topbar">
-        <div class="brand">权变之路</div>
+        <div class="brand">${this.t("brand")}</div>
         <div class="topbar-meta">${this.resourceChips(this.save.profile)}</div>
       </header>
       <main class="story-shell">
-        <button class="link back-link" data-action="open-map">返回主线地图</button>
+        <button class="link back-link" data-action="open-map">${this.t("backToMap")}</button>
         <section class="story-art">
-          <canvas id="story-art" aria-label="当前情境的局势示意图"></canvas>
+          <canvas id="story-art" aria-label="${this.language === "en" ? "Diagram of the current situation" : "当前情境的局势示意图"}"></canvas>
         </section>
         <section class="story-layout">
           <section class="story-narrative">
             <section class="scenario-panel">
               <div class="scenario-meta">
-                <span>第 ${chapter.code} 章 · ${chapter.title}</span>
-                <span>${node.kind === "side" ? "支线任务" : node.kind === "branch" ? "角色分岔" : node.kind === "random" ? "随机事件" : "主线情境"}</span>
+                <span>${this.language === "en" ? `Chapter ${chapter.code} · ${chapter.title}` : `第 ${chapter.code} 章 · ${chapter.title}`}</span>
+                <span>${node.kind === "side" ? this.t("storyKindSide") : node.kind === "branch" ? this.t("storyKindBranch") : node.kind === "random" ? this.t("storyKindRandom") : this.t("storyKindMain")}</span>
               </div>
               <h1>${node.title}</h1>
               ${
                 showOnboarding
                   ? `
                     <div class="onboarding-tip">
-                      <strong>首局引导</strong>
-                      <p>1. 先看情报线索，再判断关键关系。</p>
-                      <p>2. 每个选择都有专家基准，但好选择不一定是最冒险的。</p>
-                      <p>3. 选择会影响能力、资源、NPC 关系与最终结局。</p>
+                      <strong>${this.t("onboardingTitle")}</strong>
+                      <p>${this.t("onboarding1")}</p>
+                      <p>${this.t("onboarding2")}</p>
+                      <p>${this.t("onboarding3")}</p>
                     </div>
                   `
                   : ""
               }
               <div class="role-lens">
-                <strong>${ROLES[this.save.profile.role].name}视角</strong>
-                <p>${escapeHtml(ROLES[this.save.profile.role].lens)}</p>
+                <strong>${this.roleDisplay(this.save.profile.role).name}${this.language === "zh" ? "视角" : " Lens"}</strong>
+                <p>${escapeHtml(this.language === "en" ? ROLE_EN[this.save.profile.role].lens : ROLES[this.save.profile.role].lens)}</p>
               </div>
               <p class="scenario-context">${escapeHtml(node.context)}</p>
               <div class="stake">
-                <strong>当前考验</strong>
+                <strong>${this.t("currentTest")}</strong>
                 <p>${escapeHtml(node.stake)}</p>
               </div>
             </section>
@@ -749,11 +1030,11 @@ export class AdaptiveGameApp {
           <aside class="story-side">
             <section class="intel-panel">
               <div class="intel-head">
-                <span>情报线索</span>
-                <small>先看线索，再做判断</small>
+                <span>${this.t("intelTitle")}</span>
+                <small>${this.t("intelHint")}</small>
               </div>
               <div class="intel-list">
-                ${(NODE_INTEL[node.id] ?? []).map((clue) => `<p>${escapeHtml(clue)}</p>`).join("")}
+                ${this.nodeIntel(node).map((clue) => `<p>${escapeHtml(clue)}</p>`).join("")}
               </div>
             </section>
             <section class="decision-panel">
@@ -762,7 +1043,7 @@ export class AdaptiveGameApp {
                   ? this.outcomeMarkup(this.lastOutcome)
                   : `
                     <div class="hint-controls">
-                      <button data-action="toggle-hint">${this.storyHintRevealed ? "收起教练提示" : "查看教练提示"}</button>
+                      <button data-action="toggle-hint">${this.storyHintRevealed ? this.t("hideHint") : this.t("showHint")}</button>
                       ${
                         this.storyHintRevealed
                           ? `<p class="coach-hint">${escapeHtml(this.adaptiveHint(node))}</p>`
@@ -808,32 +1089,32 @@ export class AdaptiveGameApp {
     this.root.innerHTML = `
       <header class="topbar">
         <div class="brand">${this.t("brand")}</div>
-        <button class="link sound-toggle" data-action="toggle-sound">${this.muted ? this.t("soundOff") : this.t("soundOn")}</button>
-        <button class="link language-toggle" data-action="toggle-language">${this.t("language")}</button>
+        <button class="link sound-toggle" data-action="toggle-sound" aria-label="${this.language === "en" ? "Toggle sound" : "切换声音"}">${this.muted ? this.t("soundOff") : this.t("soundOn")}</button>
+        <button class="link language-toggle" data-action="toggle-language" aria-label="${this.language === "en" ? "Switch language" : "切换语言"}">${this.t("language")}</button>
       </header>
       <main class="transition-shell">
         <section class="transition-panel">
-          <p class="eyebrow">第 ${chapter.code} 章完成</p>
-          <h1>${chapter.title}</h1>
-          <p class="transition-summary">${escapeHtml(CHAPTER_REFLECTIONS[chapter.id] ?? "")}</p>
+          <p class="eyebrow">${this.language === "en" ? `Chapter ${chapter.code} ${this.t("chapterComplete")}` : `第 ${chapter.code} 章完成`}</p>
+          <h1>${this.chapterDisplay(chapter).title}</h1>
+          <p class="transition-summary">${escapeHtml(this.chapterReflectionText(chapter.id))}</p>
           ${
             next
               ? `
                 <div class="next-chapter">
-                  <span>下一章</span>
-                  <strong>第 ${next.code} 章 · ${next.title}</strong>
-                  <p>${next.subtitle}</p>
+                  <span>${this.t("nextChapter")}</span>
+                  <strong>${this.language === "en" ? `Chapter ${next.code} · ${this.chapterDisplay(next).title}` : `第 ${next.code} 章 · ${next.title}`}</strong>
+                  <p>${this.chapterDisplay(next).subtitle}</p>
                 </div>
               `
               : `
                 <div class="next-chapter">
-                  <span>主线完成</span>
-                  <strong>九章权力架构已全部走完</strong>
-                  <p>查看复盘报告与角色结局。</p>
+                  <span>${this.t("campaignComplete")}</span>
+                  <strong>${this.t("campaignCompleteText")}</strong>
+                  <p>${this.t("campaignCompleteHint")}</p>
                 </div>
               `
           }
-          <button class="primary" data-action="continue-transition-map">继续主线</button>
+          <button class="primary" data-action="continue-transition-map">${this.t("menuContinue")}</button>
         </section>
       </main>
     `;
@@ -855,14 +1136,14 @@ export class AdaptiveGameApp {
           <div>
             <p class="eyebrow">${this.t("abilityTitle")}</p>
             <h1>${summary.rank.name}</h1>
-            <p class="muted">综合能力值 ${summary.total}，下一段位需要 ${this.nextRankNeed(summary.total)} 点。</p>
+            <p class="muted">${this.language === "en" ? `Total Ability ${summary.total}, next rank needs ${this.nextRankNeed(summary.total)} points.` : `综合能力值 ${summary.total}，下一段位需要 ${this.nextRankNeed(summary.total)} 点。`}</p>
             <div class="role-focus">
-              <strong>${ROLES[this.save.profile.role].name}重点</strong>
+              <strong>${this.roleDisplay(this.save.profile.role).name}${this.language === "en" ? " Focus" : "重点"}</strong>
               <div>
                 ${ROLES[this.save.profile.role].focusAbilities
                   .map(
                     (id) => `
-                      <span style="--dot:${ABILITIES[id].color}">${ABILITIES[id].name}</span>
+                      <span style="--dot:${ABILITIES[id].color}">${this.abilityDisplay(id).name}</span>
                     `
                   )
                   .join("")}
@@ -870,22 +1151,22 @@ export class AdaptiveGameApp {
             </div>
           </div>
           <canvas class="radar" id="ability-radar"></canvas>
-          <button class="primary" data-action="open-report">查看复盘报告</button>
+          <button class="primary" data-action="open-report">${this.t("viewReport")}</button>
         </section>
         <section class="ability-grid">
           ${ABILITY_ORDER.map((id) => this.abilityCard(id)).join("")}
         </section>
         <section class="training-panel">
-          <h2>建议训练方向</h2>
+          <h2>${this.language === "en" ? "Recommended Training" : "建议训练方向"}</h2>
           <div class="training-list">
             ${training
               .map(
                 (id) => `
                   <div class="training-item">
                     <span style="--dot:${ABILITIES[id].color}"></span>
-                    <strong>${ABILITIES[id].name}</strong>
-                    <p>${ABILITIES[id].tagline}</p>
-                    <small>${ABILITIES[id].trainingPath}</small>
+                    <strong>${this.abilityDisplay(id).name}</strong>
+                    <p>${this.abilityDisplay(id).tagline}</p>
+                    <small>${this.abilityDisplay(id).tagline}</small>
                   </div>
                 `
               )
@@ -923,29 +1204,29 @@ export class AdaptiveGameApp {
     });
     this.root.innerHTML = `
       <header class="topbar">
-        <div class="brand">权变之路</div>
-        <button class="link" data-action="open-menu">返回主页</button>
-        <button class="link sound-toggle" data-action="toggle-sound">${this.muted ? "声音：关" : "声音：开"}</button>
+        <div class="brand">${this.t("brand")}</div>
+        <button class="link" data-action="open-menu">${this.t("returnHome")}</button>
+        <button class="link sound-toggle" data-action="toggle-sound" aria-label="${this.language === "en" ? "Toggle sound" : "切换声音"}">${this.muted ? this.t("soundOff") : this.t("soundOn")}</button>
       </header>
       <main class="report-shell">
         <section class="report-hero">
           <div>
             <p class="eyebrow">${this.t("reportTitle")}</p>
             <h1>${this.save.profile.name} · ${this.t("leadershipTrajectory")}</h1>
-            <p class="muted">段位：${summary.rank.name} · 综合能力值：${summary.total} · 主线 ${summary.chapterCount}/9</p>
+            <p class="muted">${this.language === "en" ? `Rank: ${summary.rank.name} · Total Ability: ${summary.total} · Campaign ${summary.chapterCount}/9` : `段位：${summary.rank.name} · 综合能力值：${summary.total} · 主线 ${summary.chapterCount}/9`}</p>
           </div>
           <div class="duel-stats">
-            <span><strong>${this.save.duelWins}</strong> 胜</span>
-            <span><strong>${this.save.duelLosses}</strong> 负</span>
-            <span><strong>${this.save.masteryPoints}</strong> 修炼点</span>
+            <span><strong>${this.save.duelWins}</strong> ${this.language === "en" ? "Wins" : "胜"}</span>
+            <span><strong>${this.save.duelLosses}</strong> ${this.language === "en" ? "Losses" : "负"}</span>
+            <span><strong>${this.save.masteryPoints}</strong> ${this.language === "en" ? "Mastery" : "修炼点"}</span>
           </div>
           <div class="identity-badge">
-            <span>决策画像</span>
-            <strong>${ROLES[this.save.profile.role].shortName} · ${decision.identity}</strong>
+            <span>${this.language === "en" ? "Decision Profile" : "决策画像"}</span>
+            <strong>${this.roleDisplay(this.save.profile.role).shortName} · ${decision.identity}</strong>
           </div>
           <div class="certification-badge ${cert.passed ? "passed" : ""}">
-            <span>能力认证</span>
-            <strong>${cert.passed ? `认证通过 · ${cert.level}` : `未认证 · ${cert.next}`}</strong>
+            <span>${this.language === "en" ? "Certification" : "能力认证"}</span>
+            <strong>${cert.passed ? (this.language === "en" ? `Certified · ${cert.level}` : `认证通过 · ${cert.level}`) : (this.language === "en" ? `Not Certified · ${cert.next}` : `未认证 · ${cert.next}`)}</strong>
           </div>
           <button data-action="reset-profile">${this.t("resetProfile")}</button>
           <button data-action="export-save">${this.t("exportSave")}</button>
@@ -959,9 +1240,9 @@ export class AdaptiveGameApp {
             this.cloudConflict
               ? `
                 <div class="cloud-conflict">
-                  <p>检测到本地与云端进度不一致，请选择保留哪一份。</p>
-                  <button data-action="cloud-use-remote">使用云端存档</button>
-                  <button data-action="cloud-force-local">仍要上传本地</button>
+                  <p>${this.language === "en" ? "Local and cloud progress differ. Choose which version to keep." : "检测到本地与云端进度不一致，请选择保留哪一份。"}</p>
+                  <button data-action="cloud-use-remote">${this.language === "en" ? "Use Cloud Save" : "使用云端存档"}</button>
+                  <button data-action="cloud-force-local">${this.language === "en" ? "Upload Local Anyway" : "仍要上传本地"}</button>
                 </div>
               `
               : ""
@@ -974,30 +1255,30 @@ export class AdaptiveGameApp {
         <section class="stat-tiles">
           <div class="stat-tile">
             <strong>${decision.counts.expert}</strong>
-            <span>专家级决策</span>
+            <span>${this.language === "en" ? "Expert Decisions" : "专家级决策"}</span>
           </div>
           <div class="stat-tile">
             <strong>${decision.counts.partial}</strong>
-            <span>部分有效</span>
+            <span>${this.language === "en" ? "Partially Effective" : "部分有效"}</span>
           </div>
           <div class="stat-tile">
             <strong>${decision.counts.risk}</strong>
-            <span>高风险应对</span>
+            <span>${this.language === "en" ? "High-Risk Responses" : "高风险应对"}</span>
           </div>
           <div class="stat-tile">
             <strong>${decision.totalScore}</strong>
-            <span>决策总分</span>
+            <span>${this.language === "en" ? "Decision Score" : "决策总分"}</span>
           </div>
           <div class="stat-tile">
             <strong>${this.save.completedRandomEvents.length}</strong>
-            <span>随机事件</span>
+            <span>${this.language === "en" ? "Random Events" : "随机事件"}</span>
           </div>
         </section>
         ${
           this.cloudEntries.length
             ? `
               <section class="cloud-leaderboard">
-                <h2>云端排行榜</h2>
+                <h2>${this.language === "en" ? "Cloud Leaderboard" : "云端排行榜"}</h2>
                 <div class="cloud-leaderboard-list">
                   ${this.cloudEntries
                     .slice(0, 10)
@@ -1018,10 +1299,10 @@ export class AdaptiveGameApp {
             : ""
         }
         <section class="duel-history">
-          <h2>近期对决</h2>
+          <h2>${this.language === "en" ? "Recent Duels" : "近期对决"}</h2>
           ${
             this.save.duelHistory.length === 0
-              ? '<p class="muted">还没有对决记录，进入 1v1 后会自动保存。</p>'
+              ? `<p class="muted">${this.language === "en" ? "No duels yet. Results are saved automatically after a match." : "还没有对决记录，进入 1v1 后会自动保存。"}</p>`
               : `
                 <div class="duel-history-list">
                   ${this.save.duelHistory
@@ -1030,7 +1311,7 @@ export class AdaptiveGameApp {
                     .map(
                       (entry) => `
                         <div class="duel-history-row ${entry.won ? "won" : "lost"}">
-                          <span>${entry.won ? "胜" : "负"}</span>
+                          <span>${entry.won ? (this.language === "en" ? "Win" : "胜") : (this.language === "en" ? "Loss" : "负")}</span>
                           <strong>${escapeHtml(entry.opponentName)}</strong>
                           <em>${entry.playerScore} : ${entry.opponentScore}</em>
                           <small>${new Date(entry.timestamp).toLocaleDateString()}</small>
@@ -1044,7 +1325,7 @@ export class AdaptiveGameApp {
         </section>
         <section class="report-grid">
           <div class="report-panel">
-            <h2>优势能力</h2>
+            <h2>${this.language === "en" ? "Strengths" : "优势能力"}</h2>
             ${
               strengths.length
                 ? strengths
@@ -1052,24 +1333,24 @@ export class AdaptiveGameApp {
                       (id) => `
                         <div class="strength-row">
                           <span style="--dot:${ABILITIES[id].color}"></span>
-                          <strong>${ABILITIES[id].name}</strong>
-                          <small>${ABILITIES[id].tagline}</small>
+                          <strong>${this.abilityDisplay(id).name}</strong>
+                          <small>${this.abilityDisplay(id).tagline}</small>
                         </div>
                       `
                     )
                     .join("")
-                : "<p class=\"muted\">继续推进主线，先让能力进入第四段位。</p>"
+                : `<p class="muted">${this.language === "en" ? "Continue the campaign to bring an ability into the fourth rank." : "继续推进主线，先让能力进入第四段位。"}</p>`
             }
           </div>
           <div class="report-panel">
-            <h2>建议训练</h2>
+            <h2>${this.language === "en" ? "Recommended Training" : "建议训练"}</h2>
             ${gaps
               .map(
                 (id) => `
                   <div class="training-item compact">
                     <span style="--dot:${ABILITIES[id].color}"></span>
-                    <strong>${ABILITIES[id].name}</strong>
-                    <p>${ABILITIES[id].tagline}</p>
+                    <strong>${this.abilityDisplay(id).name}</strong>
+                    <p>${this.abilityDisplay(id).tagline}</p>
                   </div>
                 `
               )
@@ -1077,16 +1358,16 @@ export class AdaptiveGameApp {
           </div>
         </section>
         <section class="chapter-report">
-          <h2>章节表现</h2>
+          <h2>${this.language === "en" ? "Chapter Performance" : "章节表现"}</h2>
           <div class="chapter-report-list">
             ${chapterReports
               .map(
                 (item) => `
                   <div class="chapter-report-row">
                     <span>${item.chapter.code}</span>
-                    <strong>${item.chapter.title}</strong>
+                    <strong>${this.chapterDisplay(item.chapter).title}</strong>
                     <div class="stars">${"★".repeat(item.stars)}${"☆".repeat(3 - item.stars)}</div>
-                    <small>${item.done ? "已完成" : "未完成"}</small>
+                    <small>${item.done ? (this.language === "en" ? "Complete" : "已完成") : (this.language === "en" ? "Incomplete" : "未完成")}</small>
                   </div>
                 `
               )
@@ -1102,20 +1383,27 @@ export class AdaptiveGameApp {
     if (!isChapterComplete(this.save, 9)) {
       return `
         <section class="ending-panel locked">
-          <h2>${ROLES[this.save.profile.role].name}结局</h2>
-          <p class="muted">完成第九章后解锁专属结局。</p>
+          <h2>${this.roleDisplay(this.save.profile.role).name}${this.language === "en" ? " Ending" : "结局"}</h2>
+          <p class="muted">${this.language === "en" ? "Complete chapter 9 to unlock your role ending." : "完成第九章后解锁专属结局。"}</p>
         </section>
       `;
     }
     const role = this.save.profile.role;
     const decision = decisionProfile(this.save);
+    const en = this.language === "en";
     const endings: Record<RoleId, string> = {
       parachute:
-        "你证明了自己不仅能空降，还能把陌生组织变成稳定系统。你离开时，权力已经回到制度、梯队与共识里，而不是停留在你个人身上。",
+        en
+          ? "You proved you can not only parachute in but also turn an unfamiliar organization into a stable system. When you left, power had returned to systems, succession, and shared judgment rather than staying in one person."
+          : "你证明了自己不仅能空降，还能把陌生组织变成稳定系统。你离开时，权力已经回到制度、梯队与共识里，而不是停留在你个人身上。",
       founder:
-        "你把创业直觉变成了可复制的组织方法，公司开始不依赖你一个人做所有决定。你保留了对方向的敏感，也建立了能接住增长的团队。",
+        en
+          ? "You turned founder instinct into replicable organizational method. The company no longer depends on one person for every decision, while you kept your sensitivity to direction and built a team that can absorb growth."
+          : "你把创业直觉变成了可复制的组织方法，公司开始不依赖你一个人做所有决定。你保留了对方向的敏感，也建立了能接住增长的团队。",
       highPotential:
-        "你没有职位权力，却建立了横跨部门的影响力网络。你最终被组织需要，不是因为头衔，而是因为你让所有人更清楚该往哪里走。"
+        en
+          ? "Without positional power, you built an influence network across departments. The organization needs you not because of your title but because you made it clearer where everyone should go."
+          : "你没有职位权力，却建立了横跨部门的影响力网络。你最终被组织需要，不是因为头衔，而是因为你让所有人更清楚该往哪里走。"
     };
     let style: "expert" | "risk" | "partial" | "balanced" = "balanced";
     if (decision.counts.expert >= 8) {
@@ -1126,26 +1414,38 @@ export class AdaptiveGameApp {
       style = "partial";
     }
     const styleLabels = {
-      expert: "精准决策",
-      risk: "高压破局",
-      partial: "渐进推进",
-      balanced: "平衡演进"
+      expert: en ? "Precise" : "精准决策",
+      risk: en ? "High-Pressure" : "高压破局",
+      partial: en ? "Incremental" : "渐进推进",
+      balanced: en ? "Balanced" : "平衡演进"
     };
     const styleEndings = {
       expert:
-        "你以精准判断著称，团队开始使用你沉淀的检查清单做决策，组织获得了可复制的判断力。",
+        en
+          ? "You became known for precise judgment. The team began using the checklists you created, and the organization gained replicable judgment."
+          : "你以精准判断著称，团队开始使用你沉淀的检查清单做决策，组织获得了可复制的判断力。",
       risk:
-        "你敢于在压力下押注，组织因此学会在不确定中快速行动，但也留下了需要持续修复的风险。",
+        en
+          ? "You were willing to place high-pressure bets. The organization learned to act fast in uncertainty, but it also inherited risks that still need repair."
+          : "你敢于在压力下押注，组织因此学会在不确定中快速行动，但也留下了需要持续修复的风险。",
       partial:
-        "你选择渐进推进，组织在低震荡中完成了变革，只是节奏比想象中更慢，留下了更多调整空间。",
+        en
+          ? "You chose incremental progress. The organization changed with low disruption, though slower than expected and with more room for adjustment."
+          : "你选择渐进推进，组织在低震荡中完成了变革，只是节奏比想象中更慢，留下了更多调整空间。",
       balanced:
-        "你在激进与保守之间保持了平衡，组织最终获得了一种可解释的稳定，也保留了继续进化的弹性。"
+        en
+          ? "You balanced boldness and caution. The organization gained explainable stability while retaining the flexibility to keep evolving."
+          : "你在激进与保守之间保持了平衡，组织最终获得了一种可解释的稳定，也保留了继续进化的弹性。"
     };
     const arcLegacy: Record<string, string> = {
       trust_rebuild:
-        "你救下的个体后来成了组织中最敢表达真实问题的人，这份信任成为变革最深的根基。",
+        en
+          ? "The person you protected later became one of the most honest voices in the organization, and that trust became the deepest foundation of change."
+          : "你救下的个体后来成了组织中最敢表达真实问题的人，这份信任成为变革最深的根基。",
       resilience:
-        "你在危机中建立的复盘机制，让团队在离开你之后仍能自己修复错误，执行系统真正脱离了个人依赖。"
+        en
+          ? "The review mechanism you built in crisis allowed the team to repair mistakes after you left, freeing execution from personal dependence."
+          : "你在危机中建立的复盘机制，让团队在离开你之后仍能自己修复错误，执行系统真正脱离了个人依赖。"
     };
     const legacy = SIDE_QUEST_ARCS.filter((arc) =>
       arc.nodes.every((nodeId) =>
@@ -1157,11 +1457,13 @@ export class AdaptiveGameApp {
       .join(" ");
     const randomLegacy =
       this.save.completedRandomEvents.length >= 5
-        ? "你处理过的那些临时情境，最终成为了团队判断力的隐性训练。"
+        ? en
+          ? "The unexpected situations you handled became invisible training for the team's judgment."
+          : "你处理过的那些临时情境，最终成为了团队判断力的隐性训练。"
         : "";
     return `
       <section class="ending-panel">
-        <h2>${ROLES[role].name} · ${styleLabels[style]}结局</h2>
+        <h2>${this.roleDisplay(role).name} · ${styleLabels[style]}${en ? " Ending" : "结局"}</h2>
         <p>${endings[role]} ${styleEndings[style]} ${legacy} ${randomLegacy}</p>
       </section>
     `;
@@ -1177,42 +1479,42 @@ export class AdaptiveGameApp {
       <main class="duel-lobby">
         <section class="duel-hero">
           <p class="eyebrow">${this.t("duelTitle")}</p>
-          <h1>谁能在复杂局势中做出更好的判断？</h1>
-          <p class="muted">每一回合都使用真实职场切片，选择会被专家基准评分。远程模式通过 WebRTC 点对点连接，无需服务器。</p>
+          <h1>${this.language === "en" ? "Who can make the better call in a complex situation?" : "谁能在复杂局势中做出更好的判断？"}</h1>
+          <p class="muted">${this.language === "en" ? "Every round uses a real workplace slice, and choices are scored against an expert baseline. Remote mode connects peer to peer through WebRTC without a server." : "每一回合都使用真实职场切片，选择会被专家基准评分。远程模式通过 WebRTC 点对点连接，无需服务器。"}</p>
           <div class="mode-switch">
-            <button class="${this.duelMode === "ai" ? "active" : ""}" data-action="set-duel-mode" data-mode="ai">AI 陪练</button>
-            <button class="${this.duelMode === "local" ? "active" : ""}" data-action="set-duel-mode" data-mode="local">本地双人</button>
-            <button class="${this.duelMode === "remote" ? "active" : ""}" data-action="set-duel-mode" data-mode="remote">远程对战</button>
+            <button class="${this.duelMode === "ai" ? "active" : ""}" data-action="set-duel-mode" data-mode="ai">${this.language === "en" ? "AI Practice" : "AI 陪练"}</button>
+            <button class="${this.duelMode === "local" ? "active" : ""}" data-action="set-duel-mode" data-mode="local">${this.language === "en" ? "Local Duo" : "本地双人"}</button>
+            <button class="${this.duelMode === "remote" ? "active" : ""}" data-action="set-duel-mode" data-mode="remote">${this.language === "en" ? "Remote" : "远程对战"}</button>
           </div>
         </section>
         <section class="lobby-panel">
           <div class="lobby-row">
             <label class="field">
-              <span>回合数</span>
+              <span>${this.language === "en" ? "Rounds" : "回合数"}</span>
               <select data-select="rounds">
-                <option value="3" ${this.duelRounds === 3 ? "selected" : ""}>3 回合</option>
-                <option value="5" ${this.duelRounds === 5 ? "selected" : ""}>5 回合</option>
-                <option value="7" ${this.duelRounds === 7 ? "selected" : ""}>7 回合</option>
+                <option value="3" ${this.duelRounds === 3 ? "selected" : ""}>${this.language === "en" ? "3 rounds" : "3 回合"}</option>
+                <option value="5" ${this.duelRounds === 5 ? "selected" : ""}>${this.language === "en" ? "5 rounds" : "5 回合"}</option>
+                <option value="7" ${this.duelRounds === 7 ? "selected" : ""}>${this.language === "en" ? "7 rounds" : "7 回合"}</option>
               </select>
             </label>
-            <span class="muted">当前档案：${this.save.profile.name} · ${summary.rank.name}</span>
+            <span class="muted">${this.language === "en" ? `Profile: ${this.save.profile.name} · ${summary.rank.name}` : `当前档案：${this.save.profile.name} · ${summary.rank.name}`}</span>
           </div>
           ${
             this.duelMode === "ai"
               ? `
                 <div class="mode-note">
-                  <h2>AI 陪练</h2>
-                  <p>系统会根据每道情境的专家基准和你的能力水平生成对手，并基于你的专家判断率动态调整难度。适合持续训练决策质量。</p>
-                  <button class="primary" data-action="start-ai-duel">开始对战</button>
-                  <button data-action="start-challenge-duel">7 回合挑战赛</button>
+                  <h2>${this.language === "en" ? "AI Practice" : "AI 陪练"}</h2>
+                  <p>${this.language === "en" ? "The system builds an opponent from each scenario's expert baseline and your ability level, then adjusts difficulty based on your expert-decision rate. Best for sustained decision training." : "系统会根据每道情境的专家基准和你的能力水平生成对手，并基于你的专家判断率动态调整难度。适合持续训练决策质量。"}</p>
+                  <button class="primary" data-action="start-ai-duel">${this.language === "en" ? "Start Duel" : "开始对战"}</button>
+                  <button data-action="start-challenge-duel">${this.language === "en" ? "7-Round Challenge" : "7 回合挑战赛"}</button>
                 </div>
               `
               : this.duelMode === "local"
                 ? `
                   <div class="mode-note">
-                    <h2>本地双人</h2>
-                    <p>同一台设备轮流选择，玩家一完成后把设备交给玩家二。适合课堂、教练工作坊与双人复盘。</p>
-                    <button class="primary" data-action="start-local-duel">开始对战</button>
+                    <h2>${this.language === "en" ? "Local Duo" : "本地双人"}</h2>
+                    <p>${this.language === "en" ? "Players take turns on one device; player one hands it over after finishing. Built for classrooms, coaching workshops, and paired reviews." : "同一台设备轮流选择，玩家一完成后把设备交给玩家二。适合课堂、教练工作坊与双人复盘。"}</p>
+                    <button class="primary" data-action="start-local-duel">${this.language === "en" ? "Start Duel" : "开始对战"}</button>
                   </div>
                 `
                 : this.remoteLobbyMarkup()
@@ -1223,46 +1525,47 @@ export class AdaptiveGameApp {
   }
 
   private remoteLobbyMarkup(): string {
+    const en = this.language === "en";
     return `
       <div class="remote-lobby">
         <div class="remote-create">
-          <h2>创建房间</h2>
-          <p>生成邀请码后发给对手，对手会返回一个应答码。</p>
-          <button class="primary" data-action="create-remote">生成邀请码</button>
+          <h2>${en ? "Create Room" : "创建房间"}</h2>
+          <p>${en ? "Generate an invite code, send it to your opponent, and wait for their answer code." : "生成邀请码后发给对手，对手会返回一个应答码。"}</p>
+          <button class="primary" data-action="create-remote">${en ? "Generate Invite" : "生成邀请码"}</button>
           ${
             this.remoteInviteCode
               ? `
                 <textarea readonly rows="4" data-copy-target>${escapeHtml(this.remoteInviteCode)}</textarea>
-                <button data-action="copy-invite">复制邀请码</button>
+                <button data-action="copy-invite">${en ? "Copy Invite" : "复制邀请码"}</button>
               `
               : ""
           }
         </div>
         <div class="remote-join">
-          <h2>加入房间</h2>
-          <p>粘贴对方邀请码，生成应答码后发回给创建方。</p>
-          <textarea rows="4" placeholder="粘贴对方邀请码" data-remote-input></textarea>
-          <button data-action="join-remote">生成应答码</button>
+          <h2>${en ? "Join Room" : "加入房间"}</h2>
+          <p>${en ? "Paste the invite code, generate an answer code, and send it back to the creator." : "粘贴对方邀请码，生成应答码后发回给创建方。"}</p>
+          <textarea rows="4" placeholder="${en ? "Paste opponent invite code" : "粘贴对方邀请码"}" data-remote-input></textarea>
+          <button data-action="join-remote">${en ? "Generate Answer" : "生成应答码"}</button>
           ${
             this.remoteAnswerCode
               ? `
                 <textarea readonly rows="4">${escapeHtml(this.remoteAnswerCode)}</textarea>
-                <button data-action="copy-answer">复制应答码</button>
+                <button data-action="copy-answer">${en ? "Copy Answer" : "复制应答码"}</button>
               `
               : ""
           }
         </div>
         <div class="remote-finish">
-          <h2>完成连接</h2>
-          <p>创建方粘贴对手应答码，然后点击完成连接。</p>
-          <textarea rows="4" placeholder="粘贴对方应答码" data-answer-input></textarea>
-          <button class="primary" data-action="finish-remote">完成连接</button>
-          <p class="status-text">${this.remoteStatus}</p>
+          <h2>${en ? "Complete Connection" : "完成连接"}</h2>
+          <p>${en ? "The creator pastes the opponent's answer code and completes the connection." : "创建方粘贴对手应答码，然后点击完成连接。"}</p>
+          <textarea rows="4" placeholder="${en ? "Paste opponent answer code" : "粘贴对方应答码"}" data-answer-input></textarea>
+          <button class="primary" data-action="finish-remote">${en ? "Complete Connection" : "完成连接"}</button>
+          <p class="status-text" role="status" aria-live="polite">${this.remoteStatus}</p>
         </div>
         <div class="remote-match">
-          <h2>云端自动匹配</h2>
-          <p>连接服务端后自动匹配对手，不需要手动交换邀请码。需先部署或本地运行房间服务器。</p>
-          <button class="primary" data-action="cloud-match">开始匹配</button>
+          <h2>${en ? "Cloud Auto-Match" : "云端自动匹配"}</h2>
+          <p>${en ? "Connect to the room server and match automatically without exchanging invite codes. The server must be deployed or running locally first." : "连接服务端后自动匹配对手，不需要手动交换邀请码。需先部署或本地运行房间服务器。"}</p>
+          <button class="primary" data-action="cloud-match">${en ? "Start Matching" : "开始匹配"}</button>
           <p class="status-text">${this.cloudStatus}</p>
         </div>
       </div>
@@ -1275,7 +1578,7 @@ export class AdaptiveGameApp {
       this.root.innerHTML = `
         <main class="duel-waiting">
           <h1>${this.remoteStatus}</h1>
-          <p>等待对手加入。请保持页面打开。</p>
+          <p>${this.language === "en" ? "Waiting for your opponent. Keep this page open." : "等待对手加入。请保持页面打开。"}</p>
         </main>
       `;
       return;
@@ -1315,14 +1618,14 @@ export class AdaptiveGameApp {
       this.root.innerHTML = `
         <main class="duel-result">
           <section class="result-hero">
-            <p class="eyebrow">对决结束</p>
-            <h1>${escapeHtml(result.winnerName)} 获胜</h1>
+            <p class="eyebrow">${this.language === "en" ? "Duel Complete" : "对决结束"}</p>
+            <h1>${escapeHtml(result.winnerName)} ${this.language === "en" ? "wins" : "获胜"}</h1>
             <div class="result-scores">
               <span>${engine.players[0].name} <strong>${result.scores[0]}</strong></span>
               <span>${engine.players[1].name} <strong>${result.scores[1]}</strong></span>
             </div>
-            <button class="primary" data-action="open-duel-lobby">返回大厅</button>
-            <button data-action="open-map">继续主线</button>
+            <button class="primary" data-action="open-duel-lobby">${this.language === "en" ? "Back to Lobby" : "返回大厅"}</button>
+            <button data-action="open-map">${this.t("menuContinue")}</button>
           </section>
         </main>
       `;
@@ -1330,14 +1633,15 @@ export class AdaptiveGameApp {
     }
 
     const node = engine.node;
+    const nodeView = this.storyNodeDisplay(node);
     const lastResult = engine.roundResults[engine.currentRound - 1];
     const roundKey = `${engine.currentRound}-${engine.picks[0] ?? ""}-${engine.picks[1] ?? ""}`;
     this.root.innerHTML = `
       <header class="topbar duel-top">
-        <div class="brand">1v1 对决</div>
+        <div class="brand">${this.t("duelTitle")}</div>
         <div class="duel-score">
           <span style="--dot:${engine.players[0].color}"><strong>${engine.players[0].name}</strong> ${engine.scores[0]}</span>
-          <span>第 ${Math.min(engine.currentRound + 1, engine.roundCount)} / ${engine.roundCount} 回合</span>
+          <span>${this.language === "en" ? `Round ${Math.min(engine.currentRound + 1, engine.roundCount)} / ${engine.roundCount}` : `第 ${Math.min(engine.currentRound + 1, engine.roundCount)} / ${engine.roundCount} 回合`}</span>
           <span style="--dot:${engine.players[1].color}"><strong>${engine.players[1].name}</strong> ${engine.scores[1]}</span>
         </div>
       </header>
@@ -1346,20 +1650,20 @@ export class AdaptiveGameApp {
           lastResult
             ? `
               <section class="round-result">
-                <span>上一回合</span>
-                <strong>${escapeHtml(lastResult.node.title)}</strong>
-                <p>${engine.players[0].name} ${lastResult.points[0]} 分 · ${engine.players[1].name} ${lastResult.points[1]} 分</p>
+                <span>${this.language === "en" ? "Previous Round" : "上一回合"}</span>
+                <strong>${escapeHtml(this.storyNodeDisplay(lastResult.node).title)}</strong>
+                <p>${engine.players[0].name} ${lastResult.points[0]} ${this.language === "en" ? "pts" : "分"} · ${engine.players[1].name} ${lastResult.points[1]} ${this.language === "en" ? "pts" : "分"}</p>
               </section>
             `
             : ""
         }
         <section class="duel-scenario">
           <div class="scenario-meta">
-            <span>回合 ${engine.currentRound + 1}</span>
-            <span>${node.title}</span>
+            <span>${this.language === "en" ? `Round ${engine.currentRound + 1}` : `回合 ${engine.currentRound + 1}`}</span>
+            <span>${nodeView.title}</span>
           </div>
-          <h1>${escapeHtml(node.context)}</h1>
-          <div class="stake"><strong>考验</strong><p>${escapeHtml(node.stake)}</p></div>
+          <h1>${escapeHtml(nodeView.context)}</h1>
+          <div class="stake"><strong>${this.t("currentTest")}</strong><p>${escapeHtml(nodeView.stake)}</p></div>
         </section>
         <section class="duel-players">
           ${this.playerPanel(0)}
@@ -1367,7 +1671,7 @@ export class AdaptiveGameApp {
           ${this.playerPanel(1)}
         </section>
         <section class="duel-options">
-          ${node.options
+          ${nodeView.options
             .map(
               (option, index) => `
                 <button class="option-card ${this.optionState(index)}" data-action="duel-pick" data-option="${index}" ${this.duelPickEnabled(index) ? "" : "disabled"}>
@@ -1383,7 +1687,7 @@ export class AdaptiveGameApp {
         </section>
         ${
           this.duelMode === "local" && this.localPassed && this.hotSeatTurn === 1
-            ? `<div class="pass-note">现在轮到玩家二，请移交设备。</div>`
+            ? `<div class="pass-note">${this.language === "en" ? "Player two's turn. Hand over the device." : "现在轮到玩家二，请移交设备。"}</div>`
             : ""
         }
         ${
@@ -1391,7 +1695,7 @@ export class AdaptiveGameApp {
           this.hotSeatTurn === 1 &&
           !this.localPassed &&
           this.duelEngine?.picks[0] !== null
-            ? `<button class="primary pass-button" data-action="pass-local">传递给玩家二</button>`
+            ? `<button class="primary pass-button" data-action="pass-local">${this.language === "en" ? "Pass to Player Two" : "传递给玩家二"}</button>`
             : ""
         }
       </main>
@@ -1766,7 +2070,7 @@ export class AdaptiveGameApp {
       this.save.profile.role,
       this.storyNodeId
     );
-    outcome.option = roleNode.options[optionIndex];
+    outcome.option = this.storyNodeDisplay(roleNode).options[optionIndex];
     this.lastOutcome = outcome;
     this.lastOutcomeNodeId = this.storyNodeId;
     const baseNode = getNode(this.storyNodeId);
@@ -2011,7 +2315,7 @@ export class AdaptiveGameApp {
       <div class="player-panel">
         <span class="player-color" style="--dot:${player.color}"></span>
         <strong>${escapeHtml(player.name)}</strong>
-        <small>${picked ? "已作出选择" : "正在思考"}</small>
+        <small>${picked ? (this.language === "en" ? "Choice made" : "已作出选择") : (this.language === "en" ? "Thinking" : "正在思考")}</small>
       </div>
     `;
   }
@@ -2077,56 +2381,68 @@ export class AdaptiveGameApp {
           abilityLevel(this.save.profile.abilities[a])
       )
       .slice(0, 3);
+    const en = this.language === "en";
+    const role = this.roleDisplay(this.save.profile.role);
     const lines = [
-      `# ${this.save.profile.name} 领导力复盘报告`,
+      `# ${this.save.profile.name} ${en ? "Leadership Review Report" : "领导力复盘报告"}`,
       "",
-      `角色：${ROLES[this.save.profile.role].name}`,
-      `段位：${summary.rank.name}`,
-      `综合能力值：${summary.total}`,
-      `决策画像：${decision.identity}`,
+      `${en ? "Role" : "角色"}：${role.name}`,
+      `${en ? "Rank" : "段位"}：${summary.rank.name}`,
+      `${en ? "Total Ability" : "综合能力值"}：${summary.total}`,
+      `${en ? "Decision Profile" : "决策画像"}：${decision.identity}`,
       "",
-      "## 能力现状",
+      en ? "## Ability Status" : "## 能力现状",
       ...ABILITY_ORDER.map(
         (id) =>
-          `- ${ABILITIES[id].name} Lv.${abilityLevel(this.save.profile.abilities[id])}：${ABILITIES[id].tagline}`
+          `- ${this.abilityDisplay(id).name} Lv.${abilityLevel(this.save.profile.abilities[id])}：${this.abilityDisplay(id).tagline}`
       ),
       "",
-      "## 优势能力",
-      ...strengths.map((id) => `- ${ABILITIES[id].name}：${ABILITIES[id].tagline}`),
+      en ? "## Strengths" : "## 优势能力",
+      ...strengths.map((id) => `- ${this.abilityDisplay(id).name}：${this.abilityDisplay(id).tagline}`),
       "",
-      "## 建议训练",
-      ...training.map((id) => `- ${ABILITIES[id].name}：${ABILITIES[id].trainingPath}`),
+      en ? "## Recommended Training" : "## 建议训练",
+      ...training.map((id) => `- ${this.abilityDisplay(id).name}：${this.abilityDisplay(id).tagline}`),
       "",
-      "## 章节表现",
+      en ? "## Chapter Performance" : "## 章节表现",
       ...CHAPTERS.map((chapter) => {
+        const chapterView = this.chapterDisplay(chapter);
         const record = this.save.chapterRecords.find(
           (item) => item.chapterId === chapter.id
         );
-        return `- ${chapter.title}：${record && record.completedNodeIds.length >= 2 ? "已完成" : "未完成"}`;
+        const status =
+          record && record.completedNodeIds.length >= 2
+            ? en
+              ? "Complete"
+              : "已完成"
+            : en
+              ? "Incomplete"
+              : "未完成";
+        return `- ${chapterView.title}：${status}`;
       }),
       "",
-      "## 支线剧情弧",
-      ...SIDE_QUEST_ARCS.map(
-        (arc) =>
-          `- ${arc.title}：${arc.nodes.filter((id) => this.save.completedSideQuests.includes(id)).length}/${arc.nodes.length}`
-      ),
+      en ? "## Side Story Arcs" : "## 支线剧情弧",
+      ...SIDE_QUEST_ARCS.map((arc) => {
+        const arcView = this.sideArcDisplay(arc);
+        return `- ${arcView.title}：${arc.nodes.filter((id) => this.save.completedSideQuests.includes(id)).length}/${arc.nodes.length}`;
+      }),
       "",
-      "## 人物关系",
+      en ? "## Relationships" : "## 人物关系",
       ...NPCS.map((npc) => {
+        const npcView = this.npcDisplay(npc);
         const relation = npcRelation(this.save, npc);
-        return `- ${npc.name}（${npc.title}）：${relation.status}`;
+        return `- ${npcView.name}（${npcView.title}）：${this.relationStatusText(relation.status)}`;
       }),
       "",
-      "## 对决记录",
-      `- 胜场：${this.save.duelWins}`,
-      `- 负场：${this.save.duelLosses}`,
-      `- 随机事件：${this.save.completedRandomEvents.length}`,
-      `- 修炼点：${this.save.masteryPoints}`,
+      en ? "## Duel Record" : "## 对决记录",
+      `- ${en ? "Wins" : "胜场"}：${this.save.duelWins}`,
+      `- ${en ? "Losses" : "负场"}：${this.save.duelLosses}`,
+      `- ${en ? "Random Events" : "随机事件"}：${this.save.completedRandomEvents.length}`,
+      `- ${en ? "Mastery Points" : "修炼点"}：${this.save.masteryPoints}`,
       "",
-      "## 近期对决",
+      en ? "## Recent Duels" : "## 近期对决",
       ...this.save.duelHistory.slice(-5).map(
         (entry) =>
-          `- ${entry.won ? "胜" : "负"} ${entry.opponentName} ${entry.playerScore}:${entry.opponentScore}`
+          `- ${entry.won ? (en ? "Win" : "胜") : (en ? "Loss" : "负")} ${entry.opponentName} ${entry.playerScore}:${entry.opponentScore}`
       )
     ];
     const blob = new Blob([lines.join("\n")], {
@@ -2135,7 +2451,7 @@ export class AdaptiveGameApp {
     const url = URL.createObjectURL(blob);
     const anchor = document.createElement("a");
     anchor.href = url;
-    anchor.download = `权变之路-${this.save.profile.name}-报告.md`;
+    anchor.download = `${en ? "Adaptive-Ascent" : "权变之路"}-${this.save.profile.name}-${en ? "report" : "报告"}.md`;
     anchor.click();
     URL.revokeObjectURL(url);
     this.audio.ui();
@@ -2198,11 +2514,12 @@ export class AdaptiveGameApp {
           }
         } else if (this.pendingCloudAction === "sync") {
           const remote = message.account as { save?: SaveState };
-          if (
-            remote.save &&
-            (remote.save.playCount ?? 0) > this.save.playCount
-          ) {
-            this.cloudStatus = "云端进度较新，已停止覆盖；请使用云端载入";
+          const resolution = resolveCloudConflict(this.save, remote.save ?? null);
+          if (resolution === "remote-newer" || resolution === "conflict") {
+            this.cloudStatus =
+              resolution === "conflict"
+                ? "检测到内容冲突（同进度但内容不同），已停止覆盖；请选择保留云端或本地"
+                : "云端进度较新，已停止覆盖；请使用云端载入";
             this.cloudConflict = true;
             this.cloudRemoteSave = remote.save;
           } else {
@@ -2405,10 +2722,11 @@ export class AdaptiveGameApp {
     const unlocked = this.save.unlockedChapters.includes(chapter.id);
     const complete = isChapterComplete(this.save, chapter.id);
     const current = this.selectedChapter === chapter.id;
+    const view = this.chapterDisplay(chapter);
     return `
       <button class="chapter-badge ${unlocked ? "unlocked" : ""} ${complete ? "complete" : ""} ${current ? "current" : ""}" data-action="select-chapter" data-chapter="${chapter.id}">
         <span>${chapter.code}</span>
-        <strong>${chapter.title}</strong>
+        <strong>${view.title}</strong>
       </button>
     `;
   }
@@ -2418,36 +2736,38 @@ export class AdaptiveGameApp {
       isNodeComplete(this.save, id)
     ).length;
     const done = doneCount === arc.nodes.length;
+    const view = this.sideArcDisplay(arc);
     return `
       <div class="quest-arc ${done ? "complete" : ""}">
         <div class="quest-arc-head">
           <div>
-            <strong>${arc.title}</strong>
-            <span>${doneCount} / ${arc.nodes.length} 节点</span>
+            <strong>${view.title}</strong>
+            <span>${doneCount} / ${arc.nodes.length} ${this.language === "en" ? "nodes" : "节点"}</span>
           </div>
-          <small>${done ? "已完成" : "进行中"}</small>
+          <small>${done ? (this.language === "en" ? "Complete" : "已完成") : (this.language === "en" ? "In Progress" : "进行中")}</small>
         </div>
-        <p class="quest-summary">${escapeHtml(arc.summary)}</p>
-        <p class="quest-intro">${escapeHtml(arc.intro)}</p>
+        <p class="quest-summary">${escapeHtml(view.summary)}</p>
+        <p class="quest-intro">${escapeHtml(view.intro)}</p>
         <div class="quest-nodes">
           ${arc.nodes
             .map((nodeId, index) => {
               const node = getNode(nodeId);
+              const nodeView = this.storyNodeDisplay(node);
               const unlocked = this.canEnterSideNode(nodeId);
               const nodeDone = isNodeComplete(this.save, nodeId);
               return `
                 <button class="quest-node ${nodeDone ? "done" : ""} ${unlocked ? "" : "locked"}" data-action="open-node" data-node="${nodeId}" ${unlocked ? "" : "disabled"}>
                   <span>${index + 1}</span>
                   <div>
-                    <strong>${escapeHtml(node.title)}</strong>
-                    <em>${nodeDone ? "已完成" : unlocked ? "可接取" : "前置未解锁"}</em>
+                    <strong>${escapeHtml(nodeView.title)}</strong>
+                    <em>${nodeDone ? (this.language === "en" ? "Complete" : "已完成") : unlocked ? (this.language === "en" ? "Available" : "可接取") : (this.language === "en" ? "Locked" : "前置未解锁")}</em>
                   </div>
                 </button>
               `;
             })
             .join("")}
         </div>
-        ${done ? `<p class="quest-conclusion">${escapeHtml(arc.conclusion)}</p>` : ""}
+        ${done ? `<p class="quest-conclusion">${escapeHtml(view.conclusion)}</p>` : ""}
       </div>
     `;
   }
@@ -2470,14 +2790,30 @@ export class AdaptiveGameApp {
   private nodeRow(node: StoryNode): string {
     const done = isNodeComplete(this.save, node.id);
     const chapter = getChapter(node.chapterId);
+    const view = this.storyNodeDisplay(node);
+    const kindLabel =
+      node.kind === "side"
+        ? this.t("storyKindSide")
+        : node.kind === "branch"
+          ? this.t("storyKindBranch")
+          : node.kind === "random"
+            ? this.t("storyKindRandom")
+            : this.t("storyKindMain");
+    const statusLabel = done
+      ? this.language === "en"
+        ? "Complete"
+        : "已完成"
+      : this.language === "en"
+        ? "Available"
+        : "可进入";
     return `
       <button class="node-row ${done ? "done" : ""}" data-action="open-node" data-node="${node.id}">
         <span class="node-state">${done ? "✓" : node.kind === "side" ? "支" : chapter.code}</span>
         <span>
-          <strong>${escapeHtml(node.title)}</strong>
-          <em>${node.kind === "side" ? "支线任务" : "主线情境"}</em>
+          <strong>${escapeHtml(view.title)}</strong>
+          <em>${kindLabel}</em>
         </span>
-        <small>${done ? "已完成" : "可进入"}</small>
+        <small>${statusLabel}</small>
       </button>
     `;
   }
@@ -2487,7 +2823,7 @@ export class AdaptiveGameApp {
       .map(
         (key) => `
           <span class="resource-chip">
-            <b>${RESOURCE_NAMES[key]}</b>
+            <b>${this.resourceDisplay(key)}</b>
             <i>${Math.round(profile.resources[key])}</i>
           </span>
         `
@@ -2504,12 +2840,12 @@ export class AdaptiveGameApp {
         <div class="ability-head">
           <span style="--dot:${ability.color}"></span>
           <div>
-            <h3>${ability.name}</h3>
+            <h3>${this.abilityDisplay(id).name}</h3>
             <small>${ability.code}</small>
           </div>
           <strong>Lv.${level}</strong>
         </div>
-        <p>${ability.tagline}</p>
+        <p>${this.abilityDisplay(id).tagline}</p>
         <div class="ability-bar"><i style="width:${Math.min(100, (level / 6) * 100)}%"></i></div>
         <div class="subskill-list">${ability.subSkills.map((skill) => `<span>${escapeHtml(skill)}</span>`).join("")}</div>
         <p class="training-path">${escapeHtml(ability.trainingPath)}</p>
@@ -2527,15 +2863,19 @@ export class AdaptiveGameApp {
       )
     ];
     if (relevant.length === 0) {
-      return "先看关键关系，再选最可能建立信任的行动。";
+      return this.language === "en"
+        ? "Read the key relationships first, then choose the move most likely to build trust."
+        : "先看关键关系，再选最可能建立信任的行动。";
     }
     const weakest = relevant.sort(
       (a, b) =>
         abilityLevel(this.save.profile.abilities[a]) -
         abilityLevel(this.save.profile.abilities[b])
     )[0];
-    const ability = ABILITIES[weakest];
-    return `本局对你的「${ability.name}」要求较高：${ability.tagline} 建议：${ability.trainingPath}`;
+    const ability = this.abilityDisplay(weakest);
+    return this.language === "en"
+      ? `This situation stresses your ${ability.name}. Focus: ${ability.tagline}`
+      : `本局对你的「${ABILITIES[weakest].name}」要求较高：${ability.tagline} 建议：${ABILITIES[weakest].trainingPath}`;
   }
 
   private roleOptionLabel(option: StoryOption, index: number): string {
@@ -2561,7 +2901,28 @@ export class AdaptiveGameApp {
 
   private roleMove(quality: OptionQuality): string {
     const role = this.save.profile.role;
-    const label = ROLES[role].shortName;
+    const label = this.roleDisplay(role).shortName;
+    if (this.language === "en") {
+      if (role === "parachute") {
+        return quality === "expert"
+          ? `${label} play: diagnose the power map before acting publicly`
+          : quality === "partial"
+            ? `${label} play: build authority first, repair relationships later`
+            : `${label} play: move fast and set boundaries without waiting for consensus`;
+      }
+      if (role === "founder") {
+        return quality === "expert"
+          ? `${label} play: validate cash flow before scaling`
+          : quality === "partial"
+            ? `${label} play: protect delivery before adding systems`
+            : `${label} play: push decisively and test fast`;
+      }
+      return quality === "expert"
+        ? `${label} play: build horizontal consensus before deciding`
+        : quality === "partial"
+          ? `${label} play: win key support before broad execution`
+          : `${label} play: escalate around resistance`;
+    }
     if (role === "parachute") {
       return quality === "expert"
         ? `${label}打法：先诊断权力结构，再公开行动`
@@ -2583,6 +2944,17 @@ export class AdaptiveGameApp {
         : `${label}打法：越级推动，绕过部门阻力`;
   }
 
+  private qualityLabel(quality: OptionQuality): string {
+    if (this.language === "en") {
+      return quality === "expert"
+        ? "Expert Response"
+        : quality === "partial"
+          ? "Partially Effective"
+          : "High-Risk Response";
+    }
+    return optionQualityLabel(quality);
+  }
+
   private outcomeMarkup(outcome: ChoiceOutcome): string {
     const option = outcome.option;
     const transitionId = this.pendingChapterTransition;
@@ -2592,40 +2964,54 @@ export class AdaptiveGameApp {
         ? "continue-branch"
         : "continue-story";
     const actionLabel = transitionId
-      ? "查看章节过渡"
+      ? this.language === "en"
+        ? "View Chapter Transition"
+        : "查看章节过渡"
       : this.pendingBranchNodeId
-        ? "进入角色分岔"
-        : "返回地图";
+        ? this.language === "en"
+          ? "Enter Role Branch"
+          : "进入角色分岔"
+        : this.language === "en"
+          ? "Back to Map"
+          : "返回地图";
     const streak = this.expertStreak();
     const encouragement =
       option.quality === "expert"
         ? streak >= 2
-          ? `连续专家判断 x${streak}，你已经找到自己的判断节奏！`
-          : "这一手判断精准，保持这个节奏。"
+          ? this.language === "en"
+            ? `Expert streak x${streak}. You are finding your decision rhythm.`
+            : `连续专家判断 x${streak}，你已经找到自己的判断节奏！`
+          : this.language === "en"
+            ? "Precise read. Keep this rhythm."
+            : "这一手判断精准，保持这个节奏。"
         : option.quality === "partial"
-          ? "方向不错，下一步可以更稳。"
-          : "你敢于在高压中行动，这份胆识也是领导力的一部分。";
+          ? this.language === "en"
+            ? "Good direction; make the next step steadier."
+            : "方向不错，下一步可以更稳。"
+          : this.language === "en"
+            ? "You acted under pressure; that courage is part of leadership."
+            : "你敢于在高压中行动，这份胆识也是领导力的一部分。";
     return `
       <section class="outcome-panel">
-        <span class="quality ${option.quality}">${optionQualityLabel(option.quality)}</span>
+        <span class="quality ${option.quality}">${this.qualityLabel(option.quality)}</span>
         <div class="positive-feedback">${encouragement}</div>
         ${
           this.lastUnlockedAchievement
-            ? `<div class="achievement-unlock">新成就解锁：${escapeHtml(this.lastUnlockedAchievement)}</div>`
+            ? `<div class="achievement-unlock">${this.language === "en" ? "Achievement Unlocked: " : "新成就解锁："}${escapeHtml(this.lastUnlockedAchievement)}</div>`
             : ""
         }
         <h2>${escapeHtml(option.label)}</h2>
         <p>${escapeHtml(option.feedback)}</p>
         <blockquote>${escapeHtml(option.theory)}</blockquote>
         <div class="outcome-effects">
-          <span><b>+${outcome.qualityScore}</b> 专家契合分</span>
-          ${outcome.gainedAbilityIds.map((id) => `<span><b>+${option.effects[id] ?? 0}</b> ${ABILITIES[id].name}</span>`).join("")}
+          <span><b>+${outcome.qualityScore}</b> ${this.language === "en" ? "Expert Fit" : "专家契合分"}</span>
+          ${outcome.gainedAbilityIds.map((id) => `<span><b>+${option.effects[id] ?? 0}</b> ${this.abilityDisplay(id).name}</span>`).join("")}
           ${(Object.keys(outcome.resourceDeltas) as ResourceKey[])
             .filter((key) => outcome.resourceDeltas[key])
             .map(
               (key) => `
                 <span class="${(outcome.resourceDeltas[key] ?? 0) < 0 ? "negative" : "positive"}">
-                  <b>${formatDelta(outcome.resourceDeltas[key] ?? 0)}</b> ${RESOURCE_NAMES[key]}
+                  <b>${formatDelta(outcome.resourceDeltas[key] ?? 0)}</b> ${this.resourceDisplay(key)}
                 </span>
               `
             )
@@ -2650,7 +3036,11 @@ export class AdaptiveGameApp {
 
   private latestDecisionText(): string {
     const last = this.save.decisionHistory[this.save.decisionHistory.length - 1];
-    return last ? optionQualityLabel(last.quality) : "尚未决策";
+    return last
+      ? this.qualityLabel(last.quality)
+      : this.language === "en"
+        ? "No decision yet"
+        : "尚未决策";
   }
 
   private nextRankNeed(total: number): number {
