@@ -1,5 +1,6 @@
 import {
   CHAPTERS,
+  CHAPTER_REFLECTIONS,
   NODE_INTEL,
   ROLE_NODE_VARIANTS,
   STORY_NODES
@@ -17,6 +18,11 @@ const problems = [];
 
 if (CHAPTERS.length !== 9) {
   problems.push("chapter count must be 9");
+}
+for (const chapter of CHAPTERS) {
+  if (!CHAPTER_REFLECTIONS[chapter.id]) {
+    problems.push(`chapter ${chapter.id} missing reflection`);
+  }
 }
 if (mainNodes.length !== 18) {
   problems.push(`main nodes must be 18, got ${mainNodes.length}`);

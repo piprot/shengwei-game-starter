@@ -32,6 +32,7 @@ import {
 } from "../core/game";
 import {
   CHAPTERS,
+  CHAPTER_REFLECTIONS,
   NODE_INTEL,
   getChapter,
   getNode,
@@ -260,6 +261,7 @@ export class AdaptiveGameApp {
     const summary = profileSummary(this.save);
     const chapter = getChapter(this.selectedChapter);
     const mainNodes = chapter.nodeIds.map(getNode);
+    const chapterDone = isChapterComplete(this.save, chapter.id);
     const sideNodes = sideNodesForChapter(this.selectedChapter).filter(
       (node) =>
         !isNodeComplete(this.save, node.id) &&
@@ -299,6 +301,16 @@ export class AdaptiveGameApp {
               ${mainNodes.map((node) => this.nodeRow(node)).join("")}
               ${sideNodes.length ? `<h3>支线任务</h3>${sideNodes.map((node) => this.nodeRow(node)).join("")}` : ""}
             </div>
+            ${
+              chapterDone
+                ? `
+                  <section class="chapter-reflection">
+                    <h3>本章复盘</h3>
+                    <p>${escapeHtml(CHAPTER_REFLECTIONS[chapter.id] ?? "")}</p>
+                  </section>
+                `
+                : ""
+            }
           </div>
           <aside class="map-side">
             <div class="mini-panel role-objective">
