@@ -34,6 +34,7 @@ import {
   NODE_INTEL,
   getChapter,
   getNode,
+  getNodeForRole,
   sideNodesForChapter
 } from "../core/story";
 import type {
@@ -321,7 +322,7 @@ export class AdaptiveGameApp {
       this.show("map");
       return;
     }
-    const node = getNode(this.storyNodeId);
+    const node = getNodeForRole(this.save.profile.role, this.storyNodeId);
     const chapter = getChapter(node.chapterId);
     const showingOutcome = this.lastOutcomeNodeId === node.id && this.lastOutcome;
     this.root.innerHTML = `

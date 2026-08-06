@@ -1,4 +1,4 @@
-import type { ChapterDef, StoryNode } from "./types";
+import type { ChapterDef, RoleId, StoryNode } from "./types";
 
 export const CHAPTERS: ChapterDef[] = [
   {
@@ -1070,6 +1070,341 @@ export const NODE_INTEL: Record<string, string[]> = {
     "你明早要见的客户曾在凌晨收到过竞争对手的方案"
   ]
 };
+
+export interface RoleNodeVariant {
+  title?: string;
+  context?: string;
+  stake?: string;
+}
+
+export const ROLE_NODE_VARIANTS: Record<
+  string,
+  Partial<Record<RoleId, RoleNodeVariant>>
+> = {
+  c1n1: {
+    parachute: {
+      context:
+        "你刚空降接任事业部负责人，团队还不知道你会带来什么，前任的人正在观察你会不会动他们。",
+      stake: "先摸清谁真正掌握信息，还是先证明你能赢？"
+    },
+    founder: {
+      context:
+        "你是创始人，团队刚扩张到 30 人，创始团队开始出现流程混乱，但没人愿意承认问题。",
+      stake: "你需要在没有职业经理人的情况下建立第一套管理秩序。"
+    },
+    highPotential: {
+      context:
+        "你作为高潜骨干被 CEO 点名牵头一个新项目，但没有正式任命，各部门只是给出“配合”的口头承诺。",
+      stake: "你必须用专业和关系让项目真正运转起来。"
+    }
+  },
+  c1n2: {
+    parachute: {
+      context:
+        "空降第三周，你发现一笔外包费用去向不明，行政主管无意间给了你一条线索，但财务团队还没准备好配合。",
+      stake: "在信任未建立时，你如何验证这条线索？"
+    },
+    founder: {
+      context:
+        "你发现合伙人使用的一笔外包费缺少合同，项目没交付，但这位合伙人掌握着主要客户关系。",
+      stake: "你要在保护现金流和维持合伙人信任之间做判断。"
+    },
+    highPotential: {
+      context:
+        "你协助财务做预算审计时发现异常支出，但直接汇报会得罪一位跨部门负责人。",
+      stake: "你如何用非正式影响力推动事实被看见？"
+    }
+  },
+  c2n1: {
+    parachute: {
+      context:
+        "组织架构调整后你的直属上级突然调走，授权悬空，CEO 说“先干起来，授权再谈”。",
+      stake: "你要先争取资源，还是先用成果换授权？"
+    },
+    founder: {
+      context:
+        "投资人说下个月才会到账，但团队已经需要采购、招人，你没有任何正式授权文件。",
+      stake: "你要先证明项目能跑，还是先逼投资人明确承诺？"
+    },
+    highPotential: {
+      context:
+        "你被授权推进一个创新项目，但没有预算和人手，所有支持都只是口头承诺。",
+      stake: "你要先做出小胜利，还是先向上要明确权力？"
+    }
+  },
+  c2n2: {
+    parachute: {
+      context:
+        "你召开第一次全员会，团队怀疑你要裁员，有人当面问尖锐问题，有人沉默。",
+      stake: "你如何用一场会建立第一波信任？"
+    },
+    founder: {
+      context:
+        "你第一次召集全员会，老员工质疑你过度扩张，新员工担心公司方向不清楚。",
+      stake: "你如何在混乱中找到共同目标？"
+    },
+    highPotential: {
+      context:
+        "你作为项目牵头人第一次召集跨部门会议，但每个部门都在谈自己的 KPI。",
+      stake: "你如何让会议从立场争吵变成共同方案？"
+    }
+  },
+  c3n1: {
+    parachute: {
+      context:
+        "你接管团队后要提交精简名单，有人能力强但关系存疑，有人平庸但掌握客户。",
+      stake: "你要用人岗匹配决定去留，还是用忠诚度决定去留？"
+    },
+    founder: {
+      context:
+        "你发现团队里最能打的人开始掌控核心客户，公司人才结构过度依赖某几个人。",
+      stake: "你要重组关键岗位，还是继续依赖少数明星？"
+    },
+    highPotential: {
+      context:
+        "你被邀请参与人才盘点，部门负责人希望你能给出不偏袒任何人的判断。",
+      stake: "你如何在组织政治中坚持专业判断？"
+    }
+  },
+  c3n2: {
+    parachute: {
+      context:
+        "项目连续出问题，团队习惯把问题推给你，你发现一位年轻骨干能独立解决大部分问题。",
+      stake: "你要继续当救火队长，还是真正授权？"
+    },
+    founder: {
+      context:
+        "公司订单一多，你发现自己成了唯一能解决问题的人，连办公室网络都要你修。",
+      stake: "你要继续亲自把关，还是把责任还回去？"
+    },
+    highPotential: {
+      context:
+        "你发现一个初级同事能独立解决问题，但他总在等你确认，因为跨部门都把他当成传话筒。",
+      stake: "你要替他扛责任，还是帮他建立自主决策空间？"
+    }
+  },
+  c4n1: {
+    parachute: {
+      context:
+        "你推动新流程，资历深厚的运营负责人公开反对，他的顾虑确实存在。",
+      stake: "你要压制反对，还是把反对者变成方案负责人？"
+    },
+    founder: {
+      context:
+        "你想改变产品方向，但联合创始人公开反对，他认为现有客户会流失。",
+      stake: "你要用数据说服，还是用创始人权力强推？"
+    },
+    highPotential: {
+      context:
+        "你提出的新流程被资深负责人反对，你没有职位权力，但方案确实有漏洞。",
+      stake: "你要如何让反对者愿意和你一起修改方案？"
+    }
+  },
+  c4n2: {
+    parachute: {
+      context:
+        "产品、销售、研发三部门互相推责，一个客户项目停了十天，CEO 让你牵头解决。",
+      stake: "你要如何跨越没有直属权力的部门墙？"
+    },
+    founder: {
+      context:
+        "你的创业团队开始出现部门墙，产品怪销售乱承诺，销售怪产品不交付。",
+      stake: "你要如何用目标而不是命令重新组织协作？"
+    },
+    highPotential: {
+      context:
+        "跨部门项目陷入僵局，你既不是产品负责人也不是销售负责人，但所有人都等你给方案。",
+      stake: "你要如何在没有指挥权的情况下推动行动？"
+    }
+  },
+  c5n1: {
+    parachute: {
+      context:
+        "公司给你定下收入翻倍目标，但团队只会点头，没人知道明天该做什么。",
+      stake: "你要如何把口号拆成可执行的关键结果？"
+    },
+    founder: {
+      context:
+        "投资人给你定下增长目标，但产品、销售和研发各有各的优先级。",
+      stake: "你要如何让团队围绕同一个目标排兵布阵？"
+    },
+    highPotential: {
+      context:
+        "你被要求带领跨部门小组完成季度目标，但没有人真正向你汇报。",
+      stake: "你要如何用目标管理代替行政命令？"
+    }
+  },
+  c5n2: {
+    parachute: {
+      context:
+        "季度还有十五天，目标缺口 30%，团队已经连续加班，士气下降。",
+      stake: "你要如何在不透支团队的情况下完成冲刺？"
+    },
+    founder: {
+      context:
+        "现金流只能再撑一个月，产品还没跑通收入，团队已经在超负荷工作。",
+      stake: "你要如何重新排优先级，保住最关键的现金流？"
+    },
+    highPotential: {
+      context:
+        "项目交付日临近，关键成员被抽走，剩余团队已经连续加班。",
+      stake: "你要如何向更高层要资源，而不是简单加码？"
+    }
+  },
+  c6n1: {
+    parachute: {
+      context:
+        "你发现 CFO 和销售副总绕过你直接决策，你的批示在系统中只是“参考意见”。",
+      stake: "你要如何用制度重新划定权力边界？"
+    },
+    founder: {
+      context:
+        "合伙人开始绕过你直接决策，你发现自己名义上是 CEO，实际上被架空。",
+      stake: "你要如何重建决策机制，而不是公开摊牌？"
+    },
+    highPotential: {
+      context:
+        "你的项目被更高层直接指挥，关键决定都绕过了你，但你还要为结果负责。",
+      stake: "你要如何守住项目主导权？"
+    }
+  },
+  c6n2: {
+    parachute: {
+      context:
+        "核心下属开始越级汇报，并在 CEO 面前曲解你的决策，团队都看在眼里。",
+      stake: "你要如何处理越级汇报而不显得心胸狭窄？"
+    },
+    founder: {
+      context:
+        "一个资深员工开始绕过你直接找投资人，投资人开始质疑你的管理能力。",
+      stake: "你要如何同时守住内部纪律和投资人信任？"
+    },
+    highPotential: {
+      context:
+        "你的项目成员开始跳过你向部门负责人汇报，部门负责人开始自行决定项目方向。",
+      stake: "你要如何用机制保护项目的一致性？"
+    }
+  },
+  c7n1: {
+    parachute: {
+      context:
+        "公司准备让你晋升，要求你提名接班人：一个能力强但和你不够亲近，一个忠诚但能力待提升。",
+      stake: "你要选能力，还是选延续性？"
+    },
+    founder: {
+      context:
+        "你准备培养一个联合创始人接班，但候选人在业务能力和团队信任之间有明显差异。",
+      stake: "你要如何建立不依赖任何个人的梯队？"
+    },
+    highPotential: {
+      context:
+        "你被要求推荐下一任项目负责人，候选人包括能力强的竞争者和关系好的同事。",
+      stake: "你要如何给出不偏私但又能被组织接受的建议？"
+    }
+  },
+  c7n2: {
+    parachute: {
+      context:
+        "你发现很多好经验只存在你脑子里，你一离开，团队就回到老路。",
+      stake: "你要如何把个人判断变成组织能力？"
+    },
+    founder: {
+      context:
+        "公司所有关键决策都要经过你，你生病一天业务就停一半。",
+      stake: "你要如何把创始人经验制度化和产品化？"
+    },
+    highPotential: {
+      context:
+        "你负责的项目高度依赖你个人的沟通网络，你一休假项目就停滞。",
+      stake: "你要如何把个人关系变成团队流程？"
+    }
+  },
+  c8n1: {
+    parachute: {
+      context:
+        "财务告诉你下月现金流只够发 60% 工资，最大客户突然暂停付款。",
+      stake: "你要如何在 48 小时内稳住局面？"
+    },
+    founder: {
+      context:
+        "你的最大客户突然暂停付款，账面现金只够活一个月，投资还没到账。",
+      stake: "你要如何同时解决现金流和客户关系？"
+    },
+    highPotential: {
+      context:
+        "你负责的关键项目被砍预算，团队和供应商同时向你要答案。",
+      stake: "你要如何在资源被抽走时保护核心交付？"
+    }
+  },
+  c8n2: {
+    parachute: {
+      context:
+        "明星销售带着核心客户跳槽，客户说“我们不是被挖走的，是被服务拖走的”。",
+      stake: "你要如何同时处理客户流失、团队信心和系统漏洞？"
+    },
+    founder: {
+      context:
+        "你的核心销售带着最大客户离职，留下的客户也开始质疑服务能力。",
+      stake: "你要如何防止单个关键人成为公司命脉？"
+    },
+    highPotential: {
+      context:
+        "项目关键成员跳槽，客户开始要求换人，团队担心项目会失败。",
+      stake: "你要如何重建客户信任并防止知识断层？"
+    }
+  },
+  c9n1: {
+    parachute: {
+      context:
+        "你的改革成功了，CEO 想让你进入更高层，但你知道离开会留下交接断层。",
+      stake: "你要如何让成功在离开后延续？"
+    },
+    founder: {
+      context:
+        "公司终于稳定下来，投资人想让你去做更大平台，但你担心创始团队会失控。",
+      stake: "你要如何完成个人与组织的权力交接？"
+    },
+    highPotential: {
+      context:
+        "你即将晋升，但接替你的人还没有完全准备好，项目也正处在关键节点。",
+      stake: "你要如何安全地完成交接？"
+    }
+  },
+  c9n2: {
+    parachute: {
+      context:
+        "你离开前要决定是否继续投入一条高毛利但高风险的创新业务。",
+      stake: "你要留给组织一个结论，还是一套决策方法？"
+    },
+    founder: {
+      context:
+        "你准备寻找第二增长曲线，但新业务烧钱已久，团队还想再坚持半年。",
+      stake: "你要如何定义继续投入还是止损的检查点？"
+    },
+    highPotential: {
+      context:
+        "你负责的新项目已经烧钱很久，团队想继续，但组织开始要求你给出终局判断。",
+      stake: "你要如何用结构思考替团队建立决策标准？"
+    }
+  }
+};
+
+export function getNodeForRole(
+  role: RoleId,
+  nodeId: string
+): StoryNode {
+  const base = getNode(nodeId);
+  const variant = ROLE_NODE_VARIANTS[nodeId]?.[role];
+  if (!variant) {
+    return base;
+  }
+  return {
+    ...base,
+    title: variant.title ?? base.title,
+    context: variant.context ?? base.context,
+    stake: variant.stake ?? base.stake
+  };
+}
 
 export function duelNodes(count: number, seed: number): StoryNode[] {
   const candidates = STORY_NODES.filter((node) => node.kind === "main");
