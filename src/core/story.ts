@@ -1231,6 +1231,120 @@ export const STORY_NODES: StoryNode[] = [
     ]
   },
   {
+    id: "c2b-parachute",
+    chapterId: 2,
+    title: "空降 · 授权真空下的第一选择",
+    kind: "branch",
+    context:
+      "你作为空降管理者，在没有正式授权时决定先做小胜利。团队开始观察你会把第一个承诺投给谁。",
+    stake: "你要让高层看到你能在没有名分时建立判断秩序。",
+    options: [
+      {
+        label: "先锁定一个 14 天内能赢的项目",
+        summary: "选一个边界清楚、风险可控、能证明你判断力的项目。",
+        quality: "expert",
+        effects: { execution: 3, strategy: 2 },
+        resources: { energy: -6, trust: 5, influence: 6 },
+        feedback: "你把授权真空变成观察期，用可验证结果换回了主动权。",
+        theory: "《权经》：携为上，功次之。"
+      },
+      {
+        label: "先向上说明需要授权",
+        summary: "让 CEO 明确授权边界，避免名不正言不顺。",
+        quality: "partial",
+        effects: { strategy: 2, communication: 1 },
+        resources: { energy: -5, trust: 2, influence: 3 },
+        feedback: "你争取了授权，但也可能让高层觉得你在等别人给权力。",
+        theory: "《权经》：权乃人授，授为大焉。"
+      },
+      {
+        label: "先绕开授权推进关键动作",
+        summary: "不等正式文件，先做出改变。",
+        quality: "risk",
+        effects: { authority: 2 },
+        resources: { energy: -6, trust: -4, influence: 2 },
+        feedback: "你展现了行动力，但越权动作会留下权力边界风险。",
+        theory: "《韩非子》：事以密成，语以泄败。"
+      }
+    ]
+  },
+  {
+    id: "c2b-founder",
+    chapterId: 2,
+    title: "创业 · 授权真空下的第一选择",
+    kind: "branch",
+    context:
+      "你作为创始人，在没有明确组织授权时决定先验证现金流。团队开始等待你给出第一个可执行方向。",
+    stake: "你要让团队相信，即使没有完整体系，你也能找到活路。",
+    options: [
+      {
+        label: "先锁定一个可回款的客户动作",
+        summary: "选一个能在两周内产生现金流的动作，先跑通再谈体系。",
+        quality: "expert",
+        effects: { execution: 3, structure: 2 },
+        resources: { energy: -7, trust: 5, influence: 5 },
+        feedback: "你用一个真实回款动作建立了创业团队的第一套确定性。",
+        theory: "德鲁克：管理者的成果是贡献，不是忙碌。"
+      },
+      {
+        label: "先补齐合伙人共识",
+        summary: "避免创始人独断，先统一方向再行动。",
+        quality: "partial",
+        effects: { communication: 2 },
+        resources: { energy: -5, trust: 3, influence: 2 },
+        feedback: "共识变多了，但业务动作仍没有开始。",
+        theory: "《论语》：君子信而后劳其民。"
+      },
+      {
+        label: "直接砍掉低效业务",
+        summary: "用创始人权力快速止血，把资源转向高潜力方向。",
+        quality: "risk",
+        effects: { execution: 3 },
+        resources: { energy: -7, trust: -5, influence: 1 },
+        feedback: "资源被集中了，但团队对未来的安全感被同时砍掉。",
+        theory: "《孙子兵法》：兵贵胜，不贵久。"
+      }
+    ]
+  },
+  {
+    id: "c2b-highPotential",
+    chapterId: 2,
+    title: "高潜 · 授权真空下的第一选择",
+    kind: "branch",
+    context:
+      "你作为高潜骨干，在没有正式任命时决定先建立横向共识。各部门开始等待你证明项目值得参与。",
+    stake: "你要让关键人愿意把时间投给一个没有头衔的你。",
+    options: [
+      {
+        label: "先建立一个共同目标工作台",
+        summary: "用一张看板把各部门目标、责任和截止时间公开对齐。",
+        quality: "expert",
+        effects: { communication: 3, structure: 2 },
+        resources: { energy: -6, trust: 6, influence: 5 },
+        feedback: "你没有要求授权，而是让协作关系变得可操作。",
+        theory: "毛泽东《党委会的工作方法》：互通情报，取得共同语言。"
+      },
+      {
+        label: "先私下说服两个关键部门",
+        summary: "减少公开阻力，先获得核心支持。",
+        quality: "partial",
+        effects: { strategy: 2 },
+        resources: { energy: -5, trust: 2, influence: 2 },
+        feedback: "你获得了局部支持，但未被邀请的部门会感到被排除。",
+        theory: "《权经》：揣为上，事次之。"
+      },
+      {
+        label: "直接向上级提交完整方案",
+        summary: "用高层推动打破部门僵局。",
+        quality: "risk",
+        effects: { authority: 1, execution: 1 },
+        resources: { energy: -4, trust: -4, influence: 2 },
+        feedback: "方案被推进了，但横向关系反而变得更疏远。",
+        theory: "《韩非子》：事以密成，语以泄败。"
+      }
+    ]
+  },
+  {
     id: "r1",
     chapterId: 2,
     title: "电梯偶遇",
@@ -2203,6 +2317,18 @@ export const NODE_INTEL: Record<string, string[]> = {
     "各部门愿意认领自己提出的动作",
     "直接下发清单会让他们退回本位"
   ],
+  "c2b-parachute": [
+    "CEO 正在等待一个不需要他兜底的小胜利",
+    "组织里有一个停滞项目可以快速重启"
+  ],
+  "c2b-founder": [
+    "现金流缺口来自两个逾期客户",
+    "团队里有人已经准备好一份回款清单"
+  ],
+  "c2b-highPotential": [
+    "各部门最缺的不是方案，而是共同验收标准",
+    "财务愿意提供数据，但不想承担最终决策责任"
+  ],
   r1: [
     "CEO 最近最担心的是组织是否开始失去方向",
     "他给你一句话的机会，其实是在测试你是否已经进入状态"
@@ -2715,6 +2841,9 @@ function buildBranchNodes(): void {
     }
     for (const role of ROLE_IDS) {
       const id = `c${chapter.id}b-${role}`;
+      if (STORY_NODES.some((node) => node.id === id)) {
+        continue;
+      }
       STORY_NODES.push({
         id,
         chapterId: chapter.id,
