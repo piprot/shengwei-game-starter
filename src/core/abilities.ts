@@ -20,7 +20,9 @@ export const ABILITIES: Record<AbilityId, AbilityDef> = {
     code: "SIGHT",
     tagline: "看懂人，才能看穿局",
     color: "#f2c14e",
-    sources: ["《人物志》九征八观", "《冰鉴》识人八字诀", "《孙子兵法》知胜有五"]
+    sources: ["《人物志》九征八观", "《冰鉴》识人八字诀", "《孙子兵法》知胜有五"],
+    subSkills: ["观其外而知其内", "察其行而辨其品", "审其变而见其性", "辨其类而尽其才"],
+    trainingPath: "每章先完成利益相关者地图，再进入关键人物一对一访谈。"
   },
   deploy: {
     id: "deploy",
@@ -28,7 +30,9 @@ export const ABILITIES: Record<AbilityId, AbilityDef> = {
     code: "PLACE",
     tagline: "把对的人放进对的坑",
     color: "#57c7a3",
-    sources: ["《韩非子·用人》循天顺人", "《贞观政要》唯才是举", "德鲁克：用人之所长"]
+    sources: ["《韩非子·用人》循天顺人", "《贞观政要》唯才是举", "德鲁克：用人之所长"],
+    subSkills: ["因材施用", "用其所长", "赏罚分明", "职责清晰"],
+    trainingPath: "用关键岗位清单代替印象分，按能力证据做人事配置。"
   },
   mobilize: {
     id: "mobilize",
@@ -36,7 +40,9 @@ export const ABILITIES: Record<AbilityId, AbilityDef> = {
     code: "MOVE",
     tagline: "让一群人愿意一起走",
     color: "#e9826c",
-    sources: ["《论语》为政以德", "《孙子兵法》令之以文，齐之以武", "毛泽东：出主意、用干部、抓重点"]
+    sources: ["《论语》为政以德", "《孙子兵法》令之以文，齐之以武", "毛泽东：出主意、用干部、抓重点"],
+    subSkills: ["以德服人", "文德武威", "出主意引方向", "抓重点带全局"],
+    trainingPath: "把反对者的顾虑写进方案，再邀请对方承担试点责任。"
   },
   strategy: {
     id: "strategy",
@@ -44,7 +50,9 @@ export const ABILITIES: Record<AbilityId, AbilityDef> = {
     code: "SHAPE",
     tagline: "在授权之前先建势",
     color: "#8f8cd9",
-    sources: ["《权经》谋权篇", "《韩非子》法、术、势", "马基雅维利《君主论》"]
+    sources: ["《权经》谋权篇", "《韩非子》法、术、势", "马基雅维利《君主论》"],
+    subSkills: ["权力认知", "战略布局", "法势术结合", "等待时机"],
+    trainingPath: "用先立功再争权的方式积累筹码，同时保持授权者信息同步。"
   },
   authority: {
     id: "authority",
@@ -52,7 +60,9 @@ export const ABILITIES: Record<AbilityId, AbilityDef> = {
     code: "HOLD",
     tagline: "权力是用来创造结果的",
     color: "#4db7d6",
-    sources: ["《权经》用权篇", "《孙子兵法》致人而不致于人", "《鬼谷子》权变思维"]
+    sources: ["《权经》用权篇", "《孙子兵法》致人而不致于人", "《鬼谷子》权变思维"],
+    subSkills: ["用权有度", "授权赋能", "主动掌控", "先胜后战"],
+    trainingPath: "把关键决策纳入联签机制，用制度守住权力边界。"
   },
   stability: {
     id: "stability",
@@ -60,7 +70,9 @@ export const ABILITIES: Record<AbilityId, AbilityDef> = {
     code: "STAY",
     tagline: "把个人影响力变成组织能力",
     color: "#7fb069",
-    sources: ["《贞观政要》善始慎终", "《资治通鉴》谦退与团结", "《党委会的工作方法》民主集中制"]
+    sources: ["《贞观政要》善始慎终", "《资治通鉴》谦退与团结", "《党委会的工作方法》民主集中制"],
+    subSkills: ["成果支撑", "制度固化", "梯队建设", "风险防范"],
+    trainingPath: "把高频判断做成清单与复盘库，并给接班人设计陪跑期。"
   },
   recovery: {
     id: "recovery",
@@ -68,7 +80,9 @@ export const ABILITIES: Record<AbilityId, AbilityDef> = {
     code: "FUEL",
     tagline: "先管理精力，再管理结果",
     color: "#e9b872",
-    sources: ["《卓有成效的管理者》自我管理", "《高效能人士的七个习惯》主动积极", "现代精力管理研究"]
+    sources: ["《卓有成效的管理者》自我管理", "《高效能人士的七个习惯》主动积极", "现代精力管理研究"],
+    subSkills: ["觉察情绪", "恢复精力", "建立边界", "复盘重启"],
+    trainingPath: "每天设置一个不被打断的恢复时段，用呼吸练习重置状态。"
   },
   execution: {
     id: "execution",
@@ -76,7 +90,9 @@ export const ABILITIES: Record<AbilityId, AbilityDef> = {
     code: "DELIVER",
     tagline: "把方向拆成可验收的成果",
     color: "#d97aa2",
-    sources: ["《卓有成效的管理者》要事优先", "《孙子兵法》兵贵神速", "目标管理实践"]
+    sources: ["《卓有成效的管理者》要事优先", "《孙子兵法》兵贵神速", "目标管理实践"],
+    subSkills: ["目标拆解", "优先级排序", "检查节点", "结果验收"],
+    trainingPath: "为目标设定三个关键结果，每个结果都配负责人和验收标准。"
   },
   structure: {
     id: "structure",
@@ -84,7 +100,9 @@ export const ABILITIES: Record<AbilityId, AbilityDef> = {
     code: "FRAME",
     tagline: "没有答案时，先拆出问题",
     color: "#5ca9e9",
-    sources: ["《矛盾论》抓主要矛盾", "《实践论》从实践中找规律", "结构化问题解决框架"]
+    sources: ["《矛盾论》抓主要矛盾", "《实践论》从实践中找规律", "结构化问题解决框架"],
+    subSkills: ["定义问题", "拆解要素", "抓主要矛盾", "形成验证假设"],
+    trainingPath: "遇到模糊问题时先写问题定义，再列出因果链和验证节点。"
   },
   communication: {
     id: "communication",
@@ -92,7 +110,9 @@ export const ABILITIES: Record<AbilityId, AbilityDef> = {
     code: "ALIGN",
     tagline: "把话说清楚，把事对齐",
     color: "#d4a5e8",
-    sources: ["《论语》不患人之不己知", "《高效能人士的七个习惯》知彼解己", "非暴力沟通原则"]
+    sources: ["《论语》不患人之不己知", "《高效能人士的七个习惯》知彼解己", "非暴力沟通原则"],
+    subSkills: ["主动对齐", "结构化表达", "提问倾听", "化解分歧"],
+    trainingPath: "跨部门会议前先同步目标，会后用一页纪要锁定责任人。"
   }
 };
 

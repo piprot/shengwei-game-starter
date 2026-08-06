@@ -19,6 +19,7 @@ import {
   buildDuelProfile,
   chapterStarCount,
   createProfile,
+  decisionProfile,
   isChapterComplete,
   isNodeComplete,
   loadSave,
@@ -30,6 +31,7 @@ import {
 } from "../core/game";
 import {
   CHAPTERS,
+  NODE_INTEL,
   getChapter,
   getNode,
   sideNodesForChapter
@@ -256,7 +258,9 @@ export class AdaptiveGameApp {
     const chapter = getChapter(this.selectedChapter);
     const mainNodes = chapter.nodeIds.map(getNode);
     const sideNodes = sideNodesForChapter(this.selectedChapter).filter(
-      (node) => !isNodeComplete(this.save, node.id)
+      (node) =>
+        !isNodeComplete(this.save, node.id) &&
+        mainNodes.some((mainNode) => isNodeComplete(this.save, mainNode.id))
     );
     this.root.innerHTML = `
       <header class="topbar">
@@ -330,38 +334,55 @@ export class AdaptiveGameApp {
         <section class="story-art">
           <canvas id="story-art" aria-label="当前情境的局势示意图"></canvas>
         </section>
-        <section class="scenario-panel">
-          <div class="scenario-meta">
-            <span>第 ${chapter.code} 章 · ${chapter.title}</span>
-            <span>${node.kind === "side" ? "支线任务" : "主线情境"}</span>
-          </div>
-          <h1>${node.title}</h1>
-          <p class="scenario-context">${escapeHtml(node.context)}</p>
-          <div class="stake">
-            <strong>当前考验</strong>
-            <p>${escapeHtml(node.stake)}</p>
-          </div>
-          ${
-            showingOutcome && this.lastOutcome
-              ? this.outcomeMarkup(this.lastOutcome)
-              : `
-                <div class="option-list">
-                  ${node.options
-                    .map(
-                      (option, index) => `
-                        <button class="option-card" data-action="choose-option" data-option="${index}">
-                          <span class="option-letter">${String.fromCharCode(65 + index)}</span>
-                          <span class="option-body">
-                            <strong>${escapeHtml(option.label)}</strong>
-                            <em>${escapeHtml(option.summary)}</em>
-                          </span>
-                        </button>
-                      `
-                    )
-                    .join("")}
-                </div>
-              `
-          }
+        <section class="story-layout">
+          <section class="story-narrative">
+            <section class="scenario-panel">
+              <div class="scenario-meta">
+                <span>第 ${chapter.code} 章 · ${chapter.title}</span>
+                <span>${node.kind === "side" ? "支线任务" : "主线情境"}</span>
+              </div>
+              <h1>${node.title}</h1>
+              <p class="scenario-context">${escapeHtml(node.context)}</p>
+              <div class="stake">
+                <strong>当前考验</strong>
+                <p>${escapeHtml(node.stake)}</p>
+              </div>
+            </section>
+          </section>
+          <aside class="story-side">
+            <section class="intel-panel">
+              <div class="intel-head">
+                <span>情报线索</span>
+                <small>先看线索，再做判断</small>
+              </div>
+              <div class="intel-list">
+                ${(NODE_INTEL[node.id] ?? []).map((clue) => `<p>${escapeHtml(clue)}</p>`).join("")}
+              </div>
+            </section>
+            <section class="decision-panel">
+              ${
+                showingOutcome && this.lastOutcome
+                  ? this.outcomeMarkup(this.lastOutcome)
+                  : `
+                    <div class="option-list">
+                      ${node.options
+                        .map(
+                          (option, index) => `
+                            <button class="option-card" data-action="choose-option" data-option="${index}">
+                              <span class="option-letter">${String.fromCharCode(65 + index)}</span>
+                              <span class="option-body">
+                                <strong>${escapeHtml(option.label)}</strong>
+                                <em>${escapeHtml(option.summary)}</em>
+                              </span>
+                            </button>
+                          `
+                        )
+                        .join("")}
+                    </div>
+                  `
+              }
+            </section>
+          </aside>
         </section>
       </main>
     `;
@@ -402,7 +423,7 @@ export class AdaptiveGameApp {
                     <span style="--dot:${ABILITIES[id].color}"></span>
                     <strong>${ABILITIES[id].name}</strong>
                     <p>${ABILITIES[id].tagline}</p>
-                    <small>${ABILITIES[id].sources[0]}</small>
+                    <small>${ABILITIES[id].trainingPath}</small>
                   </div>
                 `
               )
@@ -419,6 +440,7 @@ export class AdaptiveGameApp {
 
   private renderReport(): void {
     const summary = profileSummary(this.save);
+    const decision = decisionProfile(this.save);
     const strengths = ABILITY_ORDER.filter(
       (id) => abilityLevel(this.save.profile.abilities[id]) >= 4
     );
@@ -450,7 +472,29 @@ export class AdaptiveGameApp {
             <span><strong>${this.save.duelLosses}</strong> 负</span>
             <span><strong>${this.save.masteryPoints}</strong> 修炼点</span>
           </div>
+          <div class="identity-badge">
+            <span>决策画像</span>
+            <strong>${decision.identity}</strong>
+          </div>
           <button data-action="reset-profile">重置档案</button>
+        </section>
+        <section class="stat-tiles">
+          <div class="stat-tile">
+            <strong>${decision.counts.expert}</strong>
+            <span>专家级决策</span>
+          </div>
+          <div class="stat-tile">
+            <strong>${decision.counts.partial}</strong>
+            <span>部分有效</span>
+          </div>
+          <div class="stat-tile">
+            <strong>${decision.counts.risk}</strong>
+            <span>高风险应对</span>
+          </div>
+          <div class="stat-tile">
+            <strong>${decision.totalScore}</strong>
+            <span>决策总分</span>
+          </div>
         </section>
         <section class="report-grid">
           <div class="report-panel">
@@ -1203,6 +1247,8 @@ export class AdaptiveGameApp {
         </div>
         <p>${ability.tagline}</p>
         <div class="ability-bar"><i style="width:${Math.min(100, (level / 6) * 100)}%"></i></div>
+        <div class="subskill-list">${ability.subSkills.map((skill) => `<span>${escapeHtml(skill)}</span>`).join("")}</div>
+        <p class="training-path">${escapeHtml(ability.trainingPath)}</p>
         <div class="ability-sources">${ability.sources.slice(0, 2).map((source) => `<span>${escapeHtml(source)}</span>`).join("")}</div>
       </div>
     `;

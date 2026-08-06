@@ -11,6 +11,7 @@ import { getNode } from "./story";
 import type {
   AbilityId,
   ChoiceOutcome,
+  DecisionRecord,
   OptionQuality,
   PlayerProfile,
   ResourceKey,
@@ -37,7 +38,8 @@ export const DEFAULT_SAVE: SaveState = {
   duelWins: 0,
   duelLosses: 0,
   playCount: 0,
-  masteryPoints: 0
+  masteryPoints: 0,
+  decisionHistory: []
 };
 
 export function createProfile(name: string, role: RoleId): PlayerProfile {
@@ -104,7 +106,10 @@ function normalizeSave(save: SaveState): SaveState {
     duelWins: Number(save.duelWins) || 0,
     duelLosses: Number(save.duelLosses) || 0,
     playCount: Number(save.playCount) || 0,
-    masteryPoints: Number(save.masteryPoints) || 0
+    masteryPoints: Number(save.masteryPoints) || 0,
+    decisionHistory: Array.isArray(save.decisionHistory)
+      ? save.decisionHistory
+      : []
   };
 }
 
@@ -132,6 +137,15 @@ export function applyStoryChoice(
   const node = getNode(nodeId);
   const option = node.options[optionIndex];
   const outcome = buildOutcome(save, option);
+
+  const decisionRecord: DecisionRecord = {
+    nodeId,
+    optionIndex,
+    quality: option.quality,
+    qualityScore: outcome.qualityScore,
+    chapterId: node.chapterId
+  };
+  save.decisionHistory.push(decisionRecord);
 
   for (const [abilityId, gained] of Object.entries(option.effects) as Array<
     [AbilityId, number]
@@ -281,6 +295,34 @@ export function recordDuelResult(
   save.achievements = [...new Set(save.achievements)];
   saveState(save);
   return save;
+}
+
+export function decisionProfile(save: SaveState): {
+  identity: string;
+  counts: { expert: number; partial: number; risk: number };
+  totalScore: number;
+} {
+  const counts = { expert: 0, partial: 0, risk: 0 };
+  let totalScore = 0;
+  for (const record of save.decisionHistory) {
+    counts[record.quality] += 1;
+    totalScore += record.qualityScore;
+  }
+  const total = Math.max(1, save.decisionHistory.length);
+  const expertRatio = counts.expert / total;
+  const partialRatio = counts.partial / total;
+  const riskRatio = counts.risk / total;
+  let identity = "平衡型领导者";
+  if (save.decisionHistory.length < 3) {
+    identity = "观察期决策者";
+  } else if (expertRatio >= 0.7) {
+    identity = "精准决策者";
+  } else if (riskRatio >= 0.35) {
+    identity = "高压破局者";
+  } else if (partialRatio >= 0.6) {
+    identity = "渐进探索者";
+  }
+  return { identity, counts, totalScore };
 }
 
 export function buildDuelProfile(

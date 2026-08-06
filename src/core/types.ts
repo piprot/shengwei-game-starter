@@ -23,6 +23,8 @@ export interface AbilityDef {
   tagline: string;
   color: string;
   sources: string[];
+  subSkills: string[];
+  trainingPath: string;
 }
 
 export interface StoryOption {
@@ -85,6 +87,14 @@ export interface ChapterRecord {
   stars: number;
 }
 
+export interface DecisionRecord {
+  nodeId: string;
+  optionIndex: number;
+  quality: OptionQuality;
+  qualityScore: number;
+  chapterId: number;
+}
+
 export interface SaveState {
   version: number;
   profileCreated: boolean;
@@ -97,6 +107,7 @@ export interface SaveState {
   duelLosses: number;
   playCount: number;
   masteryPoints: number;
+  decisionHistory: DecisionRecord[];
 }
 
 export interface ChoiceOutcome {
