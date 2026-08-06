@@ -82,6 +82,8 @@ try {
     await page.click("text=开启征程");
     await page.waitForSelector("text=能力基线测评");
     await page.click("text=跳过测评");
+    await page.waitForSelector("text=能力基线报告");
+    await page.click("text=进入主线");
     await page.waitForSelector("text=九章权力架构");
     const mapOverflow = await overflow(page);
 

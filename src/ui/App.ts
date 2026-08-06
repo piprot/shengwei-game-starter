@@ -61,6 +61,7 @@ type View =
   | "menu"
   | "profile"
   | "assessment"
+  | "assessmentResult"
   | "map"
   | "story"
   | "ability"
@@ -140,6 +141,9 @@ export class AdaptiveGameApp {
         break;
       case "assessment":
         this.renderAssessment();
+        break;
+      case "assessmentResult":
+        this.renderAssessmentResult();
         break;
       case "map":
         this.renderMap();
@@ -323,6 +327,77 @@ export class AdaptiveGameApp {
         "能力基线图",
         `${ROLES[this.pendingProfile.role].shortName} · 十项能力倾向`
       );
+    }
+  }
+
+  private renderAssessmentResult(): void {
+    const summary = profileSummary(this.save);
+    const training = recommendedTraining(
+      this.save.profile.abilities,
+      this.save.profile.role
+    );
+    const strengths = ABILITY_ORDER.slice()
+      .sort(
+        (a, b) =>
+          abilityLevel(this.save.profile.abilities[b]) -
+          abilityLevel(this.save.profile.abilities[a])
+      )
+      .slice(0, 3);
+    this.root.innerHTML = `
+      <header class="topbar">
+        <div class="brand">权变之路</div>
+        <button class="link sound-toggle" data-action="toggle-sound">${this.muted ? "声音：关" : "声音：开"}</button>
+      </header>
+      <main class="assessment-result-shell">
+        <section class="assessment-result-hero">
+          <div>
+            <p class="eyebrow">能力基线报告</p>
+            <h1>${ROLES[this.save.profile.role].name} · ${summary.rank.name}</h1>
+            <p class="muted">综合能力值 ${summary.total}，角色重点与测评倾向已经写入初始档案。</p>
+          </div>
+          <canvas class="radar" id="assessment-result-radar"></canvas>
+        </section>
+        <section class="result-columns">
+          <div class="report-panel">
+            <h2>优势能力</h2>
+            ${strengths
+              .map(
+                (id) => `
+                  <div class="strength-row">
+                    <span style="--dot:${ABILITIES[id].color}"></span>
+                    <strong>${ABILITIES[id].name} Lv.${abilityLevel(this.save.profile.abilities[id])}</strong>
+                    <small>${ABILITIES[id].tagline}</small>
+                  </div>
+                `
+              )
+              .join("")}
+          </div>
+          <div class="report-panel">
+            <h2>建议训练</h2>
+            ${training
+              .map(
+                (id) => `
+                  <div class="training-item compact">
+                    <span style="--dot:${ABILITIES[id].color}"></span>
+                    <strong>${ABILITIES[id].name}</strong>
+                    <p>${ABILITIES[id].trainingPath}</p>
+                  </div>
+                `
+              )
+              .join("")}
+          </div>
+        </section>
+        <section class="role-start-panel">
+          <h2>本角色开局建议</h2>
+          <p>${ROLES[this.save.profile.role].objective}</p>
+          <button class="primary" data-action="start-campaign">进入主线</button>
+        </section>
+      </main>
+    `;
+    const radar =
+      this.root.querySelector<HTMLCanvasElement>("#assessment-result-radar");
+    if (radar) {
+      renderAbilityRadar(radar, this.save.profile.abilities);
     }
   }
 
@@ -1047,6 +1122,10 @@ export class AdaptiveGameApp {
       case "assessment-skip":
         this.finishProfile(false);
         break;
+      case "start-campaign":
+        this.audio.ui();
+        this.show("map");
+        break;
       case "choose-option":
         this.chooseStoryOption(actionTarget);
         break;
@@ -1142,7 +1221,7 @@ export class AdaptiveGameApp {
     this.audio.startAmbient();
     this.audio.expert();
     this.selectedChapter = 1;
-    this.show("map");
+    this.show("assessmentResult");
   }
 
   private chooseStoryOption(target: HTMLElement): void {
