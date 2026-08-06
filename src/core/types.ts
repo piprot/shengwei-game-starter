@@ -120,6 +120,7 @@ export interface SaveState {
   masteryPoints: number;
   decisionHistory: DecisionRecord[];
   duelHistory: DuelHistoryEntry[];
+  claimedChallenges: string[];
 }
 
 export interface ChoiceOutcome {

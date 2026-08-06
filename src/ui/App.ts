@@ -61,6 +61,7 @@ import { ManualRtcPeer, type RtcMessage } from "../net/rtc";
 import { GameAudio } from "../audio";
 import { ASSESSMENT_QUESTIONS } from "../core/assessment";
 import { NPCS, npcRelation } from "../core/npcs";
+import { dailyChallenges } from "../core/challenges";
 import { renderAbilityRadar } from "./charts";
 import { renderPowerBoard } from "./art";
 
@@ -92,6 +93,7 @@ export class AdaptiveGameApp {
   private assessmentAnswers: number[] = [];
   private selectedChapter = 1;
   private storyNodeId?: string;
+  private storyHintRevealed = false;
   private lastOutcome?: ChoiceOutcome;
   private lastOutcomeNodeId?: string;
   private duelMode: DuelMode = "ai";
@@ -578,6 +580,29 @@ export class AdaptiveGameApp {
               <h3>本角色目标</h3>
               <p>${ROLES[this.save.profile.role].objective}</p>
             </div>
+            <div class="challenge-panel">
+              <h3>当日行动任务</h3>
+              ${dailyChallenges(this.save)
+                .map(
+                  (challenge) => `
+                    <div class="challenge-row ${challenge.done ? "done" : ""}">
+                      <div>
+                        <strong>${escapeHtml(challenge.title)}</strong>
+                        <span>${challenge.current} / ${challenge.target}</span>
+                        <p>${escapeHtml(challenge.description)}</p>
+                      </div>
+                      ${
+                        challenge.done && !this.save.claimedChallenges.includes(challenge.id)
+                          ? `<button data-action="claim-challenge" data-challenge="${challenge.id}">领取 +${challenge.reward}</button>`
+                          : this.save.claimedChallenges.includes(challenge.id)
+                            ? `<small>已领取</small>`
+                            : `<small>进行中</small>`
+                      }
+                    </div>
+                  `
+                )
+                .join("")}
+            </div>
             <div class="mini-panel">
               <h3>当前进度</h3>
               <strong>${summary.chapterCount} / 9</strong>
@@ -648,6 +673,14 @@ export class AdaptiveGameApp {
                 showingOutcome && this.lastOutcome
                   ? this.outcomeMarkup(this.lastOutcome)
                   : `
+                    <div class="hint-controls">
+                      <button data-action="toggle-hint">${this.storyHintRevealed ? "收起教练提示" : "查看教练提示"}</button>
+                      ${
+                        this.storyHintRevealed
+                          ? `<p class="coach-hint">${escapeHtml(NODE_INTEL[node.id]?.[2] ?? "先看关键关系，再选最可能建立信任的行动。")}</p>`
+                          : ""
+                      }
+                    </div>
                     <div class="option-list">
                       ${node.options
                         .map(
@@ -1198,6 +1231,7 @@ export class AdaptiveGameApp {
         if (nodeId) {
           this.audio.ui();
           this.storyNodeId = nodeId;
+          this.storyHintRevealed = false;
           this.lastOutcome = undefined;
           this.lastOutcomeNodeId = undefined;
           this.show("story");
@@ -1312,6 +1346,26 @@ export class AdaptiveGameApp {
       case "start-campaign":
         this.audio.ui();
         this.show("map");
+        break;
+      case "claim-challenge": {
+        const challengeId = actionTarget.dataset.challenge ?? "";
+        if (!this.save.claimedChallenges.includes(challengeId)) {
+          const reward =
+            dailyChallenges(this.save).find(
+              (challenge) => challenge.id === challengeId
+            )?.reward ?? 3;
+          this.save.claimedChallenges.push(challengeId);
+          this.save.masteryPoints += reward;
+          saveState(this.save);
+          this.audio.expert();
+          this.renderMap();
+        }
+        break;
+      }
+      case "toggle-hint":
+        this.storyHintRevealed = !this.storyHintRevealed;
+        this.audio.ui();
+        this.renderStory();
         break;
       case "choose-option":
         this.chooseStoryOption(actionTarget);
@@ -2011,9 +2065,19 @@ export class AdaptiveGameApp {
 
   private outcomeMarkup(outcome: ChoiceOutcome): string {
     const option = outcome.option;
+    const streak = this.expertStreak();
+    const encouragement =
+      option.quality === "expert"
+        ? streak >= 2
+          ? `连续专家判断 x${streak}，你已经找到自己的判断节奏！`
+          : "这一手判断精准，保持这个节奏。"
+        : option.quality === "partial"
+          ? "方向不错，下一步可以更稳。"
+          : "你敢于在高压中行动，这份胆识也是领导力的一部分。";
     return `
       <section class="outcome-panel">
         <span class="quality ${option.quality}">${optionQualityLabel(option.quality)}</span>
+        <div class="positive-feedback">${encouragement}</div>
         <h2>${escapeHtml(this.roleOptionLabel(option, outcome.optionIndex))}</h2>
         <p>${escapeHtml(option.feedback)}</p>
         <blockquote>${escapeHtml(option.theory)}</blockquote>
@@ -2034,6 +2098,18 @@ export class AdaptiveGameApp {
         <button class="primary" data-action="continue-story">返回地图</button>
       </section>
     `;
+  }
+
+  private expertStreak(): number {
+    let streak = 0;
+    for (let i = this.save.decisionHistory.length - 1; i >= 0; i -= 1) {
+      if (this.save.decisionHistory[i].quality === "expert") {
+        streak += 1;
+      } else {
+        break;
+      }
+    }
+    return streak;
   }
 
   private nextRankNeed(total: number): number {

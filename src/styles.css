@@ -1068,6 +1068,68 @@ h2 {
     var(--panel-2);
 }
 
+.challenge-panel {
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--panel-2);
+}
+
+.challenge-panel h3 {
+  margin: 0 0 10px;
+  color: var(--teal);
+  font-size: 14px;
+}
+
+.challenge-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 8px 12px;
+  align-items: center;
+  padding: 10px 0;
+  border-top: 1px solid var(--line);
+}
+
+.challenge-row:first-of-type {
+  border-top: 0;
+}
+
+.challenge-row strong,
+.challenge-row span,
+.challenge-row p {
+  display: block;
+}
+
+.challenge-row strong {
+  font-size: 14px;
+}
+
+.challenge-row span,
+.challenge-row p {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.challenge-row p {
+  margin: 3px 0 0;
+  line-height: 1.5;
+}
+
+.challenge-row small {
+  color: var(--gold);
+  white-space: nowrap;
+}
+
+.challenge-row button {
+  min-height: 34px;
+  padding: 7px 10px;
+  font-size: 12px;
+}
+
+.challenge-row.done {
+  border-color: rgba(87, 199, 163, 0.35);
+}
+
 .story-shell {
   width: min(1180px, 100%);
 }
@@ -1166,6 +1228,26 @@ h2 {
 
 .decision-panel .option-list {
   margin-top: 0;
+}
+
+.hint-controls {
+  margin-bottom: 14px;
+}
+
+.hint-controls button {
+  min-height: 38px;
+  padding: 8px 12px;
+  font-size: 13px;
+}
+
+.coach-hint {
+  margin: 10px 0 0;
+  padding: 12px;
+  border-left: 3px solid var(--gold);
+  border-radius: 0 8px 8px 0;
+  background: rgba(242, 193, 78, 0.09);
+  color: var(--muted);
+  line-height: 1.7;
 }
 
 .back-link {
@@ -1331,6 +1413,17 @@ h2 {
 .quality.risk {
   background: rgba(233, 130, 108, 0.18);
   color: var(--coral);
+}
+
+.positive-feedback {
+  margin: 10px 0;
+  padding: 10px 12px;
+  border: 1px solid rgba(87, 199, 163, 0.35);
+  border-radius: 8px;
+  background: rgba(87, 199, 163, 0.1);
+  color: #57c7a3;
+  font-weight: 700;
+  line-height: 1.6;
 }
 
 .outcome-effects {
