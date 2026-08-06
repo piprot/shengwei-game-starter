@@ -1459,6 +1459,120 @@ export const STORY_NODES: StoryNode[] = [
     ]
   },
   {
+    id: "c4b-parachute",
+    chapterId: 4,
+    title: "空降 · 阻力面前的第一次同盟",
+    kind: "branch",
+    context:
+      "你作为空降管理者推动新流程，运营负责人公开反对。你没有压制，而是决定把谁拉进共同责任。",
+    stake: "你要让反对者从阻力变成共同负责人，而不是把他推向更深的对立。",
+    options: [
+      {
+        label: "把反对者变成试点负责人",
+        summary: "让他的顾虑成为方案前提，并让他负责试点结果。",
+        quality: "expert",
+        effects: { mobilize: 3, communication: 2 },
+        resources: { energy: -7, trust: 8, influence: 6 },
+        feedback: "你让最有能力反对的人开始为结果负责，变革第一次有了共同所有权。",
+        theory: "《孙子兵法》：上下同欲者胜。"
+      },
+      {
+        label: "先私下争取他的支持",
+        summary: "避免公开对抗，先谈条件再宣布。",
+        quality: "partial",
+        effects: { strategy: 2 },
+        resources: { energy: -5, trust: 3, influence: 2 },
+        feedback: "他暂时支持你，但团队其他人并不清楚你们的交易。",
+        theory: "《权经》：揣为上，事次之。"
+      },
+      {
+        label: "用高层授权强制推进",
+        summary: "不等待共识，用 CEO 背书让流程先落地。",
+        quality: "risk",
+        effects: { authority: 3 },
+        resources: { energy: -5, trust: -7, influence: 4 },
+        feedback: "流程落地了，但运营团队开始用沉默抵抗你。",
+        theory: "《孙子兵法》：令之以文，齐之以武，但不可偏废。"
+      }
+    ]
+  },
+  {
+    id: "c4b-founder",
+    chapterId: 4,
+    title: "创业 · 阻力面前的第一次同盟",
+    kind: "branch",
+    context:
+      "你作为创始人推动产品方向变化，联合创始人公开反对。团队分成两派，都在等你表态。",
+    stake: "你要让反对意见变成产品验证的一部分，而不是内部分裂。",
+    options: [
+      {
+        label: "把双方观点变成可验证实验",
+        summary: "不让团队站队，用两周实验验证两条路径。",
+        quality: "expert",
+        effects: { structure: 3, mobilize: 2 },
+        resources: { energy: -7, trust: 7, influence: 5 },
+        feedback: "你把创始人之间的争论变成了组织学习，团队重新开始合作。",
+        theory: "《实践论》：从实践中找规律。"
+      },
+      {
+        label: "按自己的判断直接定方向",
+        summary: "承担创始人责任，用权力结束争论。",
+        quality: "partial",
+        effects: { authority: 2, execution: 1 },
+        resources: { energy: -5, trust: -4, influence: 3 },
+        feedback: "方向定了，但联合创始人的不认同仍会持续影响执行。",
+        theory: "《权经》：权惟用，不为大也。"
+      },
+      {
+        label: "让董事会介入仲裁",
+        summary: "把内部争议交给外部裁决。",
+        quality: "risk",
+        effects: { strategy: 2 },
+        resources: { energy: -4, trust: -6, influence: -3 },
+        feedback: "你避免了亲自得罪人，却让团队看到创始团队无法自治。",
+        theory: "《韩非子》：明主之道，使智者尽其虑。"
+      }
+    ]
+  },
+  {
+    id: "c4b-highPotential",
+    chapterId: 4,
+    title: "高潜 · 阻力面前的第一次同盟",
+    kind: "branch",
+    context:
+      "你作为高潜骨干提出的方案被资深负责人反对。你没有职位权力，但方案里确实存在一个关键漏洞。",
+    stake: "你要让反对者愿意和你一起改方案，而不是坚持对错。",
+    options: [
+      {
+        label: "把反对者的漏洞变成方案修订项",
+        summary: "公开承认缺口，请他提供专业补充。",
+        quality: "expert",
+        effects: { communication: 3, structure: 2 },
+        resources: { energy: -6, trust: 8, influence: 5 },
+        feedback: "你把最强反对者变成了最强协作者，方案反而更扎实。",
+        theory: "《论语》：君子求诸己，小人求诸人。"
+      },
+      {
+        label: "先争取更高层支持",
+        summary: "绕过反对者，用上级推动方案通过。",
+        quality: "partial",
+        effects: { strategy: 2 },
+        resources: { energy: -5, trust: -5, influence: 3 },
+        feedback: "方案暂时通过了，但资深负责人不会再主动帮助你。",
+        theory: "《权经》：权乃人授，授为大焉。"
+      },
+      {
+        label: "坚持原方案，指出对方误解",
+        summary: "先证明自己没错，再讨论改进。",
+        quality: "risk",
+        effects: { authority: 1 },
+        resources: { energy: -4, trust: -6, influence: -2 },
+        feedback: "你证明了观点，却把讨论变成谁对谁错，协作入口关闭了。",
+        theory: "《人物志》：审其变而见其性。"
+      }
+    ]
+  },
+  {
     id: "r1",
     chapterId: 2,
     title: "电梯偶遇",
@@ -2454,6 +2568,18 @@ export const NODE_INTEL: Record<string, string[]> = {
   "c3b-highPotential": [
     "部门负责人真正想保护的人是自己的旧下属",
     "另一名候选人在两个关键项目中有完整证据"
+  ],
+  "c4b-parachute": [
+    "运营负责人之前曾被空降管理者公开否过一次",
+    "他的团队已经私下准备了替代方案"
+  ],
+  "c4b-founder": [
+    "联合创始人反对的不是方向，而是被排除在决策外",
+    "两条路径所需的资源并不冲突"
+  ],
+  "c4b-highPotential": [
+    "资深负责人的反对里包含一个真实交付风险",
+    "他手上有一套现成的数据可以验证新方案"
   ],
   r1: [
     "CEO 最近最担心的是组织是否开始失去方向",
