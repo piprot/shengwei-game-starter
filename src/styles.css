@@ -1917,6 +1917,60 @@ h2 {
   font-size: 11px;
 }
 
+.cloud-status {
+  display: inline-flex;
+  align-items: center;
+  padding: 8px 10px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.cloud-leaderboard {
+  margin-bottom: 18px;
+  padding: 20px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--panel);
+}
+
+.cloud-leaderboard h2 {
+  margin-bottom: 14px;
+  font-size: 22px;
+}
+
+.cloud-leaderboard-list {
+  display: grid;
+  gap: 8px;
+}
+
+.cloud-rank-row {
+  display: grid;
+  grid-template-columns: 34px minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--panel-2);
+}
+
+.cloud-rank-row span {
+  color: var(--gold);
+  font-weight: 900;
+}
+
+.cloud-rank-row em {
+  color: var(--muted);
+  font-style: normal;
+}
+
+.cloud-rank-row small {
+  color: var(--teal);
+  font-weight: 900;
+}
+
 .report-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));

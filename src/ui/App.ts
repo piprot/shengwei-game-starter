@@ -58,6 +58,7 @@ import type {
   StoryOption
 } from "../core/types";
 import { ManualRtcPeer, type RtcMessage } from "../net/rtc";
+import { RoomClient, type RoomServerMessage } from "../net/roomClient";
 import { GameAudio } from "../audio";
 import {
   ASSESSMENT_QUESTIONS,
@@ -132,6 +133,11 @@ export class AdaptiveGameApp {
   private remoteAnswerCode = "";
   private remoteStatus = "尚未建立连接";
   private duelRecorded = false;
+  private roomClient?: RoomClient;
+  private cloudToken = localStorage.getItem("adaptive-ascent-cloud-token") || "";
+  private cloudStatus = "未连接云端";
+  private cloudEntries: Array<{ name: string; role: string; score: number }> = [];
+  private pendingCloudAction: "sync" | "load" = "sync";
 
   constructor(root: HTMLElement) {
     this.root = root;
@@ -847,6 +853,10 @@ export class AdaptiveGameApp {
           <button data-action="export-save">导出存档</button>
           <button data-action="export-report">导出报告</button>
           <button data-action="copy-save-link">复制存档链接</button>
+          <button data-action="cloud-sync">云端同步</button>
+          <button data-action="cloud-load">云端载入</button>
+          <button data-action="cloud-leaderboard">云端排行</button>
+          <span class="cloud-status">${this.cloudStatus}</span>
           <label class="file-button">
             导入存档
             <input type="file" data-import-save accept="application/json" hidden />
@@ -870,6 +880,30 @@ export class AdaptiveGameApp {
             <span>决策总分</span>
           </div>
         </section>
+        ${
+          this.cloudEntries.length
+            ? `
+              <section class="cloud-leaderboard">
+                <h2>云端排行榜</h2>
+                <div class="cloud-leaderboard-list">
+                  ${this.cloudEntries
+                    .slice(0, 10)
+                    .map(
+                      (entry, index) => `
+                        <div class="cloud-rank-row">
+                          <span>${index + 1}</span>
+                          <strong>${escapeHtml(entry.name)}</strong>
+                          <em>${ROLES[entry.role as RoleId]?.shortName ?? entry.role}</em>
+                          <small>${entry.score}</small>
+                        </div>
+                      `
+                    )
+                    .join("")}
+                </div>
+              </section>
+            `
+            : ""
+        }
         <section class="duel-history">
           <h2>近期对决</h2>
           ${
@@ -1318,6 +1352,15 @@ export class AdaptiveGameApp {
         break;
       case "copy-save-link":
         this.copySaveLink(actionTarget);
+        break;
+      case "cloud-sync":
+        void this.cloudSync();
+        break;
+      case "cloud-load":
+        void this.cloudLoad();
+        break;
+      case "cloud-leaderboard":
+        void this.cloudLeaderboard();
         break;
       case "toggle-sound":
         this.muted = !this.muted;
@@ -1885,6 +1928,117 @@ export class AdaptiveGameApp {
       target.textContent = original;
     }, 1400);
     this.audio.ui();
+  }
+
+  private async ensureCloudClient(): Promise<RoomClient> {
+    if (this.roomClient) {
+      return this.roomClient;
+    }
+    const client = new RoomClient();
+    this.roomClient = client;
+    client.onMessage = (message) => this.handleCloudMessage(message);
+    client.onClose = () => {
+      this.cloudStatus = "云端连接已断开";
+    };
+    await client.connect();
+    return client;
+  }
+
+  private handleCloudMessage(message: RoomServerMessage): void {
+    switch (message.type) {
+      case "registered": {
+        this.cloudToken = message.token;
+        localStorage.setItem("adaptive-ascent-cloud-token", message.token);
+        this.cloudStatus = "云端账号已创建";
+        this.roomClient?.cloudSave(message.token, this.save);
+        break;
+      }
+      case "logged_in": {
+        this.cloudStatus = "云端账号已连接";
+        if (this.pendingCloudAction === "load") {
+          const remote = message.account as { save?: SaveState };
+          if (remote.save) {
+            try {
+              this.save = importSaveJson(JSON.stringify(remote.save));
+              this.show("report");
+            } catch {
+              this.cloudStatus = "云端存档无法解析";
+            }
+          } else {
+            this.cloudStatus = "云端暂无存档";
+          }
+        } else if (this.pendingCloudAction === "sync") {
+          this.roomClient?.cloudSave(this.cloudToken, this.save);
+        }
+        break;
+      }
+      case "save_ok":
+        this.cloudStatus = "云端同步成功";
+        break;
+      case "leaderboard":
+        this.cloudEntries = message.entries;
+        this.cloudStatus = "排行榜已刷新";
+        break;
+      case "error":
+        this.cloudStatus = message.message;
+        break;
+      default:
+        break;
+    }
+    if (this.view === "report") {
+      this.renderReport();
+    }
+  }
+
+  private async cloudSync(): Promise<void> {
+    this.pendingCloudAction = "sync";
+    this.cloudStatus = "正在连接云端…";
+    this.renderReport();
+    try {
+      const client = await this.ensureCloudClient();
+      if (this.cloudToken) {
+        client.login(this.cloudToken);
+      } else {
+        client.register(
+          this.save.profile.name,
+          this.save.profile.role,
+          this.save
+        );
+      }
+    } catch (error) {
+      this.cloudStatus = error instanceof Error ? error.message : "云端连接失败";
+      this.renderReport();
+    }
+  }
+
+  private async cloudLoad(): Promise<void> {
+    if (!this.cloudToken) {
+      this.cloudStatus = "请先云端同步生成账号";
+      this.renderReport();
+      return;
+    }
+    this.pendingCloudAction = "load";
+    this.cloudStatus = "正在从云端载入…";
+    this.renderReport();
+    try {
+      const client = await this.ensureCloudClient();
+      client.login(this.cloudToken);
+    } catch (error) {
+      this.cloudStatus = error instanceof Error ? error.message : "云端载入失败";
+      this.renderReport();
+    }
+  }
+
+  private async cloudLeaderboard(): Promise<void> {
+    this.cloudStatus = "正在刷新排行榜…";
+    this.renderReport();
+    try {
+      const client = await this.ensureCloudClient();
+      client.leaderboard();
+    } catch (error) {
+      this.cloudStatus = error instanceof Error ? error.message : "排行榜刷新失败";
+      this.renderReport();
+    }
   }
 
   private async importSave(input: HTMLInputElement): Promise<void> {
