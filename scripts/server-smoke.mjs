@@ -80,9 +80,57 @@ async function runClient() {
   ws.close();
 }
 
+async function runMatchTest() {
+  const clients = [
+    new WebSocket(`ws://127.0.0.1:${port}`),
+    new WebSocket(`ws://127.0.0.1:${port}`)
+  ];
+  await Promise.all(
+    clients.map(
+      (ws) =>
+        new Promise((resolvePromise, reject) => {
+          ws.onopen = resolvePromise;
+          ws.onerror = () => reject(new Error("WebSocket connect failed"));
+        })
+    )
+  );
+
+  const waitFor = (ws, type) =>
+    new Promise((resolvePromise, reject) => {
+      const timer = setTimeout(() => reject(new Error(`timeout waiting ${type}`)), 5000);
+      ws.onmessage = (event) => {
+        const message = JSON.parse(String(event.data));
+        if (message.type === type) {
+          clearTimeout(timer);
+          resolvePromise(message);
+        }
+      };
+    });
+
+  clients[0].send(JSON.stringify({ type: "match", name: "甲", role: "founder", save: null, rounds: 3 }));
+  clients[1].send(JSON.stringify({ type: "match", name: "乙", role: "highPotential", save: null, rounds: 3 }));
+
+  const [start0, start1] = await Promise.all([
+    waitFor(clients[0], "match_started"),
+    waitFor(clients[1], "match_started")
+  ]);
+  if (start0.opponentName !== "乙" || start1.opponentName !== "甲") {
+    throw new Error("Opponent names were not relayed correctly");
+  }
+
+  clients[0].send(JSON.stringify({ type: "pick", optionIndex: 2 }));
+  const received = await waitFor(clients[1], "pick");
+  if (received.optionIndex !== 2) {
+    throw new Error("Pick was not relayed correctly");
+  }
+
+  clients.forEach((ws) => ws.close());
+}
+
 try {
   await waitForServer();
   await runClient();
+  await runMatchTest();
   console.log("PASS server smoke test");
 } finally {
   server.kill();
