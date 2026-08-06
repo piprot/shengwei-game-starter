@@ -1486,6 +1486,26 @@ h2 {
   line-height: 1.7;
 }
 
+.onboarding-tip {
+  margin-bottom: 14px;
+  padding: 14px;
+  border: 1px solid rgba(65, 199, 192, 0.35);
+  border-radius: 8px;
+  background: rgba(65, 199, 192, 0.08);
+}
+
+.onboarding-tip strong {
+  display: block;
+  color: var(--teal);
+  margin-bottom: 6px;
+}
+
+.onboarding-tip p {
+  margin: 4px 0;
+  color: var(--muted);
+  line-height: 1.6;
+}
+
 .scenario-context {
   color: var(--ink);
   font-size: 17px;

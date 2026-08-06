@@ -692,6 +692,7 @@ export class AdaptiveGameApp {
     const node = getNodeForRole(this.save.profile.role, this.storyNodeId);
     const chapter = getChapter(node.chapterId);
     const showingOutcome = this.lastOutcomeNodeId === node.id && this.lastOutcome;
+    const showOnboarding = this.save.playCount === 0 && !showingOutcome;
     this.root.innerHTML = `
       <header class="topbar">
         <div class="brand">权变之路</div>
@@ -710,6 +711,18 @@ export class AdaptiveGameApp {
                 <span>${node.kind === "side" ? "支线任务" : "主线情境"}</span>
               </div>
               <h1>${node.title}</h1>
+              ${
+                showOnboarding
+                  ? `
+                    <div class="onboarding-tip">
+                      <strong>首局引导</strong>
+                      <p>1. 先看情报线索，再判断关键关系。</p>
+                      <p>2. 每个选择都有专家基准，但好选择不一定是最冒险的。</p>
+                      <p>3. 选择会影响能力、资源、NPC 关系与最终结局。</p>
+                    </div>
+                  `
+                  : ""
+              }
               <div class="role-lens">
                 <strong>${ROLES[this.save.profile.role].name}视角</strong>
                 <p>${escapeHtml(ROLES[this.save.profile.role].lens)}</p>

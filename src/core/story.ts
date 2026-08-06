@@ -1457,10 +1457,124 @@ export const STORY_NODES: StoryNode[] = [
         theory: "《人物志》：审其变而见其性。"
       }
     ]
+  },
+  {
+    id: "r7",
+    chapterId: 2,
+    title: "会议室的临时提问",
+    kind: "side",
+    context:
+      "高层会议上，你被临时要求解释一项你还没完全掌握的数据。现场有人低头看手机，有人开始小声议论。",
+    stake: "你需要在信息不全时既不说谎，也不丢掌控感。",
+    options: [
+      {
+        label: "先讲已知事实，再公开补数据时限",
+        summary: "明确区分“已确认”和“待核实”，并给一个可验证时间。",
+        quality: "expert",
+        effects: { structure: 3, communication: 2 },
+        resources: { energy: -5, trust: 5, influence: 5 },
+        feedback: "你没有假装全知，也没有失控，高层开始信任你的信息边界。",
+        theory: "《实践论》：从感性材料上升到理性认识，不能跳过事实。"
+      },
+      {
+        label: "先给一个看似肯定的答案",
+        summary: "用直觉先回应，避免显得准备不足。",
+        quality: "partial",
+        effects: { authority: 2 },
+        resources: { energy: -3, trust: -3, influence: 2 },
+        feedback: "会议暂时过去了，但数据被证伪时，你的可信度会被双倍消耗。",
+        theory: "《孙子兵法》：先为不可胜，以待敌之可胜。"
+      },
+      {
+        label: "现场反问提问者数据来源",
+        summary: "把问题抛回给提问者，转移压力。",
+        quality: "risk",
+        effects: { strategy: 2 },
+        resources: { energy: -4, trust: -5, influence: -2 },
+        feedback: "你暂时避开了提问，但也让其他人看到你缺乏数据准备。",
+        theory: "《权经》：揣为上，事次之。"
+      }
+    ]
+  },
+  {
+    id: "r8",
+    chapterId: 4,
+    title: "新人越权答复客户",
+    kind: "side",
+    context:
+      "一位新人当着客户的面承诺了团队尚未确认的交付时间。客户已经开始按这个时间排期。",
+    stake: "你要在保护新人和守住承诺之间做选择。",
+    options: [
+      {
+        label: "先确认交付可行性，再带新人一起对齐",
+        summary: "先核实内部是否真能做到，再决定如何调整客户预期。",
+        quality: "expert",
+        effects: { deploy: 3, structure: 1 },
+        resources: { energy: -6, trust: 5, influence: 5 },
+        feedback: "你没有在客户面前否定新人，也没有让承诺失控，团队学会了如何处理越权。",
+        theory: "《韩非子·用人》：使事不相干，使士不兼官。"
+      },
+      {
+        label: "当场纠正新人的承诺",
+        summary: "在客户面前明确说这个时间不能确认。",
+        quality: "partial",
+        effects: { authority: 2, communication: 1 },
+        resources: { energy: -4, trust: -5, influence: 3 },
+        feedback: "客户看到了你的严谨，但新人在客户面前失去了信任。",
+        theory: "《论语》：君子信而后劳其民。"
+      },
+      {
+        label: "先按新人的承诺执行",
+        summary: "不推翻承诺，用加班把时间追回来。",
+        quality: "risk",
+        effects: { execution: 2 },
+        resources: { energy: -10, trust: -2, influence: 1 },
+        feedback: "这次承诺可能保住了，但团队为越权承诺支付了高昂精力。",
+        theory: "《孙子兵法》：兵贵胜，不贵久。"
+      }
+    ]
+  },
+  {
+    id: "r9",
+    chapterId: 7,
+    title: "项目延期前的沉默",
+    kind: "side",
+    context:
+      "关键项目大概率延期，但团队还没人向你正式汇报。你已经从侧面听到了消息。",
+    stake: "你选择等待正式汇报，还是主动触发风险沟通。",
+    options: [
+      {
+        label: "主动召集一次风险复盘",
+        summary: "不等正式汇报，先让团队把风险摆到桌面上。",
+        quality: "expert",
+        effects: { mobilize: 3, structure: 2 },
+        resources: { energy: -6, trust: 6, influence: 4 },
+        feedback: "你打断了“报喜不报忧”的默认规则，延期风险开始被真实管理。",
+        theory: "《孙子兵法》：上下同欲者胜。"
+      },
+      {
+        label: "先私下问项目负责人",
+        summary: "避免公开制造压力，先了解真实原因。",
+        quality: "partial",
+        effects: { communication: 2 },
+        resources: { energy: -4, trust: 2, influence: 2 },
+        feedback: "你了解了真相，但团队其他成员仍不知道风险正在升级。",
+        theory: "《韩非子》：事以密成，语以泄败。"
+      },
+      {
+        label: "继续等待正式汇报",
+        summary: "尊重汇报链路，不越级介入。",
+        quality: "risk",
+        effects: { recovery: 1 },
+        resources: { energy: -2, trust: -3, influence: -3 },
+        feedback: "你遵守了流程，却让延期风险在沉默中继续扩大。",
+        theory: "《资治通鉴》：不塞隙穴，则暴雨疾风必坏。"
+      }
+    ]
   }
 ];
 
-export const RANDOM_EVENT_IDS = ["r1", "r2", "r3", "r4", "r5", "r6"];
+export const RANDOM_EVENT_IDS = ["r1", "r2", "r3", "r4", "r5", "r6", "r7", "r8", "r9"];
 
 export function getChapter(id: number): ChapterDef {
   const chapter = CHAPTERS.find((item) => item.id === id);
@@ -1639,6 +1753,18 @@ export const NODE_INTEL: Record<string, string[]> = {
   r6: [
     "这位骨干最近两次主动承担了超出岗位的任务",
     "他真正在意的不是职位，而是有没有更大的判断空间"
+  ],
+  r7: [
+    "提问者手上其实也只有一份旧版数据",
+    "高层真正想看你如何管理信息边界"
+  ],
+  r8: [
+    "新人的承诺背后是销售负责人私下的催促",
+    "客户真正在意的是交付机制是否透明"
+  ],
+  r9: [
+    "项目负责人已经连续三次调整内部计划",
+    "团队担心报风险会被视为能力不足"
   ]
 };
 
