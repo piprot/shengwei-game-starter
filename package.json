@@ -20,7 +20,8 @@
     "server": "node server/index.mjs",
     "test:server": "node scripts/server-smoke.mjs",
     "test:live": "node scripts/live-audit.mjs",
-    "test:rtc:public": "node --experimental-strip-types scripts/public-rtc-audit.mjs"
+    "test:rtc:public": "node --experimental-strip-types scripts/public-rtc-audit.mjs",
+    "recovery:github": "node scripts/github-recovery.mjs"
   },
   "devDependencies": {
     "playwright": "^1.62.1",

@@ -54,3 +54,4 @@ npm run test:server
 ## 2026-08-06 GitHub incident
 
 GitHub Status reported `Actions: major_outage` and `Pages: major_outage` at 2026-08-06 17:54 UTC. Queued runs are external and should be rerun after GitHub Status recovers. Git push/API remained operational after FastGithub restart.
+After GitHub Status recovers, run `npm run recovery:github` from the repo root to rerun and watch the latest CI automatically.
