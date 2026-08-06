@@ -129,10 +129,30 @@ export class AdaptiveGameApp {
   constructor(root: HTMLElement) {
     this.root = root;
     this.save = loadSave();
+    this.restoreFromHash();
     this.root.addEventListener("click", (event) => this.handleClick(event));
     this.root.addEventListener("submit", (event) => this.handleSubmit(event));
     this.root.addEventListener("change", (event) => this.handleChange(event));
     this.show("menu");
+  }
+
+  private restoreFromHash(): void {
+    const match = location.hash.match(/^#save=(.+)$/);
+    if (!match) {
+      return;
+    }
+    try {
+      const encoded = match[1].replace(/-/g, "+").replace(/_/g, "/");
+      const padded = encoded.padEnd(
+        encoded.length + ((4 - (encoded.length % 4)) % 4),
+        "="
+      );
+      const json = decodeURIComponent(atob(padded));
+      this.save = importSaveJson(json);
+      history.replaceState(null, "", location.pathname);
+    } catch {
+      history.replaceState(null, "", location.pathname);
+    }
   }
 
   show(view: View): void {
@@ -762,6 +782,7 @@ export class AdaptiveGameApp {
           <button data-action="reset-profile">重置档案</button>
           <button data-action="export-save">导出存档</button>
           <button data-action="export-report">导出报告</button>
+          <button data-action="copy-save-link">复制存档链接</button>
           <label class="file-button">
             导入存档
             <input type="file" data-import-save accept="application/json" hidden />
@@ -1192,6 +1213,9 @@ export class AdaptiveGameApp {
         break;
       case "export-report":
         this.exportReport();
+        break;
+      case "copy-save-link":
+        this.copySaveLink(actionTarget);
         break;
       case "toggle-sound":
         this.muted = !this.muted;
@@ -1687,6 +1711,22 @@ export class AdaptiveGameApp {
     anchor.download = `权变之路-${this.save.profile.name}-报告.md`;
     anchor.click();
     URL.revokeObjectURL(url);
+    this.audio.ui();
+  }
+
+  private copySaveLink(target: HTMLElement): void {
+    const json = JSON.stringify(this.save);
+    const encoded = btoa(unescape(encodeURIComponent(json)))
+      .replace(/\+/g, "-")
+      .replace(/\//g, "_")
+      .replace(/=+$/, "");
+    const url = `${location.origin}${location.pathname}#save=${encoded}`;
+    void navigator.clipboard?.writeText(url);
+    const original = target.textContent;
+    target.textContent = "链接已复制";
+    window.setTimeout(() => {
+      target.textContent = original;
+    }, 1400);
     this.audio.ui();
   }
 
