@@ -88,6 +88,8 @@
 - 新增 `npm run test:device-screenshots`：720x1280 / 1080x2400 中英文关键页截图全绿
 - 新增 `npm run test:rtc`：两个本地浏览器页面 WebRTC 远程对局全绿
 - 新增 `npm run deploy:check`：Render/Docker/CI/生产守卫部署前置条件全绿
+- 已本地安装 Render Codex 插件（`render-oss/render-codex-plugin`）并注册到 marketplace
+- 已安装 Render CLI v2.22.0 到 `~/.codex/bin/render.exe` 并加入用户 PATH
 - `npm run build` 通过
 
 ## 重要文件
