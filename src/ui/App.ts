@@ -60,6 +60,7 @@ import type {
 import { ManualRtcPeer, type RtcMessage } from "../net/rtc";
 import { GameAudio } from "../audio";
 import { ASSESSMENT_QUESTIONS } from "../core/assessment";
+import { NPCS, npcRelation } from "../core/npcs";
 import { renderAbilityRadar } from "./charts";
 import { renderPowerBoard } from "./art";
 
@@ -69,6 +70,7 @@ type View =
   | "assessment"
   | "assessmentResult"
   | "achievements"
+  | "relations"
   | "map"
   | "story"
   | "ability"
@@ -155,6 +157,9 @@ export class AdaptiveGameApp {
       case "achievements":
         this.renderAchievements();
         break;
+      case "relations":
+        this.renderRelations();
+        break;
       case "map":
         this.renderMap();
         break;
@@ -239,6 +244,11 @@ export class AdaptiveGameApp {
             <span class="card-index">05</span>
             <h2>成就墙</h2>
             <p>追踪章节、支线、测评、1v1 与能力段位的完成进度。</p>
+          </button>
+          <button class="menu-card" data-action="open-relations">
+            <span class="card-index">06</span>
+            <h2>人物关系图</h2>
+            <p>查看主线与支线中结识的关键人物，以及关系是否已经转化为组织能力。</p>
           </button>
         </section>
       </main>
@@ -443,6 +453,44 @@ export class AdaptiveGameApp {
                   <p>${achievement.description}</p>
                 </div>
                 <small>${done ? "已解锁" : "未解锁"}</small>
+              </div>
+            `;
+          }).join("")}
+        </section>
+      </main>
+    `;
+  }
+
+  private renderRelations(): void {
+    const related = NPCS.filter(
+      (npc) => npcRelation(this.save, npc).status !== "尚未接触"
+    ).length;
+    this.root.innerHTML = `
+      <header class="topbar">
+        <div class="brand">权变之路</div>
+        <button class="link" data-action="open-menu">返回主页</button>
+      </header>
+      <main class="relation-shell">
+        <section class="relation-hero">
+          <div>
+            <p class="eyebrow">人物关系图</p>
+            <h1>${related} / ${NPCS.length} 人已进入你的关系网络</h1>
+            <p class="muted">支线中真正面对过的 NPC，会从线索变成可延续的组织关系。</p>
+          </div>
+        </section>
+        <section class="relation-grid">
+          ${NPCS.map((npc) => {
+            const relation = npcRelation(this.save, npc);
+            return `
+              <div class="npc-card ${relation.status === "已建立关系" ? "trusted" : relation.status === "存在线索" ? "known" : "hidden"}">
+                <span class="npc-avatar">${npc.name.slice(0, 1)}</span>
+                <div>
+                  <h2>${npc.name}</h2>
+                  <small>${npc.title}</small>
+                  <p>${npc.description}</p>
+                </div>
+                <span class="npc-status">${relation.status}</span>
+                <em>${relation.note}</em>
               </div>
             `;
           }).join("")}
@@ -1133,6 +1181,10 @@ export class AdaptiveGameApp {
       case "open-achievements":
         this.audio.ui();
         this.show("achievements");
+        break;
+      case "open-relations":
+        this.audio.ui();
+        this.show("relations");
         break;
       case "export-save":
         this.exportSave();

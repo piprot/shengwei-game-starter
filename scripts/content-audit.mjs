@@ -13,6 +13,7 @@ import {
 } from "../src/core/abilities.ts";
 import { ASSESSMENT_QUESTIONS } from "../src/core/assessment.ts";
 import { ACHIEVEMENTS } from "../src/core/achievements.ts";
+import { NPCS } from "../src/core/npcs.ts";
 
 const mainNodes = STORY_NODES.filter((node) => node.kind === "main");
 const sideNodes = STORY_NODES.filter((node) => node.kind === "side");
@@ -102,6 +103,11 @@ for (const arc of SIDE_QUEST_ARCS) {
 
 if (ACHIEVEMENTS.length < 10) {
   problems.push("achievements must contain at least 10 entries");
+}
+for (const npc of NPCS) {
+  if (!STORY_NODES.some((node) => node.id === npc.nodeId)) {
+    problems.push(`${npc.id} references missing node ${npc.nodeId}`);
+  }
 }
 
 if (problems.length > 0) {
