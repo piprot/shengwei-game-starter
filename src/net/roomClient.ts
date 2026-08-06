@@ -7,7 +7,7 @@ export type RoomServerMessage =
   | { type: "save_ok" }
   | { type: "leaderboard"; entries: Array<{ name: string; role: string; score: number }> }
   | { type: "room_created"; roomId: string }
-  | { type: "match_started"; roomId: string; playerIndex: number }
+  | { type: "match_started"; roomId: string; playerIndex: number; opponentName?: string }
   | { type: "queued" }
   | { type: "pick"; optionIndex: number }
   | { type: "signal"; signal: unknown }

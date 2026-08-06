@@ -57,8 +57,18 @@ function addToRoom(roomId, player) {
   player.roomId = roomId;
   if (room.players.length === 2) {
     room.status = "playing";
-    send(room.players[0].socket, { type: "match_started", roomId, playerIndex: 0 });
-    send(room.players[1].socket, { type: "match_started", roomId, playerIndex: 1 });
+    send(room.players[0].socket, {
+      type: "match_started",
+      roomId,
+      playerIndex: 0,
+      opponentName: room.players[1].name
+    });
+    send(room.players[1].socket, {
+      type: "match_started",
+      roomId,
+      playerIndex: 1,
+      opponentName: room.players[0].name
+    });
   }
   return room;
 }

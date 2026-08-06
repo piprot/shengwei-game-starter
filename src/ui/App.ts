@@ -137,7 +137,8 @@ export class AdaptiveGameApp {
   private cloudToken = localStorage.getItem("adaptive-ascent-cloud-token") || "";
   private cloudStatus = "未连接云端";
   private cloudEntries: Array<{ name: string; role: string; score: number }> = [];
-  private pendingCloudAction: "sync" | "load" = "sync";
+  private pendingCloudAction: "sync" | "load" | "match" = "sync";
+  private usingCloudMatch = false;
 
   constructor(root: HTMLElement) {
     this.root = root;
@@ -1142,6 +1143,12 @@ export class AdaptiveGameApp {
           <button class="primary" data-action="finish-remote">完成连接</button>
           <p class="status-text">${this.remoteStatus}</p>
         </div>
+        <div class="remote-match">
+          <h2>云端自动匹配</h2>
+          <p>连接服务端后自动匹配对手，不需要手动交换邀请码。需先部署或本地运行房间服务器。</p>
+          <button class="primary" data-action="cloud-match">开始匹配</button>
+          <p class="status-text">${this.cloudStatus}</p>
+        </div>
       </div>
     `;
   }
@@ -1362,6 +1369,9 @@ export class AdaptiveGameApp {
         break;
       case "cloud-leaderboard":
         void this.cloudLeaderboard();
+        break;
+      case "cloud-match":
+        void this.cloudMatch();
         break;
       case "toggle-sound":
         this.muted = !this.muted;
@@ -1769,9 +1779,13 @@ export class AdaptiveGameApp {
       this.renderDuel();
       return;
     }
-    if (this.duelMode === "remote" && this.remotePeer) {
+    if (this.duelMode === "remote") {
       engine.pick(this.remotePlayerIndex, optionIndex);
-      this.remotePeer.send({ kind: "pick", optionIndex });
+      if (this.usingCloudMatch && this.roomClient) {
+        this.roomClient.pick(optionIndex);
+      } else if (this.remotePeer) {
+        this.remotePeer.send({ kind: "pick", optionIndex });
+      }
       this.renderDuel();
     }
   }
@@ -1823,6 +1837,7 @@ export class AdaptiveGameApp {
     this.remoteOpponentReady = false;
     this.remoteStatus = "尚未建立连接";
     this.duelEngine = undefined;
+    this.usingCloudMatch = false;
   }
 
   private exportSave(): void {
@@ -1984,6 +1999,27 @@ export class AdaptiveGameApp {
         this.cloudStatus = "排行榜已刷新";
         this.audio.ui();
         break;
+      case "queued":
+        this.cloudStatus = "已进入云端匹配队列，等待对手…";
+        break;
+      case "match_started":
+        this.startCloudDuel(
+          message.roomId,
+          message.playerIndex as 0 | 1,
+          message.opponentName || "云端对手"
+        );
+        break;
+      case "pick":
+        if (this.duelEngine) {
+          const opponentIndex = this.remotePlayerIndex === 0 ? 1 : 0;
+          this.duelEngine.pick(opponentIndex, message.optionIndex);
+          this.renderDuel();
+        }
+        break;
+      case "opponent_left":
+        this.cloudStatus = "对手已离开";
+        if (this.view === "duelLobby") this.renderDuelLobby();
+        break;
       case "error":
         this.cloudStatus = message.message;
         this.audio.risk();
@@ -2045,6 +2081,69 @@ export class AdaptiveGameApp {
       this.cloudStatus = error instanceof Error ? error.message : "排行榜刷新失败";
       this.renderReport();
     }
+  }
+
+  private async cloudMatch(): Promise<void> {
+    this.pendingCloudAction = "match";
+    this.cloudStatus = "正在连接云端匹配…";
+    this.renderDuelLobby();
+    try {
+      const client = await this.ensureCloudClient();
+      client.match(
+        this.save.profile.name,
+        this.save.profile.role,
+        this.save,
+        this.duelRounds
+      );
+    } catch (error) {
+      this.cloudStatus = error instanceof Error ? error.message : "云端匹配失败";
+      this.renderDuelLobby();
+    }
+  }
+
+  private startCloudDuel(
+    roomId: string,
+    playerIndex: 0 | 1,
+    opponentName: string
+  ): void {
+    const me = buildDuelProfile(
+      this.save.profile,
+      this.save.profile.name,
+      playerIndex === 0 ? "#41c7c0" : "#e9826c"
+    );
+    const opponent = {
+      name: opponentName,
+      role: "highPotential" as RoleId,
+      abilities: {
+        insight: 2,
+        deploy: 2,
+        mobilize: 2,
+        strategy: 2,
+        authority: 2,
+        stability: 2,
+        recovery: 2,
+        execution: 2,
+        structure: 2,
+        communication: 2
+      } as Record<AbilityId, number>,
+      resources: { energy: 75, trust: 55, influence: 45, capital: 40 },
+      color: playerIndex === 0 ? "#e9826c" : "#41c7c0",
+      isHuman: true
+    };
+    const seed =
+      [...roomId].reduce((sum, char) => sum * 31 + char.charCodeAt(0), 7) %
+      100000;
+    this.duelEngine =
+      playerIndex === 0
+        ? new DuelEngine(me, opponent, this.duelRounds, seed)
+        : new DuelEngine(opponent, me, this.duelRounds, seed);
+    this.remotePlayerIndex = playerIndex;
+    this.remoteOpponentName = opponentName;
+    this.usingCloudMatch = true;
+    this.duelMode = "remote";
+    this.duelRecorded = false;
+    this.audio.remoteConnected();
+    this.show("duel");
   }
 
   private async importSave(input: HTMLInputElement): Promise<void> {
