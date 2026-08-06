@@ -570,7 +570,34 @@ export class AdaptiveGameApp {
               .join("")}
           </div>
         </section>
+        ${this.endingMarkup()}
       </main>
+    `;
+  }
+
+  private endingMarkup(): string {
+    if (!isChapterComplete(this.save, 9)) {
+      return `
+        <section class="ending-panel locked">
+          <h2>${ROLES[this.save.profile.role].name}结局</h2>
+          <p class="muted">完成第九章后解锁专属结局。</p>
+        </section>
+      `;
+    }
+    const role = this.save.profile.role;
+    const endings: Record<RoleId, string> = {
+      parachute:
+        "你证明了自己不仅能空降，还能把陌生组织变成稳定系统。你离开时，权力已经回到制度、梯队与共识里，而不是停留在你个人身上。",
+      founder:
+        "你把创业直觉变成了可复制的组织方法，公司开始不依赖你一个人做所有决定。你保留了对方向的敏感，也建立了能接住增长的团队。",
+      highPotential:
+        "你没有职位权力，却建立了横跨部门的影响力网络。你最终被组织需要，不是因为头衔，而是因为你让所有人更清楚该往哪里走。"
+    };
+    return `
+      <section class="ending-panel">
+        <h2>${ROLES[role].name}结局</h2>
+        <p>${endings[role]}</p>
+      </section>
     `;
   }
 
