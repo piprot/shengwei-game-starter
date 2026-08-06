@@ -86,6 +86,7 @@ npm run test:server
 - [BACKEND_PLAN.md](./BACKEND_PLAN.md)
 - [DEPLOYMENT.md](./DEPLOYMENT.md)
 - [TRANSLATION_STATUS.md](./TRANSLATION_STATUS.md)
+- [DEVICE_QA.md](./DEVICE_QA.md)
 - [CODEX_HANDOFF.md](./CODEX_HANDOFF.md)
 
 ## 当前状态
