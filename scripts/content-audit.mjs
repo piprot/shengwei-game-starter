@@ -5,7 +5,8 @@ import {
   RANDOM_EVENT_IDS,
   ROLE_NODE_VARIANTS,
   SIDE_QUEST_ARCS,
-  STORY_NODES
+  STORY_NODES,
+  getNodeForRole
 } from "../src/core/story.ts";
 import {
   ABILITIES,
@@ -74,6 +75,17 @@ for (const node of mainNodes) {
   }
 }
 
+for (const node of mainNodes) {
+  for (const role of ["parachute", "founder", "highPotential"]) {
+    const labels = getNodeForRole(role, node.id).options.map(
+      (option) => option.label
+    );
+    if (new Set(labels).size < 3) {
+      problems.push(`${node.id}/${role} has duplicate role option labels`);
+    }
+  }
+}
+
 for (const id of ABILITY_ORDER) {
   const ability = ABILITIES[id];
   if (ability.subSkills.length < 4) {
@@ -111,8 +123,22 @@ for (const arc of SIDE_QUEST_ARCS) {
 }
 
 for (const eventId of RANDOM_EVENT_IDS) {
-  if (!STORY_NODES.some((node) => node.id === eventId)) {
+  const eventNode = STORY_NODES.find((node) => node.id === eventId);
+  if (!eventNode) {
     problems.push(`random event ${eventId} is missing`);
+  } else if (eventNode.kind !== "random") {
+    problems.push(`random event ${eventId} must use kind random`);
+  }
+}
+
+for (const node of STORY_NODES) {
+  for (const option of node.options) {
+    for (const branchId of Object.values(option.branchTo || {})) {
+      const branchNode = STORY_NODES.find((item) => item.id === branchId);
+      if (branchNode && branchNode.kind !== "branch") {
+        problems.push(`${branchId} must use kind branch`);
+      }
+    }
   }
 }
 

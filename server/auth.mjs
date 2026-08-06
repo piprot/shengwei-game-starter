@@ -1,0 +1,32 @@
+import { createHmac, timingSafeEqual } from "node:crypto";
+
+const secret = process.env.JWT_SECRET || "dev-only-secret-change-me";
+
+export function createToken(name, role) {
+  const payload = Buffer.from(
+    JSON.stringify({ name, role, iat: Date.now() })
+  ).toString("base64url");
+  const signature = createHmac("sha256", secret)
+    .update(payload)
+    .digest("base64url");
+  return `${payload}.${signature}`;
+}
+
+export function verifyToken(token) {
+  if (!token || !token.includes(".")) return null;
+  const [payload, signature] = token.split(".");
+  const expected = createHmac("sha256", secret)
+    .update(payload)
+    .digest("base64url");
+  if (
+    signature.length !== expected.length ||
+    !timingSafeEqual(Buffer.from(signature), Buffer.from(expected))
+  ) {
+    return null;
+  }
+  try {
+    return JSON.parse(Buffer.from(payload, "base64url").toString("utf8"));
+  } catch {
+    return null;
+  }
+}

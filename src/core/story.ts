@@ -1120,7 +1120,7 @@ export const STORY_NODES: StoryNode[] = [
     id: "c1b-parachute",
     chapterId: 1,
     title: "权力地图",
-    kind: "side",
+    kind: "branch",
     context:
       "你选择先做权力地图。行政主管愿意配合，但财务经理仍保持距离，你需要判断谁是你的第一联盟。",
     stake: "你要把第一轮访谈变成可信的联盟基础。",
@@ -1158,7 +1158,7 @@ export const STORY_NODES: StoryNode[] = [
     id: "c1b-founder",
     chapterId: 1,
     title: "现金流最小验证",
-    kind: "side",
+    kind: "branch",
     context:
       "你决定先用访谈建立信任，但创始人直觉提醒你：如果没有现金流验证，团队只会继续内耗。",
     stake: "你要在信任和现金流之间找到第一个可验证的突破口。",
@@ -1196,7 +1196,7 @@ export const STORY_NODES: StoryNode[] = [
     id: "c1b-highPotential",
     chapterId: 1,
     title: "横向共识会",
-    kind: "side",
+    kind: "branch",
     context:
       "你没有正式任命，决定先用访谈建立横向共识。现在你需要让这轮共识变成一个能被各部门认可的行动计划。",
     stake: "你要让每个部门都觉得自己参与了，而不是被通知。",
@@ -1575,6 +1575,47 @@ export const STORY_NODES: StoryNode[] = [
 ];
 
 export const RANDOM_EVENT_IDS = ["r1", "r2", "r3", "r4", "r5", "r6", "r7", "r8", "r9"];
+for (const id of RANDOM_EVENT_IDS) {
+  const node = STORY_NODES.find((item) => item.id === id);
+  if (node) node.kind = "random";
+}
+
+export const RANDOM_EVENT_META: Record<string, { weight: number; chapterId: number }> = {
+  r1: { weight: 3, chapterId: 2 },
+  r2: { weight: 3, chapterId: 3 },
+  r3: { weight: 4, chapterId: 5 },
+  r4: { weight: 3, chapterId: 6 },
+  r5: { weight: 4, chapterId: 8 },
+  r6: { weight: 5, chapterId: 9 },
+  r7: { weight: 3, chapterId: 2 },
+  r8: { weight: 4, chapterId: 4 },
+  r9: { weight: 4, chapterId: 7 }
+};
+
+export function nextRandomEvent(save: {
+  completedRandomEvents: string[];
+  unlockedChapters: number[];
+}): string | undefined {
+  const eligible = RANDOM_EVENT_IDS.filter((id) => {
+    const meta = RANDOM_EVENT_META[id];
+    return (
+      meta &&
+      !save.completedRandomEvents.includes(id) &&
+      save.unlockedChapters.includes(meta.chapterId)
+    );
+  });
+  if (eligible.length === 0) return undefined;
+  const totalWeight = eligible.reduce(
+    (sum, id) => sum + RANDOM_EVENT_META[id].weight,
+    0
+  );
+  let roll = Math.random() * totalWeight;
+  for (const id of eligible) {
+    roll -= RANDOM_EVENT_META[id].weight;
+    if (roll <= 0) return id;
+  }
+  return eligible[0];
+}
 
 export function getChapter(id: number): ChapterDef {
   const chapter = CHAPTERS.find((item) => item.id === id);
@@ -2202,7 +2243,7 @@ function buildBranchNodes(): void {
         id,
         chapterId: chapter.id,
         title: `${roleName(role)} · ${template.title}`,
-        kind: "side",
+        kind: "branch",
         context: `${template.context} ${roleLens(role)}`,
         stake: template.stake,
         options: BRANCH_QUALITIES.map((quality, index) => {

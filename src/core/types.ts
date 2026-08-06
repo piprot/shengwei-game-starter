@@ -42,7 +42,7 @@ export interface StoryNode {
   id: string;
   chapterId: number;
   title: string;
-  kind: "main" | "side";
+  kind: "main" | "side" | "branch" | "random";
   context: string;
   stake: string;
   options: StoryOption[];
@@ -123,6 +123,8 @@ export interface SaveState {
   duelHistory: DuelHistoryEntry[];
   claimedChallenges: string[];
   assessmentScore: number;
+  completedRandomEvents: string[];
+  completedBranchNodes: string[];
 }
 
 export interface ChoiceOutcome {

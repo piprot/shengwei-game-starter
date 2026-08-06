@@ -43,7 +43,9 @@ export const DEFAULT_SAVE: SaveState = {
   decisionHistory: [],
   duelHistory: [],
   claimedChallenges: [],
-  assessmentScore: 0
+  assessmentScore: 0,
+  completedRandomEvents: [],
+  completedBranchNodes: []
 };
 
 export function createProfile(name: string, role: RoleId): PlayerProfile {
@@ -118,7 +120,13 @@ function normalizeSave(save: SaveState): SaveState {
     claimedChallenges: Array.isArray(save.claimedChallenges)
       ? save.claimedChallenges
       : [],
-    assessmentScore: Number(save.assessmentScore) || 0
+    assessmentScore: Number(save.assessmentScore) || 0,
+    completedRandomEvents: Array.isArray(save.completedRandomEvents)
+      ? save.completedRandomEvents
+      : [],
+    completedBranchNodes: Array.isArray(save.completedBranchNodes)
+      ? save.completedBranchNodes
+      : []
   };
 }
 
@@ -185,6 +193,16 @@ export function applyStoryChoice(
   if (node.kind === "side") {
     if (!save.completedSideQuests.includes(nodeId)) {
       save.completedSideQuests.push(nodeId);
+      save.masteryPoints += 5;
+    }
+  } else if (node.kind === "branch") {
+    if (!save.completedBranchNodes.includes(nodeId)) {
+      save.completedBranchNodes.push(nodeId);
+      save.masteryPoints += 5;
+    }
+  } else if (node.kind === "random") {
+    if (!save.completedRandomEvents.includes(nodeId)) {
+      save.completedRandomEvents.push(nodeId);
       save.masteryPoints += 5;
     }
   } else {
@@ -270,6 +288,12 @@ export function isNodeComplete(save: SaveState, nodeId: string): boolean {
   const node = getNode(nodeId);
   if (node.kind === "side") {
     return save.completedSideQuests.includes(nodeId);
+  }
+  if (node.kind === "branch") {
+    return save.completedBranchNodes.includes(nodeId);
+  }
+  if (node.kind === "random") {
+    return save.completedRandomEvents.includes(nodeId);
   }
   return Boolean(
     save.chapterRecords

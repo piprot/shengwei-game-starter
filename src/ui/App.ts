@@ -40,6 +40,7 @@ import {
   CHAPTER_REFLECTIONS,
   NODE_INTEL,
   RANDOM_EVENT_IDS,
+  nextRandomEvent,
   SIDE_QUEST_ARCS,
   getChapter,
   getNode,
@@ -145,6 +146,8 @@ export class AdaptiveGameApp {
   private cloudEntries: Array<{ name: string; role: string; score: number }> = [];
   private pendingCloudAction: "sync" | "load" | "match" = "sync";
   private usingCloudMatch = false;
+  private cloudConflict = false;
+  private cloudRemoteSave?: SaveState;
 
   constructor(root: HTMLElement) {
     this.root = root;
@@ -575,9 +578,7 @@ export class AdaptiveGameApp {
     const chapter = getChapter(this.selectedChapter);
     const mainNodes = chapter.nodeIds.map(getNode);
     const chapterDone = isChapterComplete(this.save, chapter.id);
-    const availableRandom = RANDOM_EVENT_IDS.find(
-      (id) => !isNodeComplete(this.save, id)
-    );
+    const availableRandom = nextRandomEvent(this.save);
     this.root.innerHTML = `
       <header class="topbar">
         <div class="brand">权变之路</div>
@@ -708,7 +709,7 @@ export class AdaptiveGameApp {
             <section class="scenario-panel">
               <div class="scenario-meta">
                 <span>第 ${chapter.code} 章 · ${chapter.title}</span>
-                <span>${node.kind === "side" ? "支线任务" : "主线情境"}</span>
+                <span>${node.kind === "side" ? "支线任务" : node.kind === "branch" ? "角色分岔" : node.kind === "random" ? "随机事件" : "主线情境"}</span>
               </div>
               <h1>${node.title}</h1>
               ${
@@ -943,6 +944,17 @@ export class AdaptiveGameApp {
           <button data-action="cloud-load">云端载入</button>
           <button data-action="cloud-leaderboard">云端排行</button>
           <span class="cloud-status" role="status" aria-live="polite">${this.cloudStatus}</span>
+          ${
+            this.cloudConflict
+              ? `
+                <div class="cloud-conflict">
+                  <p>检测到本地与云端进度不一致，请选择保留哪一份。</p>
+                  <button data-action="cloud-use-remote">使用云端存档</button>
+                  <button data-action="cloud-force-local">仍要上传本地</button>
+                </div>
+              `
+              : ""
+          }
           <label class="file-button">
             导入存档
             <input type="file" data-import-save accept="application/json" hidden />
@@ -964,6 +976,10 @@ export class AdaptiveGameApp {
           <div class="stat-tile">
             <strong>${decision.totalScore}</strong>
             <span>决策总分</span>
+          </div>
+          <div class="stat-tile">
+            <strong>${this.save.completedRandomEvents.length}</strong>
+            <span>随机事件</span>
           </div>
         </section>
         ${
@@ -1128,10 +1144,14 @@ export class AdaptiveGameApp {
       .map((arc) => arcLegacy[arc.id])
       .filter(Boolean)
       .join(" ");
+    const randomLegacy =
+      this.save.completedRandomEvents.length >= 5
+        ? "你处理过的那些临时情境，最终成为了团队判断力的隐性训练。"
+        : "";
     return `
       <section class="ending-panel">
         <h2>${ROLES[role].name} · ${styleLabels[style]}结局</h2>
-        <p>${endings[role]} ${styleEndings[style]} ${legacy}</p>
+        <p>${endings[role]} ${styleEndings[style]} ${legacy} ${randomLegacy}</p>
       </section>
     `;
   }
@@ -1454,6 +1474,29 @@ export class AdaptiveGameApp {
         break;
       case "cloud-leaderboard":
         void this.cloudLeaderboard();
+        break;
+      case "cloud-use-remote":
+        if (this.cloudRemoteSave) {
+          try {
+            this.save = importSaveJson(JSON.stringify(this.cloudRemoteSave));
+            this.cloudConflict = false;
+            this.cloudStatus = "已使用云端存档";
+            this.audio.expert();
+            this.show("report");
+          } catch {
+            this.cloudStatus = "云端存档无法解析";
+            this.cloudConflict = false;
+            this.renderReport();
+          }
+        }
+        break;
+      case "cloud-force-local":
+        if (this.roomClient && this.cloudToken) {
+          this.cloudConflict = false;
+          this.roomClient.cloudSave(this.cloudToken, this.save);
+          this.cloudStatus = "正在上传本地存档";
+          this.renderReport();
+        }
         break;
       case "cloud-match":
         void this.cloudMatch();
@@ -2032,6 +2075,7 @@ export class AdaptiveGameApp {
       "## 对决记录",
       `- 胜场：${this.save.duelWins}`,
       `- 负场：${this.save.duelLosses}`,
+      `- 随机事件：${this.save.completedRandomEvents.length}`,
       `- 修炼点：${this.save.masteryPoints}`,
       "",
       "## 近期对决",
@@ -2114,7 +2158,11 @@ export class AdaptiveGameApp {
             (remote.save.playCount ?? 0) > this.save.playCount
           ) {
             this.cloudStatus = "云端进度较新，已停止覆盖；请使用云端载入";
+            this.cloudConflict = true;
+            this.cloudRemoteSave = remote.save;
           } else {
+            this.cloudConflict = false;
+            this.cloudRemoteSave = undefined;
             this.roomClient?.cloudSave(this.cloudToken, this.save);
           }
         }

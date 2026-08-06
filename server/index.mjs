@@ -4,6 +4,7 @@ import { createServer } from "node:http";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { WebSocketServer } from "ws";
+import { createToken, verifyToken } from "./auth.mjs";
 import {
   dbEnabled,
   getAccount,
@@ -16,6 +17,10 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 const DATA_DIR = process.env.DATA_DIR || join(__dirname, "data");
 const DATA_FILE = join(DATA_DIR, "store.json");
 const PORT = Number(process.env.PORT || 8080);
+
+if (process.env.NODE_ENV === "production" && !process.env.DATABASE_URL) {
+  throw new Error("Production requires DATABASE_URL");
+}
 
 mkdirSync(DATA_DIR, { recursive: true });
 
@@ -141,7 +146,10 @@ wss.on("connection", (socket) => {
 
     switch (message.type) {
       case "register": {
-        const token = randomUUID();
+        const token = createToken(
+          String(message.name || "玩家"),
+          String(message.role || "highPotential")
+        );
         const account = {
           token,
           name: String(message.name || "玩家"),
@@ -167,6 +175,10 @@ wss.on("connection", (socket) => {
       }
       case "login": {
         const token = String(message.token || "");
+        if (!verifyToken(token)) {
+          send(socket, { type: "error", message: "Token 无效或已过期" });
+          return;
+        }
         const account = dbEnabled
           ? await getAccount(token)
           : accountForToken(token);
@@ -180,6 +192,10 @@ wss.on("connection", (socket) => {
       }
       case "cloud_save": {
         const token = String(message.token || "");
+        if (!verifyToken(token)) {
+          send(socket, { type: "error", message: "Token 无效或已过期" });
+          return;
+        }
         const account = dbEnabled ? await getAccount(token) : accountForToken(token);
         if (!account) {
           send(socket, { type: "error", message: "账号不存在" });

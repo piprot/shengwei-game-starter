@@ -2051,6 +2051,29 @@ h2 {
   background: var(--panel);
 }
 
+.cloud-conflict {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  padding: 12px;
+  border: 1px solid rgba(242, 193, 78, 0.4);
+  border-radius: 8px;
+  background: rgba(242, 193, 78, 0.08);
+}
+
+.cloud-conflict p {
+  margin: 0;
+  color: var(--gold);
+}
+
+.cloud-conflict button {
+  min-height: 36px;
+  padding: 7px 12px;
+  font-size: 13px;
+}
+
 .cloud-leaderboard h2 {
   margin-bottom: 14px;
   font-size: 22px;
