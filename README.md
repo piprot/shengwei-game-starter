@@ -49,9 +49,10 @@ npm run build
 npm test
 npm run audit
 npm run content-audit
+npm run test:server
 ```
 
-`npm test` 会自动启动 Vite，并完成建档、主线情境、AI 1v1 全流程冒烟验证；`npm run audit` 会检查桌面/手机全页面布局与控制台错误；`npm run content-audit` 会检查章节、情境、选项、情报、角色变体与能力数据完整性。
+`npm test` 会自动启动 Vite，并完成建档、主线情境、AI 1v1 全流程冒烟验证；`npm run audit` 会检查桌面/手机全页面布局与控制台错误；`npm run content-audit` 会检查章节、情境、选项、情报、角色变体与能力数据完整性；`npm run test:server` 会启动服务端并验证注册、云存档与排行榜。
 
 ## 远程对战
 

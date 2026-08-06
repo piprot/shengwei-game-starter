@@ -828,6 +828,7 @@ export class AdaptiveGameApp {
       <header class="topbar">
         <div class="brand">权变之路</div>
         <button class="link" data-action="open-menu">返回主页</button>
+        <button class="link sound-toggle" data-action="toggle-sound">${this.muted ? "声音：关" : "声音：开"}</button>
       </header>
       <main class="report-shell">
         <section class="report-hero">
@@ -1950,11 +1951,13 @@ export class AdaptiveGameApp {
         this.cloudToken = message.token;
         localStorage.setItem("adaptive-ascent-cloud-token", message.token);
         this.cloudStatus = "云端账号已创建";
+        this.audio.remoteConnected();
         this.roomClient?.cloudSave(message.token, this.save);
         break;
       }
       case "logged_in": {
         this.cloudStatus = "云端账号已连接";
+        this.audio.remoteConnected();
         if (this.pendingCloudAction === "load") {
           const remote = message.account as { save?: SaveState };
           if (remote.save) {
@@ -1974,13 +1977,16 @@ export class AdaptiveGameApp {
       }
       case "save_ok":
         this.cloudStatus = "云端同步成功";
+        this.audio.expert();
         break;
       case "leaderboard":
         this.cloudEntries = message.entries;
         this.cloudStatus = "排行榜已刷新";
+        this.audio.ui();
         break;
       case "error":
         this.cloudStatus = message.message;
+        this.audio.risk();
         break;
       default:
         break;

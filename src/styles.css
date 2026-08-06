@@ -1925,6 +1925,7 @@ h2 {
   border-radius: 8px;
   color: var(--muted);
   font-size: 12px;
+  animation: board-breathe 4s ease-in-out infinite;
 }
 
 .cloud-leaderboard {

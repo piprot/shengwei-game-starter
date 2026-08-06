@@ -19,6 +19,7 @@
 ```bash
 npm install
 npm run server
+npm run test:server
 ```
 
 默认地址：`ws://127.0.0.1:8080`
@@ -47,6 +48,7 @@ npm run server
 - 前端构建时注入 `VITE_ROOM_SERVER_URL`
 - Render：直接使用仓库根目录的 `render.yaml`
 - Docker：直接使用仓库根目录的 `Dockerfile`
+- GHCR：`.github/workflows/docker.yml` 会在每次推送时构建并发布镜像
 
 ## Render 一键部署
 
