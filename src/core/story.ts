@@ -1573,6 +1573,120 @@ export const STORY_NODES: StoryNode[] = [
     ]
   },
   {
+    id: "c5b-parachute",
+    chapterId: 5,
+    title: "空降 · 目标落地的第一次拆解",
+    kind: "branch",
+    context:
+      "你作为空降管理者拿到收入翻倍目标，团队开始点头但没人知道明天做什么。",
+    stake: "你要把口号变成每个团队都能检查的关键结果。",
+    options: [
+      {
+        label: "用关键结果倒排行动和责任人",
+        summary: "把目标拆成三个可验证结果，并让每个人认领。",
+        quality: "expert",
+        effects: { structure: 3, execution: 2 },
+        resources: { energy: -7, trust: 5, influence: 6 },
+        feedback: "目标第一次变成可检查的作战图，团队不再只点头。",
+        theory: "德鲁克：把资源集中在真正重要的少数任务上。"
+      },
+      {
+        label: "先让各部门自报目标",
+        summary: "尊重现有汇报体系，只做汇总。",
+        quality: "partial",
+        effects: { communication: 2 },
+        resources: { energy: -5, trust: 3, influence: 1 },
+        feedback: "各部门目标很快互相冲突，你只能不断协调。",
+        theory: "《韩非子》：使事不相干，使士不兼官。"
+      },
+      {
+        label: "直接给每个部门下指标",
+        summary: "用目标压力推动执行，避免讨论拖延。",
+        quality: "risk",
+        effects: { authority: 2, execution: 1 },
+        resources: { energy: -5, trust: -5, influence: 3 },
+        feedback: "数字被下达了，但团队开始寻找最容易完成的解释。",
+        theory: "《孙子兵法》：上下同欲者胜。"
+      }
+    ]
+  },
+  {
+    id: "c5b-founder",
+    chapterId: 5,
+    title: "创业 · 目标落地的第一次拆解",
+    kind: "branch",
+    context:
+      "你作为创始人面对增长目标，产品、销售、研发各有优先级。团队需要你把目标变成共同节奏。",
+    stake: "你要让三个部门围绕同一个可验证结果行动。",
+    options: [
+      {
+        label: "锁定一个可回款的关键结果",
+        summary: "让所有部门围绕“本季度回款”定义各自动作。",
+        quality: "expert",
+        effects: { execution: 3, structure: 2 },
+        resources: { energy: -7, trust: 5, influence: 5 },
+        feedback: "不同部门第一次用同一个结果语言协作。",
+        theory: "《卓有成效的管理者》：要事优先。"
+      },
+      {
+        label: "让三个部门分别定目标",
+        summary: "减少创始人干预，让部门自主。",
+        quality: "partial",
+        effects: { deploy: 2 },
+        resources: { energy: -5, trust: 3, influence: 1 },
+        feedback: "部门目标各自合理，但合在一起并不支持增长。",
+        theory: "《韩非子》：明主之道，使智者尽其虑。"
+      },
+      {
+        label: "用投资人压力强推目标",
+        summary: "让团队知道目标不能谈，只能执行。",
+        quality: "risk",
+        effects: { authority: 2 },
+        resources: { energy: -5, trust: -6, influence: 2 },
+        feedback: "团队开始执行，但不再愿意暴露真实风险。",
+        theory: "《孙子兵法》：令之以文，齐之以武。"
+      }
+    ]
+  },
+  {
+    id: "c5b-highPotential",
+    chapterId: 5,
+    title: "高潜 · 目标落地的第一次拆解",
+    kind: "branch",
+    context:
+      "你作为高潜骨干被要求带领跨部门小组完成季度目标，但没有人真正向你汇报。",
+    stake: "你要用目标管理代替行政命令，让成员愿意协作。",
+    options: [
+      {
+        label: "建立共同看板和轮流主持节奏",
+        summary: "让每个成员承担一个公开可见的关键结果。",
+        quality: "expert",
+        effects: { communication: 3, structure: 2 },
+        resources: { energy: -6, trust: 7, influence: 5 },
+        feedback: "你让项目变成共同所有，而不是你一个人的任务。",
+        theory: "毛泽东《党委会的工作方法》：互通情报，取得共同语言。"
+      },
+      {
+        label: "先争取部门负责人支持",
+        summary: "让负责人认可目标，再推动成员执行。",
+        quality: "partial",
+        effects: { strategy: 2 },
+        resources: { energy: -5, trust: 2, influence: 2 },
+        feedback: "负责人支持了，但成员仍然只向原部门汇报。",
+        theory: "《权经》：权乃人授，授为大焉。"
+      },
+      {
+        label: "直接发布目标清单",
+        summary: "用清晰指令让各部门配合。",
+        quality: "risk",
+        effects: { execution: 2 },
+        resources: { energy: -5, trust: -5, influence: 2 },
+        feedback: "清单发出去了，但被各部门当作别人的项目。",
+        theory: "《论语》：不患人之不己知，患不知人也。"
+      }
+    ]
+  },
+  {
     id: "r1",
     chapterId: 2,
     title: "电梯偶遇",
@@ -2580,6 +2694,18 @@ export const NODE_INTEL: Record<string, string[]> = {
   "c4b-highPotential": [
     "资深负责人的反对里包含一个真实交付风险",
     "他手上有一套现成的数据可以验证新方案"
+  ],
+  "c5b-parachute": [
+    "收入缺口里 60% 来自三个未签约大客户",
+    "财务手里有一份可回款订单清单"
+  ],
+  "c5b-founder": [
+    "产品部已经在私下做新功能，但销售不知情",
+    "现有客户里有两个愿意提前付款"
+  ],
+  "c5b-highPotential": [
+    "各部门都担心目标变成自己部门独自承担",
+    "有一张现成的项目看板模板可以复用"
   ],
   r1: [
     "CEO 最近最担心的是组织是否开始失去方向",
