@@ -123,6 +123,16 @@ export function resetSave(): SaveState {
   return fresh;
 }
 
+export function importSaveJson(text: string): SaveState {
+  const parsed = JSON.parse(text) as SaveState;
+  if (parsed.version !== DEFAULT_SAVE.version) {
+    throw new Error("存档版本不匹配，无法导入");
+  }
+  const save = normalizeSave(parsed);
+  saveState(save);
+  return save;
+}
+
 export function activateProfile(save: SaveState, profile: PlayerProfile): void {
   save.profile = profile;
   save.profileCreated = true;

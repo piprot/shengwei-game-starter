@@ -80,6 +80,29 @@ button.primary:hover {
   border-color: #58d7d1;
 }
 
+.file-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  padding: 11px 16px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--panel-2);
+  color: var(--ink);
+  cursor: pointer;
+  transition:
+    transform 120ms ease,
+    border-color 120ms ease,
+    background 120ms ease;
+}
+
+.file-button:hover {
+  transform: translateY(-1px);
+  border-color: rgba(65, 199, 192, 0.55);
+  background: var(--panel-3);
+}
+
 button.link {
   border: 0;
   background: transparent;

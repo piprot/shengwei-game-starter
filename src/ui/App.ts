@@ -20,6 +20,7 @@ import {
   chapterStarCount,
   createProfile,
   decisionProfile,
+  importSaveJson,
   isChapterComplete,
   isNodeComplete,
   loadSave,
@@ -506,6 +507,11 @@ export class AdaptiveGameApp {
             <strong>${ROLES[this.save.profile.role].shortName} · ${decision.identity}</strong>
           </div>
           <button data-action="reset-profile">重置档案</button>
+          <button data-action="export-save">导出存档</button>
+          <label class="file-button">
+            导入存档
+            <input type="file" data-import-save accept="application/json" hidden />
+          </label>
         </section>
         <section class="stat-tiles">
           <div class="stat-tile">
@@ -876,6 +882,9 @@ export class AdaptiveGameApp {
         this.audio.ui();
         this.show("report");
         break;
+      case "export-save":
+        this.exportSave();
+        break;
       case "toggle-sound":
         this.muted = !this.muted;
         this.audio.setMuted(this.muted);
@@ -962,6 +971,9 @@ export class AdaptiveGameApp {
     const target = event.target as HTMLSelectElement;
     if (target.dataset.select === "rounds") {
       this.duelRounds = Number(target.value) || 3;
+    }
+    if (target.dataset.importSave && target instanceof HTMLInputElement) {
+      void this.importSave(target);
     }
   }
 
@@ -1231,6 +1243,37 @@ export class AdaptiveGameApp {
     this.remoteOpponentReady = false;
     this.remoteStatus = "尚未建立连接";
     this.duelEngine = undefined;
+  }
+
+  private exportSave(): void {
+    const blob = new Blob([JSON.stringify(this.save, null, 2)], {
+      type: "application/json"
+    });
+    const url = URL.createObjectURL(blob);
+    const anchor = document.createElement("a");
+    anchor.href = url;
+    anchor.download = `权变之路-${this.save.profile.name}-存档.json`;
+    anchor.click();
+    URL.revokeObjectURL(url);
+    this.audio.ui();
+  }
+
+  private async importSave(input: HTMLInputElement): Promise<void> {
+    const file = input.files?.[0];
+    if (!file) {
+      return;
+    }
+    try {
+      const text = await file.text();
+      this.save = importSaveJson(text);
+      this.audio.ensure();
+      this.audio.expert();
+      this.show("menu");
+    } catch (error) {
+      window.alert(error instanceof Error ? error.message : "导入存档失败");
+    } finally {
+      input.value = "";
+    }
   }
 
   private copyText(target: HTMLElement, selector: string): void {

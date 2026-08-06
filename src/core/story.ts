@@ -936,6 +936,129 @@ export const STORY_NODES: StoryNode[] = [
         theory: "《孙子兵法》：上下同欲者胜，但同欲不等于同耗。"
       }
     ]
+  },
+  {
+    id: "s4",
+    chapterId: 3,
+    title: "谈判桌上的沉默",
+    kind: "side",
+    context:
+      "你陪同销售负责人见一位关键客户。客户突然问起你上一家公司的失败项目，场面安静了几秒，所有人都在等你回应。",
+    stake: "你的一句话可能保住这笔订单，也可能让团队失去谈判主动权。",
+    options: [
+      {
+        label: "承认失败，并讲出可迁移的方法",
+        summary: "不回避过去，把失败经验转成客户关心的交付保障。",
+        quality: "expert",
+        effects: { communication: 3, structure: 1 },
+        resources: { energy: -5, trust: 7, influence: 6 },
+        feedback:
+          "你没有防御，也没有表演真诚，而是让客户看到你会从失败中提取可复用的方法。销售负责人悄悄松了口气。",
+        theory: "《实践论》：错误常常是正确的先导，关键是从失败中找出规律。"
+      },
+      {
+        label: "把问题推给销售负责人",
+        summary: "暗示客户这是团队执行问题，和自己没有关系。",
+        quality: "partial",
+        effects: { execution: 2 },
+        resources: { energy: -3, trust: -5, influence: 2 },
+        feedback:
+          "你保住了自己的形象，却让团队在客户面前失去一致性。订单即使签下，信任也已经打折。",
+        theory: "《孙子兵法》：上下同欲者胜。"
+      },
+      {
+        label: "避而不答，转移话题",
+        summary: "用客户更关心的问题把沉默带过去。",
+        quality: "risk",
+        effects: { strategy: 2 },
+        resources: { energy: -4, trust: -3, influence: -2 },
+        feedback:
+          "你暂时避开了尴尬，但客户记得你没有正面回答。回避本身也是一种答案。",
+        theory: "《权经》：揣为上，事次之，但不可失信于人。"
+      }
+    ]
+  },
+  {
+    id: "s5",
+    chapterId: 5,
+    title: "周末交付危机",
+    kind: "side",
+    context:
+      "周六晚上，关键项目发现严重数据错误，客户周一上午就要看演示。团队核心成员已经连续两周没有休息。",
+    stake: "你需要决定：连夜修复，还是先把风险告诉客户。",
+    options: [
+      {
+        label: "先隔离错误范围，再决定加班方案",
+        summary: "用 30 分钟确认错误影响，只留下真正必要的人处理。",
+        quality: "expert",
+        effects: { structure: 3, execution: 2, recovery: 1 },
+        resources: { energy: -6, trust: 6, influence: 5 },
+        feedback:
+          "你没有让所有人盲目加班，而是先缩小问题范围。团队看到你在用结构保护他们的精力。",
+        theory: "《矛盾论》：抓住主要矛盾，其他问题才能迎刃而解。"
+      },
+      {
+        label: "全员立即上线处理",
+        summary: "先把错误修完，其他事情等演示结束后再说。",
+        quality: "partial",
+        effects: { execution: 3 },
+        resources: { energy: -12, trust: -2, influence: 2 },
+        feedback:
+          "问题可能修完了，但团队连续加班的风险会在下个季度爆发。你不是在管理精力，只是在透支未来。",
+        theory: "《卓有成效的管理者》：时间是最稀缺的资源。"
+      },
+      {
+        label: "周一直接带风险上会",
+        summary: "不临时修复，把真实情况完整告诉客户。",
+        quality: "risk",
+        effects: { communication: 2, recovery: 1 },
+        resources: { energy: -3, trust: 3, influence: -6 },
+        feedback:
+          "坦诚值得肯定，但你本可以在周末先控制错误范围。只带风险上会，客户会认为团队没有执行能力。",
+        theory: "《孙子兵法》：先为不可胜，以待敌之可胜。"
+      }
+    ]
+  },
+  {
+    id: "s6",
+    chapterId: 8,
+    title: "团队崩溃时刻",
+    kind: "side",
+    context:
+      "业务连续受挫后，核心团队在复盘会上开始互相指责，有人提出辞职，有人把失败归咎于你。",
+    stake: "你需要在情绪失控前，重新建立团队对彼此和目标的信任。",
+    options: [
+      {
+        label: "先叫停指责，重新约定复盘规则",
+        summary: "把讨论从“谁错了”转成“我们从哪里学到了什么”。",
+        quality: "expert",
+        effects: { mobilize: 3, communication: 2 },
+        resources: { energy: -7, trust: 8, influence: 6 },
+        feedback:
+          "你没有急着背锅，也没有找人顶罪，而是先改变讨论结构。团队开始把失败当成共同材料。",
+        theory: "毛泽东《党委会的工作方法》：先当学生，再当先生。"
+      },
+      {
+        label: "独自承担责任",
+        summary: "把所有失败都揽到自己身上，让团队停止争吵。",
+        quality: "partial",
+        effects: { recovery: 2, authority: 1 },
+        resources: { energy: -8, trust: 5, influence: -2 },
+        feedback:
+          "团队暂时安静了，但他们没有学会面对失败。过度背锅也会让真正的问题消失。",
+        theory: "《论语》：君子求诸己，小人求诸人。"
+      },
+      {
+        label: "点名批评最响的反对者",
+        summary: "用高压让团队先服从，再讨论下一步。",
+        quality: "risk",
+        effects: { authority: 3 },
+        resources: { energy: -5, trust: -8, influence: 3 },
+        feedback:
+          "你压住了场面，却把团队拆成了更小的阵营。下一次失败时，没有人愿意先开口。",
+        theory: "《孙子兵法》：令之以文，齐之以武，但文武必须并用。"
+      }
+    ]
   }
 ];
 
@@ -1068,6 +1191,18 @@ export const NODE_INTEL: Record<string, string[]> = {
   s3: [
     "提案客户最看重的是决策质量，而不是响应速度",
     "你明早要见的客户曾在凌晨收到过竞争对手的方案"
+  ],
+  s4: [
+    "客户今天真正想确认的是你们是否还值得继续信任",
+    "销售负责人已经私下承诺过交付日期，但团队并未确认"
+  ],
+  s5: [
+    "数据错误只影响演示模块中的两张报表",
+    "客户周一真正想看的是决策逻辑，而不是完整功能"
+  ],
+  s6: [
+    "提出辞职的人并不是最失望的人，而是最沉默的人",
+    "团队上周已经提交过一份风险预警，但没有被重视"
   ]
 };
 
