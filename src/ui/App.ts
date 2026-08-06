@@ -73,7 +73,9 @@ import { ROLE_OPTION_SETS } from "../core/roleOptions";
 import { uiString, type Language } from "../core/i18n";
 import {
   ABILITY_EN,
+  ABILITY_DETAIL_EN,
   ACHIEVEMENT_EN,
+  ASSESSMENT_EN,
   BRANCH_NODE_EN,
   CHAPTER_EN,
   CHAPTER_REFLECTION_EN,
@@ -240,6 +242,17 @@ export class AdaptiveGameApp {
     return this.language === "en" && en
       ? { name: en.name, tagline: en.tagline }
       : { name: ability.name, tagline: ability.tagline };
+  }
+
+  private abilityDetailDisplay(id: AbilityId) {
+    const en = ABILITY_DETAIL_EN[id];
+    return this.language === "en" && en
+      ? en
+      : {
+          subSkills: ABILITIES[id].subSkills,
+          trainingPath: ABILITIES[id].trainingPath,
+          sources: ABILITIES[id].sources
+        };
   }
 
   private roleDisplay(role: RoleId): { name: string; shortName: string } {
@@ -429,6 +442,19 @@ export class AdaptiveGameApp {
       : challenge;
   }
 
+  private assessmentDisplay(question: (typeof ASSESSMENT_QUESTIONS)[number]) {
+    const en = ASSESSMENT_EN[question.id];
+    if (this.language !== "en" || !en) return question;
+    return {
+      ...question,
+      prompt: en.prompt,
+      options: question.options.map((option, index) => ({
+        ...option,
+        label: en.options[index] ?? option.label
+      }))
+    };
+  }
+
   private chapterReflectionText(chapterId: number): string {
     return this.language === "en"
       ? CHAPTER_REFLECTION_EN[chapterId] ?? ""
@@ -604,27 +630,29 @@ export class AdaptiveGameApp {
       return;
     }
     const question = ASSESSMENT_QUESTIONS[this.assessmentStep];
+    const questionView = this.assessmentDisplay(question);
     const selected = this.assessmentAnswers[this.assessmentStep];
+    const en = this.language === "en";
     this.root.innerHTML = `
       <header class="topbar">
-        <div class="brand">权变之路</div>
-        <button class="link" data-action="open-profile">返回建档</button>
+        <div class="brand">${this.t("brand")}</div>
+        <button class="link" data-action="open-profile">${en ? "Back to Profile" : "返回建档"}</button>
         <button class="link sound-toggle" data-action="toggle-sound" aria-label="${this.language === "en" ? "Toggle sound" : "切换声音"}">${this.muted ? this.t("soundOff") : this.t("soundOn")}</button>
       </header>
       <main class="assessment-shell">
         <section class="assessment-panel">
           <div class="assessment-progress">
-            <span>能力基线测评</span>
+            <span>${en ? "Ability Baseline Assessment" : "能力基线测评"}</span>
             <small>${this.assessmentStep + 1} / ${ASSESSMENT_QUESTIONS.length}</small>
           </div>
           <div class="assessment-bar"><i style="width:${((this.assessmentStep + 1) / ASSESSMENT_QUESTIONS.length) * 100}%"></i></div>
-          <h1>${escapeHtml(question.prompt)}</h1>
-          <p class="muted">${ABILITIES[question.abilityId].name} · ${ABILITIES[question.abilityId].tagline}</p>
+          <h1>${escapeHtml(questionView.prompt)}</h1>
+          <p class="muted">${this.abilityDisplay(question.abilityId).name} · ${this.abilityDisplay(question.abilityId).tagline}</p>
           <div class="assessment-art">
-            <canvas id="assessment-art" aria-label="能力基线图"></canvas>
+            <canvas id="assessment-art" aria-label="${en ? "Ability baseline chart" : "能力基线图"}"></canvas>
           </div>
           <div class="assessment-options">
-            ${question.options
+            ${questionView.options
               .map(
                 (option, index) => `
                   <button class="assessment-option ${selected === index ? "selected" : ""}" data-action="assessment-option" data-option="${index}">
@@ -635,13 +663,13 @@ export class AdaptiveGameApp {
               .join("")}
           </div>
           <div class="assessment-actions">
-            <button data-action="assessment-prev" ${this.assessmentStep === 0 ? "disabled" : ""}>上一题</button>
+            <button data-action="assessment-prev" ${this.assessmentStep === 0 ? "disabled" : ""}>${en ? "Previous" : "上一题"}</button>
             ${
               this.assessmentStep === ASSESSMENT_QUESTIONS.length - 1
-                ? `<button class="primary" data-action="assessment-submit">生成能力档案</button>`
-                : `<button class="primary" data-action="assessment-next">下一题</button>`
+                ? `<button class="primary" data-action="assessment-submit">${en ? "Generate Profile" : "生成能力档案"}</button>`
+                : `<button class="primary" data-action="assessment-next">${en ? "Next" : "下一题"}</button>`
             }
-            <button class="link" data-action="assessment-skip">跳过测评</button>
+            <button class="link" data-action="assessment-skip">${en ? "Skip Assessment" : "跳过测评"}</button>
           </div>
         </section>
       </main>
@@ -652,8 +680,10 @@ export class AdaptiveGameApp {
       renderPowerBoard(
         assessmentArt,
         this.assessmentStep * 17 + 3,
-        "能力基线图",
-        `${ROLES[this.pendingProfile.role].shortName} · 十项能力倾向`
+        this.language === "en" ? "Ability baseline chart" : "能力基线图",
+        this.language === "en"
+          ? `${this.roleDisplay(this.pendingProfile.role).shortName} · Ten Ability Tendencies`
+          : `${ROLES[this.pendingProfile.role].shortName} · 十项能力倾向`
       );
     }
   }
@@ -672,44 +702,45 @@ export class AdaptiveGameApp {
           abilityLevel(this.save.profile.abilities[a])
       )
       .slice(0, 3);
+    const en = this.language === "en";
     this.root.innerHTML = `
       <header class="topbar">
-        <div class="brand">权变之路</div>
+        <div class="brand">${this.t("brand")}</div>
         <button class="link sound-toggle" data-action="toggle-sound" aria-label="${this.language === "en" ? "Toggle sound" : "切换声音"}">${this.muted ? this.t("soundOff") : this.t("soundOn")}</button>
       </header>
       <main class="assessment-result-shell">
         <section class="assessment-result-hero">
           <div>
-            <p class="eyebrow">能力基线报告</p>
-            <h1>${ROLES[this.save.profile.role].name} · ${summary.rank.name}</h1>
-            <p class="muted">综合能力值 ${summary.total}，角色重点与测评倾向已经写入初始档案。</p>
+            <p class="eyebrow">${en ? "Ability Baseline Report" : "能力基线报告"}</p>
+            <h1>${this.roleDisplay(this.save.profile.role).name} · ${summary.rank.name}</h1>
+            <p class="muted">${en ? `Total Ability ${summary.total}; role focus and assessment tendencies are now in your starting profile.` : `综合能力值 ${summary.total}，角色重点与测评倾向已经写入初始档案。`}</p>
           </div>
           <canvas class="radar" id="assessment-result-radar"></canvas>
         </section>
         <section class="result-columns">
           <div class="report-panel">
-            <h2>优势能力</h2>
+            <h2>${en ? "Strengths" : "优势能力"}</h2>
             ${strengths
               .map(
                 (id) => `
                   <div class="strength-row">
                     <span style="--dot:${ABILITIES[id].color}"></span>
-                    <strong>${ABILITIES[id].name} Lv.${abilityLevel(this.save.profile.abilities[id])}</strong>
-                    <small>${ABILITIES[id].tagline}</small>
+                    <strong>${this.abilityDisplay(id).name} Lv.${abilityLevel(this.save.profile.abilities[id])}</strong>
+                    <small>${this.abilityDisplay(id).tagline}</small>
                   </div>
                 `
               )
               .join("")}
           </div>
           <div class="report-panel">
-            <h2>建议训练</h2>
+            <h2>${en ? "Recommended Training" : "建议训练"}</h2>
             ${training
               .map(
                 (id) => `
                   <div class="training-item compact">
                     <span style="--dot:${ABILITIES[id].color}"></span>
-                    <strong>${ABILITIES[id].name}</strong>
-                    <p>${ABILITIES[id].trainingPath}</p>
+                    <strong>${this.abilityDisplay(id).name}</strong>
+                    <p>${this.abilityDisplay(id).tagline}</p>
                   </div>
                 `
               )
@@ -717,7 +748,7 @@ export class AdaptiveGameApp {
           </div>
         </section>
         <section class="baseline-detail">
-          <h2>能力基线明细</h2>
+          <h2>${en ? "Baseline Detail" : "能力基线明细"}</h2>
           <div class="baseline-list">
             ${ABILITY_ORDER.map((id) => {
               const level = abilityLevel(this.save.profile.abilities[id]);
@@ -725,21 +756,21 @@ export class AdaptiveGameApp {
               return `
                 <div class="baseline-row">
                   <span style="--dot:${ABILITIES[id].color}"></span>
-                  <strong>${ABILITIES[id].name}</strong>
+                  <strong>${this.abilityDisplay(id).name}</strong>
                   <em>Lv.${level}</em>
-                  <small>${grade} 级</small>
+                  <small>${grade} ${en ? "grade" : "级"}</small>
                 </div>
               `;
             }).join("")}
           </div>
           <p class="cert-note">
-            认证状态：${cert.level}（${cert.score} / 60）${cert.next}
+            ${en ? `Certification: ${cert.level} (${cert.score} / 60) ${cert.next}` : `认证状态：${cert.level}（${cert.score} / 60）${cert.next}`}
           </p>
         </section>
         <section class="role-start-panel">
-          <h2>本角色开局建议</h2>
-          <p>${ROLES[this.save.profile.role].objective}</p>
-          <button class="primary" data-action="start-campaign">进入主线</button>
+          <h2>${en ? "Role Starting Advice" : "本角色开局建议"}</h2>
+          <p>${en ? ROLE_EN[this.save.profile.role].objective : ROLES[this.save.profile.role].objective}</p>
+          <button class="primary" data-action="start-campaign">${en ? "Enter Campaign" : "进入主线"}</button>
         </section>
       </main>
     `;

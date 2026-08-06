@@ -1710,6 +1710,437 @@ export const CHALLENGE_EN: Record<
   }
 };
 
+export const ASSESSMENT_EN: Record<
+  string,
+  { prompt: string; options: string[] }
+> = {
+  "q-insight": {
+    prompt:
+      "After taking over an unfamiliar team, how do you judge whether a core performer is trustworthy?",
+    options: [
+      "Watch his behavior under pressure instead of listening to what he says.",
+      "Check past performance and formal history first.",
+      "Mainly see who he is close to."
+    ]
+  },
+  "q-deploy": {
+    prompt:
+      "You have an important project that needs an owner. What do you prioritize?",
+    options: [
+      "Define the role's outcomes first, then match ability evidence.",
+      "Find a loyal and reliable person first, then develop them.",
+      "Choose the most senior person to avoid risk."
+    ]
+  },
+  "q-mobilize": {
+    prompt:
+      "When the team publicly opposes your new plan, what is your first reaction?",
+    options: [
+      "Turn the opponent's concerns into premises of the plan.",
+      "Stabilize the room first, then persuade key people privately.",
+      "Push forward directly with decision authority."
+    ]
+  },
+  "q-strategy": {
+    prompt:
+      "Without formal authority, how do you advance an important matter?",
+    options: [
+      "Win a small result first, then trade it for authority.",
+      "Express needs to leadership and clarify power boundaries first.",
+      "Wait until authority is granted before acting."
+    ]
+  },
+  "q-authority": {
+    prompt:
+      "You discover someone is bypassing you to make decisions. What do you do?",
+    options: [
+      "Redefine power boundaries with a joint approval process.",
+      "Talk directly to the person and clarify boundaries.",
+      "Do nothing until they make a mistake."
+    ]
+  },
+  "q-stability": {
+    prompt:
+      "Before leaving your current role, what do you hand over first?",
+    options: [
+      "Turn high-frequency judgments into checklists and a decision review library.",
+      "Introduce key clients and relationships to your successor.",
+      "Organize the important documents and finish."
+    ]
+  },
+  "q-recovery": {
+    prompt:
+      "After a week of intense work, your energy starts dropping noticeably. What do you do?",
+    options: [
+      "Set recovery boundaries and move the most important work to high-energy periods.",
+      "Push through on willpower and rest after the work is done.",
+      "Sleep less and give all time to work."
+    ]
+  },
+  "q-execution": {
+    prompt: "The quarterly goal gap is large. What do you do first?",
+    options: [
+      "Break out key results and cut low-value work.",
+      "Have the team focus on overtime to catch the numbers.",
+      "Talk to leadership about lowering the target."
+    ]
+  },
+  "q-structure": {
+    prompt:
+      "Facing a problem you have never handled, how do you usually start?",
+    options: [
+      "Define the problem boundary, then break out the key variables.",
+      "Find a similar case and copy a successful approach.",
+      "Start acting and adjust when problems appear."
+    ]
+  },
+  "q-communication": {
+    prompt:
+      "A cross-functional meeting is stuck in conflict. How do you express yourself?",
+    options: [
+      "Restate both sides' concerns, then redefine the shared goal.",
+      "Propose my plan directly and ask everyone to cooperate.",
+      "Stay quiet now and handle it privately after the meeting."
+    ]
+  },
+  "q-insight-2": {
+    prompt:
+      "A candidate has strong results, but the team says he takes all the credit. What do you do?",
+    options: [
+      "Observe how he explains failure and collaborates.",
+      "Trust the results first, then add team feedback.",
+      "Lower your evaluation of him directly."
+    ]
+  },
+  "q-insight-3": {
+    prompt:
+      "To understand a key person's real motives, what is the most effective action?",
+    options: [
+      "Watch what he voluntarily invests time and resources in.",
+      "Ask him directly what matters most.",
+      "Rely on what others say about him."
+    ]
+  },
+  "q-deploy-2": {
+    prompt:
+      "A key role candidate has weaknesses but outstanding strengths. What do you do?",
+    options: [
+      "Assess whether the weaknesses affect core role outcomes, then decide.",
+      "Prefer someone with no obvious weaknesses.",
+      "Refuse to use anyone with weaknesses."
+    ]
+  },
+  "q-deploy-3": {
+    prompt:
+      "When delegating to a subordinate, what should you confirm first?",
+    options: [
+      "The results he must deliver and his judgment boundaries.",
+      "Whether he is loyal enough.",
+      "Whether he fully agrees with your approach."
+    ]
+  },
+  "q-mobilize-2": {
+    prompt:
+      "When team morale is low, what most re-energizes people?",
+    options: [
+      "Give them a winnable small goal and shared responsibility.",
+      "Publicly praise a few people's effort.",
+      "Emphasize the serious consequences of failure."
+    ]
+  },
+  "q-mobilize-3": {
+    prompt:
+      "To make two hostile departments cooperate, what is the first step?",
+    options: [
+      "Redefine the customer or result they both share.",
+      "Persuade the two leads separately.",
+      "Ask leadership to pressure them."
+    ]
+  },
+  "q-strategy-2": {
+    prompt:
+      "What is the most persuasive way to obtain resources?",
+    options: [
+      "Show a verifiable small result first.",
+      "Explain how much return the resources can bring.",
+      "Emphasize the urgency of the project."
+    ]
+  },
+  "q-strategy-3": {
+    prompt:
+      "Facing a strong competitor, what do you prefer?",
+    options: [
+      "Find a differentiation advantage they cannot copy.",
+      "Invest faster and harder than them.",
+      "Wait for them to make a mistake."
+    ]
+  },
+  "q-authority-2": {
+    prompt:
+      "After taking over a team, what authority source should you build first?",
+    options: [
+      "Clear, consistent decision standards and results.",
+      "Strict work discipline.",
+      "Public criticism of problematic behavior."
+    ]
+  },
+  "q-authority-3": {
+    prompt:
+      "Someone publicly challenges your decision. What do you do?",
+    options: [
+      "Confirm the facts first, then decide whether to adjust.",
+      "Immediately defend the decision's authority.",
+      "Publicly rebut the challenger."
+    ]
+  },
+  "q-stability-2": {
+    prompt:
+      "To make the team run without depending on you, the key is?",
+    options: [
+      "Turn key decisions into reusable processes.",
+      "Develop one most trusted deputy.",
+      "Keep key decisions in your own hands."
+    ]
+  },
+  "q-stability-3": {
+    prompt:
+      "After someone learns your core ability, you will?",
+    options: [
+      "Keep upgrading to a higher-order ability.",
+      "Actively mentor them and expand influence.",
+      "Worry about being replaced."
+    ]
+  },
+  "q-recovery-2": {
+    prompt:
+      "When you feel worst emotionally, what recovers you most effectively?",
+    options: [
+      "Leave the scene first and let your body and emotions cool down.",
+      "Talk to a trusted person.",
+      "Use more work to distract yourself."
+    ]
+  },
+  "q-recovery-3": {
+    prompt:
+      "You notice two weeks of continuous fatigue. What do you do first?",
+    options: [
+      "Check the three tasks that consume the most energy.",
+      "Cut everything except sleep.",
+      "Push through until the project ends."
+    ]
+  },
+  "q-execution-2": {
+    prompt:
+      "A new task suddenly appears in the project. What do you do?",
+    options: [
+      "First judge whether it affects key results.",
+      "Insert it into the schedule quickly so nothing is missed.",
+      "Handle it immediately to avoid being questioned by leadership."
+    ]
+  },
+  "q-execution-3": {
+    prompt:
+      "What mechanism most effectively keeps the team on plan?",
+    options: [
+      "Fixed-rhythm milestone checks.",
+      "Ask for progress every day.",
+      "Check everything before delivery."
+    ]
+  },
+  "q-structure-2": {
+    prompt:
+      "When a problem repeats, what do you analyze first?",
+    options: [
+      "The systemic conditions that cause it.",
+      "Who is responsible this time.",
+      "How to patch one gap quickly."
+    ]
+  },
+  "q-structure-3": {
+    prompt:
+      "When you receive a lot of information, what do you do first?",
+    options: [
+      "Break it into key variables and causal chains by goal.",
+      "Organize it into a list by source.",
+      "Look directly for the most striking conclusion."
+    ]
+  },
+  "q-communication-2": {
+    prompt:
+      "The other person clearly misunderstands you. What do you do?",
+    options: [
+      "Restate their understanding first, then add key information.",
+      "Repeat your own point in more detail.",
+      "Ask a third party to convey it again."
+    ]
+  },
+  "q-communication-3": {
+    prompt:
+      "Cross-functional meeting time is running out. What do you align first?",
+    options: [
+      "Shared goal, owners, and deadline.",
+      "Each department's difficulties and concerns.",
+      "Final solution details."
+    ]
+  }
+};
+
+export const ABILITY_DETAIL_EN: Record<
+  AbilityId,
+  { subSkills: string[]; trainingPath: string; sources: string[] }
+> = {
+  insight: {
+    subSkills: [
+      "See beyond the surface to understand what is inside",
+      "Observe behavior to judge character",
+      "Inspect change to see nature",
+      "Recognize categories and make the most of talent"
+    ],
+    trainingPath:
+      "Complete a stakeholder map in each chapter, then move into one-on-one interviews with key people.",
+    sources: [
+      "The Record of Characters: Nine Signs and Eight Observations",
+      "The Ice Mirror: eight-character reading formula",
+      "The Art of War: five ways to know victory"
+    ]
+  },
+  deploy: {
+    subSkills: [
+      "Match people to roles by ability",
+      "Use what each person does best",
+      "Make rewards and punishments clear",
+      "Keep responsibilities clear"
+    ],
+    trainingPath:
+      "Replace impression scores with a key-role checklist and make people decisions from ability evidence.",
+    sources: [
+      "Han Feizi on Personnel: follow heaven and people",
+      "Zhenguan Essentials: promote only the capable",
+      "Drucker: build on people's strengths"
+    ]
+  },
+  mobilize: {
+    subSkills: [
+      "Win people through virtue",
+      "Combine civil trust with martial discipline",
+      "Offer direction, not just orders",
+      "Seize the key point and carry the whole"
+    ],
+    trainingPath:
+      "Write opponents' concerns into the plan, then invite them to own a pilot.",
+    sources: [
+      "The Analects: govern through virtue",
+      "The Art of War: unite with civility and discipline with martial order",
+      "Mao Zedong: make proposals, use cadres, grasp key points"
+    ]
+  },
+  strategy: {
+    subSkills: [
+      "Power awareness",
+      "Strategic positioning",
+      "Combine law, power, and technique",
+      "Wait for the right moment"
+    ],
+    trainingPath:
+      "Earn leverage by winning before claiming power, while keeping authorizers informed.",
+    sources: [
+      "The Book of Power: Building Power",
+      "Han Feizi: law, power, and technique",
+      "Machiavelli: The Prince"
+    ]
+  },
+  authority: {
+    subSkills: [
+      "Use power with restraint",
+      "Delegate and empower",
+      "Take active control",
+      "Secure victory before battle"
+    ],
+    trainingPath:
+      "Put key decisions into joint approval mechanisms and use systems to protect power boundaries.",
+    sources: [
+      "The Book of Power: Using Power",
+      "The Art of War: make the opponent come to you",
+      "Guiguzi: adaptive power thinking"
+    ]
+  },
+  stability: {
+    subSkills: [
+      "Support results",
+      "Institutionalize systems",
+      "Build succession",
+      "Prevent risks"
+    ],
+    trainingPath:
+      "Turn high-frequency judgments into checklists and a review library, and design a runway period for successors.",
+    sources: [
+      "Zhenguan Essentials: start well and end cautiously",
+      "Zizhi Tongjian: humility and unity",
+      "Methods of Work in Party Committees: democratic centralism"
+    ]
+  },
+  recovery: {
+    subSkills: [
+      "Notice emotions",
+      "Restore energy",
+      "Set boundaries",
+      "Review and restart"
+    ],
+    trainingPath:
+      "Set one uninterrupted recovery block each day and reset your state with breathing practice.",
+    sources: [
+      "The Effective Executive: self-management",
+      "The 7 Habits: be proactive",
+      "Modern energy management research"
+    ]
+  },
+  execution: {
+    subSkills: [
+      "Break goals into results",
+      "Prioritize",
+      "Create checkpoints",
+      "Accept verified outcomes"
+    ],
+    trainingPath:
+      "Set three key results for the goal; give each result an owner and acceptance criteria.",
+    sources: [
+      "The Effective Executive: first things first",
+      "The Art of War: speed wins",
+      "Goal management practice"
+    ]
+  },
+  structure: {
+    subSkills: [
+      "Define the problem",
+      "Break out elements",
+      "Seize the principal contradiction",
+      "Form a testable hypothesis"
+    ],
+    trainingPath:
+      "For vague problems, write the problem definition first, then list causal chains and validation checkpoints.",
+    sources: [
+      "On Contradiction: seize the principal contradiction",
+      "On Practice: find patterns from practice",
+      "Structured problem-solving framework"
+    ]
+  },
+  communication: {
+    subSkills: [
+      "Align proactively",
+      "Communicate with structure",
+      "Ask and listen",
+      "Resolve disagreement"
+    ],
+    trainingPath:
+      "Align goals before cross-functional meetings, and lock owners with a one-page summary afterward.",
+    sources: [
+      "The Analects: do not worry that others do not know you",
+      "The 7 Habits: seek first to understand",
+      "Nonviolent communication principles"
+    ]
+  }
+};
+
 export const NPC_EN: Record<
   string,
   { name: string; title: string; description: string }

@@ -20,6 +20,7 @@ import { ROLE_OPTION_SETS } from "../src/core/roleOptions.ts";
 import {
   ABILITY_EN,
   ACHIEVEMENT_EN,
+  ASSESSMENT_EN,
   BRANCH_NODE_EN,
   CHAPTER_EN,
   CHAPTER_REFLECTION_EN,
@@ -120,7 +121,12 @@ for (const id of ABILITY_ORDER) {
 }
 
 for (const role of Object.values(ROLES)) {
-  if (!ROLE_EN[role.id]?.name || !ROLE_EN[role.id]?.lens || !ROLE_EN[role.id]?.objective) {
+  if (
+    !ROLE_EN[role.id]?.name ||
+    !ROLE_EN[role.id]?.lens ||
+    !ROLE_EN[role.id]?.objective ||
+    !ROLE_EN[role.id]?.description
+  ) {
     problems.push(`${role.id} missing English role text`);
   }
   if (!role.objective || !role.lens || role.focusAbilities.length < 4) {
@@ -231,6 +237,15 @@ for (const question of ASSESSMENT_QUESTIONS) {
   if (question.options.length !== 3) {
     problems.push(`${question.id} must have exactly 3 options`);
   }
+  const en = ASSESSMENT_EN[question.id];
+  if (
+    !en?.prompt ||
+    !en.options ||
+    en.options.length !== question.options.length ||
+    en.options.some((label) => !label)
+  ) {
+    problems.push(`${question.id} missing English assessment text`);
+  }
 }
 
 for (const arc of SIDE_QUEST_ARCS) {
@@ -308,6 +323,9 @@ console.log(
       translatedNpcs: NPCS.filter((npc) => NPC_EN[npc.id]).length,
       translatedAchievements: ACHIEVEMENTS.filter(
         (achievement) => ACHIEVEMENT_EN[achievement.id]
+      ).length,
+      translatedAssessmentQuestions: ASSESSMENT_QUESTIONS.filter(
+        (question) => ASSESSMENT_EN[question.id]
       ).length,
       translatedRoleOptions: Object.keys(ROLE_OPTION_EN).length * 9,
       subSkills: ABILITY_ORDER.reduce(
