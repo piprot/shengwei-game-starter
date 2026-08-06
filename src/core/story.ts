@@ -1801,6 +1801,120 @@ export const STORY_NODES: StoryNode[] = [
     ]
   },
   {
+    id: "c7b-parachute",
+    chapterId: 7,
+    title: "空降 · 组织能力的第一次沉淀",
+    kind: "branch",
+    context:
+      "你作为空降管理者发现很多判断只存在你脑子里。你一离开，团队就回到老路。",
+    stake: "你要让组织开始离开你也能运行。",
+    options: [
+      {
+        label: "把高频决策做成检查清单",
+        summary: "让团队在关键节点使用可复用的判断流程。",
+        quality: "expert",
+        effects: { stability: 3, structure: 2 },
+        resources: { energy: -7, trust: 4, influence: 6 },
+        feedback: "你开始把个人经验产品化，组织第一次不再依赖你的反应速度。",
+        theory: "毛泽东《党委会的工作方法》：制度建党，不依赖个人。"
+      },
+      {
+        label: "只培养一个核心代理人",
+        summary: "把关键经验传给最信任的人。",
+        quality: "partial",
+        effects: { deploy: 2, strategy: 1 },
+        resources: { energy: -5, trust: 4, influence: 2 },
+        feedback: "你降低了短期风险，却把组织能力绑定在另一个人身上。",
+        theory: "《权经》：授能干者，授忠诚者。"
+      },
+      {
+        label: "保持个人判断优势",
+        summary: "不公开方法，让自己不可替代。",
+        quality: "risk",
+        effects: { authority: 2 },
+        resources: { energy: -4, trust: -5, influence: -5 },
+        feedback: "你保住了位置，却让组织无法放大你的价值。",
+        theory: "《贞观政要》：善始慎终，创业难守成更难。"
+      }
+    ]
+  },
+  {
+    id: "c7b-founder",
+    chapterId: 7,
+    title: "创业 · 组织能力的第一次沉淀",
+    kind: "branch",
+    context:
+      "你作为创始人发现公司所有关键决策都要经过你，你生病一天业务就停一半。",
+    stake: "你要把创始人经验变成可复制的组织流程。",
+    options: [
+      {
+        label: "把关键决策写成经营手册",
+        summary: "让核心团队使用同一套判断框架。",
+        quality: "expert",
+        effects: { stability: 3, structure: 2 },
+        resources: { energy: -7, trust: 5, influence: 6 },
+        feedback: "你开始把创始人直觉制度化，公司第一次有了“不依赖你也能决策”的路径。",
+        theory: "德鲁克：把个人贡献转化为组织能力。"
+      },
+      {
+        label: "只带一个联合创始人",
+        summary: "把关键经验传给一人，保证重大决策不失控。",
+        quality: "partial",
+        effects: { deploy: 2 },
+        resources: { energy: -5, trust: 3, influence: 2 },
+        feedback: "公司不再只依赖你，但开始依赖另一个个人。",
+        theory: "《权经》：授能干者，授忠诚者。"
+      },
+      {
+        label: "继续亲自掌控所有决策",
+        summary: "保持创始人控制力，防止执行走样。",
+        quality: "risk",
+        effects: { authority: 2 },
+        resources: { energy: -8, trust: -2, influence: -2 },
+        feedback: "公司稳定在你手里，但增长被你的精力锁死。",
+        theory: "《贞观政要》：善始慎终。"
+      }
+    ]
+  },
+  {
+    id: "c7b-highPotential",
+    chapterId: 7,
+    title: "高潜 · 组织能力的第一次沉淀",
+    kind: "branch",
+    context:
+      "你作为高潜骨干的项目高度依赖你个人的沟通网络。你一休假，项目就停滞。",
+    stake: "你要把个人关系变成团队流程。",
+    options: [
+      {
+        label: "把关键沟通节点做成协作地图",
+        summary: "让团队知道关键人、时间节点和交接责任。",
+        quality: "expert",
+        effects: { structure: 3, communication: 2 },
+        resources: { energy: -6, trust: 6, influence: 5 },
+        feedback: "你把自己的网络变成了团队资产，项目第一次可以在你离开时继续运行。",
+        theory: "《韩非子》：使事不相干，使士不兼官。"
+      },
+      {
+        label: "让一位同事替代你对接",
+        summary: "把关系转给最信任的同事，减少交接成本。",
+        quality: "partial",
+        effects: { deploy: 2 },
+        resources: { energy: -5, trust: 3, influence: 2 },
+        feedback: "替代者接手了，但组织仍依赖个人关系而非机制。",
+        theory: "《权经》：授能干者，授忠诚者。"
+      },
+      {
+        label: "不公开关系网络",
+        summary: "保持自己在项目中的不可替代性。",
+        quality: "risk",
+        effects: { authority: 1 },
+        resources: { energy: -3, trust: -5, influence: -4 },
+        feedback: "你保住了影响力，却让项目变得脆弱。",
+        theory: "《贞观政要》：善始慎终。"
+      }
+    ]
+  },
+  {
     id: "r1",
     chapterId: 2,
     title: "电梯偶遇",
@@ -2832,6 +2946,18 @@ export const NODE_INTEL: Record<string, string[]> = {
   "c6b-highPotential": [
     "高层直接指挥的内容集中在两个交付节点",
     "项目章程尚未被正式发布"
+  ],
+  "c7b-parachute": [
+    "团队里已经有人开始模仿你的口头决策",
+    "系统里有一套未被启用的审批检查清单"
+  ],
+  "c7b-founder": [
+    "核心团队经常等你确认后才敢行动",
+    "过去三个月的高频决策可以被归类成五种"
+  ],
+  "c7b-highPotential": [
+    "项目关键人只认可你的口头确认",
+    "有一份会议记录模板可以升级为协作地图"
   ],
   r1: [
     "CEO 最近最担心的是组织是否开始失去方向",
