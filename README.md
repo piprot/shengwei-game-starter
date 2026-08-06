@@ -80,3 +80,11 @@ npm run test:server
 - [REQUIREMENTS_TRACEABILITY.md](./REQUIREMENTS_TRACEABILITY.md)
 - [NARRATIVE_PLAN.md](./NARRATIVE_PLAN.md)
 - [CODEX_HANDOFF.md](./CODEX_HANDOFF.md)
+
+## 当前状态
+
+- P0 可玩生产闭环：已完成并部署 GitHub Pages
+- P1 服务端：房间、自动匹配、账号、云存档、排行榜代码已完成并本地测试通过
+- P1 部署：PostgreSQL、Docker、Render 配置已就绪，等待部署到公网
+- P2 教练工具：存档/报告导出、云同步、人物关系图、成就与认证已具备
+- P3 内容规模化：角色独立选项、全章节分支、30 题测评、支线剧情弧已具备，后续可继续扩充
