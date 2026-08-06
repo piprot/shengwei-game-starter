@@ -76,7 +76,11 @@ jobs:
     runs-on: ubuntu-latest
     concurrency:
       group: pages-deploy-${{ github.ref }}
-      cancel-in-progress: false
+      # true: a new deploy cancels any stale in-progress deploy job, which marks
+      # that deployment inactive and releases the GitHub Pages single-slot lock.
+      # Prevents the recurring "stuck in deployment_in_progress -> timeout failure"
+      # wedge (see historical root cause 176c67b) when pushes land close together.
+      cancel-in-progress: true
     permissions:
       contents: read
       pages: write
