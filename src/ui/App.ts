@@ -609,6 +609,7 @@ export class AdaptiveGameApp {
       `;
     }
     const role = this.save.profile.role;
+    const decision = decisionProfile(this.save);
     const endings: Record<RoleId, string> = {
       parachute:
         "你证明了自己不仅能空降，还能把陌生组织变成稳定系统。你离开时，权力已经回到制度、梯队与共识里，而不是停留在你个人身上。",
@@ -617,10 +618,34 @@ export class AdaptiveGameApp {
       highPotential:
         "你没有职位权力，却建立了横跨部门的影响力网络。你最终被组织需要，不是因为头衔，而是因为你让所有人更清楚该往哪里走。"
     };
+    let style: "expert" | "risk" | "partial" | "balanced" = "balanced";
+    if (decision.counts.expert >= 8) {
+      style = "expert";
+    } else if (decision.counts.risk >= 5) {
+      style = "risk";
+    } else if (decision.counts.partial >= 8) {
+      style = "partial";
+    }
+    const styleLabels = {
+      expert: "精准决策",
+      risk: "高压破局",
+      partial: "渐进推进",
+      balanced: "平衡演进"
+    };
+    const styleEndings = {
+      expert:
+        "你以精准判断著称，团队开始使用你沉淀的检查清单做决策，组织获得了可复制的判断力。",
+      risk:
+        "你敢于在压力下押注，组织因此学会在不确定中快速行动，但也留下了需要持续修复的风险。",
+      partial:
+        "你选择渐进推进，组织在低震荡中完成了变革，只是节奏比想象中更慢，留下了更多调整空间。",
+      balanced:
+        "你在激进与保守之间保持了平衡，组织最终获得了一种可解释的稳定，也保留了继续进化的弹性。"
+    };
     return `
       <section class="ending-panel">
-        <h2>${ROLES[role].name}结局</h2>
-        <p>${endings[role]}</p>
+        <h2>${ROLES[role].name} · ${styleLabels[style]}结局</h2>
+        <p>${endings[role]} ${styleEndings[style]}</p>
       </section>
     `;
   }
