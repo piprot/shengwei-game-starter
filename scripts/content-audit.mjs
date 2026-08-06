@@ -11,6 +11,7 @@ import {
   ROLES
 } from "../src/core/abilities.ts";
 import { ASSESSMENT_QUESTIONS } from "../src/core/assessment.ts";
+import { ACHIEVEMENTS } from "../src/core/achievements.ts";
 
 const mainNodes = STORY_NODES.filter((node) => node.kind === "main");
 const sideNodes = STORY_NODES.filter((node) => node.kind === "side");
@@ -85,6 +86,10 @@ for (const question of ASSESSMENT_QUESTIONS) {
   if (question.options.length !== 3) {
     problems.push(`${question.id} must have exactly 3 options`);
   }
+}
+
+if (ACHIEVEMENTS.length < 10) {
+  problems.push("achievements must contain at least 10 entries");
 }
 
 if (problems.length > 0) {

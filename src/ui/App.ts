@@ -8,6 +8,11 @@ import {
   totalAbilityLevels
 } from "../core/abilities";
 import {
+  ACHIEVEMENTS,
+  isAchievementUnlocked,
+  unlockedCount
+} from "../core/achievements";
+import {
   DuelEngine,
   duelSeed,
   recommendedTraining
@@ -62,6 +67,7 @@ type View =
   | "profile"
   | "assessment"
   | "assessmentResult"
+  | "achievements"
   | "map"
   | "story"
   | "ability"
@@ -145,6 +151,9 @@ export class AdaptiveGameApp {
       case "assessmentResult":
         this.renderAssessmentResult();
         break;
+      case "achievements":
+        this.renderAchievements();
+        break;
       case "map":
         this.renderMap();
         break;
@@ -224,6 +233,11 @@ export class AdaptiveGameApp {
             <span class="card-index">04</span>
             <h2>复盘报告</h2>
             <p>从游戏表现反推训练建议，把决策反馈迁移回真实工作。</p>
+          </button>
+          <button class="menu-card" data-action="open-achievements">
+            <span class="card-index">05</span>
+            <h2>成就墙</h2>
+            <p>追踪章节、支线、测评、1v1 与能力段位的完成进度。</p>
           </button>
         </section>
       </main>
@@ -399,6 +413,41 @@ export class AdaptiveGameApp {
     if (radar) {
       renderAbilityRadar(radar, this.save.profile.abilities);
     }
+  }
+
+  private renderAchievements(): void {
+    const unlocked = unlockedCount(this.save);
+    this.root.innerHTML = `
+      <header class="topbar">
+        <div class="brand">权变之路</div>
+        <button class="link" data-action="open-menu">返回主页</button>
+      </header>
+      <main class="achievement-shell">
+        <section class="achievement-hero">
+          <div>
+            <p class="eyebrow">成就墙</p>
+            <h1>${unlocked} / ${ACHIEVEMENTS.length} 已解锁</h1>
+            <p class="muted">完成章节、支线、测评、1v1 与能力段位，解锁全部成就。</p>
+          </div>
+          <div class="achievement-progress"><i style="width:${(unlocked / ACHIEVEMENTS.length) * 100}%"></i></div>
+        </section>
+        <section class="achievement-grid">
+          ${ACHIEVEMENTS.map((achievement) => {
+            const done = isAchievementUnlocked(this.save, achievement.id);
+            return `
+              <div class="achievement-card ${done ? "unlocked" : "locked"}">
+                <span class="achievement-icon">${achievement.icon}</span>
+                <div>
+                  <h2>${achievement.name}</h2>
+                  <p>${achievement.description}</p>
+                </div>
+                <small>${done ? "已解锁" : "未解锁"}</small>
+              </div>
+            `;
+          }).join("")}
+        </section>
+      </main>
+    `;
   }
 
   private renderMap(): void {
@@ -1067,6 +1116,10 @@ export class AdaptiveGameApp {
         this.audio.ui();
         this.show("report");
         break;
+      case "open-achievements":
+        this.audio.ui();
+        this.show("achievements");
+        break;
       case "export-save":
         this.exportSave();
         break;
@@ -1215,6 +1268,8 @@ export class AdaptiveGameApp {
         this.pendingProfile!.abilities[question.abilityId] +=
           question.options[answer].points;
       });
+      this.save.achievements.push("assessment_done");
+      this.save.achievements = [...new Set(this.save.achievements)];
     }
     activateProfile(this.save, this.pendingProfile);
     this.pendingProfile = undefined;
