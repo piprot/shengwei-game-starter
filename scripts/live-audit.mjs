@@ -57,26 +57,46 @@ async function checkHealth() {
   );
 }
 
+function createWaiter(ws, timeoutMs) {
+  const buffer = [];
+  const pending = [];
+  ws.onmessage = (event) => {
+    const message = JSON.parse(String(event.data));
+    const index = pending.findIndex((entry) => entry.type === message.type);
+    if (index >= 0) {
+      const entry = pending.splice(index, 1)[0];
+      clearTimeout(entry.timer);
+      entry.resolve(message);
+      return;
+    }
+    buffer.push(message);
+  };
+  return (type) =>
+    new Promise((resolvePromise, reject) => {
+      const index = buffer.findIndex((message) => message.type === type);
+      if (index >= 0) {
+        resolvePromise(buffer.splice(index, 1)[0]);
+        return;
+      }
+      const entry = {
+        type,
+        resolve: resolvePromise,
+        timer: setTimeout(
+          () => reject(new Error(`timeout waiting ${type}`)),
+          timeoutMs
+        )
+      };
+      pending.push(entry);
+    });
+}
+
 async function connect(name) {
   const ws = new WebSocket(roomUrl);
   await new Promise((resolvePromise, reject) => {
     ws.onopen = resolvePromise;
     ws.onerror = () => reject(new Error("WebSocket connect failed"));
   });
-  const wait = (type) =>
-    new Promise((resolvePromise, reject) => {
-      const timer = setTimeout(
-        () => reject(new Error(`timeout waiting ${type}`)),
-        10000
-      );
-      ws.onmessage = (event) => {
-        const message = JSON.parse(String(event.data));
-        if (message.type === type) {
-          clearTimeout(timer);
-          resolvePromise(message);
-        }
-      };
-    });
+  const wait = createWaiter(ws, 10000);
   return { ws, wait };
 }
 

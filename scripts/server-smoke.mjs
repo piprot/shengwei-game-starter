@@ -73,6 +73,39 @@ async function waitForServer() {
   throw new Error(`Server did not start.\n${log}`);
 }
 
+function createWaiter(ws, timeoutMs) {
+  const buffer = [];
+  const pending = [];
+  ws.onmessage = (event) => {
+    const message = JSON.parse(String(event.data));
+    const index = pending.findIndex((entry) => entry.type === message.type);
+    if (index >= 0) {
+      const entry = pending.splice(index, 1)[0];
+      clearTimeout(entry.timer);
+      entry.resolve(message);
+      return;
+    }
+    buffer.push(message);
+  };
+  return (type) =>
+    new Promise((resolvePromise, reject) => {
+      const index = buffer.findIndex((message) => message.type === type);
+      if (index >= 0) {
+        resolvePromise(buffer.splice(index, 1)[0]);
+        return;
+      }
+      const entry = {
+        type,
+        resolve: resolvePromise,
+        timer: setTimeout(
+          () => reject(new Error(`timeout waiting ${type}`)),
+          timeoutMs
+        )
+      };
+      pending.push(entry);
+    });
+}
+
 async function runClient() {
   const ws = new WebSocket(`ws://127.0.0.1:${port}`);
   await new Promise((resolvePromise, reject) => {
@@ -80,17 +113,7 @@ async function runClient() {
     ws.onerror = () => reject(new Error("WebSocket connect failed"));
   });
 
-  const wait = (type) =>
-    new Promise((resolvePromise, reject) => {
-      const timer = setTimeout(() => reject(new Error(`timeout waiting ${type}`)), 5000);
-      ws.onmessage = (event) => {
-        const message = JSON.parse(String(event.data));
-        if (message.type === type) {
-          clearTimeout(timer);
-          resolvePromise(message);
-        }
-      };
-    });
+  const wait = createWaiter(ws, 5000);
 
   ws.send(
     JSON.stringify({
@@ -153,47 +176,38 @@ async function runMatchTest() {
     )
   );
 
-  const waitFor = (ws, type) =>
-    new Promise((resolvePromise, reject) => {
-      const timer = setTimeout(() => reject(new Error(`timeout waiting ${type}`)), 5000);
-      ws.onmessage = (event) => {
-        const message = JSON.parse(String(event.data));
-        if (message.type === type) {
-          clearTimeout(timer);
-          resolvePromise(message);
-        }
-      };
-    });
+  const waitFor0 = createWaiter(clients[0], 5000);
+  const waitFor1 = createWaiter(clients[1], 5000);
 
   clients[0].send(JSON.stringify({ type: "match", name: "甲", role: "founder", save: null, rounds: 3 }));
   clients[1].send(JSON.stringify({ type: "match", name: "乙", role: "highPotential", save: null, rounds: 3 }));
 
   const [start0, start1] = await Promise.all([
-    waitFor(clients[0], "match_started"),
-    waitFor(clients[1], "match_started")
+    waitFor0("match_started"),
+    waitFor1("match_started")
   ]);
   if (start0.opponentName !== "乙" || start1.opponentName !== "甲") {
     throw new Error("Opponent names were not relayed correctly");
   }
 
   clients[0].send(JSON.stringify({ type: "pick", optionIndex: 2 }));
-  await waitFor(clients[1], "picked");
+  await waitFor1("picked");
   clients[1].send(JSON.stringify({ type: "pick", optionIndex: 0 }));
-  await waitFor(clients[0], "picked");
+  await waitFor0("picked");
 
   clients[0].send(JSON.stringify({ type: "reveal", optionIndex: 2 }));
-  const revealToRight = await waitFor(clients[1], "reveal");
+  const revealToRight = await waitFor1("reveal");
   if (revealToRight.optionIndex !== 2) {
     throw new Error("Reveal was not relayed correctly");
   }
   clients[1].send(JSON.stringify({ type: "reveal", optionIndex: 0 }));
-  const revealToLeft = await waitFor(clients[0], "reveal");
+  const revealToLeft = await waitFor0("reveal");
   if (revealToLeft.optionIndex !== 0) {
     throw new Error("Reveal was not relayed correctly");
   }
   await Promise.all([
-    waitFor(clients[0], "round_complete"),
-    waitFor(clients[1], "round_complete")
+    waitFor0("round_complete"),
+    waitFor1("round_complete")
   ]);
 
   clients.forEach((ws) => ws.close());
