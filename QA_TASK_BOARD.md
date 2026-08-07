@@ -55,3 +55,6 @@ npm run test:server
 
 GitHub Status reported `Actions: major_outage` and `Pages: major_outage` at 2026-08-06 17:54 UTC. Queued runs are external and should be rerun after GitHub Status recovers. Git push/API remained operational after FastGithub restart.
 After GitHub Status recovers, run `npm run recovery:github` from the repo root to rerun and watch the latest CI automatically.
+## 2026-08-07 recovery
+
+GitHub Actions/Pages recovered. CI run `31133005719` for `19edd53` completed success; Pages returns 200. Render remains the only release blocker: `adaptive-ascent-server.onrender.com` returns 404 and the dashboard Blueprint has not been confirmed yet.

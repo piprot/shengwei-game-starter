@@ -14,6 +14,15 @@ function gh(args) {
   return result.stdout.trim();
 }
 
+function gitHead() {
+  const result = spawnSync("git", ["rev-parse", "HEAD"], { encoding: "utf8" });
+  if (result.status !== 0) {
+    const detail = (result.stderr || result.stdout || "").trim();
+    throw new Error(`git rev-parse HEAD failed: ${detail}`);
+  }
+  return result.stdout.trim();
+}
+
 async function waitForOperational() {
   const deadline = Date.now() + MAX_WAIT_SECONDS * 1000;
   while (Date.now() < deadline) {
@@ -70,7 +79,7 @@ async function waitForHeadRun(head, waitMs) {
 
 try {
   await waitForOperational();
-  const head = gh(["rev-parse", "HEAD"]).trim();
+  const head = gitHead();
   let target = await waitForHeadRun(head, 5 * 60 * 1000);
   if (!target) {
     console.log("No CI run found yet; dispatching CI workflow.");
