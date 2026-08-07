@@ -54,6 +54,10 @@
   background: var(--teal);
 }
 
+.hp-bar i {
+  background: var(--coral);
+}
+
 .trial-energy-actions {
   display: flex;
   flex-wrap: wrap;
@@ -295,6 +299,21 @@
   text-align: right;
 }
 
+.trial-faction-bars {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.trial-faction-bars span {
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: var(--panel-2);
+  color: var(--muted);
+  font-size: 12px;
+}
+
 .trial-question-panel,
 .trial-battle-result {
   margin-top: 14px;
@@ -391,6 +410,11 @@
 
 .trial-battle-result.win {
   border-color: rgba(65, 199, 192, 0.5);
+}
+
+.trial-branch-label {
+  color: var(--gold);
+  font-weight: 800;
 }
 
 .trial-battle-result.lose {

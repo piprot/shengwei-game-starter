@@ -15,7 +15,8 @@ export type RtcMessage =
       abilities: Record<AbilityId, number>;
       resources: Record<ResourceKey, number>;
     }
-  | { kind: "pick"; optionIndex: number }
+  | { kind: "picked" }
+  | { kind: "reveal"; optionIndex: number }
   | { kind: "next" }
   | { kind: "result"; winnerName: string; scores: [number, number] };
 

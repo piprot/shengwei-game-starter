@@ -7,6 +7,7 @@ import { WebSocketServer } from "ws";
 import {
   createScoreSignature,
   createToken,
+  hashPassword,
   hashRecovery,
   verifyToken
 } from "./auth.mjs";
@@ -14,6 +15,7 @@ import {
   dbEnabled,
   dbHealth,
   getAccount,
+  getAccountByUsername,
   getAccountByRecovery,
   initDb,
   leaderboard as dbLeaderboard,
@@ -253,11 +255,17 @@ wss.on("connection", (socket, request) => {
           role
         );
         const recoveryCode = String(message.recoveryCode || "").trim() || null;
+        const username = String(message.username || "").trim().slice(0, 24) || null;
+        const passwordHash = message.password
+          ? hashPassword(String(message.password))
+          : null;
         const account = {
           token,
           name,
           role,
           recoveryCodeHash: recoveryCode ? hashRecovery(recoveryCode) : null,
+          username,
+          passwordHash,
           save,
           score,
           scoreSig,
@@ -271,7 +279,9 @@ wss.on("connection", (socket, request) => {
             account.save,
             account.score,
             account.scoreSig,
-            account.recoveryCodeHash
+            account.recoveryCodeHash,
+            account.username,
+            account.passwordHash
           );
         } else {
           store.accounts[token] = {
@@ -354,6 +364,33 @@ wss.on("connection", (socket, request) => {
           code: newRecoveryCode,
           account
         });
+        break;
+      }
+      case "login_password": {
+        const username = String(message.username || "").trim();
+        const password = String(message.password || "");
+        if (!username || !password) {
+          send(socket, { type: "error", message: "用户名或密码不能为空" });
+          return;
+        }
+        const account = dbEnabled
+          ? await getAccountByUsername(username)
+          : Object.values(store.accounts).find(
+              (item) => item.username === username
+            );
+        if (
+          !account ||
+          account.passwordHash !== hashPassword(password)
+        ) {
+          send(socket, { type: "error", message: "用户名或密码错误" });
+          return;
+        }
+        if (!consumeRate(`acct:${account.token}`, 120, 10_000)) {
+          send(socket, { type: "error", message: "账号操作过于频繁，请稍后再试" });
+          return;
+        }
+        socket.accountToken = account.token;
+        send(socket, { type: "logged_in", account });
         break;
       }
       case "cloud_save": {

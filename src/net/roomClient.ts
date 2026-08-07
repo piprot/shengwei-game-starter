@@ -65,9 +65,19 @@ export class RoomClient {
     name: string,
     role: string,
     save: SaveState,
-    recoveryCode?: string
+    recoveryCode?: string,
+    username?: string,
+    password?: string
   ): void {
-    this.send({ type: "register", name, role, save, recoveryCode });
+    this.send({
+      type: "register",
+      name,
+      role,
+      save,
+      recoveryCode,
+      username,
+      password
+    });
   }
 
   login(token: string): void {
@@ -77,6 +87,10 @@ export class RoomClient {
 
   loginRecovery(code: string): void {
     this.send({ type: "login_recovery", code });
+  }
+
+  loginPassword(username: string, password: string): void {
+    this.send({ type: "login_password", username, password });
   }
 
   cloudSave(token: string, save: SaveState): void {

@@ -52,3 +52,9 @@ export function hashRecovery(code) {
     .update(`recovery:${String(code || "")}`)
     .digest("hex");
 }
+
+export function hashPassword(password) {
+  return createHmac("sha256", secret)
+    .update(`password:${String(password || "")}`)
+    .digest("hex");
+}

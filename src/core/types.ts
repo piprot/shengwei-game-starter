@@ -130,14 +130,17 @@ export interface SaveState {
   completedTraining: string[];
   trainingScores: Record<string, number>;
   trialEnergy: number;
+  trialHp: number;
   trialCleared: string[];
   trialItems: string[];
   completedPracticeTasks: string[];
   trialStreak: number;
   lastTrialEnergyDate?: string;
   trialAccelerator: boolean;
+  trialAcceleratorLevel: number;
   trialOpenAnswers: Record<string, string>;
   hiddenRoutes: string[];
+  hiddenRouteProgress: Record<string, number>;
   alternateEndings: string[];
   highPressureMode: boolean;
   /** 难度档位：标准 / 高压 / 极限。驱动资源缩放、回合时限与突发干扰。 */

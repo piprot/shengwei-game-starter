@@ -15,6 +15,11 @@ export interface TrialQuestion {
     explanation: string;
     referenceAnswer: string;
   };
+  calculation?: {
+    prompt: string;
+    answer: number;
+    unit: string;
+  };
 }
 
 export type TrialQuestionSource =
@@ -50,6 +55,8 @@ export interface TrialStageDef {
   correctSuspect?: string;
   intelChoices?: string[];
   correctIntel?: string;
+  betrayalChoices?: string[];
+  correctBetrayal?: string;
   staminaCost: number;
   rewardExp: number;
   rewardItem?: string;
@@ -63,6 +70,7 @@ export interface PracticeTaskDef {
   source: string;
   quote: string;
   action: string;
+  keywords: string[];
   rewardEnergy: number;
   rewardExp: number;
   rewardAbility: AbilityId;
@@ -108,6 +116,8 @@ export const TRIAL_STAGES: TrialStageDef[] = [
     correctAlly: "运营负责人",
     intelChoices: ["交付数据", "客户名单", "反对者名单"],
     correctIntel: "交付数据",
+    betrayalChoices: ["交换全部情报", "保留客户名单"],
+    correctBetrayal: "交换全部情报",
     gates: [{ abilityId: "mobilize", level: 1 }],
     staminaCost: 8,
     rewardExp: 2,
@@ -125,6 +135,8 @@ export const TRIAL_STAGES: TrialStageDef[] = [
     correctAlly: "财务负责人",
     intelChoices: ["现金流数据", "产品路线图", "组织架构"],
     correctIntel: "现金流数据",
+    betrayalChoices: ["交换现金流数据", "保留关键数据"],
+    correctBetrayal: "交换现金流数据",
     gates: [{ abilityId: "strategy", level: 2 }],
     staminaCost: 10,
     rewardExp: 3,
@@ -210,6 +222,8 @@ export const TRIAL_STAGES: TrialStageDef[] = [
     correctAlly: "客户成功负责人",
     intelChoices: ["客户验收标准", "部门预算", "人事调整"],
     correctIntel: "客户验收标准",
+    betrayalChoices: ["共享验收标准", "保留部门预算"],
+    correctBetrayal: "共享验收标准",
     gates: [{ abilityId: "communication", level: 3 }],
     staminaCost: 12,
     rewardExp: 4,
@@ -227,6 +241,8 @@ export const TRIAL_STAGES: TrialStageDef[] = [
     correctAlly: "财务负责人",
     intelChoices: ["现金贡献地图", "品牌预算", "银行条款"],
     correctIntel: "现金贡献地图",
+    betrayalChoices: ["共享现金贡献地图", "保留银行条款"],
+    correctBetrayal: "共享现金贡献地图",
     gates: [
       { abilityId: "structure", level: 4 },
       { abilityId: "execution", level: 3 }
@@ -264,6 +280,12 @@ export const TRIAL_STAGES: TrialStageDef[] = [
           explanation:
             "多阶段决策要同时管理财务目标、组织情绪和验证周期。给品牌店设验证节点，比立刻关店或维持现状更可执行。",
           referenceAnswer: "保留品牌店但设 60 天验证节点。"
+        },
+        calculation: {
+          prompt:
+            "假设总现金 3000 万，固定成本 1200 万，变动成本率为 60%。需要多少收入（万元）才能刚好覆盖成本？",
+          answer: 3000,
+          unit: "万元"
         }
       }
     }
@@ -328,6 +350,8 @@ export const TRIAL_STAGES: TrialStageDef[] = [
     correctAlly: "业务负责人",
     intelChoices: ["岗位成果标准", "薪酬数据", "离职名单"],
     correctIntel: "岗位成果标准",
+    betrayalChoices: ["共享岗位成果标准", "保留薪酬数据"],
+    correctBetrayal: "共享岗位成果标准",
     gates: [
       { abilityId: "deploy", level: 4 },
       { abilityId: "communication", level: 3 }
@@ -379,6 +403,8 @@ export const TRIAL_STAGES: TrialStageDef[] = [
     correctAlly: "销售负责人",
     intelChoices: ["渠道转化数据", "广告预算", "竞品方案"],
     correctIntel: "渠道转化数据",
+    betrayalChoices: ["共享渠道转化数据", "保留广告预算"],
+    correctBetrayal: "共享渠道转化数据",
     gates: [{ abilityId: "structure", level: 3 }],
     minChapter: 5,
     staminaCost: 14,
@@ -502,6 +528,8 @@ export const TRIAL_STAGES: TrialStageDef[] = [
     correctAlly: "业务负责人",
     intelChoices: ["绩效数据", "薪酬数据", "考勤记录"],
     correctIntel: "绩效数据",
+    betrayalChoices: ["共享绩效数据", "保留考勤记录"],
+    correctBetrayal: "共享绩效数据",
     gates: [{ abilityId: "deploy", level: 3 }],
     minChapter: 5,
     staminaCost: 14,
@@ -567,6 +595,7 @@ export const PRACTICE_TASKS: PracticeTaskDef[] = [
     quote: "观其变而见其性，察其安而知其志。",
     action:
       "列出你最近要合作的 5 个人，写下每个人最在意的结果，以及你判断的依据。",
+    keywords: ["利益", "结果", "依据", "清单"],
     rewardEnergy: 12,
     rewardExp: 1,
     rewardAbility: "insight"
@@ -578,6 +607,7 @@ export const PRACTICE_TASKS: PracticeTaskDef[] = [
     quote: "莫听穿林打叶声，何妨吟啸且徐行。",
     action:
       "写下此刻最消耗你精力的三件事，并给其中一件设置一个具体的恢复边界。",
+    keywords: ["精力", "恢复", "边界"],
     rewardEnergy: 15,
     rewardExp: 1,
     rewardAbility: "recovery"
@@ -589,6 +619,7 @@ export const PRACTICE_TASKS: PracticeTaskDef[] = [
     quote: "有效的管理者把精力集中在少数重要领域。",
     action:
       "把本周目标拆成 3 个关键结果，每个结果写明负责人和验收标准。",
+    keywords: ["关键结果", "负责人", "验收"],
     rewardEnergy: 10,
     rewardExp: 1,
     rewardAbility: "execution"
@@ -600,6 +631,7 @@ export const PRACTICE_TASKS: PracticeTaskDef[] = [
     quote: "研究任何过程，如果是存在着两个以上矛盾的复杂过程，就要用全力找出它的主要矛盾。",
     action:
       "写出当前最模糊问题的一句话定义，并列出两个最可能的关键变量。",
+    keywords: ["问题", "变量", "定义"],
     rewardEnergy: 10,
     rewardExp: 1,
     rewardAbility: "structure"
@@ -611,6 +643,7 @@ export const PRACTICE_TASKS: PracticeTaskDef[] = [
     quote: "不患人之不己知，患不知人也。",
     action:
       "给一位跨部门同事写一封 100 字对齐邮件，说明目标、责任人和截止时间。",
+    keywords: ["目标", "责任人", "截止"],
     rewardEnergy: 10,
     rewardExp: 1,
     rewardAbility: "communication"
@@ -622,6 +655,7 @@ export const PRACTICE_TASKS: PracticeTaskDef[] = [
     quote: "仍然自由自我，永远高唱我歌，走遍千里。",
     action:
       "听一遍这首歌，写下最触动你的一句，并说明它对应你当前的哪个处境。",
+    keywords: ["触动", "处境", "歌词"],
     rewardEnergy: 12,
     rewardExp: 1,
     rewardAbility: "recovery"
@@ -633,6 +667,7 @@ export const PRACTICE_TASKS: PracticeTaskDef[] = [
     quote: "好的定位不是说得更多，而是让目标客户一眼知道为什么要选你。",
     action:
       "为当前产品写一句卖点，并写出它对应哪个客户最痛的场景。",
+    keywords: ["卖点", "客户", "场景"],
     rewardEnergy: 10,
     rewardExp: 1,
     rewardAbility: "structure"
@@ -644,6 +679,7 @@ export const PRACTICE_TASKS: PracticeTaskDef[] = [
     quote: "先分清固定成本、变动成本和一次性投入，再谈利润。",
     action:
       "列出当前项目三类成本，并标出哪一个最可能失控。",
+    keywords: ["成本", "失控", "固定"],
     rewardEnergy: 12,
     rewardExp: 1,
     rewardAbility: "execution"
@@ -655,6 +691,7 @@ export const PRACTICE_TASKS: PracticeTaskDef[] = [
     quote: "风险不是出事后才知道，而是签约前就写清边界。",
     action:
       "为一项合作写下三条必须写进合同的风险边界。",
+    keywords: ["风险", "边界", "合同"],
     rewardEnergy: 10,
     rewardExp: 1,
     rewardAbility: "structure"
@@ -666,6 +703,7 @@ export const PRACTICE_TASKS: PracticeTaskDef[] = [
     quote: "客户先要被理解，才愿意听你的解决方案。",
     action:
       "写一封 100 字客户安抚信，包含复述问题、补救措施和时间节点。",
+    keywords: ["客户", "补救", "时间"],
     rewardEnergy: 12,
     rewardExp: 1,
     rewardAbility: "communication"
@@ -677,6 +715,7 @@ export const PRACTICE_TASKS: PracticeTaskDef[] = [
     quote: "处理纠纷的第一步，是让双方都相信你听懂了各自立场。",
     action:
       "把一次员工纠纷拆成双方诉求、共同目标和下一步规则。",
+    keywords: ["诉求", "目标", "规则"],
     rewardEnergy: 10,
     rewardExp: 1,
     rewardAbility: "communication"
@@ -688,6 +727,7 @@ export const PRACTICE_TASKS: PracticeTaskDef[] = [
     quote: "交付不是把东西交出去，而是让验收标准被双方共同确认。",
     action:
       "为当前交付写一份 5 项验收清单，并指定每一项的负责人。",
+    keywords: ["验收", "清单", "负责人"],
     rewardEnergy: 12,
     rewardExp: 1,
     rewardAbility: "execution"
@@ -736,6 +776,9 @@ export function canEnterTrial(save: SaveState, stage: TrialStageDef): boolean {
     return false;
   }
   if (save.trialEnergy < trialCostFor(save, stage)) {
+    return false;
+  }
+  if (save.trialHp <= 0) {
     return false;
   }
   return true;
@@ -834,4 +877,29 @@ export function trialStageLabel(stage: TrialStageDef): string {
   if (stage.style === "wolf") return "狼人杀式局势判断";
   if (stage.style === "alliance") return "三国杀式合纵连横";
   return "独当一面挑战";
+}
+
+export function scoreOpenText(
+  text: string,
+  keywords: string[],
+  minLength = 20
+): number {
+  const normalized = text.trim();
+  if (!normalized) return 0;
+  const lengthScore = Math.min(40, Math.floor(normalized.length / 2));
+  const keywordHits = keywords.filter((keyword) =>
+    normalized.includes(keyword)
+  ).length;
+  const keywordScore = Math.min(
+    40,
+    Math.floor((keywordHits / Math.max(1, keywords.length)) * 40)
+  );
+  const structureSignals = [
+    /[。；;]/g.test(normalized),
+    /[\d一二三四五六七八九十][.、．]/.test(normalized),
+    /(第一|第二|首先|其次|最后|1\.|2\.|3\.)/.test(normalized),
+    /(负责人|步骤|验收|时间|目标|依据)/.test(normalized)
+  ].filter(Boolean).length;
+  const structureScore = structureSignals * 5;
+  return Math.min(100, lengthScore + keywordScore + structureScore);
 }

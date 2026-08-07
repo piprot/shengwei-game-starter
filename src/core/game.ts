@@ -69,14 +69,17 @@ export const DEFAULT_SAVE: SaveState = {
   completedTraining: [],
   trainingScores: {},
   trialEnergy: 100,
+  trialHp: 100,
   trialCleared: [],
   trialItems: [],
   completedPracticeTasks: [],
   trialStreak: 0,
   lastTrialEnergyDate: "",
   trialAccelerator: false,
+  trialAcceleratorLevel: 0,
   trialOpenAnswers: {},
   hiddenRoutes: [],
+  hiddenRouteProgress: {},
   alternateEndings: [],
   highPressureMode: false,
   difficulty: "normal"
@@ -173,6 +176,7 @@ function normalizeSave(save: SaveState): SaveState {
         ? { ...save.trainingScores }
         : {},
     trialEnergy: clamp(Number(save.trialEnergy) || 100, 0, 100),
+    trialHp: clamp(Number(save.trialHp) || 100, 0, 100),
     trialCleared: Array.isArray(save.trialCleared) ? save.trialCleared : [],
     trialItems: Array.isArray(save.trialItems) ? save.trialItems : [],
     completedPracticeTasks: Array.isArray(save.completedPracticeTasks)
@@ -184,6 +188,10 @@ function normalizeSave(save: SaveState): SaveState {
         ? save.lastTrialEnergyDate
         : "",
     trialAccelerator: Boolean(save.trialAccelerator),
+    trialAcceleratorLevel: Math.max(
+      0,
+      Math.min(3, Number(save.trialAcceleratorLevel) || 0)
+    ),
     trialOpenAnswers:
       save.trialOpenAnswers && typeof save.trialOpenAnswers === "object"
         ? { ...save.trialOpenAnswers }
@@ -191,6 +199,10 @@ function normalizeSave(save: SaveState): SaveState {
     hiddenRoutes: Array.isArray(save.hiddenRoutes)
       ? save.hiddenRoutes
       : [],
+    hiddenRouteProgress:
+      save.hiddenRouteProgress && typeof save.hiddenRouteProgress === "object"
+        ? { ...save.hiddenRouteProgress }
+        : {},
     alternateEndings: Array.isArray(save.alternateEndings)
       ? save.alternateEndings
       : [],
@@ -229,14 +241,17 @@ export function computeSaveHash(save: SaveState): string {
     ts: save.trainingScores ?? {},
     trial: [
       save.trialEnergy,
+      save.trialHp,
       save.trialCleared,
       save.trialItems,
       save.completedPracticeTasks,
       save.trialStreak,
       save.lastTrialEnergyDate,
       save.trialAccelerator,
+      save.trialAcceleratorLevel,
       save.trialOpenAnswers,
       save.hiddenRoutes,
+      save.hiddenRouteProgress,
       save.alternateEndings
     ],
     diff: save.difficulty
@@ -328,6 +343,30 @@ export function applyStoryChoice(
         : Math.round(delta * factor.pos);
     save.profile.resources[resource] = clamp(
       save.profile.resources[resource] + adjustedDelta,
+      0,
+      100
+    );
+  }
+  if (option.quality === "expert") {
+    save.profile.resources.trust = clamp(
+      save.profile.resources.trust + 1,
+      0,
+      100
+    );
+    save.profile.resources.influence = clamp(
+      save.profile.resources.influence + 1,
+      0,
+      100
+    );
+  } else if (option.quality === "partial") {
+    save.profile.resources.influence = clamp(
+      save.profile.resources.influence + 1,
+      0,
+      100
+    );
+  } else {
+    save.profile.resources.capital = clamp(
+      save.profile.resources.capital + 1,
       0,
       100
     );
@@ -575,12 +614,13 @@ export function applyDailyTrialRecovery(save: SaveState): boolean {
     return false;
   }
   const stageBonus = Math.min(20, save.trialCleared.length);
-  const acceleratorBonus = save.trialAccelerator ? 20 : 0;
+  const acceleratorBonus = save.trialAcceleratorLevel * 20;
   save.trialEnergy = clamp(
     save.trialEnergy + 50 + stageBonus + acceleratorBonus,
     0,
     100
   );
+  save.trialHp = clamp(save.trialHp + 50, 0, 100);
   save.lastTrialEnergyDate = today;
   saveState(save);
   return true;
@@ -627,12 +667,15 @@ export function buyTrialEnergyWithInfluence(
 
 export function investTrialAccelerator(
   save: SaveState,
-  cost = 40
+  baseCost = 40
 ): boolean {
   if (
-    save.trialAccelerator ||
-    save.profile.resources.capital < cost
+    save.trialAcceleratorLevel >= 3
   ) {
+    return false;
+  }
+  const cost = baseCost + save.trialAcceleratorLevel * 20;
+  if (save.profile.resources.capital < cost) {
     return false;
   }
   save.profile.resources.capital = clamp(
@@ -641,6 +684,7 @@ export function investTrialAccelerator(
     100
   );
   save.trialAccelerator = true;
+  save.trialAcceleratorLevel += 1;
   saveState(save);
   return true;
 }
@@ -706,7 +750,8 @@ export function applyTrialAnswer(
   rewardExp: number,
   rewardItem?: string,
   resourceCost = 0,
-  wrongPenalty = 6
+  wrongPenalty = 6,
+  hpCost = 0
 ): TrialAnswerOutcome {
   const cleared = correct && !save.trialCleared.includes(stageId);
   const energyChange = -(staminaCost + (correct ? 0 : wrongPenalty));
@@ -718,6 +763,11 @@ export function applyTrialAnswer(
     );
   }
   save.trialEnergy = clamp(save.trialEnergy + energyChange, 0, 100);
+  save.trialHp = clamp(
+    save.trialHp + (correct ? 20 : -hpCost),
+    0,
+    100
+  );
   if (cleared) {
     save.trialCleared.push(stageId);
     save.profile.abilities[abilityId] += rewardExp;

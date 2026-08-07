@@ -159,6 +159,36 @@ try {
   if (!error.message) throw new Error("invalid save should be rejected");
   bad.ws.close();
 
+  const passA = await connect();
+  await passA.next((m) => m.type === "connected");
+  passA.send({
+    type: "register",
+    name: "密码测试",
+    role: "founder",
+    username: "pwduser",
+    password: "secret123",
+    recoveryCode: "PWD-CODE-1",
+    save: validSave
+  });
+  const passRegistered = await passA.next((m) => m.type === "registered");
+  if (!passRegistered.account.username) {
+    throw new Error("register should store username");
+  }
+  passA.ws.close();
+
+  const passB = await connect();
+  await passB.next((m) => m.type === "connected");
+  passB.send({
+    type: "login_password",
+    username: "pwduser",
+    password: "secret123"
+  });
+  const passLogged = await passB.next((m) => m.type === "logged_in");
+  if (passLogged.account?.name !== "密码测试") {
+    throw new Error("password login should restore account");
+  }
+  passB.ws.close();
+
   const p1 = await connect();
   await p1.next((m) => m.type === "connected");
   p1.send({

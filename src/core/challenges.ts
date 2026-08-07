@@ -6,6 +6,7 @@ export interface ChallengeDef {
   title: string;
   description: string;
   reward: number;
+  category: "ability" | "chapter" | "trial" | "duel";
 }
 
 export interface ChallengeState extends ChallengeDef {
@@ -21,6 +22,7 @@ const CHALLENGE_POOL: Array<ChallengeDef & { target: number; progress(save: Save
     description: "完成 3 次专家级情境选择",
     target: 3,
     reward: 4,
+    category: "chapter",
     progress: (save) =>
       save.decisionHistory.filter((record) => record.quality === "expert").length
   },
@@ -30,6 +32,7 @@ const CHALLENGE_POOL: Array<ChallengeDef & { target: number; progress(save: Save
     description: "完成 1 个支线剧情节点",
     target: 1,
     reward: 4,
+    category: "chapter",
     progress: (save) => save.completedSideQuests.length
   },
   {
@@ -38,6 +41,7 @@ const CHALLENGE_POOL: Array<ChallengeDef & { target: number; progress(save: Save
     description: "完成 1 场 1v1 对决",
     target: 1,
     reward: 4,
+    category: "duel",
     progress: (save) => save.duelWins + save.duelLosses
   },
   {
@@ -46,6 +50,7 @@ const CHALLENGE_POOL: Array<ChallengeDef & { target: number; progress(save: Save
     description: "完成任意一章主线",
     target: 1,
     reward: 6,
+    category: "chapter",
     progress: (save) =>
       save.chapterRecords.filter((record) => record.completedNodeIds.length >= 2)
         .length
@@ -56,6 +61,7 @@ const CHALLENGE_POOL: Array<ChallengeDef & { target: number; progress(save: Save
     description: "综合能力值达到 20",
     target: 20,
     reward: 6,
+    category: "ability",
     progress: (save) => totalAbilityLevels(save.profile.abilities)
   },
   {
@@ -64,6 +70,7 @@ const CHALLENGE_POOL: Array<ChallengeDef & { target: number; progress(save: Save
     description: "完成 1 条能力训练路线",
     target: 1,
     reward: 4,
+    category: "ability",
     progress: (save) => save.completedTraining.length
   },
   {
@@ -72,6 +79,7 @@ const CHALLENGE_POOL: Array<ChallengeDef & { target: number; progress(save: Save
     description: "通关 1 个成长试炼关卡",
     target: 1,
     reward: 4,
+    category: "trial",
     progress: (save) => save.trialCleared.length
   },
   {
@@ -80,6 +88,7 @@ const CHALLENGE_POOL: Array<ChallengeDef & { target: number; progress(save: Save
     description: "完成 1 个修炼任务",
     target: 1,
     reward: 4,
+    category: "trial",
     progress: (save) => save.completedPracticeTasks.length
   },
   {
@@ -88,6 +97,7 @@ const CHALLENGE_POOL: Array<ChallengeDef & { target: number; progress(save: Save
     description: "累计完成 3 个情境决策",
     target: 3,
     reward: 5,
+    category: "chapter",
     progress: (save) => save.decisionHistory.length
   },
   {
@@ -96,6 +106,7 @@ const CHALLENGE_POOL: Array<ChallengeDef & { target: number; progress(save: Save
     description: "完成 3 个支线节点",
     target: 3,
     reward: 5,
+    category: "chapter",
     progress: (save) => save.completedSideQuests.length
   },
   {
@@ -104,6 +115,7 @@ const CHALLENGE_POOL: Array<ChallengeDef & { target: number; progress(save: Save
     description: "完成 3 场 1v1 对决",
     target: 3,
     reward: 5,
+    category: "duel",
     progress: (save) => save.duelWins + save.duelLosses
   },
   {
@@ -112,6 +124,7 @@ const CHALLENGE_POOL: Array<ChallengeDef & { target: number; progress(save: Save
     description: "处理 2 个随机事件",
     target: 2,
     reward: 5,
+    category: "chapter",
     progress: (save) => save.completedRandomEvents.length
   },
   {
@@ -120,6 +133,7 @@ const CHALLENGE_POOL: Array<ChallengeDef & { target: number; progress(save: Save
     description: "完成 3 个角色分岔节点",
     target: 3,
     reward: 5,
+    category: "chapter",
     progress: (save) => save.completedBranchNodes.length
   },
   {
@@ -128,6 +142,7 @@ const CHALLENGE_POOL: Array<ChallengeDef & { target: number; progress(save: Save
     description: "通关 1 个 MBA 高难案例",
     target: 1,
     reward: 6,
+    category: "trial",
     progress: (save) =>
       save.trialCleared.filter((id) => id.startsWith("mba_")).length
   }
@@ -152,6 +167,7 @@ export function dailyChallenges(save: SaveState): ChallengeState[] {
         title: challenge.title,
         description: challenge.description,
         reward: challenge.reward,
+        category: challenge.category,
         current,
         target: challenge.target,
         done: current >= challenge.target

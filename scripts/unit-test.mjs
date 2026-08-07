@@ -17,10 +17,12 @@ import {
   PRACTICE_TASKS,
   TRIAL_STAGES,
   canEnterTrial,
+  scoreOpenText,
   trialCostFor,
   trialQuestionFor,
   trialRewardExpFor
 } from "../src/core/trials.ts";
+import { hiddenRouteSteps } from "../src/core/hiddenRoutes.ts";
 
 
 import { ACHIEVEMENTS } from "../src/core/achievements.ts";
@@ -122,6 +124,22 @@ assert(
   "default profile should enter the first trial"
 );
 assert(PRACTICE_TASKS.length >= 5, "practice tasks must contain at least 5 missions");
+assert(
+  hiddenRouteSteps("insight").length === 3,
+  "hidden routes should contain 3 real decision steps"
+);
+assert(
+  scoreOpenText("嗯嗯嗯", ["关键结果"], 20) < 60,
+  "low-quality open text should score below threshold"
+);
+assert(
+  scoreOpenText(
+    "1. 关键结果。2. 负责人。3. 验收标准。",
+    ["关键结果", "负责人", "验收"],
+    20
+  ) >= 70,
+  "structured open text should score high"
+);
 
 // 精力恢复：每日恢复只生效一次，组织资源可兑换精力。
 const energySave = structuredClone(DEFAULT_SAVE);
@@ -281,7 +299,16 @@ for (const [abilityId, gained] of Object.entries(option.effects)) {
 }
 // 资源结算 + 钳制在 [0,100]
 for (const [resource, delta] of Object.entries(option.resources)) {
-  const expected = Math.max(0, Math.min(100, beforeResources[resource] + (delta || 0)));
+  const production =
+    option.quality === "expert"
+      ? { trust: 1, influence: 1 }
+      : option.quality === "partial"
+        ? { influence: 1 }
+        : { capital: 1 };
+  const expected = Math.max(
+    0,
+    Math.min(100, beforeResources[resource] + (delta || 0) + (production[resource] || 0))
+  );
   assert(
     save.profile.resources[resource] === expected,
     `resource ${resource} should change by delta and clamp`
@@ -314,13 +341,38 @@ if (probe) {
   const beforeH = { ...saveHard.profile.resources };
   applyStoryChoice(saveNormal, probe.id, 0);
   applyStoryChoice(saveHard, probe.id, 0);
+  const production =
+    probe.options[0].quality === "expert"
+      ? { trust: 1, influence: 1 }
+      : probe.options[0].quality === "partial"
+        ? { influence: 1 }
+        : { capital: 1 };
   for (const [resource, delta] of Object.entries(res)) {
     const d = delta || 0;
-    const expectNormal = Math.max(0, Math.min(100, beforeN[resource] + d));
+    const expectNormal = Math.max(
+      0,
+      Math.min(100, beforeN[resource] + d + (production[resource] || 0))
+    );
     const expectHard =
       d < 0
-        ? Math.max(0, Math.min(100, beforeH[resource] + Math.round(d * 1.4)))
-        : Math.max(0, Math.min(100, beforeH[resource] + Math.round(d * 0.7)));
+        ? Math.max(
+            0,
+            Math.min(
+              100,
+              beforeH[resource] +
+                Math.round(d * 1.4) +
+                (production[resource] || 0)
+            )
+          )
+        : Math.max(
+            0,
+            Math.min(
+              100,
+              beforeH[resource] +
+                Math.round(d * 0.7) +
+                (production[resource] || 0)
+            )
+          );
     assert(
       saveNormal.profile.resources[resource] === expectNormal,
       "normal mode resource delta as-is"
@@ -449,11 +501,22 @@ for (const difficulty of ["normal", "pressure", "extreme"]) {
   const before = { ...s.profile.resources };
   applyStoryChoice(s, probe2.id, 0);
   const factor = PRESSURE_FACTORS[difficulty];
+  const production =
+    probe2.options[0].quality === "expert"
+      ? { trust: 1, influence: 1 }
+      : probe2.options[0].quality === "partial"
+        ? { influence: 1 }
+        : { capital: 1 };
   for (const [resource, delta] of Object.entries(probeRes)) {
     const d = delta || 0;
     const expected = Math.max(
       0,
-      Math.min(100, before[resource] + Math.round(d < 0 ? d * factor.neg : d * factor.pos))
+      Math.min(
+        100,
+        before[resource] +
+          Math.round(d < 0 ? d * factor.neg : d * factor.pos) +
+          (production[resource] || 0)
+      )
     );
     assert(
       s.profile.resources[resource] === expected,

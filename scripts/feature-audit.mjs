@@ -79,9 +79,25 @@ try {
   if ((await page.locator("[data-action=continue-branch]").count()) > 0) {
     await page.click("[data-action=continue-branch]");
   }
-  await page.waitForSelector(".hidden-branch-shell, .story-shell", {
-    timeout: 5000
-  }).catch(() => {});
+  await page
+    .waitForSelector(".hidden-branch-shell, .story-shell", {
+      timeout: 5000
+    })
+    .catch(() => {});
+  if ((await page.locator(".hidden-branch-shell").count()) > 0) {
+    for (let i = 0; i < 3; i += 1) {
+      await page.waitForSelector(".hidden-route-question, .hidden-route-feedback", {
+        timeout: 5000
+      });
+      if ((await page.locator(".hidden-route-options button").count()) > 0) {
+        await page.locator(".hidden-route-options button").first().click();
+        await page.waitForSelector(".hidden-route-feedback");
+      }
+      if ((await page.locator(".hidden-route-feedback button").count()) > 0) {
+        await page.locator(".hidden-route-feedback button").first().click();
+      }
+    }
+  }
   if ((await page.locator("[data-action=open-map]").count()) === 0) {
     throw new Error("replay flow has no map exit");
   }
