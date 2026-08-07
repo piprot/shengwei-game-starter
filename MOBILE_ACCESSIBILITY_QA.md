@@ -1,13 +1,13 @@
 # Mobile Accessibility and Cross-Network WebRTC QA
 
 This checklist covers the acceptance work that requires real devices or
-cross-network endpoints. Run it after the Render Blueprint service is live and
+cross-network endpoints. Run it after the Railway service is live and
 GitHub Pages is serving the latest main build.
 
 ## Prerequisites
 
 - Latest `main` is deployed to `https://piprot.github.io/shengwei-game-starter/`.
-- Render service is healthy at `https://adaptive-ascent-server.onrender.com/`.
+- Railway service is healthy at $railwayHttps.
 - At least two devices are available:
   - iOS device with VoiceOver enabled.
   - Android device with TalkBack enabled.

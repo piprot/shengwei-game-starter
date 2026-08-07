@@ -5,9 +5,9 @@ process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
 
 const root = resolve(import.meta.dirname, "..");
 const healthUrl =
-  process.env.HEALTH_URL || "https://adaptive-ascent-server.onrender.com/";
+  process.env.HEALTH_URL || "https://adaptive-ascent-server-production-018a.up.railway.app/";
 const roomUrl =
-  process.env.ROOM_SERVER_URL || "wss://adaptive-ascent-server.onrender.com";
+  process.env.ROOM_SERVER_URL || "wss://adaptive-ascent-server-production-018a.up.railway.app";
 
 const validSave = {
   version: 1,

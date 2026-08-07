@@ -2,6 +2,8 @@
 
 Render 登录接口在某些网络不可用，因此项目同时支持 Railway 部署。
 
+> 当前状态（2026-08-07）：`adaptive-ascent-server-production-018a.up.railway.app` 已上线，公网验收通过。
+
 ## 前置条件
 
 1. Railway 账号

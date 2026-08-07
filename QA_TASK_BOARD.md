@@ -12,7 +12,7 @@
 
 | # | 问题 | 任务 | 状态 |
 | --- | --- | --- | --- |
-| 1 | 服务端未公网部署 | 完成部署文档、Render 配置、部署工作流 | 文档已备，公网部署待账号 |
+| 1 | 服务端未公网部署 | 完成部署文档、Render 配置、部署工作流 | 已部署 Railway：adaptive-ascent-server-production-018a.up.railway.app 健康检查通过 |
 | 2 | 4 小时内容不稳 | 扩充随机事件、分支与挑战模式 | 已完成内容扩充：20 随机事件、27 手写角色分支、挑战模式；待长时间试玩稳定性验证 |
 | 3 | 角色选项模板化 | 建立手写内容管线与重复度检测 | 已完成：第 1-9 章手写角色分支 |
 | 4 | 随机事件太少 | 扩池、权重、前置、NPC/结局影响 | 已达成：20 个事件、权重、前置、结局影响 |
@@ -57,4 +57,14 @@ GitHub Status reported `Actions: major_outage` and `Pages: major_outage` at 2026
 After GitHub Status recovers, run `npm run recovery:github` from the repo root to rerun and watch the latest CI automatically.
 ## 2026-08-07 recovery
 
-GitHub Actions/Pages recovered. CI run `31133005719` for `19edd53` completed success; Pages returns 200. Render remains the only release blocker: `adaptive-ascent-server.onrender.com` returns 404 and the dashboard Blueprint has not been confirmed yet.
+GitHub Actions/Pages recovered. CI run `31133005719` for `19edd53` completed success; Pages returns 200. Render was the remaining release blocker before this Railway deployment.
+
+## 2026-08-07 Railway deployment
+
+- Render API is blocked on this network, so deployment switched to Railway.
+- Railway service is live at `https://adaptive-ascent-server-production-018a.up.railway.app/`; health returns `{"status":"ok","db":true}`.
+- GitHub variable `VITE_ROOM_SERVER_URL` now points to `wss://adaptive-ascent-server-production-018a.up.railway.app`.
+- CI run `31149524606` completed success; the deployed GitHub Pages JS was verified to contain the Railway URL.
+- `npm run test:live` PASS.
+- `npm run test:rtc:public` PASS.
+- Railway support was added in commit `4ccae3d` (`railway.toml` + `RAILWAY_SETUP.md`).

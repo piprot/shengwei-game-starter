@@ -1,5 +1,7 @@
 # 上线前 Checklist ·《权变之路》
 
+> 2026-08-07 更新：公网服务已部署到 Railway，地址 `https://adaptive-ascent-server-production-018a.up.railway.app/`；以下 Render 流程保留为备选，当前部署步骤见 `RAILWAY_SETUP.md`。
+
 > 目标：把 WebSocket 服务端部署到 Render，让 GitHub Pages 公网前端连上它。
 > 本清单区分 **「仓库侧（已就绪，已核对）」** 与 **「需在 GitHub / Render 控制台操作」** 两类。
 > 仓库侧全部完成后，剩下的只是控制台点击；找不点击项，公网闭环就差最后一步。

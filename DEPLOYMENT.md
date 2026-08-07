@@ -1,5 +1,11 @@
 # 公网部署指南
 
+## 当前部署状态
+
+- 2026-08-07：已部署 Railway，公网地址 `https://adaptive-ascent-server-production-018a.up.railway.app/`
+- GitHub Pages 前端构建已注入 `wss://adaptive-ascent-server-production-018a.up.railway.app`
+- Render 因 `api.render.com` 在当前网络不可用，保留为备用部署方案；Railway 步骤见 `RAILWAY_SETUP.md`
+
 ## 目标
 
 把 WebSocket 服务端部署到 Render，并让 GitHub Pages 前端连接公网服务器。

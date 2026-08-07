@@ -24,10 +24,10 @@ jobs:
         run: npm ci
 
       # 注入房间服务器地址：优先用仓库 Variable VITE_ROOM_SERVER_URL，
-      # 未设置时兜底到 render.yaml 中定义的服务名 adaptive-ascent-server。
+      # 未设置时兜底到 Railway 服务地址。
       # 不注入会导致部署到 GitHub Pages 的公网前端连不上 localhost。
       - name: Inject room server URL
-        run: echo "VITE_ROOM_SERVER_URL=${{ vars.VITE_ROOM_SERVER_URL || 'wss://adaptive-ascent-server.onrender.com' }}" >> "$GITHUB_ENV"
+        run: echo "VITE_ROOM_SERVER_URL=${{ vars.VITE_ROOM_SERVER_URL || 'wss://adaptive-ascent-server-production-018a.up.railway.app' }}" >> "$GITHUB_ENV"
 
       - name: Build
         run: npm run build
