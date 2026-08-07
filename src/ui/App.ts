@@ -4246,13 +4246,18 @@ export class AdaptiveGameApp {
         }
         this.duelPrediction = prediction;
         this.duelPredictionPhase = false;
-        if (this.duelMode === "remote" && this.remotePeer) {
+        if (this.duelMode === "remote") {
           this.duelPredictionCorrect = undefined;
           this.duelPredictionHistory.push(false);
-          this.remotePeer.send({
-            kind: "reveal",
-            optionIndex: this.remoteOwnOption ?? 0
-          });
+          const ownOption = this.remoteOwnOption ?? 0;
+          if (this.usingCloudMatch && this.roomClient) {
+            this.roomClient.reveal(ownOption);
+          } else if (this.remotePeer) {
+            this.remotePeer.send({
+              kind: "reveal",
+              optionIndex: ownOption
+            });
+          }
           this.audio.duelPick();
           this.renderDuel();
           return;
@@ -5018,10 +5023,23 @@ export class AdaptiveGameApp {
           message.opponentName || "云端对手"
         );
         break;
-      case "pick":
+      case "picked":
+        this.remoteOpponentPicked = true;
+        this.maybeRevealRemotePrediction();
+        break;
+      case "reveal":
         if (this.duelEngine) {
           const opponentIndex = this.remotePlayerIndex === 0 ? 1 : 0;
           this.duelEngine.pick(opponentIndex, message.optionIndex);
+          this.remoteOpponentPicked = false;
+          this.duelPredictionCorrect =
+            this.duelPrediction === message.optionIndex;
+          if (this.duelPredictionCorrect) {
+            this.duelEngine.scores[this.remotePlayerIndex] += 10;
+          }
+          this.duelPrediction = undefined;
+          this.duelPredictionPhase = false;
+          this.duelEngine.resolvePendingRound();
           this.renderDuel();
         }
         break;

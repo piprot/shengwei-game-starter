@@ -18,7 +18,8 @@ export type RoomServerMessage =
   | { type: "room_created"; roomId: string }
   | { type: "match_started"; roomId: string; playerIndex: number; opponentName?: string }
   | { type: "queued" }
-  | { type: "pick"; optionIndex: number }
+  | { type: "picked" }
+  | { type: "reveal"; optionIndex: number }
   | { type: "signal"; signal: unknown }
   | { type: "opponent_left" }
   | { type: "error"; message: string };
@@ -125,6 +126,10 @@ export class RoomClient {
 
   pick(optionIndex: number): void {
     this.send({ type: "pick", optionIndex });
+  }
+
+  reveal(optionIndex: number): void {
+    this.send({ type: "reveal", optionIndex });
   }
 
   signal(signal: unknown): void {

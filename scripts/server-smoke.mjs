@@ -177,10 +177,24 @@ async function runMatchTest() {
   }
 
   clients[0].send(JSON.stringify({ type: "pick", optionIndex: 2 }));
-  const received = await waitFor(clients[1], "pick");
-  if (received.optionIndex !== 2) {
-    throw new Error("Pick was not relayed correctly");
+  await waitFor(clients[1], "picked");
+  clients[1].send(JSON.stringify({ type: "pick", optionIndex: 0 }));
+  await waitFor(clients[0], "picked");
+
+  clients[0].send(JSON.stringify({ type: "reveal", optionIndex: 2 }));
+  const revealToRight = await waitFor(clients[1], "reveal");
+  if (revealToRight.optionIndex !== 2) {
+    throw new Error("Reveal was not relayed correctly");
   }
+  clients[1].send(JSON.stringify({ type: "reveal", optionIndex: 0 }));
+  const revealToLeft = await waitFor(clients[0], "reveal");
+  if (revealToLeft.optionIndex !== 0) {
+    throw new Error("Reveal was not relayed correctly");
+  }
+  await Promise.all([
+    waitFor(clients[0], "round_complete"),
+    waitFor(clients[1], "round_complete")
+  ]);
 
   clients.forEach((ws) => ws.close());
 }

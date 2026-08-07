@@ -158,10 +158,21 @@ async function runMatchFlow() {
     throw new Error("Opponent names were not relayed correctly");
   }
   left.ws.send(JSON.stringify({ type: "pick", optionIndex: 2 }));
-  const received = await right.wait("pick");
-  if (received.optionIndex !== 2) {
-    throw new Error("Pick was not relayed correctly");
+  await right.wait("picked");
+  right.ws.send(JSON.stringify({ type: "pick", optionIndex: 0 }));
+  await left.wait("picked");
+
+  left.ws.send(JSON.stringify({ type: "reveal", optionIndex: 2 }));
+  const revealToRight = await right.wait("reveal");
+  if (revealToRight.optionIndex !== 2) {
+    throw new Error("Reveal was not relayed correctly");
   }
+  right.ws.send(JSON.stringify({ type: "reveal", optionIndex: 0 }));
+  const revealToLeft = await left.wait("reveal");
+  if (revealToLeft.optionIndex !== 0) {
+    throw new Error("Reveal was not relayed correctly");
+  }
+  await Promise.all([left.wait("round_complete"), right.wait("round_complete")]);
   left.ws.close();
   right.ws.close();
 }

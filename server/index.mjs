@@ -140,6 +140,7 @@ function createRoom(player, rounds) {
     createdAt: Date.now(),
     round: 1,
     picks: [null, null],
+    reveals: [null, null],
     players: []
   };
   rooms.set(roomId, room);
@@ -563,10 +564,35 @@ wss.on("connection", (socket, request) => {
         room.picks[playerIndex] = optionIndex;
         const opponent = room.players.find((item) => item.socket !== socket);
         if (opponent) {
-          send(opponent.socket, { type: "pick", optionIndex });
+          send(opponent.socket, { type: "picked" });
         }
-        if (room.picks[0] !== null && room.picks[1] !== null) {
+        break;
+      }
+      case "reveal": {
+        const optionIndex = Number(message.optionIndex);
+        if (![0, 1, 2].includes(optionIndex)) {
+          send(socket, { type: "error", message: "选项索引无效" });
+          return;
+        }
+        const player = findPlayer(socket);
+        if (!player?.roomId) return;
+        const room = roomById(player.roomId);
+        if (!room) return;
+        const playerIndex = room.players.findIndex(
+          (item) => item.socket === socket
+        );
+        if (playerIndex < 0) return;
+        room.reveals[playerIndex] = optionIndex;
+        const opponent = room.players.find((item) => item.socket !== socket);
+        if (opponent) {
+          send(opponent.socket, { type: "reveal", optionIndex });
+        }
+        if (
+          room.reveals[0] !== null &&
+          room.reveals[1] !== null
+        ) {
           room.picks = [null, null];
+          room.reveals = [null, null];
           room.round += 1;
           if (room.round > room.rounds) {
             room.status = "finished";
