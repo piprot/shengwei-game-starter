@@ -46,3 +46,9 @@ export function createScoreSignature(score, name, role, updatedAt) {
   const payload = JSON.stringify({ score, name, role, updatedAt });
   return createHmac("sha256", secret).update(payload).digest("base64url");
 }
+
+export function hashRecovery(code) {
+  return createHmac("sha256", secret)
+    .update(`recovery:${String(code || "")}`)
+    .digest("hex");
+}

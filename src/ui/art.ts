@@ -19,7 +19,7 @@ export function renderPowerBoard(
   const background = ctx.createLinearGradient(0, 0, width, height);
   background.addColorStop(0, "#111a2a");
   background.addColorStop(0.55, "#17243a");
-  background.addColorStop(1, "#0d1420");
+  background.addColorStop(1, "#0a1013");
   ctx.fillStyle = background;
   ctx.fillRect(0, 0, width, height);
 

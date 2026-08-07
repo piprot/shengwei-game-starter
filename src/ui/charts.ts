@@ -65,7 +65,7 @@ export function renderAbilityRadar(
     const labelX = cx + Math.cos(angle) * (radius + 22);
     const labelY = cy + Math.sin(angle) * (radius + 16);
     ctx.font = "12px 'Microsoft YaHei', sans-serif";
-    ctx.fillStyle = "#dbe7ee";
+    ctx.fillStyle = "#e7eef2";
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
     ctx.fillText(`${ABILITIES[id].name} ${abilityLevel(abilities[id])}`, labelX, labelY);

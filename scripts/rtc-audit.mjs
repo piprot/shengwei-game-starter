@@ -73,7 +73,7 @@ try {
     { saveJson: JSON.stringify(makeSave()) }
   );
   await host.reload({ waitUntil: "networkidle" });
-  await host.waitForSelector("text=Adaptive Ascent");
+  await host.waitForSelector("text=Ascend");
   await host.click("text=Enter 1v1");
   await host.click("[data-action=set-duel-mode][data-mode=remote]");
   await host.click("[data-action=create-remote]");
@@ -86,7 +86,7 @@ try {
     if (message.type() === "error") errors.push(message.text());
   });
   await joiner.goto(url, { waitUntil: "networkidle" });
-  await joiner.waitForSelector("text=Adaptive Ascent");
+  await joiner.waitForSelector("text=Ascend");
   await joiner.click("text=Enter 1v1");
   await joiner.click("[data-action=set-duel-mode][data-mode=remote]");
   await joiner.fill("textarea[data-remote-input]", invite);

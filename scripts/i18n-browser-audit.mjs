@@ -71,7 +71,7 @@ try {
     { saveJson: JSON.stringify(save), lang: "en" }
   );
   await page.reload({ waitUntil: "networkidle" });
-  await page.waitForSelector("text=Adaptive Ascent");
+  await page.waitForSelector("text=Ascend");
   await page.click("button.primary[data-action=open-map]");
   await page.waitForSelector("text=Diagnose");
 

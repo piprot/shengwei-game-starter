@@ -7,12 +7,14 @@ import { WebSocketServer } from "ws";
 import {
   createScoreSignature,
   createToken,
+  hashRecovery,
   verifyToken
 } from "./auth.mjs";
 import {
   dbEnabled,
   dbHealth,
   getAccount,
+  getAccountByRecovery,
   initDb,
   leaderboard as dbLeaderboard,
   upsertAccount
@@ -162,6 +164,14 @@ const roomCleanup = setInterval(() => {
       send(room.players[0]?.socket, { type: "room_expired", roomId });
       leaveRoom(room.players[0]?.socket);
     }
+    if (
+      room.status === "playing" &&
+      room.players.length > 0 &&
+      room.players.every((player) => player.disconnected) &&
+      now - room.createdAt > ROOM_TTL_MS
+    ) {
+      rooms.delete(roomId);
+    }
   }
 }, 60_000);
 roomCleanup.unref?.();
@@ -242,10 +252,12 @@ wss.on("connection", (socket, request) => {
           name,
           role
         );
+        const recoveryCode = String(message.recoveryCode || "").trim() || null;
         const account = {
           token,
           name,
           role,
+          recoveryCodeHash: recoveryCode ? hashRecovery(recoveryCode) : null,
           save,
           score,
           scoreSig,
@@ -258,7 +270,8 @@ wss.on("connection", (socket, request) => {
             account.role,
             account.save,
             account.score,
-            account.scoreSig
+            account.scoreSig,
+            account.recoveryCodeHash
           );
         } else {
           store.accounts[token] = {
@@ -267,7 +280,11 @@ wss.on("connection", (socket, request) => {
           };
           persist();
         }
-        send(socket, { type: "registered", token, account });
+        send(socket, {
+          type: "registered",
+          token,
+          account: { ...account, recoveryCode }
+        });
         break;
       }
       case "login": {
@@ -293,6 +310,50 @@ wss.on("connection", (socket, request) => {
         }
         socket.accountToken = account.token;
         send(socket, { type: "logged_in", account });
+        break;
+      }
+      case "login_recovery": {
+        const code = String(message.code || "").trim();
+        if (!code) {
+          send(socket, { type: "error", message: "恢复码不能为空" });
+          return;
+        }
+        const account = dbEnabled
+          ? await getAccountByRecovery(hashRecovery(code))
+          : Object.values(store.accounts).find(
+              (item) => item.recoveryCodeHash === hashRecovery(code)
+            );
+        if (!account) {
+          send(socket, { type: "error", message: "恢复码不存在" });
+          return;
+        }
+        if (!consumeRate(`acct:${account.token}`, 120, 10_000)) {
+          send(socket, { type: "error", message: "账号操作过于频繁，请稍后再试" });
+          return;
+        }
+        socket.accountToken = account.token;
+        send(socket, { type: "logged_in", account });
+        const newRecoveryCode = randomUUID().slice(0, 8).toUpperCase();
+        const newHash = hashRecovery(newRecoveryCode);
+        account.recoveryCodeHash = newHash;
+        if (dbEnabled) {
+          await upsertAccount(
+            account.token,
+            account.name,
+            account.role,
+            account.save,
+            account.score,
+            account.scoreSig,
+            newHash
+          );
+        } else {
+          persist();
+        }
+        send(socket, {
+          type: "recovery_reissued",
+          code: newRecoveryCode,
+          account
+        });
         break;
       }
       case "cloud_save": {
@@ -384,6 +445,44 @@ wss.on("connection", (socket, request) => {
           name: cleanName(message.name),
           role: cleanRole(message.role),
           save
+        });
+        break;
+      }
+      case "reconnect": {
+        const roomId = String(message.roomId || "");
+        const name = cleanName(message.name);
+        const role = cleanRole(message.role);
+        const save = cleanSave(message.save);
+        if (message.save && !save) {
+          send(socket, { type: "error", message: "存档格式无效" });
+          return;
+        }
+        const room = roomById(roomId);
+        if (!room) {
+          send(socket, { type: "error", message: "房间不存在或已过期" });
+          return;
+        }
+        const player = room.players.find(
+          (item) =>
+            item.name === name &&
+            item.role === role &&
+            item.disconnected === true
+        );
+        if (!player) {
+          send(socket, { type: "error", message: "没有可恢复的对局槽位" });
+          return;
+        }
+        player.socket = socket;
+        player.disconnected = false;
+        player.disconnectedAt = undefined;
+        socket.roomId = roomId;
+        const playerIndex = room.players.indexOf(player);
+        const opponent = room.players.find((item) => item !== player);
+        send(socket, {
+          type: "match_started",
+          roomId,
+          playerIndex,
+          opponentName: opponent?.name
         });
         break;
       }
@@ -493,6 +592,15 @@ function leaveRoom(socket) {
   if (!player?.roomId) return;
   const room = roomById(player.roomId);
   if (!room) return;
+  if (room.status === "playing") {
+    player.disconnected = true;
+    player.disconnectedAt = Date.now();
+    const opponent = room.players.find((item) => item !== player);
+    if (opponent) {
+      send(opponent.socket, { type: "opponent_left" });
+    }
+    return;
+  }
   room.players = room.players.filter((item) => item.socket !== socket);
   if (room.players.length === 0) {
     rooms.delete(room.id);

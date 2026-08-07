@@ -1,7 +1,7 @@
 {
-  "name": "权变之路 · 自适应领导力情境游戏",
-  "short_name": "权变之路",
-  "description": "基于权经九章架构与情境高尔夫方法的在线 1v1 领导力情境游戏。",
+  "name": "升维 · 自适应领导力情境游戏",
+  "short_name": "升维",
+  "description": "升维是一款基于权经九章架构、情境高尔夫方法与 Juricore 学院风视觉的在线领导力情境游戏。",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",

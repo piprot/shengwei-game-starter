@@ -5,6 +5,10 @@
 - `src/core/story.ts`：主线、支线、分支、随机事件数据
 - `src/core/roleOptions.ts`：角色独立选项模板
 - `src/core/assessment.ts`：30 题能力测评
+- `src/core/training.ts`：10 项能力的经典故事、训练路线和测验题
+- `src/core/trainingExtras.ts`：训练问题、类比、公式/模型、角色应用、例题和题解
+- `src/core/trials.ts`：成长试炼、MBA 高难案例和修炼任务
+- `PROGRESSION_DESIGN.md`：成长循环、解锁逻辑和 GitHub 参照
 - `scripts/content-audit.mjs`：内容完整性审计
 - `scripts/unit-test.mjs`：核心数据单元测试
 

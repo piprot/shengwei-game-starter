@@ -1707,6 +1707,42 @@ export const CHALLENGE_EN: Record<
   rank_20: {
     title: "Ability Leap",
     description: "Reach 20 total ability levels"
+  },
+  training_1: {
+    title: "Dedicated Training",
+    description: "Complete 1 ability training path"
+  },
+  trial_1: {
+    title: "Trial Breakthrough",
+    description: "Clear 1 growth trial stage"
+  },
+  practice_1: {
+    title: "Practice Mission",
+    description: "Complete 1 practice mission"
+  },
+  story_3: {
+    title: "Scenario Streak",
+    description: "Complete 3 scenario decisions"
+  },
+  side_3: {
+    title: "Side Quest Depth",
+    description: "Complete 3 side quest nodes"
+  },
+  duel_3: {
+    title: "Three Duels",
+    description: "Complete 3 1v1 duels"
+  },
+  random_2: {
+    title: "Random Resilience",
+    description: "Handle 2 random events"
+  },
+  branch_3: {
+    title: "Role Branches",
+    description: "Complete 3 role branch nodes"
+  },
+  mba_1: {
+    title: "MBA Case",
+    description: "Clear 1 MBA advanced case"
   }
 };
 
@@ -2224,6 +2260,42 @@ export const ACHIEVEMENT_EN: Record<
   assessment_done: {
     name: "Ability Portrait",
     description: "Complete the 30-question ability baseline assessment"
+  },
+  training_first: {
+    name: "First Training",
+    description: "Complete any dedicated ability training path"
+  },
+  training_four: {
+    name: "Four Tracks",
+    description: "Complete 4 ability training paths"
+  },
+  training_all: {
+    name: "Ability Trainer",
+    description: "Complete all 10 ability training paths"
+  },
+  trial_first: {
+    name: "First Trial Win",
+    description: "Clear your first growth trial stage"
+  },
+  trial_five: {
+    name: "Five Trials Broken",
+    description: "Clear 5 growth trial stages"
+  },
+  trial_all: {
+    name: "Trial Master",
+    description: "Clear all growth trial stages"
+  },
+  mba_clear: {
+    name: "MBA Breakthrough",
+    description: "Clear any MBA advanced case"
+  },
+  hidden_route: {
+    name: "Hidden Route",
+    description: "Enter an advanced ability review route"
+  },
+  alternate_ending: {
+    name: "Alternate Ending Collector",
+    description: "Record one alternate ending"
   },
   chapter_1: {
     name: "Chapter 1 Complete",

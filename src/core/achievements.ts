@@ -1,5 +1,6 @@
 import { totalAbilityLevels } from "./abilities.ts";
 import { SIDE_QUEST_ARCS } from "./story.ts";
+import { TRIAL_STAGES } from "./trials.ts";
 import type { SaveState } from "./types";
 
 export interface AchievementDef {
@@ -21,6 +22,60 @@ export const ACHIEVEMENTS: AchievementDef[] = [
     name: "能力画像",
     description: "完成 30 题能力基线测评",
     icon: "02"
+  },
+  {
+    id: "training_first",
+    name: "第一次训练",
+    description: "完成任意能力专项训练",
+    icon: "19"
+  },
+  {
+    id: "training_four",
+    name: "四线并进",
+    description: "完成 4 条能力训练路线",
+    icon: "20"
+  },
+  {
+    id: "training_all",
+    name: "能力训练家",
+    description: "完成全部 10 条能力训练路线",
+    icon: "21"
+  },
+  {
+    id: "trial_first",
+    name: "试炼初胜",
+    description: "首次通关成长试炼关卡",
+    icon: "22"
+  },
+  {
+    id: "trial_five",
+    name: "五关连破",
+    description: "通关 5 个成长试炼关卡",
+    icon: "23"
+  },
+  {
+    id: "trial_all",
+    name: "试炼霸主",
+    description: "通关全部成长试炼关卡",
+    icon: "24"
+  },
+  {
+    id: "mba_clear",
+    name: "MBA 破局者",
+    description: "完成任一 MBA 高难案例",
+    icon: "25"
+  },
+  {
+    id: "hidden_route",
+    name: "高阶路线",
+    description: "进入一次能力隐藏复盘路线",
+    icon: "26"
+  },
+  {
+    id: "alternate_ending",
+    name: "备选结局收集者",
+    description: "记录一条备选结局",
+    icon: "27"
   },
   ...Array.from({ length: 9 }, (_, index) => ({
     id: `chapter_${index + 1}`,
@@ -90,6 +145,33 @@ export function isAchievementUnlocked(save: SaveState, id: string): boolean {
   }
   if (id === "first_step") {
     return save.playCount >= 1;
+  }
+  if (id === "training_first") {
+    return save.completedTraining.length >= 1;
+  }
+  if (id === "training_four") {
+    return save.completedTraining.length >= 4;
+  }
+  if (id === "training_all") {
+    return save.completedTraining.length >= 10;
+  }
+  if (id === "trial_first") {
+    return save.trialCleared.length >= 1;
+  }
+  if (id === "trial_five") {
+    return save.trialCleared.length >= 5;
+  }
+  if (id === "trial_all") {
+    return save.trialCleared.length >= TRIAL_STAGES.length;
+  }
+  if (id === "mba_clear") {
+    return save.trialCleared.some((trialId) => trialId.startsWith("mba_"));
+  }
+  if (id === "hidden_route") {
+    return save.hiddenRoutes.length >= 1;
+  }
+  if (id === "alternate_ending") {
+    return save.alternateEndings.length >= 1;
   }
   if (id.startsWith("chapter_")) {
     const chapterId = Number(id.split("_")[1]);

@@ -4,7 +4,9 @@ export class GameAudio {
   private ambientGain?: GainNode;
   private musicTimer?: number;
   private musicNodes: AudioNode[] = [];
+  private musicGain?: GainNode;
   private muted = false;
+  private musicMuted = false;
 
   ensure(): void {
     if (!this.context) {
@@ -29,6 +31,21 @@ export class GameAudio {
     this.muted = muted;
     if (this.master) {
       this.master.gain.value = muted ? 0 : 0.9;
+    }
+  }
+
+  setMusicMuted(muted: boolean): void {
+    this.musicMuted = muted;
+    if (this.musicGain) {
+      this.musicGain.gain.value = muted ? 0 : 0.6;
+    }
+  }
+
+  setMusicVolume(volume: number): void {
+    if (this.musicGain) {
+      this.musicGain.gain.value = this.musicMuted
+        ? 0
+        : Math.max(0, Math.min(1, volume / 100));
     }
   }
 
@@ -84,6 +101,25 @@ export class GameAudio {
     this.tone(780, 0.14, "sine", 0.03, 0.08);
   }
 
+  trainingStart(): void {
+    this.tone(261.63, 0.12, "triangle", 0.04);
+    this.tone(329.63, 0.14, "triangle", 0.035, 0.08);
+    this.tone(392, 0.2, "sine", 0.03, 0.16);
+    this.tone(523.25, 0.28, "sine", 0.022, 0.26);
+  }
+
+  trainingCorrect(): void {
+    this.tone(440, 0.1, "triangle", 0.03);
+    this.tone(554.37, 0.16, "sine", 0.024, 0.08);
+  }
+
+  trainingMastery(): void {
+    this.tone(392, 0.16, "triangle", 0.04);
+    this.tone(523.25, 0.18, "triangle", 0.035, 0.1);
+    this.tone(659.25, 0.24, "sine", 0.03, 0.2);
+    this.tone(783.99, 0.34, "sine", 0.022, 0.32);
+  }
+
   startAmbient(): void {
     this.ensure();
     if (!this.context || !this.master || this.ambientGain) {
@@ -91,6 +127,11 @@ export class GameAudio {
     }
     const gain = this.context.createGain();
     gain.gain.value = this.muted ? 0 : 0.012;
+    if (!this.musicGain) {
+      this.musicGain = this.context.createGain();
+      this.musicGain.gain.value = 0.6;
+      this.musicGain.connect(this.context.destination);
+    }
     const oscillator = this.context.createOscillator();
     oscillator.type = "sine";
     oscillator.frequency.value = 55;
@@ -107,23 +148,40 @@ export class GameAudio {
     second.connect(filter);
     third.connect(filter);
     filter.connect(gain);
-    gain.connect(this.master);
+    gain.connect(this.musicGain);
     oscillator.start();
     second.start();
     third.start();
     this.ambientGain = gain;
     this.musicNodes = [oscillator, second, third, filter, gain];
 
+    const chords = [
+      [220, 261.63, 329.63],
+      [174.61, 220, 261.63],
+      [196, 246.94, 293.66],
+      [146.83, 220, 293.66]
+    ];
+    const melodies = [
+      [329.63, 392, 440, 392],
+      [293.66, 349.23, 392, 349.23],
+      [329.63, 392, 440, 493.88],
+      [261.63, 329.63, 392, 329.63]
+    ];
+    let musicIndex = 0;
     const playPhrase = () => {
       if (!this.context || !this.master || this.muted) return;
-      const start = this.context.currentTime + 0.03;
-      const notes = [220, 261.63, 329.63, 261.63];
-      notes.forEach((freq, index) => {
-        this.tone(freq, 1.7, "sine", 0.008, index * 0.55);
+      const chord = chords[musicIndex % chords.length];
+      chord.forEach((freq, index) => {
+        this.tone(freq, 2.4, index === 1 ? "triangle" : "sine", 0.006, index * 0.06);
       });
+      const melody = melodies[musicIndex % melodies.length];
+      melody.forEach((freq, index) => {
+        this.tone(freq, 1.5, index % 2 === 0 ? "sine" : "triangle", 0.007, 0.2 + index * 0.45);
+      });
+      musicIndex += 1;
     };
     playPhrase();
-    this.musicTimer = window.setInterval(playPhrase, 5200);
+    this.musicTimer = window.setInterval(playPhrase, 3600);
   }
 
   stopAmbient(): void {

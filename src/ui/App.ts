@@ -20,6 +20,17 @@ import {
 import {
   activateProfile,
   applyStoryChoice,
+  applyTrainingResult,
+  applyTrialAnswer,
+  applyDailyTrialRecovery,
+  buyTrialEnergy,
+  buyTrialEnergyWithInfluence,
+  completePracticeTask,
+  hireTrialAlly,
+  investTrialAccelerator,
+  recordAlternateEnding,
+  recordHiddenRoute,
+  submitTrialSummary,
   buildAiProfile,
   buildDuelProfile,
   chapterStarCount,
@@ -71,7 +82,25 @@ import {
   certificationLevel
 } from "../core/assessment";
 import { NPCS, npcRelation } from "../core/npcs";
-import { dailyChallenges } from "../core/challenges";
+import { dailyChallenges, todayKey } from "../core/challenges";
+import { scoreTrainingAnswers } from "../core/training";
+import {
+  EXPANDED_TRAINING,
+  type ExpandedAbilityTraining
+} from "../core/trainingExtras";
+import {
+  EXPANDED_TRAINING_EN,
+  type ExpandedAbilityTrainingEn
+} from "../core/trainingExtrasEn";
+import {
+  PRACTICE_TASKS,
+  TRIAL_STAGES,
+  canEnterTrial,
+  trialCostFor,
+  trialQuestionFor,
+  trialRewardExpFor,
+  trialStageLabel
+} from "../core/trials";
 import { ROLE_OPTION_SETS } from "../core/roleOptions";
 import { uiString, type Language } from "../core/i18n";
 import {
@@ -95,6 +124,8 @@ import {
 } from "../core/translations";
 import { renderAbilityRadar } from "./charts";
 import { renderPowerBoard } from "./art";
+import { renderTrainingBoard } from "./trainingArt";
+import { renderRelationGraph } from "./relationsArt";
 
 type View =
   | "menu"
@@ -103,11 +134,17 @@ type View =
   | "assessmentResult"
   | "achievements"
   | "relations"
+  | "settings"
   | "map"
   | "story"
   | "chapterTransition"
   | "ability"
   | "report"
+  | "ending"
+  | "hiddenBranch"
+  | "training"
+  | "trial"
+  | "trialBattle"
   | "duelLobby"
   | "duel";
 
@@ -117,6 +154,11 @@ export class AdaptiveGameApp {
   private root: HTMLElement;
   private audio = new GameAudio();
   private muted = localStorage.getItem("adaptive-ascent-muted") === "1";
+  private musicMuted =
+    localStorage.getItem("adaptive-ascent-music") === "1";
+  private musicVolume = Number(
+    localStorage.getItem("adaptive-ascent-music-volume") || 60
+  );
   private language: Language =
     localStorage.getItem("adaptive-ascent-lang") === "en" ? "en" : "zh";
   private save: SaveState;
@@ -126,8 +168,38 @@ export class AdaptiveGameApp {
   private assessmentStep = 0;
   private assessmentAnswers: number[] = [];
   private selectedChapter = 1;
+  private trainingAbilityId: AbilityId = "insight";
+  private trainingStage: "story" | "quiz" | "result" = "story";
+  private trainingStep = 0;
+  private trainingAnswers: number[] = [];
+  private trainingReturnView: View = "ability";
+  private activeTrialId?: string;
+  private trialAnswerResult?: ReturnType<typeof applyTrialAnswer>;
+  private lastTrialAnswer?: number;
+  private trialObserveRevealed = false;
+  private trialAllyChoice?: string;
+  private trialAllyCorrect?: boolean;
+  private trialSuspectChoice?: string;
+  private trialSuspectCorrect?: boolean;
+  private trialIntelChoice?: string;
+  private trialIntelCorrect?: boolean;
+  private trialFollowUpAnswer?: number;
+  private trialFollowUpAnswered = false;
+  private trialSummaryPending = false;
+  private trialSummaryKeywordCorrect?: boolean;
+  private activePracticeTaskId?: string;
+  private trainingResult?: {
+    correct: number;
+    total: number;
+    gainedExp: number;
+    firstComplete: boolean;
+    answered: boolean[];
+  };
   private storyNodeId?: string;
   private storyHintRevealed = false;
+  private replayMode = false;
+  private hiddenBranchAbilityId?: AbilityId;
+  private endingChoice?: string;
   private pendingBranchNodeId?: string;
   private pendingChapterTransition?: number;
   private lastUnlockedAchievement?: string;
@@ -166,8 +238,16 @@ export class AdaptiveGameApp {
   private remoteStatus =
     this.language === "en" ? "Not connected" : "尚未建立连接";
   private duelRecorded = false;
+  private duelRevealing = false;
+  private duelRevealTimer?: number;
+  private duelPrediction?: number;
+  private duelPredictionPhase = false;
+  private duelPredictionCorrect?: boolean;
+  private duelPredictionHistory: boolean[] = [];
   private roomClient?: RoomClient;
   private cloudToken = localStorage.getItem("adaptive-ascent-cloud-token") || "";
+  private cloudRecoveryCode =
+    localStorage.getItem("adaptive-ascent-recovery-code") || "";
   private cloudStatus =
     this.language === "en" ? "Cloud not connected" : "未连接云端";
   private cloudEntries: Array<{
@@ -178,8 +258,11 @@ export class AdaptiveGameApp {
   }> = [];
   private pendingCloudAction: "sync" | "load" | "match" = "sync";
   private usingCloudMatch = false;
+  private lastRoomId =
+    localStorage.getItem("adaptive-ascent-room-id") || "";
   private cloudConflict = false;
   private cloudRemoteSave?: SaveState;
+  private cloudAccountName?: string;
   // 高压/极限模式的回合时限与突发干扰状态
   private roundTimerId?: number;
   private roundDeadline = 0;
@@ -478,6 +561,23 @@ export class AdaptiveGameApp {
     return fallback;
   }
 
+  private npcAvatarColor(id: string): string {
+    const colors: Record<string, string> = {
+      "npc-assistant": "#4db7d6",
+      "npc-finance": "#e9826c",
+      "npc-ops": "#f2c14e",
+      "npc-young": "#57c7a3",
+      "npc-veteran": "#d97aa2",
+      "npc-chen": "#5ca9e9",
+      "npc-shen": "#8f8cd9",
+      "npc-xu": "#7fb069",
+      "npc-he": "#e9b872",
+      "npc-tang": "#d4a5e8",
+      "npc-fang": "#e9826c"
+    };
+    return colors[id] ?? "#41c7c0";
+  }
+
   private npcDisplay(npc: (typeof NPCS)[number]) {
     const en = NPC_EN[npc.id];
     return this.language === "en" && en
@@ -578,6 +678,9 @@ export class AdaptiveGameApp {
       case "relations":
         this.renderRelations();
         break;
+      case "settings":
+        this.renderSettings();
+        break;
       case "map":
         this.renderMap();
         break;
@@ -593,6 +696,21 @@ export class AdaptiveGameApp {
       case "report":
         this.renderReport();
         break;
+      case "ending":
+        this.renderEnding();
+        break;
+      case "hiddenBranch":
+        this.renderHiddenBranch();
+        break;
+      case "training":
+        this.renderTraining();
+        break;
+      case "trial":
+        this.renderTrial();
+        break;
+      case "trialBattle":
+        this.renderTrialBattle();
+        break;
       case "duelLobby":
         this.renderDuelLobby();
         break;
@@ -600,6 +718,7 @@ export class AdaptiveGameApp {
         this.renderDuel();
         break;
     }
+    this.wireTrainingLinks();
   }
 
   private renderMenu(): void {
@@ -672,6 +791,16 @@ export class AdaptiveGameApp {
             <h2>${this.t("relations")}</h2>
             <p>${this.language === "en" ? "See key people from the campaign and side quests, and whether those relationships became organizational capability." : "查看主线与支线中结识的关键人物，以及关系是否已经转化为组织能力。"}</p>
           </button>
+          <button class="menu-card" data-action="open-trial">
+            <span class="card-index">07</span>
+            <h2>${this.t("trialTitle")}</h2>
+            <p>${this.language === "en" ? "Spend energy, break through gates, collect loot, and unlock MBA cases." : "消耗精力打怪升级，用能力门槛解锁关卡、战利品和 MBA 高难案例。"}</p>
+          </button>
+          <button class="menu-card" data-action="open-settings">
+            <span class="card-index">08</span>
+            <h2>${this.t("settingsTitle")}</h2>
+            <p>${this.language === "en" ? "Sound, language, difficulty, save data, and help in one place." : "统一管理声音、语言、难度、存档数据与操作说明。"}</p>
+          </button>
         </section>
       </main>
     `;
@@ -715,6 +844,8 @@ export class AdaptiveGameApp {
                 .join("")}
             </div>
             <button class="primary" data-action="create-profile">${en ? "Start Your Journey" : "开启征程"}</button>
+            <button data-action="start-without-assessment">${this.t("startTrialFirst")}</button>
+            <small class="profile-note">${this.t("assessmentLater")}</small>
           </form>
         </section>
       </main>
@@ -743,6 +874,15 @@ export class AdaptiveGameApp {
             <small>${this.assessmentStep + 1} / ${ASSESSMENT_QUESTIONS.length}</small>
           </div>
           <div class="assessment-bar"><i style="width:${((this.assessmentStep + 1) / ASSESSMENT_QUESTIONS.length) * 100}%"></i></div>
+          ${
+            this.assessmentStep === 0
+              ? `
+                <div class="assessment-intro">
+                  <p>${this.t("assessmentOptional")}</p>
+                </div>
+              `
+              : ""
+          }
           <h1>${escapeHtml(questionView.prompt)}</h1>
           <p class="muted">${this.abilityDisplay(question.abilityId).name} · ${this.abilityDisplay(question.abilityId).tagline}</p>
           <div class="assessment-art">
@@ -766,7 +906,7 @@ export class AdaptiveGameApp {
                 ? `<button class="primary" data-action="assessment-submit">${en ? "Generate Profile" : "生成能力档案"}</button>`
                 : `<button class="primary" data-action="assessment-next">${en ? "Next" : "下一题"}</button>`
             }
-            <button class="link" data-action="assessment-skip">${en ? "Skip Assessment" : "跳过测评"}</button>
+            <button class="link" data-action="assessment-skip">${en ? "Try 2 scenarios first" : this.t("assessmentTryFirst")}</button>
           </div>
         </section>
       </main>
@@ -931,13 +1071,14 @@ export class AdaptiveGameApp {
             <p class="muted">${this.language === "en" ? "NPCs you faced directly in side quests evolve from leads into lasting organizational relationships." : "支线中真正面对过的 NPC，会从线索变成可延续的组织关系。"}</p>
           </div>
         </section>
+        <canvas class="relation-graph" id="relation-graph"></canvas>
         <section class="relation-grid">
           ${NPCS.map((npc) => {
             const relation = npcRelation(this.save, npc);
             const view = this.npcDisplay(npc);
             return `
               <div class="npc-card ${relation.status === "已建立关系" ? "trusted" : relation.status === "存在线索" ? "known" : "hidden"}">
-                <span class="npc-avatar">${view.name.slice(0, 1)}</span>
+                <span class="npc-avatar" style="--avatar:${this.npcAvatarColor(npc.id)}">${view.name.slice(0, 1)}</span>
                 <div>
                   <h2>${view.name}</h2>
                   <small>${view.title}</small>
@@ -951,6 +1092,51 @@ export class AdaptiveGameApp {
         </section>
       </main>
     `;
+    const relationGraph = this.root.querySelector<HTMLCanvasElement>(
+      "#relation-graph"
+    );
+    if (relationGraph) {
+      renderRelationGraph(relationGraph, this.save);
+    }
+  }
+
+  private nextActionAdvice(): {
+    text: string;
+    action?: "open-trial" | "open-map" | "open-training";
+    ability?: AbilityId;
+  } {
+    const openTrial = TRIAL_STAGES.find(
+      (stage) => canEnterTrial(this.save, stage) && !this.save.trialCleared.includes(stage.id)
+    );
+    if (openTrial) {
+      return {
+        text:
+          this.language === "en"
+            ? `Reason: ${openTrial.name} is ready. Energy ${this.save.trialEnergy}/100, capital ${this.save.profile.resources.capital}.`
+            : `原因：「${openTrial.name}」已可进入。精力 ${this.save.trialEnergy}/100，组织资源 ${this.save.profile.resources.capital}。`,
+        action: "open-trial"
+      };
+    }
+    const missing = TRIAL_STAGES.find(
+      (stage) => !this.save.trialCleared.includes(stage.id)
+    );
+    if (missing) {
+      return {
+        text:
+          this.language === "en"
+            ? `Reason: ${missing.name} needs ${missing.gates.map((g) => `${this.abilityDisplay(g.abilityId).name} Lv.${g.level}`).join(" + ")}. Train the missing abilities first.`
+            : `原因：「${missing.name}」需要 ${missing.gates.map((g) => `${this.abilityDisplay(g.abilityId).name} Lv.${g.level}`).join(" + ")}，先提升缺失能力。`,
+        action: "open-training",
+        ability: missing.gates[0].abilityId
+      };
+    }
+    return {
+      text:
+        this.language === "en"
+          ? `Reason: all trials cleared. Continue the campaign; current energy ${this.save.trialEnergy}/100.`
+          : "原因：试炼已全部通关。继续主线；当前精力 " + `${this.save.trialEnergy}/100。`,
+      action: "open-map"
+    };
   }
 
   private renderMap(): void {
@@ -999,6 +1185,7 @@ export class AdaptiveGameApp {
                     <h3>${this.t("chapterReflectionTitle")}</h3>
                     <p>${escapeHtml(this.chapterReflectionText(chapter.id))}</p>
                   </section>
+                  <button class="replay-chapter-button" data-action="replay-chapter" data-chapter="${chapter.id}">${this.t("replayChapter")}</button>
                 `
                 : ""
             }
@@ -1009,6 +1196,15 @@ export class AdaptiveGameApp {
             </section>
           </div>
           <aside class="map-side">
+            <div class="mini-panel next-step-panel">
+              <h3>${this.t("nextStepTitle")}</h3>
+              <p>${escapeHtml(this.nextActionAdvice().text)}</p>
+              ${
+                this.nextActionAdvice().action
+                  ? `<button data-action="${this.nextActionAdvice().action}" ${this.nextActionAdvice().ability ? `data-ability="${this.nextActionAdvice().ability}"` : ""}>${this.t("nextStepAction")}</button>`
+                  : ""
+              }
+            </div>
             <div class="mini-panel role-objective">
               <h3>${this.t("roleObjective")}</h3>
               <p>${this.language === "en" ? ROLE_EN[this.save.profile.role].objective : ROLES[this.save.profile.role].objective}</p>
@@ -1023,6 +1219,8 @@ export class AdaptiveGameApp {
               ${dailyChallenges(this.save)
                 .map(
                   (challenge) => {
+                    const today = todayKey();
+                    const claimedToday = (this.save.claimedDaily[today] ?? []).includes(challenge.id);
                     const view = this.challengeDisplay(challenge);
                     return `
                     <div class="challenge-row ${challenge.done ? "done" : ""}">
@@ -1032,9 +1230,9 @@ export class AdaptiveGameApp {
                         <p>${escapeHtml(view.description)}</p>
                       </div>
                       ${
-                        challenge.done && !this.save.claimedChallenges.includes(challenge.id)
+                        challenge.done && !claimedToday
                           ? `<button data-action="claim-challenge" data-challenge="${challenge.id}">${this.t("claim")}${challenge.reward}</button>`
-                          : this.save.claimedChallenges.includes(challenge.id)
+                          : claimedToday
                             ? `<small>${this.t("claimed")}</small>`
                             : `<small>${this.t("inProgress")}</small>`
                       }
@@ -1120,6 +1318,16 @@ export class AdaptiveGameApp {
     const chapter = this.chapterDisplay(getChapter(node.chapterId));
     const showingOutcome = this.lastOutcomeNodeId === node.id && this.lastOutcome;
     const showOnboarding = this.save.playCount === 0 && !showingOutcome;
+    const relevantAbilities = [
+      ...new Set(
+        node.options.flatMap((option) =>
+          Object.keys(option.effects) as AbilityId[]
+        )
+      )
+    ];
+    const unlockAbility = relevantAbilities.find(
+      (id) => abilityLevel(this.save.profile.abilities[id]) >= 3
+    );
     this.root.innerHTML = `
       <header class="topbar">
         <div class="brand">${this.t("brand")}</div>
@@ -1129,6 +1337,7 @@ export class AdaptiveGameApp {
         </div>
       </header>
       <main class="story-shell" aria-label="${this.language === "en" ? "Story scenario" : "剧情情境"}">
+        ${this.replayMode ? `<button class="link replay-exit" data-action="open-map">${this.t("replayExit")}</button>` : ""}
         <button class="link back-link" data-action="open-map">${this.t("backToMap")}</button>
         <section class="story-art">
           <canvas id="story-art" aria-label="${this.language === "en" ? "Diagram of the current situation" : "当前情境的局势示意图"}"></canvas>
@@ -1159,6 +1368,16 @@ export class AdaptiveGameApp {
                       <p>${this.t("onboarding1")}</p>
                       <p>${this.t("onboarding2")}</p>
                       <p>${this.t("onboarding3")}</p>
+                    </div>
+                  `
+                  : ""
+              }
+              ${
+                unlockAbility
+                  ? `
+                    <div class="ability-unlock-banner">
+                      <strong>${this.abilityDisplay(unlockAbility).name} Lv.${abilityLevel(this.save.profile.abilities[unlockAbility])} · ${this.t("abilityUnlockTitle")}</strong>
+                      <p>${this.t("abilityUnlockText")}</p>
                     </div>
                   `
                   : ""
@@ -1387,6 +1606,23 @@ export class AdaptiveGameApp {
           <button data-action="cloud-sync">${this.t("cloudSync")}</button>
           <button data-action="cloud-load">${this.t("cloudLoad")}</button>
           <button data-action="cloud-leaderboard">${this.t("cloudLeaderboard")}</button>
+          <div class="account-panel">
+            <h3>${this.t("accountTitle")}</h3>
+            ${
+              this.cloudAccountName
+                ? `<p class="account-name">${this.t("accountName")}：${escapeHtml(this.cloudAccountName)}</p>`
+                : ""
+            }
+            <input data-login-token placeholder="${this.t("accountToken")}" value="${escapeAttr(this.cloudToken)}" />
+            <input data-recovery-code placeholder="${this.t("accountRecovery")}" value="${escapeAttr(this.cloudRecoveryCode)}" />
+            <small class="account-recovery-note">${this.t("accountRecoveryNote")}</small>
+            <div class="account-actions">
+              <button data-action="cloud-login-token">${this.t("accountLogin")}</button>
+              <button data-action="cloud-login-recovery">${this.t("accountRecoveryLogin")}</button>
+              <button data-action="cloud-register">${this.t("cloudSync")}</button>
+              <button data-action="cloud-logout">${this.t("accountLogout")}</button>
+            </div>
+          </div>
           <span class="cloud-status" role="status" aria-live="polite">${this.cloudStatus}</span>
           ${
             this.cloudConflict
@@ -1531,6 +1767,867 @@ export class AdaptiveGameApp {
     `;
   }
 
+  private wireTrainingLinks(): void {
+    const recommended = recommendedTraining(
+      this.save.profile.abilities,
+      this.save.profile.role
+    );
+    this.root
+      .querySelectorAll<HTMLElement>(".training-item")
+      .forEach((item, index) => {
+        const id = recommended[index];
+        if (id) {
+          item.classList.add("training-link");
+          item.setAttribute("data-action", "open-training");
+          item.setAttribute("data-ability", id);
+        }
+      });
+    this.root
+      .querySelectorAll<HTMLElement>(".ability-card")
+      .forEach((card, index) => {
+        const id = ABILITY_ORDER[index];
+        if (!card.querySelector(".ability-training-button")) {
+          const button = document.createElement("button");
+          button.className = "ability-training-button";
+          button.textContent =
+            this.language === "en" ? "Start Training" : "进入训练";
+          button.dataset.action = "open-training";
+          button.dataset.ability = id;
+          card.appendChild(button);
+        }
+      });
+  }
+
+  private trainingDisplay(path: ExpandedAbilityTraining): ExpandedAbilityTrainingEn {
+    return this.language === "en" ? EXPANDED_TRAINING_EN[path.abilityId] : path;
+  }
+
+  private trainingMasteryLabel(correct: number, total: number): string {
+    if (correct === total) return this.t("trainingMastered");
+    if (correct >= Math.ceil(total / 2)) return this.t("trainingBasic");
+    return this.t("trainingReviewNeeded");
+  }
+
+  private renderTraining(): void {
+    const path = EXPANDED_TRAINING[this.trainingAbilityId];
+    const view = this.trainingDisplay(path);
+    const en = this.language === "en";
+    const ability = this.abilityDisplay(this.trainingAbilityId);
+    const exp = this.save.profile.abilities[this.trainingAbilityId];
+    const done = this.save.completedTraining.includes(this.trainingAbilityId);
+    const best = this.save.trainingScores[this.trainingAbilityId] ?? 0;
+    const role = this.save.profile.role;
+
+    if (this.trainingStage === "quiz") {
+      const question = view.questions[this.trainingStep];
+      const selected = this.trainingAnswers[this.trainingStep];
+      const last = this.trainingStep === view.questions.length - 1;
+      this.root.innerHTML = `
+        <header class="topbar">
+          <div class="brand">${this.t("brand")}</div>
+          <button class="link" data-action="training-back">${en ? "Back" : "返回"}</button>
+        </header>
+        <main class="training-shell training-quiz-shell" aria-label="${this.t("trainingQuiz")}">
+          <section class="training-quiz-head">
+            <div>
+              <p class="eyebrow">${this.t("trainingQuiz")}</p>
+              <h1>${ability.name} · ${escapeHtml(view.routeTitle)}</h1>
+            </div>
+            <strong>${this.trainingStep + 1} / ${view.questions.length}</strong>
+          </section>
+          <div class="assessment-bar"><i style="width:${((this.trainingStep + 1) / view.questions.length) * 100}%"></i></div>
+          <section class="training-question">
+            <h2>${escapeHtml(question.prompt)}</h2>
+            <div class="training-options">
+              ${question.options
+                .map(
+                  (option, index) => `
+                    <button class="training-option ${selected === index ? "selected" : ""}" data-action="training-option" data-option="${index}">
+                      ${escapeHtml(option.label)}
+                    </button>
+                  `
+                )
+                .join("")}
+            </div>
+            <div class="training-actions">
+              <button data-action="training-prev" ${this.trainingStep === 0 ? "disabled" : ""}>${this.t("trainingPrev")}</button>
+              ${
+                last
+                  ? `<button class="primary" data-action="training-submit">${this.t("trainingSubmit")}</button>`
+                  : `<button class="primary" data-action="training-next">${this.t("trainingNext")}</button>`
+              }
+            </div>
+          </section>
+        </main>
+      `;
+      return;
+    }
+
+    if (this.trainingStage === "result" && this.trainingResult) {
+      const result = this.trainingResult;
+      const masteryLabel = this.trainingMasteryLabel(result.correct, result.total);
+      this.root.innerHTML = `
+        <header class="topbar">
+          <div class="brand">${this.t("brand")}</div>
+          <button class="link" data-action="training-back">${en ? "Back" : "返回"}</button>
+        </header>
+        <main class="training-result-shell" aria-label="${this.t("trainingResult")}">
+          <section class="training-result-hero">
+            <p class="eyebrow">${this.t("trainingResult")}</p>
+            <h1>${result.correct} / ${result.total}</h1>
+            <div class="training-mastery-badge">${this.t("trainingMastery")} · ${masteryLabel}</div>
+            <p class="muted">${this.t("trainingCorrect")} ${ability.name}</p>
+            <div class="training-reward">
+              <span>${this.t("trainingReward")}</span>
+              <strong>+${result.gainedExp} ${ability.name}</strong>
+              <small>${result.firstComplete ? (en ? "First completion reward" : "首次完成奖励") : (en ? "Review only; reward already claimed" : "复训仅复盘，奖励已领取")}</small>
+            </div>
+          </section>
+          <section class="training-review">
+            <h2>${this.t("trainingReview")}</h2>
+            ${view.questions
+              .map(
+                (question, index) => `
+                  <div class="training-review-card ${result.answered[index] ? "correct" : "wrong"}">
+                    <span>${result.answered[index] ? "✓" : "×"}</span>
+                    <div>
+                      <h3>${escapeHtml(question.prompt)}</h3>
+                      <p><strong>${en ? "Your answer: " : "你的选择："}</strong>${escapeHtml(question.options[this.trainingAnswers[index]].label)}</p>
+                      <p><strong>${en ? "Correct: " : "正确做法："}</strong>${escapeHtml(question.options[question.answer].label)}</p>
+                      <div class="training-solution">
+                        <strong>${this.t("trainingSolved")}</strong>
+                        <ol>
+                          ${question.solutionSteps.map((step) => `<li>${escapeHtml(step)}</li>`).join("")}
+                        </ol>
+                      </div>
+                      <p class="reference-answer"><strong>${this.t("trainingReference")}</strong>${escapeHtml(question.referenceAnswer)}</p>
+                      <em>${escapeHtml(question.options[question.answer].feedback)}</em>
+                    </div>
+                  </div>
+                `
+              )
+              .join("")}
+          </section>
+          <div class="training-result-actions">
+            <button data-action="training-restart">${en ? "Review the Lesson" : "重新学习"}</button>
+            <button class="primary" data-action="open-ability">${en ? "Ability Map" : "能力图谱"}</button>
+          </div>
+        </main>
+      `;
+      return;
+    }
+
+    this.root.innerHTML = `
+      <header class="topbar">
+        <div class="brand">${this.t("brand")}</div>
+        <button class="link" data-action="training-back">${en ? "Back" : "返回"}</button>
+        <button class="link" data-action="open-ability">${en ? "Ability Map" : "能力图谱"}</button>
+      </header>
+      <main class="training-shell" aria-label="${this.t("trainingTitle")}">
+        <section class="training-hero">
+          <div>
+            <p class="eyebrow">${this.t("trainingTitle")}</p>
+            <h1>${escapeHtml(view.routeTitle)}</h1>
+            <p class="muted">${escapeHtml(view.routeSummary)}</p>
+            <div class="training-ability-tag" style="--dot:${ABILITIES[this.trainingAbilityId].color}">
+              <strong>${ability.name} · Lv.${abilityLevel(exp)}</strong>
+              <span>${done ? this.t("trainingCompleted") : `${this.t("trainingBest")} ${best} / ${view.questions.length}`}</span>
+            </div>
+          </div>
+          <canvas class="training-board" id="training-board"></canvas>
+        </section>
+        <section class="training-flow">
+          <div class="training-panel">
+            <h2>${this.t("trainingProblem")}</h2>
+            <p>${escapeHtml(view.problemPrompt)}</p>
+          </div>
+          <div class="training-panel">
+            <h2>${this.t("trainingAnalogy")}</h2>
+            <p>${escapeHtml(view.analogy)}</p>
+          </div>
+        </section>
+        <section class="training-columns">
+          <div class="training-panel training-route-panel">
+            <h2>${this.t("trainingBreakdown")}</h2>
+            <ol class="training-route">
+              ${view.route.map((step) => `<li>${escapeHtml(step)}</li>`).join("")}
+            </ol>
+          </div>
+          <div class="training-panel">
+            <h2>${this.t("trainingApplication")}</h2>
+            <ul class="training-points">
+              ${view.applicationPoints.map((point) => `<li>${escapeHtml(point)}</li>`).join("")}
+            </ul>
+          </div>
+          <div class="training-panel training-formula-panel">
+            <h2>${this.t("trainingFormula")}</h2>
+            <h3>${escapeHtml(view.formula.name)}</h3>
+            <code>${escapeHtml(view.formula.expression)}</code>
+            <p>${escapeHtml(view.formula.explanation)}</p>
+          </div>
+        </section>
+        <section class="training-panel role-application-panel">
+          <h2>${this.t("trainingRoleApply")} · ${this.roleDisplay(role).name}</h2>
+          <div class="role-apply-grid role-single">
+            <div class="role-apply-card active">
+              <strong>${this.roleDisplay(role).name}</strong>
+              <p>${escapeHtml(view.roleApplications[role])}</p>
+            </div>
+          </div>
+          <p class="role-split-note">${en ? "This lesson is scoped to your current role. Other-role strategies are not mixed in." : "当前训练只针对你的角色，不混入其他角色策略。"}</p>
+        </section>
+        <section class="training-panel worked-examples-panel">
+          <h2>${this.t("trainingExamples")}</h2>
+          <div class="worked-examples">
+            ${view.workedExamples
+              .map(
+                (example) => `
+                  <article>
+                    <h3>${escapeHtml(example.title)}</h3>
+                    <p>${escapeHtml(example.scenario)}</p>
+                    <p class="application">${escapeHtml(example.application)}</p>
+                  </article>
+                `
+              )
+              .join("")}
+          </div>
+        </section>
+        <section class="training-panel training-story-panel">
+          <div class="story-meta">
+            <h2>${this.t("trainingStory")}</h2>
+            <span>${escapeHtml(view.story.source)}</span>
+          </div>
+          <h3>${escapeHtml(view.story.title)}</h3>
+          <p>${escapeHtml(view.story.scenario)}</p>
+          <blockquote>${escapeHtml(view.story.lesson)}</blockquote>
+          <button class="primary" data-action="training-start-quiz">${this.t("trainingStartQuiz")}</button>
+        </section>
+      </main>
+    `;
+    const board = this.root.querySelector<HTMLCanvasElement>("#training-board");
+    if (board) {
+      renderTrainingBoard(
+        board,
+        this.trainingAbilityId,
+        exp,
+        this.language === "en"
+          ? `${ability.name} Training Path`
+          : `${ability.name}训练路径`
+      );
+    }
+  }
+
+
+  private renderTrial(): void {
+    const en = this.language === "en";
+    const energy = this.save.trialEnergy;
+    const items = this.save.trialItems;
+    const capital = this.save.profile.resources.capital;
+    const influence = this.save.profile.resources.influence;
+    const trust = this.save.profile.resources.trust;
+    const accelerator = this.save.trialAccelerator;
+    const restDone =
+      this.save.lastTrialEnergyDate ===
+      new Date().toISOString().slice(0, 10);
+    this.root.innerHTML = `
+      <header class="topbar">
+        <div class="brand">${this.t("brand")}</div>
+        <button class="link" data-action="open-menu">${this.t("returnHome")}</button>
+      </header>
+      <main class="trial-shell" aria-label="${this.t("trialTitle")}">
+        <section class="trial-hero">
+          <div>
+            <p class="eyebrow">${this.t("trialTitle")}</p>
+            <h1>${en ? "Grow through battles, not questionnaires" : "不是问卷，是打怪升级"}</h1>
+            <p class="muted">${en ? "Clear gates with ability levels, spend energy on battles, and unlock loot, companions, and MBA cases." : "用能力门槛解锁关卡，消耗精力值挑战守关者，获得道具、同伴和 MBA 高难案例。"}</p>
+          </div>
+          <div class="trial-energy-panel">
+            <span>${this.t("trialEnergy")}</span>
+            <strong>${energy} / 100</strong>
+            <div class="trial-energy-bar"><i style="width:${energy}%"></i></div>
+            <div class="trial-energy-actions">
+              <button data-action="trial-rest" ${restDone ? "disabled" : ""}>${this.t("trialRest")} +30</button>
+              <button data-action="trial-buy-energy" ${capital < 15 || energy >= 100 ? "disabled" : ""}>${this.t("trialBuyEnergy")} -15</button>
+              <button data-action="trial-buy-energy-influence" ${influence < 25 || energy >= 100 ? "disabled" : ""}>${this.t("trialBuyEnergyInfluence")} -25</button>
+              <button data-action="trial-invest-accelerator" ${accelerator || capital < 40 ? "disabled" : ""}>${this.t("trialAccelerator")} -40</button>
+              <button data-action="trial-hire-ally" ${trust < 20 || this.save.trialItems.includes("临时同伴") ? "disabled" : ""}>${this.t("trialAllyHire")} -20</button>
+            </div>
+            <small>${accelerator ? this.t("trialAcceleratorActive") : this.t("trialBuyCost")} 15 · ${capital} · ${influence} · ${trust}</small>
+          </div>
+        </section>
+        ${
+          this.activePracticeTaskId
+            ? (() => {
+                const task = PRACTICE_TASKS.find(
+                  (item) => item.id === this.activePracticeTaskId
+                );
+                if (!task) return "";
+                return `
+                  <section class="practice-editor">
+                    <h2>${escapeHtml(task.title)}</h2>
+                    <p>${escapeHtml(task.action)}</p>
+                    <textarea data-practice-result rows="5" placeholder="${this.t("practiceHint")}"></textarea>
+                    <button class="primary" data-action="practice-submit">${this.t("practiceSubmit")}</button>
+                  </section>
+                `;
+              })()
+            : ""
+        }
+        <section class="trial-next-step">
+          <h2>${this.t("nextStepTitle")}</h2>
+          <p>${escapeHtml(this.nextActionAdvice().text)}</p>
+          ${
+            this.nextActionAdvice().action
+              ? `<button data-action="${this.nextActionAdvice().action}" ${this.nextActionAdvice().ability ? `data-ability="${this.nextActionAdvice().ability}"` : ""}>${this.t("nextStepAction")}</button>`
+              : ""
+          }
+        </section>
+        <section class="trial-loot-panel">
+          <h2>${this.t("trialItems")}</h2>
+          ${
+            items.length
+              ? `<div class="trial-loot">${items.map((item) => `<span>${escapeHtml(item)}</span>`).join("")}</div>`
+              : `<p class="muted">${en ? "No loot yet. Clear trial stages to collect weapons, allies, and tools." : "还没有战利品，通关试炼会获得武器、同伴和工具。"}</p>`
+          }
+        </section>
+        <section class="trial-unlocks">
+          <h2>${en ? "Growth Unlocks" : "成长解锁"}</h2>
+          <div class="unlock-list">
+            <span class="unlocked">${en ? "HP: Energy Bar" : "血条：精力值"}</span>
+            <span class="${Math.max(...ABILITY_ORDER.map((id) => abilityLevel(this.save.profile.abilities[id]))) >= 2 ? "unlocked" : "locked"}">${en ? "Skill: Ability Lv.2" : "技能：能力 Lv.2"}</span>
+            <span class="${this.save.trialCleared.length >= 5 ? "unlocked" : "locked"}">${en ? "Armor: Clear Trial 5" : "防护：通关第 5 关"}</span>
+            <span class="${this.save.trialCleared.length >= 7 ? "unlocked" : "locked"}">${en ? "Ally: Clear Trial 7" : "同伴：通关第 7 关"}</span>
+            <span class="${this.save.trialCleared.length >= 10 ? "unlocked" : "locked"}">${en ? "Weapon: Clear Trial 10" : "武器：通关第 10 关"}</span>
+            <span class="${this.save.trialCleared.length >= 19 ? "unlocked" : "locked"}">${en ? "MBA Cases: Clear All Trials" : "MBA 关卡：通关全部试炼"}</span>
+          </div>
+        </section>
+        <section class="trial-stages">
+
+          <h2>${this.t("trialStages")}</h2>
+          <div class="trial-stage-list">
+            ${TRIAL_STAGES.map((stage) => {
+              const done = this.save.trialCleared.includes(stage.id);
+              const enterable = canEnterTrial(this.save, stage);
+              const gateText = stage.gates
+                .map((gate) => `${this.abilityDisplay(gate.abilityId).name} Lv.${gate.level}`)
+                .join(" + ");
+              return `
+                <div class="trial-stage-card ${done ? "cleared" : enterable ? "open" : "locked"}">
+                  <div class="trial-stage-head">
+                    <span>${String(stage.order).padStart(2, "0")}</span>
+                    <strong>${escapeHtml(stage.name)}</strong>
+                    <em>${escapeHtml(stage.boss)}</em>
+                  </div>
+                  <p>${trialStageLabel(stage)}</p>
+                  <div class="trial-stage-meta">
+                    <span>${this.t("trialGate")}：${escapeHtml(gateText)}</span>
+                    <span>${this.t("trialEnergyCost")} ${trialCostFor(this.save, stage)}</span>
+                  </div>
+                  ${
+                    enterable
+                      ? `<button class="primary" data-action="trial-stage" data-stage="${stage.id}">${this.t("trialEnter")}</button>`
+                      : `
+                        <div class="trial-lock-actions">
+                          <span class="trial-lock">${done ? this.t("trialCleared") : this.t("trialLocked")}</span>
+                          ${
+                            done
+                              ? ""
+                              : stage.gates
+                                  .map(
+                                    (gate) => `
+                                      <button data-action="open-training" data-ability="${gate.abilityId}">
+                                        ${this.abilityDisplay(gate.abilityId).name} Lv.${gate.level}
+                                      </button>
+                                    `
+                                  )
+                                  .join("")
+                          }
+                        </div>
+                      `
+                  }
+                </div>
+              `;
+            }).join("")}
+          </div>
+        </section>
+        <section class="trial-practice">
+          <h2>${this.t("trialPractice")}</h2>
+          <div class="practice-list">
+            ${PRACTICE_TASKS.map((task) => {
+              const done = this.save.completedPracticeTasks.includes(task.id);
+              return `
+                <article class="practice-card ${done ? "done" : ""}">
+                  <div>
+                    <h3>${escapeHtml(task.title)}</h3>
+                    <small>${escapeHtml(task.source)}</small>
+                    <blockquote>${escapeHtml(task.quote)}</blockquote>
+                    <p>${escapeHtml(task.action)}</p>
+                  </div>
+                  <div class="practice-reward">
+                    <span>${this.abilityDisplay(task.rewardAbility).name} +${task.rewardExp}</span>
+                    <span>${this.t("trialEnergy")} +${task.rewardEnergy}</span>
+                  </div>
+                  ${
+                    done
+                      ? `<span class="practice-done">${this.t("trialCleared")}</span>`
+                      : `<button data-action="practice-task" data-task="${task.id}">${en ? "Complete Mission" : "完成修炼"}</button>`
+                  }
+                </article>
+              `;
+            }).join("")}
+          </div>
+        </section>
+      </main>
+    `;
+  }
+
+  private renderTrialBattle(): void {
+    const stage = TRIAL_STAGES.find((item) => item.id === this.activeTrialId);
+    if (!stage) {
+      this.show("trial");
+      return;
+    }
+    const en = this.language === "en";
+    const question = trialQuestionFor(stage);
+    const result = this.trialAnswerResult;
+    const followUp = question.followUp;
+    const followUpPending = Boolean(followUp) && !this.trialFollowUpAnswered;
+    const referenceAnswer = followUp
+      ? followUp.referenceAnswer
+      : question.referenceAnswer;
+    const explanation = followUp
+      ? followUp.explanation
+      : question.explanation;
+    const wolfPending =
+      stage.style === "wolf" && !this.trialObserveRevealed;
+    const suspectPending =
+      stage.style === "wolf" &&
+      this.trialObserveRevealed &&
+      !this.trialSuspectChoice;
+    const allyPending =
+      Boolean(stage.allies?.length) && !this.trialAllyChoice;
+    const intelPending =
+      Boolean(stage.intelChoices?.length) &&
+      Boolean(this.trialAllyChoice) &&
+      !this.trialIntelChoice;
+    const phaseReady =
+      !wolfPending && !suspectPending && !allyPending && !intelPending;
+    this.root.innerHTML = `
+      <header class="topbar">
+        <div class="brand">${this.t("brand")}</div>
+        <button class="link" data-action="trial-next">${this.t("trialNext")}</button>
+      </header>
+      <main class="trial-battle-shell" aria-label="${this.t("trialTitle")}">
+        <section class="trial-boss-panel">
+          <div>
+            <p class="eyebrow">${trialStageLabel(stage)}</p>
+            <h1>${escapeHtml(stage.boss)}</h1>
+            <p class="muted">${escapeHtml(stage.name)}</p>
+          </div>
+          <div class="trial-boss-stats">
+            <span>${this.t("trialEnergyCost")} ${trialCostFor(this.save, stage)}</span>
+            <span>${stage.gates.map((gate) => `${this.abilityDisplay(gate.abilityId).name} Lv.${gate.level}`).join(" + ")}</span>
+          </div>
+        </section>
+        ${
+          result
+            ? `
+              <section class="trial-battle-result ${result.correct ? "win" : "lose"}">
+                <h2>${result.correct ? this.t("trialCorrect") : this.t("trialWrong")}</h2>
+                <p>${this.t("trialEnergy")} ${result.energyChange > 0 ? "+" : ""}${result.energyChange}</p>
+                ${
+                  result.cleared
+                    ? `<p>${this.t("trialReward")}：${this.abilityDisplay(stage.source.kind === "training" ? stage.source.abilityId : stage.gates[0].abilityId).name} +${result.gainedExp}${result.item ? ` · ${escapeHtml(result.item)}` : ""}</p>`
+                    : ""
+                }
+                ${
+                  this.trialAllyCorrect === true
+                    ? `<p>${this.t("trialAllyCorrect")}</p>`
+                    : this.trialAllyCorrect === false
+                      ? `<p>${this.t("trialAllyWrong")}</p>`
+                      : ""
+                }
+                ${
+                  this.trialSuspectCorrect === true
+                    ? `<p>${this.t("trialSuspectCorrect")}</p>`
+                    : this.trialSuspectCorrect === false
+                      ? `<p>${this.t("trialSuspectWrong")}</p>`
+                      : ""
+                }
+                ${
+                  this.trialIntelCorrect === true
+                    ? `<p>${this.t("trialIntelCorrect")}</p>`
+                    : this.trialIntelCorrect === false
+                      ? `<p>${this.t("trialIntelWrong")}</p>`
+                      : ""
+                }
+                ${
+                  this.trialSummaryKeywordCorrect === true
+                    ? `<p>${this.t("trialSummaryKeyword")}</p>`
+                    : this.trialSummaryKeywordCorrect === false
+                      ? `<p>${this.t("trialSummaryKeywordMiss")}</p>`
+                      : ""
+                }
+                <div class="trial-answer-review">
+                  ${
+                    followUp && this.trialFollowUpAnswer !== undefined
+                      ? `
+                        <strong>${this.t("trialStageDecision")}</strong>
+                        <p>${escapeHtml(question.options[this.trialFollowUpAnswer] ?? "")}</p>
+                      `
+                      : ""
+                  }
+                  <strong>${this.t("trialAnswer")}</strong>
+                  <p>${escapeHtml(question.options[this.lastTrialAnswer ?? 0])}</p>
+                  <strong>${this.t("trialReference")}</strong>
+                  <p>${escapeHtml(referenceAnswer)}</p>
+                  <strong>${this.t("trialExplanation")}</strong>
+                  <p>${escapeHtml(explanation)}</p>
+                </div>
+                <button class="primary" data-action="trial-next">${this.t("trialNext")}</button>
+              </section>
+            `
+            : `
+              ${
+                wolfPending
+                  ? `
+                    <section class="trial-phase-panel">
+                      <p class="eyebrow">${this.t("trialClue")}</p>
+                      <p>${escapeHtml(stage.clue ?? "")}</p>
+                      <button class="primary" data-action="trial-observe">${this.t("trialObserve")}</button>
+                    </section>
+                  `
+                  : ""
+              }
+              ${
+                suspectPending
+                  ? `
+                    <section class="trial-phase-panel">
+                      <p class="eyebrow">${this.t("trialSuspect")}</p>
+                      <div class="trial-ally-options">
+                        ${(stage.suspects ?? []).map((suspect) => `<button data-action="trial-suspect" data-suspect="${escapeAttr(suspect)}">${escapeHtml(suspect)}</button>`).join("")}
+                      </div>
+                    </section>
+                  `
+                  : ""
+              }
+              ${
+                allyPending
+                  ? `
+                    <section class="trial-phase-panel">
+                      <p class="eyebrow">${this.t("trialAlly")}</p>
+                      <div class="trial-ally-options">
+                        ${(stage.allies ?? []).map((ally) => `<button data-action="trial-ally" data-ally="${escapeAttr(ally)}">${escapeHtml(ally)}</button>`).join("")}
+                      </div>
+                    </section>
+                  `
+                  : ""
+              }
+              ${
+                intelPending
+                  ? `
+                    <section class="trial-phase-panel">
+                      <p class="eyebrow">${this.t("trialIntel")}</p>
+                      <div class="trial-ally-options">
+                        ${(stage.intelChoices ?? []).map((intel) => `<button data-action="trial-intel" data-intel="${escapeAttr(intel)}">${escapeHtml(intel)}</button>`).join("")}
+                      </div>
+                    </section>
+                  `
+                  : ""
+              }
+              ${
+                this.trialSummaryPending
+                  ? `
+                    <section class="trial-summary-panel">
+                      <h2>${this.t("trialSummary")}</h2>
+                      <p>${escapeHtml(referenceAnswer)}</p>
+                      <textarea data-trial-summary rows="5" placeholder="${en ? "Write your one-page decision summary with evidence, owner, and checkpoint." : "写出你的决策摘要：依据、负责人、检查节点。"}"></textarea>
+                      <button class="primary" data-action="trial-submit-summary">${this.t("trialSummarySubmit")}</button>
+                    </section>
+                  `
+                  : `
+                    <section class="trial-question-panel">
+                ${
+                  followUpPending && followUp
+                    ? `
+                      <section class="trial-new-info">
+                        <h3>${this.t("trialNewInfo")}</h3>
+                        <p>${escapeHtml(followUp.prompt)}</p>
+                      </section>
+                    `
+                    : ""
+                }
+                <h2>${escapeHtml(followUpPending && followUp ? followUp.prompt : question.prompt)}</h2>
+                <div class="trial-options">
+                  ${(followUpPending && followUp ? followUp.options : question.options).map((option, index) => `<button class="trial-option" data-action="trial-option" data-option="${index}" ${phaseReady ? "" : "disabled"}>${escapeHtml(option)}</button>`).join("")}
+                </div>
+              </section>
+                  `
+              }
+            `
+        }
+      </main>
+    `;
+  }
+
+
+  private duelResultMarkup(
+    engine: DuelEngine,
+    result: ReturnType<DuelEngine["toResult"]>
+  ): string {
+    const en = this.language === "en";
+    const playerIndex = this.duelMode === "remote" ? this.remotePlayerIndex : 0;
+    const analysis = engine.roundResults.map((round, index) => {
+      const node = round.node;
+      const nodeView = this.storyNodeDisplay(node);
+      const best = node.options.find((option) => option.quality === "expert") ?? node.options[0];
+      const playerPick = round.picks[playerIndex];
+      const playerOption = node.options[playerPick] ?? node.options[0];
+      const gap =
+        playerOption.quality === "expert"
+          ? en
+            ? "This move matched the expert baseline. Keep applying this logic under pressure."
+            : "本次应对符合专家基准，保持这种在压力下先诊断再行动的逻辑。"
+          : playerOption.quality === "partial"
+            ? en
+              ? "Direction is right, but the execution is incomplete. Add evidence, ownership, and a check node."
+              : "方向对但执行不完整，需要补充证据、负责人和检查节点。"
+            : en
+              ? "High-risk move. Stabilize the situation first, then turn the resistance into shared responsibility."
+              : "高风险应对。先稳住局势，再把阻力变成共同责任。";
+      return `
+        <article class="duel-analysis-card">
+          <div class="duel-analysis-head">
+            <span>${index + 1}</span>
+            <strong>${escapeHtml(nodeView.title)}</strong>
+          </div>
+          <p class="duel-analysis-context">${escapeHtml(nodeView.context)}</p>
+          <div class="duel-analysis-grid">
+            <div>
+              <h3>${this.t("duelBestMove")}</h3>
+              <p>${escapeHtml(best.label)}</p>
+              <small>${escapeHtml(best.theory)}</small>
+            </div>
+            <div>
+              <h3>${this.t("duelWhy")}</h3>
+              <p>${escapeHtml(best.feedback)}</p>
+            </div>
+            <div>
+              <h3>${this.t("duelPlayerMove")}</h3>
+              <p>${escapeHtml(playerOption.label)}</p>
+            </div>
+            <div>
+              <h3>${this.t("duelGap")}</h3>
+              <p>${gap}</p>
+            </div>
+          </div>
+          <div class="duel-round-score">
+            <span>${engine.players[0].name} ${round.points[0]}</span>
+            <span>${engine.players[1].name} ${round.points[1]}</span>
+          </div>
+        </article>
+      `;
+    }).join("");
+
+    return `
+      <main class="duel-result" aria-label="${en ? "Duel result" : "对决结果"}">
+        <section class="result-hero">
+          <p class="eyebrow">${en ? "Duel Complete" : "对决结束"}</p>
+          <h1>${escapeHtml(result.winnerName)} ${en ? "wins" : "获胜"}</h1>
+          <div class="result-scores">
+            <span>${engine.players[0].name} <strong>${result.scores[0]}</strong></span>
+            <span>${engine.players[1].name} <strong>${result.scores[1]}</strong></span>
+          </div>
+          ${
+            this.duelPredictionHistory.length
+              ? `<p class="duel-prediction-summary">${this.t("duelPredictionSummary")}：${this.duelPredictionHistory.filter(Boolean).length} / ${this.duelPredictionHistory.length}</p>`
+              : ""
+          }
+          <button class="primary" data-action="open-duel-lobby">${en ? "Back to Lobby" : "返回大厅"}</button>
+          <button data-action="open-map">${this.t("menuContinue")}</button>
+        </section>
+        <section class="duel-analysis">
+          <h2>${this.t("duelAnalysisTitle")}</h2>
+          ${analysis}
+        </section>
+      </main>
+    `;
+  }
+
+
+  private renderHiddenBranch(): void {
+    const abilityId = this.hiddenBranchAbilityId;
+    if (!abilityId || !EXPANDED_TRAINING[abilityId]) {
+      this.show("map");
+      return;
+    }
+    const path = EXPANDED_TRAINING[abilityId];
+    const view = this.trainingDisplay(path);
+    const en = this.language === "en";
+    this.root.innerHTML = `
+      <header class="topbar">
+        <div class="brand">${this.t("brand")}</div>
+        <button class="link" data-action="open-map">${this.t("hiddenBranchBack")}</button>
+      </header>
+      <main class="hidden-branch-shell" aria-label="${this.t("hiddenBranchTitle")}">
+        <section class="hidden-branch-hero">
+          <p class="eyebrow">${this.t("hiddenBranchTitle")}</p>
+          <h1>${this.abilityDisplay(abilityId).name} · ${escapeHtml(view.routeTitle)}</h1>
+          <p class="muted">${escapeHtml(view.routeSummary)}</p>
+        </section>
+        <section class="hidden-branch-grid">
+          <div>
+            <h2>${this.t("trainingFormula")}</h2>
+            <code>${escapeHtml(view.formula.expression)}</code>
+            <p>${escapeHtml(view.formula.explanation)}</p>
+          </div>
+          <div>
+            <h2>${this.t("trainingApplication")}</h2>
+            <ul>${view.applicationPoints.map((point) => `<li>${escapeHtml(point)}</li>`).join("")}</ul>
+          </div>
+          <div>
+            <h2>${this.t("trainingExamples")}</h2>
+            <p>${escapeHtml(view.workedExamples[0]?.scenario ?? "")}</p>
+            <p class="muted">${escapeHtml(view.workedExamples[0]?.application ?? "")}</p>
+          </div>
+        </section>
+        <p class="muted">${en ? "Advanced ability unlocked a hidden review route." : "高阶能力解锁了一条隐藏复盘路线。"}</p>
+      </main>
+    `;
+  }
+
+  private renderSettings(): void {
+    const en = this.language === "en";
+    this.root.innerHTML = `
+      <header class="topbar">
+        <div class="brand">${this.t("brand")}</div>
+        <button class="link" data-action="open-menu">${this.t("returnHome")}</button>
+      </header>
+      <main class="settings-shell" aria-label="${this.t("settingsTitle")}">
+        <section class="settings-hero">
+          <p class="eyebrow">${this.t("settingsTitle")}</p>
+          <h1>${en ? "One place to tune the experience" : "一个地方，管理你的体验"}</h1>
+        </section>
+        <section class="settings-grid">
+          <div class="settings-panel">
+            <h2>${en ? "Audio & Language" : "声音与语言"}</h2>
+            <button data-action="toggle-sound">${this.muted ? this.t("soundOff") : this.t("soundOn")}</button>
+            <button data-action="toggle-music">${this.musicMuted ? this.t("musicOff") : this.t("musicOn")}</button>
+            <label class="field">
+              <span>${this.t("musicVolume")}</span>
+              <select data-select="music-volume">
+                <option value="0" ${this.musicVolume === 0 ? "selected" : ""}>0</option>
+                <option value="25" ${this.musicVolume === 25 ? "selected" : ""}>25</option>
+                <option value="50" ${this.musicVolume === 50 ? "selected" : ""}>50</option>
+                <option value="75" ${this.musicVolume === 75 ? "selected" : ""}>75</option>
+                <option value="100" ${this.musicVolume === 100 ? "selected" : ""}>100</option>
+              </select>
+            </label>
+            <button data-action="toggle-language">${this.t("language")}</button>
+          </div>
+          <div class="settings-panel">
+            <h2>${this.t("difficultyLabel")}</h2>
+            ${this.difficultySelectorMarkup()}
+          </div>
+          <div class="settings-panel">
+            <h2>${this.t("settingsHelp")}</h2>
+            <p>${this.t("settingsHelpText")}</p>
+          </div>
+          <div class="settings-panel">
+            <h2>${this.t("settingsData")}</h2>
+            <button data-action="open-assessment">${this.t("assessmentReopen")}</button>
+            <button data-action="export-save">${this.t("exportSave")}</button>
+            <button data-action="import-save">${this.t("importSave")}</button>
+            <label class="file-button">
+              ${this.t("importSave")}
+              <input type="file" data-import-save accept="application/json" hidden />
+            </label>
+            <button data-action="reset-profile">${this.t("resetProfile")}</button>
+          </div>
+          <div class="settings-panel">
+            <h2>${this.t("settingsAccessibility")}</h2>
+            <p>${en ? "Reduced-motion preferences are respected by the UI." : "界面已支持系统减少动态效果偏好。"}</p>
+          </div>
+        </section>
+      </main>
+    `;
+  }
+
+  private renderEnding(): void {
+    const en = this.language === "en";
+    const decisions = this.save.decisionHistory.slice(-10).reverse();
+    const npcRows = NPCS.filter(
+      (npc) => npcRelation(this.save, npc).status !== "尚未接触"
+    )
+      .map((npc) => {
+        const view = this.npcDisplay(npc);
+        return `<li>${escapeHtml(view.name)} · ${escapeHtml(view.title)}</li>`;
+      })
+      .join("");
+    this.root.innerHTML = `
+      <header class="topbar">
+        <div class="brand">${this.t("brand")}</div>
+        <button class="link" data-action="ending-back">${this.t("endingBack")}</button>
+      </header>
+      <main class="ending-shell" aria-label="${this.t("endingTitle")}">
+        <section class="ending-hero">
+          <p class="eyebrow">${this.t("endingTitle")}</p>
+          <h1>${this.save.profile.name} · ${this.roleDisplay(this.save.profile.role).name}</h1>
+          <button data-action="ending-share">${this.t("endingShare")}</button>
+          <textarea id="ending-share-target" readonly hidden></textarea>
+        </section>
+        <section class="ending-choice-panel">
+          <h2>${this.t("endingChoiceTitle")}</h2>
+          <p>${this.t("endingChoicePrompt")}</p>
+          <div class="ending-choice-actions">
+            <button data-action="ending-choice" data-ending="stabilize">${this.t("endingChoiceStabilize")}</button>
+            <button data-action="ending-choice" data-ending="expand">${this.t("endingChoiceExpand")}</button>
+            <button data-action="ending-choice" data-ending="legacy">${this.t("endingChoiceLegacy")}</button>
+          </div>
+          ${
+            this.endingChoice
+              ? `<p class="ending-choice-result">${en ? `Final move: ${this.endingChoice}` : `最终选择：${this.endingChoice}`}</p>`
+              : ""
+          }
+        </section>
+        <section class="ending-timeline">
+          <h2>${this.t("endingTimeline")}</h2>
+          <div class="ending-decision-list">
+            ${
+              decisions.length
+                ? decisions
+                    .map((record) => {
+                      let title = record.nodeId;
+                      try {
+                        title = getNode(record.nodeId).title;
+                      } catch {
+                        // keep id
+                      }
+                      return `
+                        <div class="ending-decision-row">
+                          <span>${this.qualityLabel(record.quality)}</span>
+                          <strong>${escapeHtml(title)}</strong>
+                          <small>${record.qualityScore} pts</small>
+                        </div>
+                      `;
+                    })
+                    .join("")
+                : `<p class="muted">${en ? "No decisions recorded yet." : "暂无决策记录。"}</p>`
+            }
+          </div>
+        </section>
+        <section class="ending-relations">
+          <h2>${this.t("relationsTitle")}</h2>
+          <ul>${npcRows || `<li class="muted">${en ? "No relationships established." : "尚未建立人物关系。"}</li>`}</ul>
+        </section>
+        <section class="ending-progress">
+          <h2>${en ? "Collections" : "收集进度"}</h2>
+          <p>${en ? `Hidden routes ${this.save.hiddenRoutes.length} · Alternate endings ${this.save.alternateEndings.length}` : `高阶路线 ${this.save.hiddenRoutes.length} · 备选结局 ${this.save.alternateEndings.length}`}</p>
+        </section>
+      </main>
+    `;
+  }
+
   private endingMarkup(): string {
     if (!isChapterComplete(this.save, 9)) {
       return `
@@ -1617,6 +2714,7 @@ export class AdaptiveGameApp {
       <section class="ending-panel">
         <h2>${this.roleDisplay(role).name} · ${styleLabels[style]}${en ? " Ending" : "结局"}</h2>
         <p>${endings[role]} ${styleEndings[style]} ${legacy} ${randomLegacy}</p>
+        <button data-action="open-ending">${this.t("endingTitle")}</button>
       </section>
     `;
   }
@@ -1718,6 +2816,11 @@ export class AdaptiveGameApp {
           <h2>${en ? "Cloud Auto-Match" : "云端自动匹配"}</h2>
           <p>${en ? "Connect to the room server and match automatically without exchanging invite codes. The server must be deployed or running locally first." : "连接服务端后自动匹配对手，不需要手动交换邀请码。需先部署或本地运行房间服务器。"}</p>
           <button class="primary" data-action="cloud-match">${en ? "Start Matching" : "开始匹配"}</button>
+          ${
+            this.lastRoomId
+              ? `<button data-action="cloud-reconnect">${this.t("reconnectRoom")} · ${this.lastRoomId}</button>`
+              : ""
+          }
           <p class="status-text">${this.cloudStatus}</p>
         </div>
       </div>
@@ -1726,6 +2829,7 @@ export class AdaptiveGameApp {
 
   private renderDuel(): void {
     const engine = this.duelEngine;
+    const en = this.language === "en";
     if (!engine) {
       this.root.innerHTML = `
         <main class="duel-waiting" aria-label="${this.language === "en" ? "Waiting for opponent" : "等待对手"}">
@@ -1767,20 +2871,7 @@ export class AdaptiveGameApp {
         }
       }
       const result = engine.toResult();
-      this.root.innerHTML = `
-        <main class="duel-result" aria-label="${this.language === "en" ? "Duel result" : "对决结果"}">
-          <section class="result-hero">
-            <p class="eyebrow">${this.language === "en" ? "Duel Complete" : "对决结束"}</p>
-            <h1>${escapeHtml(result.winnerName)} ${this.language === "en" ? "wins" : "获胜"}</h1>
-            <div class="result-scores">
-              <span>${engine.players[0].name} <strong>${result.scores[0]}</strong></span>
-              <span>${engine.players[1].name} <strong>${result.scores[1]}</strong></span>
-            </div>
-            <button class="primary" data-action="open-duel-lobby">${this.language === "en" ? "Back to Lobby" : "返回大厅"}</button>
-            <button data-action="open-map">${this.t("menuContinue")}</button>
-          </section>
-        </main>
-      `;
+      this.root.innerHTML = this.duelResultMarkup(engine, result);
       return;
     }
 
@@ -1788,6 +2879,36 @@ export class AdaptiveGameApp {
     const nodeView = this.storyNodeDisplay(node);
     const lastResult = engine.roundResults[engine.currentRound - 1];
     const roundKey = `${engine.currentRound}-${engine.picks[0] ?? ""}-${engine.picks[1] ?? ""}`;
+    if (this.duelPredictionPhase) {
+      this.root.innerHTML = `
+        <main class="duel-predict" aria-label="${this.t("duelPredict")}">
+          <p class="eyebrow">${this.t("duelPredict")}</p>
+          <h1>${en ? "Read the opponent before the reveal" : "揭晓前，先读对手"}</h1>
+          <p class="muted">${escapeHtml(nodeView.stake)}</p>
+          <div class="duel-predict-options">
+            ${nodeView.options
+              .map(
+                (option, index) => `
+                  <button data-action="duel-predict" data-option="${index}">
+                    <strong>${String.fromCharCode(65 + index)}</strong>
+                    <span>${escapeHtml(option.label)}</span>
+                  </button>
+                `
+              )
+              .join("")}
+          </div>
+        </main>
+      `;
+      return;
+    }
+    if (this.duelRevealing) {
+      this.root.innerHTML =
+        '<main class="duel-reveal" aria-label="' + this.t("duelReveal") + '">' +
+        '<h1>' + this.t("duelReveal") + '</h1>' +
+        '<div class="reveal-spinner"></div>' +
+        '</main>';
+      return;
+    }
     this.root.innerHTML = `
       <header class="topbar duel-top">
         <div class="brand">${this.t("duelTitle")}</div>
@@ -1871,6 +2992,7 @@ export class AdaptiveGameApp {
         const nodeId = actionTarget.dataset.node;
         if (nodeId) {
           this.audio.ui();
+          this.replayMode = false;
           this.storyNodeId = nodeId;
           this.storyHintRevealed = false;
           this.pendingBranchNodeId = undefined;
@@ -1916,10 +3038,30 @@ export class AdaptiveGameApp {
       case "open-map":
         this.audio.ui();
         this.interferenceText = undefined;
+        this.replayMode = false;
         this.selectedChapter =
           this.save.unlockedChapters[this.save.unlockedChapters.length - 1] ?? 1;
         this.show("map");
         break;
+      case "replay-chapter": {
+        const chapterId = Number(actionTarget.dataset.chapter);
+        const chapter = CHAPTERS.find((item) => item.id === chapterId);
+        if (chapter && isChapterComplete(this.save, chapter.id)) {
+          this.audio.ui();
+          recordAlternateEnding(this.save, `replay-${chapter.id}`);
+          this.replayMode = true;
+          this.storyNodeId = chapter.nodeIds[0];
+          this.storyHintRevealed = false;
+          this.pendingBranchNodeId = undefined;
+          this.pendingChapterTransition = undefined;
+          this.lastUnlockedAchievement = undefined;
+          this.lastOutcome = undefined;
+          this.lastOutcomeNodeId = undefined;
+          this.interferenceText = undefined;
+          this.show("story");
+        }
+        break;
+      }
       case "open-ability":
         this.audio.ui();
         this.show("ability");
@@ -1928,6 +3070,41 @@ export class AdaptiveGameApp {
         this.audio.ui();
         this.show("report");
         break;
+      case "open-ending":
+        if (isChapterComplete(this.save, 9)) {
+          this.audio.ui();
+          this.show("ending");
+        }
+        break;
+      case "ending-back":
+        this.audio.ui();
+        this.show("report");
+        break;
+      case "ending-share": {
+        const textarea = this.root.querySelector<HTMLTextAreaElement>(
+          "#ending-share-target"
+        );
+        const summary = profileSummary(this.save);
+        const text =
+          `${this.save.profile.name} · ${summary.rank.name} · ${this.language === "en" ? "Ascend" : "升维"}\n` +
+          `${this.language === "en" ? `Total Ability ${summary.total}` : `综合能力值 ${summary.total}`}`;
+        if (textarea) {
+          textarea.value = text;
+          void navigator.clipboard?.writeText(text);
+        }
+        this.audio.ui();
+        break;
+      }
+      case "ending-choice": {
+        const ending = actionTarget.dataset.ending;
+        if (ending) {
+          this.endingChoice = ending;
+          recordAlternateEnding(this.save, `ending-${ending}`);
+          this.audio.expert();
+          this.renderEnding();
+        }
+        break;
+      }
       case "open-achievements":
         this.audio.ui();
         this.show("achievements");
@@ -1935,6 +3112,110 @@ export class AdaptiveGameApp {
       case "open-relations":
         this.audio.ui();
         this.show("relations");
+        break;
+      case "open-settings":
+        this.audio.ui();
+        this.show("settings");
+        break;
+      case "open-assessment":
+        this.pendingProfile = structuredClone(this.save.profile);
+        this.assessmentAnswers = [];
+        this.assessmentStep = 0;
+        this.audio.ui();
+        this.show("assessment");
+        break;
+      case "open-training": {
+        const abilityId = actionTarget.dataset.ability as AbilityId | undefined;
+        if (abilityId && EXPANDED_TRAINING[abilityId]) {
+          this.audio.ui();
+          this.trainingReturnView =
+            this.view === "report" || this.view === "assessmentResult"
+              ? this.view
+              : "ability";
+          this.trainingAbilityId = abilityId;
+          this.trainingStage = "story";
+          this.trainingStep = 0;
+          this.trainingAnswers = Array(
+            EXPANDED_TRAINING[abilityId].questions.length
+          ).fill(0);
+          this.trainingResult = undefined;
+          this.show("training");
+        }
+        break;
+      }
+      case "training-back":
+        this.audio.ui();
+        this.show(
+          this.trainingReturnView === "training"
+            ? "ability"
+            : this.trainingReturnView
+        );
+        break;
+      case "training-start-quiz":
+        this.audio.trainingStart();
+        this.trainingStage = "quiz";
+        this.trainingStep = 0;
+        this.trainingAnswers = Array(
+          EXPANDED_TRAINING[this.trainingAbilityId].questions.length
+        ).fill(0);
+        this.renderTraining();
+        break;
+      case "training-option": {
+        const trainingQuestion = EXPANDED_TRAINING[this.trainingAbilityId].questions[this.trainingStep];
+        this.trainingAnswers[this.trainingStep] = Number(
+          actionTarget.dataset.option
+        );
+        if (Number(actionTarget.dataset.option) === trainingQuestion.answer) {
+          this.audio.trainingCorrect();
+        } else {
+          this.audio.ui();
+        }
+        this.renderTraining();
+        break;
+      }
+      case "training-next":
+        this.trainingStep = Math.min(
+          EXPANDED_TRAINING[this.trainingAbilityId].questions.length - 1,
+          this.trainingStep + 1
+        );
+        this.audio.ui();
+        this.renderTraining();
+        break;
+      case "training-prev":
+        this.trainingStep = Math.max(0, this.trainingStep - 1);
+        this.audio.ui();
+        this.renderTraining();
+        break;
+      case "training-submit": {
+        const questions = EXPANDED_TRAINING[this.trainingAbilityId].questions;
+        const scored = scoreTrainingAnswers(questions, this.trainingAnswers);
+        const result = applyTrainingResult(
+          this.save,
+          this.trainingAbilityId,
+          scored.correct,
+          scored.total
+        );
+        this.trainingResult = { ...result, answered: scored.answered };
+        this.trainingStage = "result";
+        if (result.correct === scored.total) {
+          this.audio.trainingMastery();
+        } else if (result.correct >= 1) {
+          this.audio.trainingCorrect();
+        } else {
+          this.audio.risk();
+        }
+        this.renderTraining();
+        break;
+      }
+      case "training-restart":
+        this.trainingStage = "story";
+        this.trainingStep = 0;
+        this.trainingAnswers = Array(
+          EXPANDED_TRAINING[this.trainingAbilityId].questions.length
+        ).fill(0);
+        this.trainingResult = undefined;
+        this.audio.ui();
+        this.renderTraining();
         break;
       case "export-save":
         this.exportSave();
@@ -1953,6 +3234,47 @@ export class AdaptiveGameApp {
         break;
       case "cloud-leaderboard":
         void this.cloudLeaderboard();
+        break;
+      case "cloud-login-token": {
+        const input = this.root.querySelector<HTMLInputElement>("input[data-login-token]");
+        const token = input?.value.trim() ?? "";
+        if (!token) {
+          this.cloudStatus =
+            this.language === "en" ? "Paste an account token first." : "请先粘贴账号 Token";
+          this.renderReport();
+          break;
+        }
+        this.cloudToken = token;
+        localStorage.setItem("adaptive-ascent-cloud-token", token);
+        void this.loginWithToken();
+        break;
+      }
+      case "cloud-register":
+        void this.cloudSync();
+        break;
+      case "cloud-login-recovery": {
+        const input = this.root.querySelector<HTMLInputElement>("input[data-recovery-code]");
+        const code = input?.value.trim() ?? "";
+        if (!code) {
+          this.cloudStatus =
+            this.language === "en"
+              ? "Paste a recovery code first."
+              : "请先粘贴恢复码";
+          this.renderReport();
+          break;
+        }
+        void this.loginWithRecovery(code);
+        break;
+      }
+      case "cloud-logout":
+        this.cloudToken = "";
+        this.cloudRecoveryCode = "";
+        this.cloudAccountName = undefined;
+        localStorage.removeItem("adaptive-ascent-cloud-token");
+        localStorage.removeItem("adaptive-ascent-recovery-code");
+        this.cloudStatus =
+          this.language === "en" ? "Logged out locally" : "已退出本地账号";
+        this.renderReport();
         break;
       case "cloud-use-remote":
         if (this.cloudRemoteSave) {
@@ -1983,10 +3305,19 @@ export class AdaptiveGameApp {
       case "cloud-match":
         void this.cloudMatch();
         break;
+      case "cloud-reconnect":
+        void this.cloudReconnect();
+        break;
       case "toggle-sound":
         this.muted = !this.muted;
         localStorage.setItem("adaptive-ascent-muted", this.muted ? "1" : "0");
         this.audio.setMuted(this.muted);
+        this.render();
+        break;
+      case "toggle-music":
+        this.musicMuted = !this.musicMuted;
+        localStorage.setItem("adaptive-ascent-music", this.musicMuted ? "1" : "0");
+        this.audio.setMusicMuted(this.musicMuted);
         this.render();
         break;
       case "toggle-language":
@@ -2009,6 +3340,313 @@ export class AdaptiveGameApp {
           this.show("profile");
         }
         break;
+      case "open-trial":
+        this.audio.ui();
+        this.activeTrialId = undefined;
+        this.trialAnswerResult = undefined;
+        this.lastTrialAnswer = undefined;
+        this.trialObserveRevealed = false;
+        this.trialAllyChoice = undefined;
+        this.trialAllyCorrect = undefined;
+        this.trialSuspectChoice = undefined;
+        this.trialSuspectCorrect = undefined;
+        this.trialIntelChoice = undefined;
+        this.trialIntelCorrect = undefined;
+        this.trialFollowUpAnswer = undefined;
+        this.trialFollowUpAnswered = false;
+        this.trialSummaryPending = false;
+        this.trialSummaryKeywordCorrect = undefined;
+        this.activePracticeTaskId = undefined;
+        this.show("trial");
+        break;
+      case "trial-stage": {
+        const stageId = actionTarget.dataset.stage ?? "";
+        const stage = TRIAL_STAGES.find((item) => item.id === stageId);
+        if (stage && canEnterTrial(this.save, stage)) {
+          this.audio.trainingStart();
+          this.activeTrialId = stage.id;
+          this.trialAnswerResult = undefined;
+          this.lastTrialAnswer = undefined;
+          this.trialObserveRevealed =
+            stage.style === "wolf" &&
+            this.save.trialItems.includes("矛盾镜");
+          this.trialAllyChoice = undefined;
+          this.trialAllyCorrect = undefined;
+          this.trialSuspectChoice = undefined;
+          this.trialSuspectCorrect = undefined;
+          this.trialIntelChoice = undefined;
+          this.trialIntelCorrect = undefined;
+          this.trialFollowUpAnswer = undefined;
+          this.trialFollowUpAnswered = false;
+          this.trialSummaryPending = false;
+          this.trialSummaryKeywordCorrect = undefined;
+          this.show("trialBattle");
+        }
+        break;
+      }
+      case "trial-observe":
+        this.trialObserveRevealed = true;
+        this.audio.ui();
+        this.renderTrialBattle();
+        break;
+      case "trial-ally":
+        this.trialAllyChoice = actionTarget.dataset.ally;
+        this.audio.ui();
+        this.renderTrialBattle();
+        break;
+      case "trial-suspect":
+        this.trialSuspectChoice = actionTarget.dataset.suspect;
+        this.audio.ui();
+        this.renderTrialBattle();
+        break;
+      case "trial-intel":
+        this.trialIntelChoice = actionTarget.dataset.intel;
+        this.audio.ui();
+        this.renderTrialBattle();
+        break;
+      case "trial-submit-summary": {
+        const activeStage = TRIAL_STAGES.find(
+          (item) => item.id === this.activeTrialId
+        );
+        if (!activeStage) break;
+        const question = trialQuestionFor(activeStage);
+        const textarea = this.root.querySelector<HTMLTextAreaElement>(
+          "textarea[data-trial-summary]"
+        );
+        const summary = textarea?.value ?? "";
+        if (!submitTrialSummary(this.save, activeStage.id, summary)) {
+          this.audio.risk();
+          break;
+        }
+        const keywordMap: Record<string, string[]> = {
+          mba_cashflow: ["现金贡献", "现金流", "验证"],
+          mba_supplychain: ["交付", "替代", "双源"],
+          mba_people: ["成果", "陪跑", "梯队"],
+          domain_marketing: ["转化", "验证", "渠道"],
+          domain_finance: ["成本", "口径", "税务"],
+          domain_legal: ["风险", "边界", "协议"],
+          domain_customer: ["补救", "计划", "客户"],
+          domain_employee: ["成长", "底线", "激励"],
+          domain_delivery: ["风险", "关键结果", "资源"]
+        };
+        this.trialSummaryKeywordCorrect =
+          keywordMap[activeStage.id]?.some((keyword) =>
+            summary.includes(keyword)
+          ) ?? false;
+        if (this.trialSummaryKeywordCorrect) {
+          this.save.masteryPoints += 1;
+        }
+        const firstCorrect = question.followUp
+          ? this.trialFollowUpAnswer === question.answer
+          : true;
+        const finalCorrect =
+          this.lastTrialAnswer ===
+          (question.followUp ? question.followUp.answer : question.answer);
+        const correct = firstCorrect && finalCorrect;
+        const abilityId =
+          activeStage.source.kind === "training"
+            ? activeStage.source.abilityId
+            : activeStage.gates[0].abilityId;
+        if (activeStage.allies && activeStage.correctAlly) {
+          this.trialAllyCorrect =
+            this.trialAllyChoice === activeStage.correctAlly;
+          if (this.trialAllyCorrect) this.save.masteryPoints += 1;
+        }
+        if (activeStage.suspects && activeStage.correctSuspect) {
+          this.trialSuspectCorrect =
+            this.trialSuspectChoice === activeStage.correctSuspect;
+          if (this.trialSuspectCorrect) this.save.masteryPoints += 1;
+        }
+        if (activeStage.intelChoices && activeStage.correctIntel) {
+          this.trialIntelCorrect =
+            this.trialIntelChoice === activeStage.correctIntel;
+          if (this.trialIntelCorrect) this.save.masteryPoints += 1;
+        }
+        this.trialAnswerResult = applyTrialAnswer(
+          this.save,
+          activeStage.id,
+          abilityId,
+          correct,
+          trialCostFor(this.save, activeStage),
+          trialRewardExpFor(this.save, activeStage),
+          activeStage.rewardItem,
+          activeStage.resourceCost ?? 0,
+          this.save.trialItems.includes("重启铃") ? 3 : 6
+        );
+        if (correct) {
+          this.audio.trainingMastery();
+        } else {
+          this.audio.risk();
+        }
+        this.renderTrialBattle();
+        break;
+      }
+      case "trial-option": {
+        const activeStage = TRIAL_STAGES.find((item) => item.id === this.activeTrialId);
+        if (!activeStage) break;
+        const question = trialQuestionFor(activeStage);
+        const selected = Number(actionTarget.dataset.option);
+        if (question.followUp && !this.trialFollowUpAnswered) {
+          this.trialFollowUpAnswer = selected;
+          this.trialFollowUpAnswered = true;
+          this.renderTrialBattle();
+          return;
+        }
+        if (
+          activeStage.source.kind === "custom" &&
+          !this.trialSummaryPending
+        ) {
+          this.lastTrialAnswer = selected;
+          this.trialSummaryPending = true;
+          this.renderTrialBattle();
+          return;
+        }
+        const firstCorrect = question.followUp
+          ? this.trialFollowUpAnswer === question.answer
+          : true;
+        const finalCorrect =
+          selected ===
+          (question.followUp ? question.followUp.answer : question.answer);
+        const correct = firstCorrect && finalCorrect;
+        const abilityId =
+          activeStage.source.kind === "training"
+            ? activeStage.source.abilityId
+            : activeStage.gates[0].abilityId;
+        this.lastTrialAnswer = selected;
+        if (activeStage.allies && activeStage.correctAlly) {
+          if (this.save.trialItems.includes("同盟令")) {
+            this.trialAllyChoice = activeStage.correctAlly;
+          }
+          this.trialAllyCorrect =
+            this.trialAllyChoice === activeStage.correctAlly;
+          if (this.trialAllyCorrect) {
+            this.save.masteryPoints += 1;
+          }
+        }
+        if (
+          activeStage.suspects &&
+          activeStage.correctSuspect
+        ) {
+          this.trialSuspectCorrect =
+            this.trialSuspectChoice === activeStage.correctSuspect;
+          if (this.trialSuspectCorrect) {
+            this.save.masteryPoints += 1;
+          }
+        }
+        if (
+          activeStage.intelChoices &&
+          activeStage.correctIntel
+        ) {
+          this.trialIntelCorrect =
+            this.trialIntelChoice === activeStage.correctIntel;
+          if (this.trialIntelCorrect) {
+            this.save.masteryPoints += 1;
+          }
+        }
+        this.trialAnswerResult = applyTrialAnswer(
+          this.save,
+          activeStage.id,
+          abilityId,
+          correct,
+          trialCostFor(this.save, activeStage),
+          trialRewardExpFor(this.save, activeStage),
+          activeStage.rewardItem,
+          activeStage.resourceCost ?? 0,
+          this.save.trialItems.includes("重启铃") ? 3 : 6
+        );
+        if (correct) {
+          this.audio.trainingMastery();
+        } else {
+          this.audio.risk();
+        }
+        this.renderTrialBattle();
+        break;
+      }
+      case "trial-next":
+        this.audio.ui();
+        this.activeTrialId = undefined;
+        this.trialAnswerResult = undefined;
+        this.lastTrialAnswer = undefined;
+        this.trialObserveRevealed = false;
+        this.trialAllyChoice = undefined;
+        this.trialAllyCorrect = undefined;
+        this.trialSuspectChoice = undefined;
+        this.trialSuspectCorrect = undefined;
+        this.trialIntelChoice = undefined;
+        this.trialIntelCorrect = undefined;
+        this.trialFollowUpAnswer = undefined;
+        this.trialFollowUpAnswered = false;
+        this.trialSummaryPending = false;
+        this.trialSummaryKeywordCorrect = undefined;
+        this.show("trial");
+        break;
+      case "practice-task": {
+        const taskId = actionTarget.dataset.task ?? "";
+        const task = PRACTICE_TASKS.find((item) => item.id === taskId);
+        if (task && !this.save.completedPracticeTasks.includes(task.id)) {
+          this.activePracticeTaskId = task.id;
+          this.audio.trainingCorrect();
+          this.renderTrial();
+        }
+        break;
+      }
+      case "practice-submit": {
+        const task = PRACTICE_TASKS.find(
+          (item) => item.id === this.activePracticeTaskId
+        );
+        const textarea = this.root.querySelector<HTMLTextAreaElement>(
+          "textarea[data-practice-result]"
+        );
+        const text = textarea?.value.trim() ?? "";
+        if (
+          task &&
+          text.length >= 5 &&
+          completePracticeTask(
+            this.save,
+            task.id,
+            task.rewardAbility,
+            task.rewardEnergy,
+            task.rewardExp
+          )
+        ) {
+          this.activePracticeTaskId = undefined;
+          this.audio.trainingMastery();
+          this.renderTrial();
+        } else {
+          this.audio.risk();
+        }
+        break;
+      }
+      case "trial-rest":
+        if (applyDailyTrialRecovery(this.save)) {
+          this.audio.trainingCorrect();
+          this.renderTrial();
+        }
+        break;
+      case "trial-buy-energy":
+        if (buyTrialEnergy(this.save)) {
+          this.audio.trainingCorrect();
+          this.renderTrial();
+        }
+        break;
+      case "trial-buy-energy-influence":
+        if (buyTrialEnergyWithInfluence(this.save)) {
+          this.audio.trainingCorrect();
+          this.renderTrial();
+        }
+        break;
+      case "trial-invest-accelerator":
+        if (investTrialAccelerator(this.save)) {
+          this.audio.trainingCorrect();
+          this.renderTrial();
+        }
+        break;
+      case "trial-hire-ally":
+        if (hireTrialAlly(this.save)) {
+          this.audio.trainingCorrect();
+          this.renderTrial();
+        }
+        break;
       case "open-duel":
         this.audio.ui();
         this.show("duelLobby");
@@ -2020,6 +3658,9 @@ export class AdaptiveGameApp {
         break;
       case "create-profile":
         this.createProfileFromForm();
+        break;
+      case "start-without-assessment":
+        this.startWithoutAssessment();
         break;
       case "assessment-option":
         this.assessmentAnswers[this.assessmentStep] = Number(
@@ -2055,12 +3696,16 @@ export class AdaptiveGameApp {
         break;
       case "claim-challenge": {
         const challengeId = actionTarget.dataset.challenge ?? "";
-        if (!this.save.claimedChallenges.includes(challengeId)) {
+        const today = todayKey();
+        if (!(this.save.claimedDaily[today] ?? []).includes(challengeId)) {
           const reward =
             dailyChallenges(this.save).find(
               (challenge) => challenge.id === challengeId
             )?.reward ?? 3;
-          this.save.claimedChallenges.push(challengeId);
+          this.save.claimedDaily[today] = [
+            ...(this.save.claimedDaily[today] ?? []),
+            challengeId
+          ];
           this.save.masteryPoints += reward;
           saveState(this.save);
           this.audio.expert();
@@ -2082,7 +3727,11 @@ export class AdaptiveGameApp {
           this.audio.ui();
           this.save.difficulty = difficulty;
           saveState(this.save);
-          this.renderMap();
+          if (this.view === "settings") {
+            this.renderSettings();
+          } else {
+            this.renderMap();
+          }
         }
         break;
       }
@@ -2125,6 +3774,21 @@ export class AdaptiveGameApp {
       case "continue-branch": {
         const branchId = this.pendingBranchNodeId;
         if (branchId) {
+          if (branchId.startsWith("ability-")) {
+            this.hiddenBranchAbilityId = branchId.slice(
+              "ability-".length
+            ) as AbilityId;
+            recordHiddenRoute(
+              this.save,
+              `hidden-${this.hiddenBranchAbilityId}`
+            );
+            this.pendingBranchNodeId = undefined;
+            this.lastOutcome = undefined;
+            this.lastOutcomeNodeId = undefined;
+            this.audio.ui();
+            this.show("hiddenBranch");
+            break;
+          }
           this.storyNodeId = branchId;
           this.storyHintRevealed = false;
           this.pendingBranchNodeId = undefined;
@@ -2168,6 +3832,26 @@ export class AdaptiveGameApp {
       case "duel-pick":
         this.duelPick(actionTarget);
         break;
+      case "duel-predict": {
+        const prediction = Number(actionTarget.dataset.option);
+        const engine = this.duelEngine;
+        if (
+          engine?.currentRound === 0 &&
+          engine?.roundResults.length === 0
+        ) {
+          this.duelPredictionHistory = [];
+        }
+        this.duelPrediction = prediction;
+        this.duelPredictionPhase = false;
+        this.duelPredictionCorrect = engine?.picks[1] === prediction;
+        this.duelPredictionHistory.push(Boolean(this.duelPredictionCorrect));
+        if (this.duelPredictionCorrect && engine) {
+          engine.scores[0] += 10;
+        }
+        this.audio.duelPick();
+        this.maybeRevealDuelRound();
+        break;
+      }
       case "pass-local":
         this.localPassed = true;
         this.hotSeatTurn = 1;
@@ -2201,6 +3885,17 @@ export class AdaptiveGameApp {
     if (target.dataset.select === "rounds") {
       this.duelRounds = Number(target.value) || 3;
     }
+    if (target.dataset.select === "music-volume") {
+      this.musicVolume = Number(target.value) || 0;
+      localStorage.setItem(
+        "adaptive-ascent-music-volume",
+        String(this.musicVolume)
+      );
+      this.audio.setMusicVolume(this.musicVolume);
+      if (this.view === "settings") {
+        this.renderSettings();
+      }
+    }
     if (target.dataset.importSave && target instanceof HTMLInputElement) {
       void this.importSave(target);
     }
@@ -2215,6 +3910,21 @@ export class AdaptiveGameApp {
     this.assessmentAnswers = [];
     this.assessmentStep = 0;
     this.show("assessment");
+  }
+
+  private startWithoutAssessment(): void {
+    const input = this.root.querySelector<HTMLInputElement>(
+      "input[name='playerName']"
+    );
+    const name =
+      input?.value.trim() || (this.language === "en" ? "You" : "你");
+    const profile = createProfile(name, this.pendingRole);
+    activateProfile(this.save, profile);
+    this.audio.startAmbient();
+    this.audio.setMusicMuted(this.musicMuted);
+    this.audio.setMusicVolume(this.musicVolume);
+    this.selectedChapter = 1;
+    this.show("map");
   }
 
   private finishProfile(applyAssessment: boolean): void {
@@ -2237,6 +3947,8 @@ export class AdaptiveGameApp {
     activateProfile(this.save, this.pendingProfile);
     this.pendingProfile = undefined;
     this.audio.startAmbient();
+    this.audio.setMusicMuted(this.musicMuted);
+    this.audio.setMusicVolume(this.musicVolume);
     this.audio.expert();
     this.selectedChapter = 1;
     this.show("assessmentResult");
@@ -2252,6 +3964,32 @@ export class AdaptiveGameApp {
     this.stopRoundTimer();
     this.interferenceText = undefined;
     if (!this.storyNodeId) {
+      return;
+    }
+    if (this.replayMode) {
+      const roleNode = getNodeForRole(
+        this.save.profile.role,
+        this.storyNodeId
+      );
+      const rawOption = roleNode.options[optionIndex];
+      const displayOption =
+        this.storyNodeDisplay(roleNode).options[optionIndex];
+      const outcome: ChoiceOutcome = {
+        option: displayOption,
+        optionIndex,
+        gainedAbilityIds: (Object.entries(rawOption.effects) as Array<
+          [AbilityId, number]
+        >)
+          .filter(([, value]) => value > 0)
+          .map(([id]) => id),
+        resourceDeltas: rawOption.resources,
+        qualityScore: scoreQuality(rawOption.quality, this.save.profile)
+      };
+      this.lastOutcome = outcome;
+      this.lastOutcomeNodeId = this.storyNodeId;
+      this.pendingBranchNodeId = undefined;
+      this.pendingChapterTransition = undefined;
+      this.renderStory();
       return;
     }
     const beforeIds = ACHIEVEMENTS.filter((achievement) =>
@@ -2278,8 +4016,17 @@ export class AdaptiveGameApp {
       baseNode.kind === "main" && isChapterComplete(this.save, baseNode.chapterId)
         ? baseNode.chapterId
         : undefined;
-    this.pendingBranchNodeId =
-      outcome.option.branchTo?.[this.save.profile.role];
+    const highAbility = (
+      Object.keys(outcome.option.effects) as AbilityId[]
+    ).find((id) => abilityLevel(this.save.profile.abilities[id]) >= 3);
+    if (outcome.option.quality === "expert" && highAbility) {
+      this.hiddenBranchAbilityId = highAbility;
+      this.pendingBranchNodeId = `ability-${highAbility}`;
+    } else {
+      this.hiddenBranchAbilityId = undefined;
+      this.pendingBranchNodeId =
+        outcome.option.branchTo?.[this.save.profile.role];
+    }
     if (outcome.option.quality === "expert") {
       this.audio.expert();
     } else if (outcome.option.quality === "partial") {
@@ -2454,6 +4201,7 @@ export class AdaptiveGameApp {
     if (message.kind === "pick" && this.duelEngine && this.remotePeer) {
       const opponentIndex = this.remotePlayerIndex === 0 ? 1 : 0;
       this.duelEngine.pick(opponentIndex, message.optionIndex);
+      this.maybeRevealDuelRound();
       this.renderDuel();
     }
   }
@@ -2482,6 +4230,32 @@ export class AdaptiveGameApp {
     this.show("duel");
   }
 
+  private maybeRevealDuelRound(): void {
+    const engine = this.duelEngine;
+    if (!engine || this.duelRevealing) return;
+    if (engine.picks[0] !== null && engine.picks[1] !== null) {
+      if (
+        (this.duelMode === "ai" || this.duelMode === "local") &&
+        this.duelPrediction === undefined
+      ) {
+        this.duelPredictionPhase = true;
+        this.renderDuel();
+        return;
+      }
+      this.duelRevealing = true;
+      this.renderDuel();
+      this.duelRevealTimer = window.setTimeout(() => {
+        this.duelRevealing = false;
+        this.duelRevealTimer = undefined;
+        engine.resolvePendingRound();
+        this.duelPrediction = undefined;
+        this.duelPredictionPhase = false;
+        this.duelPredictionCorrect = undefined;
+        this.renderDuel();
+      }, 900);
+    }
+  }
+
   private duelPick(target: HTMLElement): void {
     const engine = this.duelEngine;
     if (!engine) {
@@ -2493,7 +4267,7 @@ export class AdaptiveGameApp {
       engine.pick(0, optionIndex);
       window.setTimeout(() => {
         engine.aiPick(1);
-        this.renderDuel();
+        this.maybeRevealDuelRound();
       }, 650);
       this.renderDuel();
       return;
@@ -2510,6 +4284,7 @@ export class AdaptiveGameApp {
         this.hotSeatTurn = 0;
         this.localPassed = false;
       }
+      this.maybeRevealDuelRound();
       this.renderDuel();
       return;
     }
@@ -2520,6 +4295,7 @@ export class AdaptiveGameApp {
       } else if (this.remotePeer) {
         this.remotePeer.send({ kind: "pick", optionIndex });
       }
+      this.maybeRevealDuelRound();
       this.renderDuel();
     }
   }
@@ -2564,6 +4340,11 @@ export class AdaptiveGameApp {
   }
 
   private cleanupRemote(): void {
+    if (this.duelRevealTimer !== undefined) {
+      window.clearTimeout(this.duelRevealTimer);
+      this.duelRevealTimer = undefined;
+    }
+    this.duelRevealing = false;
     this.remotePeer?.close();
     this.remotePeer = undefined;
     this.remoteInviteCode = "";
@@ -2582,7 +4363,7 @@ export class AdaptiveGameApp {
     const url = URL.createObjectURL(blob);
     const anchor = document.createElement("a");
     anchor.href = url;
-    anchor.download = `${this.language === "en" ? "Adaptive-Ascent" : "权变之路"}-${this.save.profile.name}-${this.language === "en" ? "save" : "存档"}.json`;
+    anchor.download = `${this.language === "en" ? "Ascend" : "升维"}-${this.save.profile.name}-${this.language === "en" ? "save" : "存档"}.json`;
     anchor.click();
     URL.revokeObjectURL(url);
     this.audio.ui();
@@ -2672,7 +4453,7 @@ export class AdaptiveGameApp {
     const url = URL.createObjectURL(blob);
     const anchor = document.createElement("a");
     anchor.href = url;
-    anchor.download = `${en ? "Adaptive-Ascent" : "权变之路"}-${this.save.profile.name}-${en ? "report" : "报告"}.md`;
+    anchor.download = `${en ? "Ascend" : "升维"}-${this.save.profile.name}-${en ? "report" : "报告"}.md`;
     anchor.click();
     URL.revokeObjectURL(url);
     this.audio.ui();
@@ -2713,13 +4494,36 @@ export class AdaptiveGameApp {
     switch (message.type) {
       case "registered": {
         this.cloudToken = message.token;
+        this.cloudAccountName = (message.account as { name?: string })?.name;
+        const recovery = (message.account as { recoveryCode?: string })
+          ?.recoveryCode;
+        if (recovery) {
+          this.cloudRecoveryCode = recovery;
+          localStorage.setItem(
+            "adaptive-ascent-recovery-code",
+            recovery
+          );
+        }
         localStorage.setItem("adaptive-ascent-cloud-token", message.token);
         this.cloudStatus = "云端账号已创建";
         this.audio.remoteConnected();
         this.roomClient?.cloudSave(message.token, this.save);
         break;
       }
+      case "recovery_reissued": {
+        this.cloudRecoveryCode = message.code;
+        localStorage.setItem(
+          "adaptive-ascent-recovery-code",
+          message.code
+        );
+        this.cloudStatus =
+          this.language === "en"
+            ? `Recovery code renewed: ${message.code}`
+            : `恢复码已更换：${message.code}`;
+        break;
+      }
       case "logged_in": {
+        this.cloudAccountName = (message.account as { name?: string })?.name;
         this.cloudStatus = "云端账号已连接";
         this.audio.remoteConnected();
         if (this.pendingCloudAction === "load") {
@@ -2794,6 +4598,32 @@ export class AdaptiveGameApp {
     }
   }
 
+  private async loginWithToken(): Promise<void> {
+    this.pendingCloudAction = "sync";
+    this.cloudStatus = "正在登录已有账号…";
+    this.renderReport();
+    try {
+      const client = await this.ensureCloudClient();
+      client.login(this.cloudToken);
+    } catch (error) {
+      this.cloudStatus = error instanceof Error ? error.message : "云端登录失败";
+      this.renderReport();
+    }
+  }
+
+  private async loginWithRecovery(code: string): Promise<void> {
+    this.pendingCloudAction = "sync";
+    this.cloudStatus = "正在用恢复码登录…";
+    this.renderReport();
+    try {
+      const client = await this.ensureCloudClient();
+      client.loginRecovery(code);
+    } catch (error) {
+      this.cloudStatus = error instanceof Error ? error.message : "恢复码登录失败";
+      this.renderReport();
+    }
+  }
+
   private async cloudSync(): Promise<void> {
     this.pendingCloudAction = "sync";
     this.cloudStatus = "正在连接云端…";
@@ -2803,14 +4633,28 @@ export class AdaptiveGameApp {
       if (this.cloudToken) {
         client.login(this.cloudToken);
       } else {
+        if (!this.cloudRecoveryCode) {
+          this.cloudRecoveryCode = Math.random()
+            .toString(36)
+            .slice(2, 10)
+            .toUpperCase();
+          localStorage.setItem(
+            "adaptive-ascent-recovery-code",
+            this.cloudRecoveryCode
+          );
+        }
         client.register(
           this.save.profile.name,
           this.save.profile.role,
-          this.save
+          this.save,
+          this.cloudRecoveryCode
         );
       }
     } catch (error) {
       this.cloudStatus = error instanceof Error ? error.message : "云端连接失败";
+      if (this.cloudStatus === "无法连接房间服务器") {
+        this.cloudStatus = this.t("accountOffline");
+      }
       this.renderReport();
     }
   }
@@ -2863,6 +4707,27 @@ export class AdaptiveGameApp {
     }
   }
 
+  private async cloudReconnect(): Promise<void> {
+    if (!this.lastRoomId) return;
+    this.cloudStatus =
+      this.language === "en"
+        ? "Reconnecting to the last room..."
+        : "正在重连上次房间…";
+    this.renderDuelLobby();
+    try {
+      const client = await this.ensureCloudClient();
+      client.reconnect(
+        this.lastRoomId,
+        this.save.profile.name,
+        this.save.profile.role,
+        this.save
+      );
+    } catch (error) {
+      this.cloudStatus = error instanceof Error ? error.message : "重连失败";
+      this.renderDuelLobby();
+    }
+  }
+
   private startCloudDuel(
     roomId: string,
     playerIndex: 0 | 1,
@@ -2902,6 +4767,8 @@ export class AdaptiveGameApp {
     this.remotePlayerIndex = playerIndex;
     this.remoteOpponentName = opponentName;
     this.usingCloudMatch = true;
+    this.lastRoomId = roomId;
+    localStorage.setItem("adaptive-ascent-room-id", roomId);
     this.duelMode = "remote";
     this.duelRecorded = false;
     this.audio.remoteConnected();
@@ -2997,6 +4864,18 @@ export class AdaptiveGameApp {
   private canEnterSideNode(nodeId: string): boolean {
     const arc = SIDE_QUEST_ARCS.find((item) => item.nodes.includes(nodeId));
     if (!arc) {
+      return false;
+    }
+    if (
+      arc.id === "trust_rebuild" &&
+      this.save.profile.resources.trust < 45
+    ) {
+      return false;
+    }
+    if (
+      arc.id === "resilience" &&
+      this.save.profile.resources.influence < 45
+    ) {
       return false;
     }
     const index = arc.nodes.indexOf(nodeId);
@@ -3192,8 +5071,12 @@ export class AdaptiveGameApp {
         : "查看章节过渡"
       : this.pendingBranchNodeId
         ? this.language === "en"
-          ? "Enter Role Branch"
-          : "进入角色分岔"
+          ? this.pendingBranchNodeId.startsWith("ability-")
+            ? "Enter Advanced Review"
+            : "Enter Role Branch"
+          : this.pendingBranchNodeId.startsWith("ability-")
+            ? "进入高阶复盘"
+            : "进入角色分岔"
         : this.language === "en"
           ? "Back to Map"
           : "返回地图";

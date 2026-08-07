@@ -69,14 +69,14 @@ try {
   });
 
   await page.goto(url, { waitUntil: "networkidle" });
-  await page.waitForSelector("text=权变之路");
+  await page.waitForSelector("text=升维");
 
   await page.click("text=创建档案");
   await page.fill("input[name=playerName]", "林远");
   await page.click("button[data-role=highPotential]");
   await page.click("text=开启征程");
   await page.waitForSelector("text=能力基线测评");
-  await page.click("text=跳过测评");
+  await page.click("[data-action=assessment-skip]");
   await page.waitForSelector("text=能力基线报告");
   await page.click("text=进入主线");
   await page.waitForSelector("text=九章权力架构");
@@ -97,15 +97,28 @@ try {
   await page.click("text=开始对战");
   await page.waitForSelector(".duel-options");
 
-  for (let i = 0; i < 5; i += 1) {
+  for (let i = 0; i < 7; i += 1) {
+    if ((await page.locator(".duel-result").count()) > 0) break;
     const enabled = page.locator(".duel-options .option-card:not([disabled])");
     const count = await enabled.count();
-    if (count === 0) break;
-    await enabled.first().click();
-    await page.waitForTimeout(1000);
-    if ((await page.locator(".duel-result").count()) > 0) break;
+    if (count > 0) {
+      await enabled.first().click();
+      await page
+        .waitForSelector(".duel-predict", { timeout: 5000 })
+        .catch(() => {});
+      const predict = page.locator(".duel-predict-options button");
+      if ((await predict.count()) > 0) {
+        await predict.first().click();
+      }
+      await page.waitForSelector(".duel-reveal", { timeout: 5000 }).catch(() => {});
+    }
+    await page
+      .waitForSelector(".duel-options .option-card:not([disabled]), .duel-result", {
+        timeout: 7000
+      })
+      .catch(() => {});
   }
-  await page.waitForSelector(".duel-result", { timeout: 15000 });
+  await page.waitForSelector(".duel-result", { timeout: 20000 });
   await page.waitForSelector("text=对决结束");
 
   const overflow = await page.evaluate(

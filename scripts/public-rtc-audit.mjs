@@ -34,7 +34,7 @@ async function loadApp(context, save, viewport) {
     { saveJson: JSON.stringify(save) }
   );
   await page.reload({ waitUntil: "networkidle", timeout: 30000 });
-  await page.waitForSelector("text=Adaptive Ascent", { timeout: 30000 });
+  await page.waitForSelector("text=Ascend", { timeout: 30000 });
   return { page, errors };
 }
 

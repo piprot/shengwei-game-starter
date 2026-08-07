@@ -16,9 +16,11 @@
     "i18n-audit": "node --experimental-strip-types scripts/i18n-audit.mjs",
     "test:i18n-browser": "node --experimental-strip-types scripts/i18n-browser-audit.mjs",
     "test:device-screenshots": "node --experimental-strip-types scripts/device-audit.mjs",
+    "test:features": "node scripts/feature-audit.mjs",
     "test:rtc": "node --experimental-strip-types scripts/rtc-audit.mjs",
     "server": "node server/index.mjs",
     "test:server": "node scripts/server-smoke.mjs",
+    "test:server-edge": "node scripts/server-edge.mjs",
     "test:live": "node scripts/live-audit.mjs",
     "test:rtc:public": "node --experimental-strip-types scripts/public-rtc-audit.mjs",
     "recovery:github": "node scripts/github-recovery.mjs"

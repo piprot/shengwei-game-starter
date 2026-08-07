@@ -122,9 +122,23 @@ export interface SaveState {
   decisionHistory: DecisionRecord[];
   duelHistory: DuelHistoryEntry[];
   claimedChallenges: string[];
+  /** 每日挑战领取记录：键为 "YYYY-MM-DD"，值为当天已领取的挑战 id 列表。跨天自然重置，故「每日」可重复领取。 */
+  claimedDaily: Record<string, string[]>;
   assessmentScore: number;
   completedRandomEvents: string[];
   completedBranchNodes: string[];
+  completedTraining: string[];
+  trainingScores: Record<string, number>;
+  trialEnergy: number;
+  trialCleared: string[];
+  trialItems: string[];
+  completedPracticeTasks: string[];
+  trialStreak: number;
+  lastTrialEnergyDate?: string;
+  trialAccelerator: boolean;
+  trialOpenAnswers: Record<string, string>;
+  hiddenRoutes: string[];
+  alternateEndings: string[];
   highPressureMode: boolean;
   /** 难度档位：标准 / 高压 / 极限。驱动资源缩放、回合时限与突发干扰。 */
   difficulty: "normal" | "pressure" | "extreme";

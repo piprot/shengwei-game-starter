@@ -36,6 +36,10 @@ export async function initDb() {
     ALTER TABLE accounts
     ADD COLUMN IF NOT EXISTS score_sig TEXT NOT NULL DEFAULT ''
   `);
+  await pool.query(`
+    ALTER TABLE accounts
+    ADD COLUMN IF NOT EXISTS recovery_code TEXT
+  `);
 }
 
 export async function dbHealth() {
@@ -48,17 +52,25 @@ export async function dbHealth() {
   }
 }
 
-export async function upsertAccount(token, name, role, save, score, scoreSig) {
+export async function upsertAccount(
+  token,
+  name,
+  role,
+  save,
+  score,
+  scoreSig,
+  recoveryCode
+) {
   if (!pool) return null;
   const result = await pool.query(
     `
-      INSERT INTO accounts (token, name, role, save, score, score_sig, updated_at)
-      VALUES ($1, $2, $3, $4::jsonb, $5, $6, now())
+      INSERT INTO accounts (token, name, role, save, score, score_sig, recovery_code, updated_at)
+      VALUES ($1, $2, $3, $4::jsonb, $5, $6, $7, now())
       ON CONFLICT (token)
-      DO UPDATE SET name = EXCLUDED.name, role = EXCLUDED.role, save = EXCLUDED.save, score = EXCLUDED.score, score_sig = EXCLUDED.score_sig, updated_at = now()
-      RETURNING token, name, role, save, score, score_sig, updated_at
+      DO UPDATE SET name = EXCLUDED.name, role = EXCLUDED.role, save = EXCLUDED.save, score = EXCLUDED.score, score_sig = EXCLUDED.score_sig, recovery_code = EXCLUDED.recovery_code, updated_at = now()
+      RETURNING token, name, role, save, score, score_sig, recovery_code, updated_at
     `,
-    [token, name, role, JSON.stringify(save), score, scoreSig]
+    [token, name, role, JSON.stringify(save), score, scoreSig, recoveryCode]
   );
   return result.rows[0] || null;
 }
@@ -66,8 +78,17 @@ export async function upsertAccount(token, name, role, save, score, scoreSig) {
 export async function getAccount(token) {
   if (!pool) return null;
   const result = await pool.query(
-    `SELECT token, name, role, save, score, score_sig, updated_at FROM accounts WHERE token = $1`,
+    `SELECT token, name, role, save, score, score_sig, recovery_code, updated_at FROM accounts WHERE token = $1`,
     [token]
+  );
+  return result.rows[0] || null;
+}
+
+export async function getAccountByRecovery(code) {
+  if (!pool) return null;
+  const result = await pool.query(
+    `SELECT token, name, role, save, score, score_sig, recovery_code, updated_at FROM accounts WHERE recovery_code = $1 LIMIT 1`,
+    [code]
   );
   return result.rows[0] || null;
 }

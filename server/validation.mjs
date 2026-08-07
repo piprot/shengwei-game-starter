@@ -13,6 +13,8 @@ const ABILITY_IDS = [
 
 const RESOURCE_IDS = ["energy", "trust", "influence", "capital"];
 const VALID_ROLES = new Set(["parachute", "founder", "highPotential"]);
+const NODE_ID_PATTERN =
+  /^(c[1-9]n[12]|c[2-9]b-(parachute|founder|highPotential)|s[1-6]|r\d+)$/;
 
 function isObject(value) {
   return Boolean(value && typeof value === "object" && !Array.isArray(value));
@@ -97,6 +99,19 @@ export function validateSave(save) {
   ) {
     return "save.unlockedChapters must contain positive integers";
   }
+  if (
+    !save.decisionHistory.every(
+      (record) =>
+        typeof record?.nodeId === "string" &&
+        NODE_ID_PATTERN.test(record.nodeId) &&
+        [0, 1, 2].includes(Number(record.optionIndex)) &&
+        ["expert", "partial", "risk"].includes(record.quality) &&
+        isFiniteNumber(record.qualityScore) &&
+        Number(record.qualityScore) <= 300
+    )
+  ) {
+    return "save.decisionHistory contains invalid records";
+  }
   return null;
 }
 
@@ -111,19 +126,14 @@ export function cleanSave(save) {
 }
 
 export function serverAbilityScore(save) {
-  const abilities = save?.profile?.abilities || {};
-  return Object.values(abilities).reduce(
-    (sum, value) => sum + abilityLevel(Number(value || 0)),
+  const decisionScore = (save?.decisionHistory || []).reduce(
+    (sum, record) => sum + (Number(record.qualityScore) || 0),
     0
   );
-}
-
-function abilityLevel(exp) {
-  const thresholds = [0, 4, 10, 18, 28, 40];
-  let level = 1;
-  for (const threshold of thresholds.slice(1)) {
-    if (exp >= threshold) level += 1;
-    else break;
-  }
-  return Math.min(6, level);
+  const trialScore = (save?.trialCleared || []).length * 5;
+  const trainingScore = Object.values(save?.trainingScores || {}).reduce(
+    (sum, value) => sum + Number(value || 0) * 3,
+    0
+  );
+  return Math.round(decisionScore + trialScore + trainingScore);
 }

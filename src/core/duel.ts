@@ -37,6 +37,9 @@ export class DuelEngine {
       return;
     }
     this.picks[playerIndex] = optionIndex;
+  }
+
+  resolvePendingRound(): void {
     if (this.picks[0] !== null && this.picks[1] !== null) {
       this.resolveRound();
     }
@@ -105,7 +108,23 @@ export class DuelEngine {
     );
     const base =
       option.quality === "expert" ? 100 : option.quality === "partial" ? 55 : 20;
-    return Math.round(base + relevantLevel * 4 + profile.resources.energy / 15);
+    let combo = 0;
+    for (let i = this.roundResults.length - 1; i >= 0; i -= 1) {
+      const previous = this.roundResults[i];
+      const previousOption =
+        previous.node.options[previous.picks[playerIndex]];
+      if (previousOption.quality === "expert") {
+        combo += 1;
+      } else {
+        break;
+      }
+    }
+    return Math.round(
+      base +
+        relevantLevel * 4 +
+        profile.resources.energy / 15 +
+        Math.min(15, combo * 5)
+    );
   }
 }
 

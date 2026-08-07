@@ -74,14 +74,14 @@ try {
     await page.goto(url, { waitUntil: "networkidle" });
     await page.evaluate(() => localStorage.clear());
     await page.reload({ waitUntil: "networkidle" });
-    await page.waitForSelector("text=权变之路");
+    await page.waitForSelector("text=升维");
 
     const menuOverflow = await overflow(page);
     await page.click("text=创建档案");
     await page.fill("input[name=playerName]", "审计员");
     await page.click("text=开启征程");
     await page.waitForSelector("text=能力基线测评");
-    await page.click("text=跳过测评");
+    await page.click("[data-action=assessment-skip]");
     await page.waitForSelector("text=能力基线报告");
     await page.click("text=进入主线");
     await page.waitForSelector("text=九章权力架构");
@@ -109,7 +109,7 @@ try {
     await page.waitForSelector("text=综合能力值");
     const shortcutAbilityOverflow = await overflow(page);
     await page.keyboard.press("h");
-    await page.waitForSelector("text=权变之路");
+    await page.waitForSelector("text=升维");
 
     await page.click("text=进入 1v1");
     await page.waitForSelector("text=谁能在复杂局势中做出更好的判断");
@@ -120,10 +120,10 @@ try {
 
     const errorsBeforeEnglish = errors.length;
     await page.goto(url, { waitUntil: "networkidle" });
-    if ((await page.locator("text=Adaptive Ascent").count()) === 0) {
+    if ((await page.locator("text=Ascend").count()) === 0) {
       await page.click("[data-action=toggle-language]");
     }
-    await page.waitForSelector("text=Adaptive Ascent");
+    await page.waitForSelector("text=Ascend");
     const htmlLang = await page.evaluate(() => document.documentElement.lang);
     if (htmlLang !== "en") {
       throw new Error(`English mode did not set html lang, got ${htmlLang}`);

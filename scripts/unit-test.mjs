@@ -9,6 +9,20 @@ globalThis.localStorage = {
 
 import { abilityLevel, totalAbilityLevels } from "../src/core/abilities.ts";
 import { ASSESSMENT_QUESTIONS } from "../src/core/assessment.ts";
+import {
+  TRAINING_PATHS,
+  scoreTrainingAnswers
+} from "../src/core/training.ts";
+import {
+  PRACTICE_TASKS,
+  TRIAL_STAGES,
+  canEnterTrial,
+  trialCostFor,
+  trialQuestionFor,
+  trialRewardExpFor
+} from "../src/core/trials.ts";
+
+
 import { ACHIEVEMENTS } from "../src/core/achievements.ts";
 import {
   CHAPTERS,
@@ -23,8 +37,13 @@ import { ROLE_OPTION_SETS } from "../src/core/roleOptions.ts";
 import {
   DEFAULT_SAVE,
   PRESSURE_FACTORS,
+  applyDailyTrialRecovery,
   applyStoryChoice,
+  buyTrialEnergy,
+  buyTrialEnergyWithInfluence,
   computeSaveHash,
+  hireTrialAlly,
+  investTrialAccelerator,
   migrateSave,
   resolveCloudConflict,
   roundDurationMsForDifficulty,
@@ -61,6 +80,126 @@ assert(ASSESSMENT_QUESTIONS.length === 30, "assessment must contain 30 questions
 assert(
   ASSESSMENT_QUESTIONS.every((question) => question.options.length === 3),
   "every assessment question must have 3 options"
+);
+
+assert(TRAINING_PATHS.length === 10, "training must cover all 10 abilities");
+assert(
+  new Set(TRAINING_PATHS.map((path) => path.abilityId)).size === 10,
+  "training ability ids must be unique"
+);
+for (const path of TRAINING_PATHS) {
+  assert(path.route.length >= 3, `${path.abilityId} training route must have 3+ steps`);
+  assert(path.questions.length >= 3, `${path.abilityId} training must have 3+ questions`);
+  for (const question of path.questions) {
+    assert(question.options.length === 3, `${question.id} must have 3 options`);
+    assert(
+      Number.isInteger(question.answer) && question.answer >= 0 && question.answer <= 2,
+      `${question.id} must have a valid answer`
+    );
+  }
+  const scored = scoreTrainingAnswers(path.questions, path.questions.map((question) => question.answer));
+  assert(scored.correct === path.questions.length, `${path.abilityId} perfect answers must score perfectly`);
+}
+
+assert(TRIAL_STAGES.length === 19, "trial must contain 19 stages");
+assert(
+  new Set(TRIAL_STAGES.map((stage) => stage.order)).size === TRIAL_STAGES.length,
+  "trial stage orders must be unique"
+);
+for (const stage of TRIAL_STAGES) {
+  assert(stage.gates.length > 0, `${stage.id} must have ability gates`);
+  assert(stage.staminaCost > 0, `${stage.id} must cost energy`);
+  const question = trialQuestionFor(stage);
+  assert(question.options.length === 3, `${stage.id} trial question must have 3 options`);
+  assert(
+    Number.isInteger(question.answer) && question.answer >= 0 && question.answer <= 2,
+    `${stage.id} trial question must have a valid answer`
+  );
+}
+const trialDefaultSave = structuredClone(DEFAULT_SAVE);
+assert(
+  canEnterTrial(trialDefaultSave, TRIAL_STAGES[0]),
+  "default profile should enter the first trial"
+);
+assert(PRACTICE_TASKS.length >= 5, "practice tasks must contain at least 5 missions");
+
+// 精力恢复：每日恢复只生效一次，组织资源可兑换精力。
+const energySave = structuredClone(DEFAULT_SAVE);
+energySave.trialEnergy = 0;
+assert(
+  applyDailyTrialRecovery(energySave) && energySave.trialEnergy === 50,
+  "daily trial recovery should restore 50 energy once"
+);
+assert(
+  !applyDailyTrialRecovery(energySave),
+  "daily trial recovery should not repeat on the same day"
+);
+energySave.trialEnergy = 0;
+energySave.profile.resources.capital = 20;
+assert(buyTrialEnergy(energySave), "capital should buy trial energy");
+assert(
+  energySave.trialEnergy === 30 && energySave.profile.resources.capital === 5,
+  "buy trial energy should spend 15 capital and restore 30 energy"
+);
+
+const influenceSave = structuredClone(DEFAULT_SAVE);
+influenceSave.trialEnergy = 0;
+influenceSave.profile.resources.influence = 30;
+assert(
+  buyTrialEnergyWithInfluence(influenceSave),
+  "influence should buy trial energy"
+);
+assert(
+  influenceSave.trialEnergy === 30 &&
+    influenceSave.profile.resources.influence === 5,
+  "influence energy trade should spend 25 influence"
+);
+
+const accelSave = structuredClone(DEFAULT_SAVE);
+accelSave.profile.resources.capital = 50;
+assert(investTrialAccelerator(accelSave), "capital should invest accelerator");
+assert(
+  accelSave.trialAccelerator && accelSave.profile.resources.capital === 10,
+  "accelerator investment should spend 40 capital"
+);
+
+const allySave = structuredClone(DEFAULT_SAVE);
+allySave.profile.resources.trust = 30;
+assert(hireTrialAlly(allySave), "trust should hire temporary ally");
+assert(
+  allySave.trialItems.includes("临时同伴") &&
+    allySave.profile.resources.trust === 10,
+  "ally hire should spend 20 trust"
+);
+
+// MBA 多阶段 + 资源门槛。
+const mba = TRIAL_STAGES.find((stage) => stage.id === "mba_cashflow");
+const mbaSave = structuredClone(DEFAULT_SAVE);
+for (const stage of TRIAL_STAGES.filter((item) => item.order < mba.order)) {
+  mbaSave.trialCleared.push(stage.id);
+}
+for (const gate of mba.gates) {
+  mbaSave.profile.abilities[gate.abilityId] = 40;
+}
+mbaSave.unlockedChapters.push(5);
+mbaSave.profile.resources.influence = 50;
+mbaSave.profile.resources.capital = 20;
+assert(canEnterTrial(mbaSave, mba), "MBA stage should open with gates and resources");
+const mbaQuestion = trialQuestionFor(mba);
+assert(Boolean(mbaQuestion.followUp), "MBA cases should include a follow-up decision");
+
+// 道具真实增益。
+const costSave = structuredClone(DEFAULT_SAVE);
+costSave.trialItems.push("识人罗盘");
+assert(
+  trialCostFor(costSave, TRIAL_STAGES[0]) ===
+    TRIAL_STAGES[0].staminaCost - 2,
+  "insight item should reduce insight trial cost"
+);
+assert(
+  trialRewardExpFor(costSave, TRIAL_STAGES[0]) ===
+    TRIAL_STAGES[0].rewardExp,
+  "insight item should not alter insight reward"
 );
 
 assert(CHAPTERS.length === 9, "chapters must be 9");

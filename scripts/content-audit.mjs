@@ -14,6 +14,25 @@ import {
   ROLES
 } from "../src/core/abilities.ts";
 import { ASSESSMENT_QUESTIONS } from "../src/core/assessment.ts";
+import {
+  TRAINING_PATHS
+} from "../src/core/training.ts";
+import { TRAINING_EN } from "../src/core/trainingEn.ts";
+import {
+  EXPANDED_TRAINING,
+  TRAINING_EXTRAS
+} from "../src/core/trainingExtras.ts";
+import {
+  EXPANDED_TRAINING_EN,
+  TRAINING_EXTRAS_EN
+} from "../src/core/trainingExtrasEn.ts";
+import {
+  PRACTICE_TASKS,
+  TRIAL_STAGES,
+  trialQuestionFor
+} from "../src/core/trials.ts";
+
+
 import { ACHIEVEMENTS } from "../src/core/achievements.ts";
 import { NPCS } from "../src/core/npcs.ts";
 import { ROLE_OPTION_SETS } from "../src/core/roleOptions.ts";
@@ -220,7 +239,22 @@ for (const achievement of ACHIEVEMENTS) {
   }
 }
 
-for (const id of ["expert_3", "side_1", "duel_1", "chapter_1", "rank_20"]) {
+for (const id of [
+  "expert_3",
+  "side_1",
+  "duel_1",
+  "chapter_1",
+  "rank_20",
+  "training_1",
+  "trial_1",
+  "practice_1",
+  "story_3",
+  "side_3",
+  "duel_3",
+  "random_2",
+  "branch_3",
+  "mba_1"
+]) {
   if (!CHALLENGE_EN[id]?.title || !CHALLENGE_EN[id]?.description) {
     problems.push(`${id} missing English challenge text`);
   }
@@ -239,6 +273,72 @@ for (const role of ["parachute", "founder", "highPotential"]) {
       problems.push(`${role}/${quality} missing English role option text`);
     }
   }
+}
+
+for (const path of TRAINING_PATHS) {
+  const en = TRAINING_EN[path.abilityId];
+  const extra = TRAINING_EXTRAS[path.abilityId];
+  const extraEn = TRAINING_EXTRAS_EN[path.abilityId];
+  if (!en || !extra || !extraEn) {
+    problems.push(`${path.abilityId} missing training localization`);
+  }
+  if (path.route.length < 3) {
+    problems.push(`${path.abilityId} training route must have at least 3 steps`);
+  }
+  if (!path.story.title || !path.story.source || !path.story.scenario || !path.story.lesson) {
+    problems.push(`${path.abilityId} training story is incomplete`);
+  }
+  if (path.questions.length < 3) {
+    problems.push(`${path.abilityId} training must contain at least 3 questions`);
+  }
+  for (const question of path.questions) {
+    if (question.options.length !== 3 || !Number.isInteger(question.answer) || question.answer < 0 || question.answer > 2) {
+      problems.push(`${question.id} must have 3 options and a valid answer`);
+    }
+  }
+  if (!extra.problemPrompt || !extra.analogy || extra.applicationPoints.length < 3 || !extra.formula.expression || extra.workedExamples.length < 2) {
+    problems.push(`${path.abilityId} training extras are incomplete`);
+  }
+  for (const role of ["parachute", "founder", "highPotential"]) {
+    if (!extra.roleApplications[role] || !extraEn.roleApplications[role]) {
+      problems.push(`${path.abilityId} missing ${role} training application`);
+    }
+  }
+  for (const question of path.questions) {
+    const detail = extra.questionDetails[question.id];
+    if (!detail || detail.solutionSteps.length < 2 || !detail.referenceAnswer) {
+      problems.push(`${question.id} missing solution steps or reference answer`);
+    }
+  }
+  const expandedEn = EXPANDED_TRAINING_EN[path.abilityId];
+  if (expandedEn.questions.length !== path.questions.length) {
+    problems.push(`${path.abilityId} English training question count mismatch`);
+  }
+  if (expandedEn.questions.some((question, index) => question.answer !== path.questions[index].answer)) {
+    problems.push(`${path.abilityId} English training answers do not match`);
+  }
+  if (!EXPANDED_TRAINING[path.abilityId]) {
+    problems.push(`${path.abilityId} missing expanded training data`);
+  }
+}
+
+if (TRIAL_STAGES.length !== 19) {
+  problems.push("trial must contain 19 stages");
+}
+if (new Set(TRIAL_STAGES.map((stage) => stage.order)).size !== TRIAL_STAGES.length) {
+  problems.push("trial orders must be unique");
+}
+for (const stage of TRIAL_STAGES) {
+  if (stage.gates.length === 0 || stage.staminaCost <= 0 || stage.rewardExp <= 0) {
+    problems.push(`${stage.id} trial stage is incomplete`);
+  }
+  const question = trialQuestionFor(stage);
+  if (question.options.length !== 3 || question.answer < 0 || question.answer > 2) {
+    problems.push(`${stage.id} trial question is invalid`);
+  }
+}
+if (PRACTICE_TASKS.length < 5) {
+  problems.push("practice tasks must contain at least 5 missions");
 }
 
 if (ASSESSMENT_QUESTIONS.length !== 30) {
@@ -341,6 +441,11 @@ console.log(
       translatedRoleOptions: Object.keys(ROLE_OPTION_EN).length * 9,
       subSkills: ABILITY_ORDER.reduce(
         (sum, id) => sum + ABILITIES[id].subSkills.length,
+        0
+      ),
+      trainingPaths: TRAINING_PATHS.length,
+      trainingQuestions: TRAINING_PATHS.reduce(
+        (sum, path) => sum + path.questions.length,
         0
       )
     },

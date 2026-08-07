@@ -57,11 +57,89 @@ const CHALLENGE_POOL: Array<ChallengeDef & { target: number; progress(save: Save
     target: 20,
     reward: 6,
     progress: (save) => totalAbilityLevels(save.profile.abilities)
+  },
+  {
+    id: "training_1",
+    title: "专项训练",
+    description: "完成 1 条能力训练路线",
+    target: 1,
+    reward: 4,
+    progress: (save) => save.completedTraining.length
+  },
+  {
+    id: "trial_1",
+    title: "试炼破关",
+    description: "通关 1 个成长试炼关卡",
+    target: 1,
+    reward: 4,
+    progress: (save) => save.trialCleared.length
+  },
+  {
+    id: "practice_1",
+    title: "行动修炼",
+    description: "完成 1 个修炼任务",
+    target: 1,
+    reward: 4,
+    progress: (save) => save.completedPracticeTasks.length
+  },
+  {
+    id: "story_3",
+    title: "情境连续",
+    description: "累计完成 3 个情境决策",
+    target: 3,
+    reward: 5,
+    progress: (save) => save.decisionHistory.length
+  },
+  {
+    id: "side_3",
+    title: "支线深入",
+    description: "完成 3 个支线节点",
+    target: 3,
+    reward: 5,
+    progress: (save) => save.completedSideQuests.length
+  },
+  {
+    id: "duel_3",
+    title: "三场对决",
+    description: "完成 3 场 1v1 对决",
+    target: 3,
+    reward: 5,
+    progress: (save) => save.duelWins + save.duelLosses
+  },
+  {
+    id: "random_2",
+    title: "随机应变",
+    description: "处理 2 个随机事件",
+    target: 2,
+    reward: 5,
+    progress: (save) => save.completedRandomEvents.length
+  },
+  {
+    id: "branch_3",
+    title: "角色分岔",
+    description: "完成 3 个角色分岔节点",
+    target: 3,
+    reward: 5,
+    progress: (save) => save.completedBranchNodes.length
+  },
+  {
+    id: "mba_1",
+    title: "MBA 案例",
+    description: "通关 1 个 MBA 高难案例",
+    target: 1,
+    reward: 6,
+    progress: (save) =>
+      save.trialCleared.filter((id) => id.startsWith("mba_")).length
   }
 ];
 
+/** 当日日期键，统一为 "YYYY-MM-DD"，与领取记录的键格式保持一致。 */
+export function todayKey(): string {
+  return new Date().toISOString().slice(0, 10);
+}
+
 export function dailyChallenges(save: SaveState): ChallengeState[] {
-  const today = new Date().toISOString().slice(0, 10);
+  const today = todayKey();
   const seed = [...today].reduce((sum, char) => sum + char.charCodeAt(0), 0);
   const start = seed % CHALLENGE_POOL.length;
   return CHALLENGE_POOL.slice(start)
@@ -84,8 +162,9 @@ export function dailyChallenges(save: SaveState): ChallengeState[] {
 export function claimableChallenges(
   save: SaveState
 ): ChallengeState[] {
+  const today = todayKey();
   return dailyChallenges(save).filter(
     (challenge) =>
-      challenge.done && !save.claimedChallenges.includes(challenge.id)
+      challenge.done && !(save.claimedDaily[today] ?? []).includes(challenge.id)
   );
 }

@@ -62,9 +62,22 @@ export const DEFAULT_SAVE: SaveState = {
   decisionHistory: [],
   duelHistory: [],
   claimedChallenges: [],
+  claimedDaily: {},
   assessmentScore: 0,
   completedRandomEvents: [],
   completedBranchNodes: [],
+  completedTraining: [],
+  trainingScores: {},
+  trialEnergy: 100,
+  trialCleared: [],
+  trialItems: [],
+  completedPracticeTasks: [],
+  trialStreak: 0,
+  lastTrialEnergyDate: "",
+  trialAccelerator: false,
+  trialOpenAnswers: {},
+  hiddenRoutes: [],
+  alternateEndings: [],
   highPressureMode: false,
   difficulty: "normal"
 };
@@ -141,12 +154,45 @@ function normalizeSave(save: SaveState): SaveState {
     claimedChallenges: Array.isArray(save.claimedChallenges)
       ? save.claimedChallenges
       : [],
+    claimedDaily:
+      save.claimedDaily && typeof save.claimedDaily === "object"
+        ? save.claimedDaily
+        : {},
     assessmentScore: Number(save.assessmentScore) || 0,
     completedRandomEvents: Array.isArray(save.completedRandomEvents)
       ? save.completedRandomEvents
       : [],
     completedBranchNodes: Array.isArray(save.completedBranchNodes)
       ? save.completedBranchNodes
+      : [],
+    completedTraining: Array.isArray(save.completedTraining)
+      ? save.completedTraining
+      : [],
+    trainingScores:
+      save.trainingScores && typeof save.trainingScores === "object"
+        ? { ...save.trainingScores }
+        : {},
+    trialEnergy: clamp(Number(save.trialEnergy) || 100, 0, 100),
+    trialCleared: Array.isArray(save.trialCleared) ? save.trialCleared : [],
+    trialItems: Array.isArray(save.trialItems) ? save.trialItems : [],
+    completedPracticeTasks: Array.isArray(save.completedPracticeTasks)
+      ? save.completedPracticeTasks
+      : [],
+    trialStreak: Math.max(0, Number(save.trialStreak) || 0),
+    lastTrialEnergyDate:
+      typeof save.lastTrialEnergyDate === "string"
+        ? save.lastTrialEnergyDate
+        : "",
+    trialAccelerator: Boolean(save.trialAccelerator),
+    trialOpenAnswers:
+      save.trialOpenAnswers && typeof save.trialOpenAnswers === "object"
+        ? { ...save.trialOpenAnswers }
+        : {},
+    hiddenRoutes: Array.isArray(save.hiddenRoutes)
+      ? save.hiddenRoutes
+      : [],
+    alternateEndings: Array.isArray(save.alternateEndings)
+      ? save.alternateEndings
       : [],
     highPressureMode: Boolean(save.highPressureMode),
     difficulty:
@@ -175,9 +221,24 @@ export function computeSaveHash(save: SaveState): string {
     dh: (save.decisionHistory ?? []).map((d) => [d.nodeId, d.optionIndex, d.qualityScore]),
     duh: (save.duelHistory ?? []).length,
     cc: save.claimedChallenges,
+    cd: save.claimedDaily,
     as: save.assessmentScore,
     cre: save.completedRandomEvents,
     cbn: save.completedBranchNodes,
+    ct: save.completedTraining,
+    ts: save.trainingScores ?? {},
+    trial: [
+      save.trialEnergy,
+      save.trialCleared,
+      save.trialItems,
+      save.completedPracticeTasks,
+      save.trialStreak,
+      save.lastTrialEnergyDate,
+      save.trialAccelerator,
+      save.trialOpenAnswers,
+      save.hiddenRoutes,
+      save.alternateEndings
+    ],
     diff: save.difficulty
   };
   const json = JSON.stringify(projection);
@@ -313,6 +374,11 @@ export function applyStoryChoice(
     }
   }
 
+  save.trialEnergy = clamp(
+    save.trialEnergy + (node.kind === "main" ? 5 : 3),
+    0,
+    100
+  );
   save.achievements = [...new Set(save.achievements)];
   saveState(save);
   return outcome;
@@ -328,12 +394,19 @@ function buildOutcome(
   >)
     .filter(([, gained]) => gained > 0)
     .map(([id]) => id);
+  const relevantLevel = Math.max(
+    ...Object.keys(option.effects).map((id) =>
+      abilityLevel(save.profile.abilities[id as AbilityId])
+    ),
+    1
+  );
+  const unlockBonus = relevantLevel >= 5 ? 14 : relevantLevel >= 3 ? 8 : 0;
   return {
     option,
     optionIndex,
     gainedAbilityIds,
     resourceDeltas: option.resources,
-    qualityScore: scoreQuality(option.quality, save.profile)
+    qualityScore: scoreQuality(option.quality, save.profile, unlockBonus)
   };
 }
 
@@ -428,6 +501,11 @@ export function recordDuelResult(
       0,
       100
     );
+    save.trialEnergy = clamp(
+      save.trialEnergy + (won ? 15 : 5),
+      0,
+      100
+    );
   }
   save.achievements.push("first_duel");
   save.achievements = [...new Set(save.achievements)];
@@ -440,6 +518,249 @@ export function recordDuelResult(
   });
   saveState(save);
   return save;
+}
+
+export interface TrainingOutcome {
+  correct: number;
+  total: number;
+  gainedExp: number;
+  firstComplete: boolean;
+}
+
+export function applyTrainingResult(
+  save: SaveState,
+  abilityId: AbilityId,
+  correct: number,
+  total: number
+): TrainingOutcome {
+  const firstComplete = !save.completedTraining.includes(abilityId);
+  const gainedExp = firstComplete ? Math.min(6, Math.max(2, correct * 2)) : 0;
+  if (firstComplete) {
+    save.completedTraining.push(abilityId);
+    save.profile.abilities[abilityId] += gainedExp;
+    save.masteryPoints += Math.max(1, Math.min(4, correct));
+    save.trialEnergy = clamp(save.trialEnergy + 10, 0, 100);
+    save.achievements.push("training_first");
+    if (save.completedTraining.length >= 4) {
+      save.achievements.push("training_four");
+    }
+    if (save.completedTraining.length >= 10) {
+      save.achievements.push("training_all");
+    }
+  }
+  save.trainingScores[abilityId] = Math.max(
+    save.trainingScores[abilityId] ?? 0,
+    correct
+  );
+  save.achievements = [...new Set(save.achievements)];
+  saveState(save);
+  return { correct, total, gainedExp, firstComplete };
+}
+
+export interface TrialAnswerOutcome {
+  cleared: boolean;
+  correct: boolean;
+  energyChange: number;
+  gainedExp: number;
+  item?: string;
+}
+
+export function todayDateKey(): string {
+  return new Date().toISOString().slice(0, 10);
+}
+
+export function applyDailyTrialRecovery(save: SaveState): boolean {
+  const today = todayDateKey();
+  if (save.lastTrialEnergyDate === today) {
+    return false;
+  }
+  const stageBonus = Math.min(20, save.trialCleared.length);
+  const acceleratorBonus = save.trialAccelerator ? 20 : 0;
+  save.trialEnergy = clamp(
+    save.trialEnergy + 50 + stageBonus + acceleratorBonus,
+    0,
+    100
+  );
+  save.lastTrialEnergyDate = today;
+  saveState(save);
+  return true;
+}
+
+export function buyTrialEnergy(
+  save: SaveState,
+  cost = 15,
+  amount = 30
+): boolean {
+  if (save.profile.resources.capital < cost || save.trialEnergy >= 100) {
+    return false;
+  }
+  save.profile.resources.capital = clamp(
+    save.profile.resources.capital - cost,
+    0,
+    100
+  );
+  save.trialEnergy = clamp(save.trialEnergy + amount, 0, 100);
+  saveState(save);
+  return true;
+}
+
+export function buyTrialEnergyWithInfluence(
+  save: SaveState,
+  cost = 25,
+  amount = 30
+): boolean {
+  if (
+    save.profile.resources.influence < cost ||
+    save.trialEnergy >= 100
+  ) {
+    return false;
+  }
+  save.profile.resources.influence = clamp(
+    save.profile.resources.influence - cost,
+    0,
+    100
+  );
+  save.trialEnergy = clamp(save.trialEnergy + amount, 0, 100);
+  saveState(save);
+  return true;
+}
+
+export function investTrialAccelerator(
+  save: SaveState,
+  cost = 40
+): boolean {
+  if (
+    save.trialAccelerator ||
+    save.profile.resources.capital < cost
+  ) {
+    return false;
+  }
+  save.profile.resources.capital = clamp(
+    save.profile.resources.capital - cost,
+    0,
+    100
+  );
+  save.trialAccelerator = true;
+  saveState(save);
+  return true;
+}
+
+export function hireTrialAlly(save: SaveState, cost = 20): boolean {
+  if (
+    save.trialItems.includes("临时同伴") ||
+    save.profile.resources.trust < cost
+  ) {
+    return false;
+  }
+  save.profile.resources.trust = clamp(
+    save.profile.resources.trust - cost,
+    0,
+    100
+  );
+  save.trialItems.push("临时同伴");
+  saveState(save);
+  return true;
+}
+
+export function submitTrialSummary(
+  save: SaveState,
+  stageId: string,
+  summary: string
+): boolean {
+  if (!summary.trim()) {
+    return false;
+  }
+  save.trialOpenAnswers[stageId] = summary.trim();
+  saveState(save);
+  return true;
+}
+
+export function recordHiddenRoute(
+  save: SaveState,
+  routeId: string
+): void {
+  if (!save.hiddenRoutes.includes(routeId)) {
+    save.hiddenRoutes.push(routeId);
+    save.achievements.push("hidden_route");
+    save.achievements = [...new Set(save.achievements)];
+  }
+  saveState(save);
+}
+
+export function recordAlternateEnding(
+  save: SaveState,
+  endingId: string
+): void {
+  if (!save.alternateEndings.includes(endingId)) {
+    save.alternateEndings.push(endingId);
+  }
+  saveState(save);
+}
+
+export function applyTrialAnswer(
+  save: SaveState,
+  stageId: string,
+  abilityId: AbilityId,
+  correct: boolean,
+  staminaCost: number,
+  rewardExp: number,
+  rewardItem?: string,
+  resourceCost = 0,
+  wrongPenalty = 6
+): TrialAnswerOutcome {
+  const cleared = correct && !save.trialCleared.includes(stageId);
+  const energyChange = -(staminaCost + (correct ? 0 : wrongPenalty));
+  if (resourceCost > 0) {
+    save.profile.resources.capital = clamp(
+      save.profile.resources.capital - resourceCost,
+      0,
+      100
+    );
+  }
+  save.trialEnergy = clamp(save.trialEnergy + energyChange, 0, 100);
+  if (cleared) {
+    save.trialCleared.push(stageId);
+    save.profile.abilities[abilityId] += rewardExp;
+    if (rewardItem) {
+      save.trialItems.push(rewardItem);
+    }
+    save.masteryPoints += 2;
+    save.trialStreak += 1;
+    save.achievements.push("trial_first");
+    if (save.trialCleared.length >= 5) save.achievements.push("trial_five");
+    if (save.trialCleared.length >= 19) save.achievements.push("trial_all");
+    if (stageId.startsWith("mba_")) save.achievements.push("mba_clear");
+  } else {
+    save.trialStreak = 0;
+    save.masteryPoints += 1;
+  }
+  save.achievements = [...new Set(save.achievements)];
+  saveState(save);
+  return {
+    cleared,
+    correct,
+    energyChange,
+    gainedExp: cleared ? rewardExp : 0,
+    item: cleared ? rewardItem : undefined
+  };
+}
+
+export function completePracticeTask(
+  save: SaveState,
+  taskId: string,
+  abilityId: AbilityId,
+  rewardEnergy: number,
+  rewardExp: number
+): boolean {
+  if (save.completedPracticeTasks.includes(taskId)) {
+    return false;
+  }
+  save.completedPracticeTasks.push(taskId);
+  save.trialEnergy = clamp(save.trialEnergy + rewardEnergy, 0, 100);
+  save.profile.abilities[abilityId] += rewardExp;
+  save.masteryPoints += 1;
+  saveState(save);
+  return true;
 }
 
 export function decisionProfile(save: SaveState): {

@@ -3,6 +3,7 @@ import type { SaveState } from "../core/types";
 export type RoomServerMessage =
   | { type: "connected"; message: string }
   | { type: "registered"; token: string; account: unknown }
+  | { type: "recovery_reissued"; code: string; account: unknown }
   | { type: "logged_in"; account: unknown }
   | { type: "save_ok" }
   | {
@@ -60,13 +61,22 @@ export class RoomClient {
     }
   }
 
-  register(name: string, role: string, save: SaveState): void {
-    this.send({ type: "register", name, role, save });
+  register(
+    name: string,
+    role: string,
+    save: SaveState,
+    recoveryCode?: string
+  ): void {
+    this.send({ type: "register", name, role, save, recoveryCode });
   }
 
   login(token: string): void {
     this.token = token;
     this.send({ type: "login", token });
+  }
+
+  loginRecovery(code: string): void {
+    this.send({ type: "login_recovery", code });
   }
 
   cloudSave(token: string, save: SaveState): void {
@@ -88,6 +98,15 @@ export class RoomClient {
 
   match(name: string, role: string, save: SaveState, rounds: number): void {
     this.send({ type: "match", name, role, save, rounds });
+  }
+
+  reconnect(
+    roomId: string,
+    name: string,
+    role: string,
+    save: SaveState
+  ): void {
+    this.send({ type: "reconnect", roomId, name, role, save });
   }
 
   pick(optionIndex: number): void {

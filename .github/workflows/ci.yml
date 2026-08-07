@@ -61,6 +61,9 @@ jobs:
       - name: Server smoke test
         run: npm run test:server
 
+      - name: Server edge tests
+        run: npm run test:server-edge
+
       # 2) 核心逻辑单元测试（node --experimental-strip-types，无浏览器）
       - name: Unit tests
         run: npm run test:unit
@@ -71,6 +74,9 @@ jobs:
 
       - name: End-to-end smoke test
         run: npm test
+
+      - name: Feature audit
+        run: npm run test:features
 
   deploy:
     needs: [build, test]

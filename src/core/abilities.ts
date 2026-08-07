@@ -49,7 +49,7 @@ export const ABILITIES: Record<AbilityId, AbilityDef> = {
     name: "谋权",
     code: "SHAPE",
     tagline: "在授权之前先建势",
-    color: "#8f8cd9",
+    color: "#41c7c0",
     sources: ["《权经》谋权篇", "《韩非子》法、术、势", "马基雅维利《君主论》"],
     subSkills: ["权力认知", "战略布局", "法势术结合", "等待时机"],
     trainingPath: "用先立功再争权的方式积累筹码，同时保持授权者信息同步。"
