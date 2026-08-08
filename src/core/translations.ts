@@ -723,6 +723,120 @@ export const SIDE_NODE_EN: Record<
           "The Art of War: unite with civility and discipline with martial order, but both must work together."
       }
     ]
+  },
+  s7: {
+    title: "Skipping the Chain",
+    context:
+      "A core subordinate starts reporting directly to the CEO and misreads your decisions in the leadership meeting. The team is watching how you handle it.",
+    stake: "Do not settle this with a private warning or public humiliation; make the rules credible again.",
+    intel: [
+      "The subordinate raised the same risk twice in weekly reports before going over your head.",
+      "The CEO cares about whether information is transparent, not who reports first."
+    ],
+    options: [
+      {
+        label: "Align the decision loop first, then talk privately",
+        summary:
+          "Treat it as a process problem: key decisions must enter a joint mechanism, then explain the boundary in private.",
+        feedback:
+          "You did not turn the conflict into choosing sides. Everyone saw that bypassing process costs collaboration and following it earns trust.",
+        theory:
+          "The Book of Power: use authority with limits, delegate with capability, control proactively, and win before fighting."
+      },
+      {
+        label: "Reject and warn on the spot",
+        summary:
+          "Correct them publicly in the executive meeting to establish that bypassing is unacceptable.",
+        feedback:
+          "Authority held, but the subordinate started hiding real information. Bypassing reports decreased while bypassing decisions increased.",
+        theory: "The Art of War: control others without being controlled."
+      },
+      {
+        label: "Stay silent and observe",
+        summary:
+          "Hold off and first collect the real motive behind the bypassing reports.",
+        feedback:
+          "Silence was read as permission. The team began going around you directly, and the power boundary collapsed while you watched.",
+        theory: "The Ghost Valley: assess the situation before acting."
+      }
+    ]
+  },
+  s8: {
+    title: "Circumventing Decisions",
+    context:
+      "A senior department head starts pushing a business partnership around you. Investors and executives have seen the proposal, and you are left accountable for the result.",
+    stake: "Hold the boundary between institutions and trust without forcing everyone to pick a side.",
+    intel: [
+      "Two of this leader's past proposals were genuinely blocked by process.",
+      "The investor's attitude depends on whether someone is willing to own the risk."
+    ],
+    options: [
+      {
+        label: "Bring the proposal into formal review",
+        summary:
+          "Recognize the value of the idea while requiring budget and risk review, returning power to the mechanism.",
+        feedback:
+          "You did not reject the person; everyone saw that a good proposal must pass the same rules. The leader became a defender of the process.",
+        theory:
+          "The Book of Power: authority is granted by people; guard its boundaries with institutions."
+      },
+      {
+        label: "Cancel the partnership directly",
+        summary:
+          "Use veto power to prove who is in charge and avoid being sidelined.",
+        feedback:
+          "The proposal stopped, but the organization remembers that you replace rules with vetoes. The next coalition will be more hidden.",
+        theory:
+          "Han Feizi: law, tactics, and power must work together; force cannot replace institutions."
+      },
+      {
+        label: "Let the CEO decide",
+        summary:
+          "Escalate the boundary problem to avoid involving yourself in politics.",
+        feedback:
+          "You escaped short-term risk, but leadership remembers that you cannot hold boundaries horizontally.",
+        theory:
+          "Comprehensive Mirror: credit others to keep the team united."
+      }
+    ]
+  },
+  s9: {
+    title: "Handoff Gap",
+    context:
+      "You are about to be promoted, but critical business depends on your personal network. When you take a day off, the project stalls because nobody knows who to ask.",
+    stake: "Turn personal experience into organizational capability instead of leaving handoff to luck.",
+    intel: [
+      "The last three key decisions only started after your personal confirmation.",
+      "Your successor finished basic process training but lacks real-case practice."
+    ],
+    options: [
+      {
+        label: "Build a decision handbook and run a handoff drill",
+        summary:
+          "Turn frequent judgments into checklists and let the successor practice with real cases and acceptance criteria.",
+        feedback:
+          "After you left, the team completed a full decision without you for the first time. Experience became process, and authority became capability.",
+        theory:
+          "The Effective Executive: leaders must invest time in genuinely important decisions."
+      },
+      {
+        label: "Only mentor one key assistant",
+        summary:
+          "Pick one person to shadow relationships and process closely to lower short-term risk.",
+        feedback:
+          "Single-point backup solved today's problem, but the organization still depends on one key person. The gap only changed its name.",
+        theory:
+          "Zhenguan Essentials: without the right talent, governance is hard."
+      },
+      {
+        label: "Leave the problem to the successor",
+        summary:
+          "Trust the organization to adapt naturally and focus on your new role.",
+        feedback:
+          "Before the new role stabilized, the old business lost momentum. You won the promotion; the organization paid the price.",
+        theory: "The Art of War: first make yourself invincible."
+      }
+    ]
   }
 };
 
@@ -747,6 +861,15 @@ export const SIDE_ARC_EN: Record<
       "Execution is not only sprinting; it is knowing when to protect energy, when to narrow the problem, and when to rebuild the team. This arc takes you from personal firefighting to organizational resilience.",
     conclusion:
       "When the team can isolate risk first and then review together instead of blaming each other, you have built an execution system that does not depend on you."
+  },
+  power_boundaries: {
+    title: "Power Boundaries",
+    summary:
+      "Between bypassing reports, circumventing decisions, and handoff gaps, turn personal authority into repeatable organizational rules.",
+    intro:
+      "Power does not stabilize by title alone; it must be seen, bounded, and handed over. This arc tests whether you can hold boundaries between institutions and trust instead of patching every gap with a private conversation.",
+    conclusion:
+      "When key decisions return to process and key information stops depending on one person, your authority becomes organizational capability."
   }
 };
 

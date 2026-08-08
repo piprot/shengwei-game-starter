@@ -123,6 +123,17 @@ export const SIDE_QUEST_ARCS: SideQuestArc[] = [
     nodes: ["s5", "s3", "s6"],
     conclusion:
       "当团队能在危机中先隔离风险、再共同复盘，而不是互相指责，你就真正建立了不依赖你个人的执行系统。"
+  },
+  {
+    id: "power_boundaries",
+    title: "权力边界",
+    summary:
+      "在越级汇报、绕过决策和交接断点之间，把个人权威变成可重复的组织规则。",
+    intro:
+      "权力不会因为头衔自动稳定，它需要被看见、被约束、被交接。这条支线会考验你能否在制度与信任之间守住边界，而不是靠一次次私下谈话补救。",
+    nodes: ["s7", "s8", "s9"],
+    conclusion:
+      "当关键决策重新回到流程、关键信息不再依赖某一个人，你的权威才真正成为组织能力。"
   }
 ];
 
@@ -1113,6 +1124,129 @@ export const STORY_NODES: StoryNode[] = [
         feedback:
           "你压住了场面，却把团队拆成了更小的阵营。下一次失败时，没有人愿意先开口。",
         theory: "《孙子兵法》：令之以文，齐之以武，但文武必须并用。"
+      }
+    ]
+  },
+  {
+    id: "s7",
+    chapterId: 6,
+    title: "越级汇报",
+    kind: "side",
+    context:
+      "核心下属开始跳过你直接向 CEO 汇报，并在高层会议里曲解你的决策。团队都在看你会如何处理这件事。",
+    stake: "处理越级汇报不能只靠私下警告，也不能公开羞辱，你需要让规则重新变得可信。",
+    options: [
+      {
+        label: "先对齐决策闭环，再私下谈话",
+        summary: "把越级汇报变成流程问题：明确关键决策必须进入联合机制，再单独说明边界。",
+        quality: "expert",
+        effects: { authority: 3, structure: 2 },
+        resources: { energy: -6, trust: 6, influence: 6 },
+        feedback:
+          "你没有把冲突变成站队，而是让所有人看到：越过流程会付出协作成本，守住流程会获得信任。下属很快回到了正式汇报路径。",
+        theory: "《权经》：用权有度，授权赋能，主动掌控，先胜后战。"
+      },
+      {
+        label: "当场驳回并警告",
+        summary: "在高管会上公开纠正对方，树立不可越级的威严。",
+        quality: "partial",
+        effects: { authority: 3 },
+        resources: { energy: -5, trust: -6, influence: 4 },
+        feedback:
+          "威严立住了，但下属从此把真实信息藏得更深。越级汇报减少了，越过你决策的行为却增加了。",
+        theory: "《孙子兵法》：致人而不致于人。"
+      },
+      {
+        label: "暂时沉默观察",
+        summary: "不急着表态，先收集对方越级汇报的真实动机。",
+        quality: "risk",
+        effects: { insight: 2 },
+        resources: { energy: -4, trust: -3, influence: -4 },
+        feedback:
+          "沉默被读成了默许。团队开始绕过你直接找高层，权力边界在观望中彻底失守。",
+        theory: "《鬼谷子》：审定形势，谋定后动。"
+      }
+    ]
+  },
+  {
+    id: "s8",
+    chapterId: 7,
+    title: "绕过决策",
+    kind: "side",
+    context:
+      "一位资深的部门负责人开始绕过你直接推动业务合作，投资人和高层都收到了他的方案，而你被留在结果面前负责。",
+    stake: "你要在制度与信任之间守住边界，而不是靠一次谈话让所有人选边站。",
+    options: [
+      {
+        label: "把方案纳入正式决策评审",
+        summary: "承认方案价值，同时要求它进入预算与风险评审，让权力回到机制。",
+        quality: "expert",
+        effects: { structure: 3, authority: 2 },
+        resources: { energy: -7, trust: 5, influence: 7 },
+        feedback:
+          "你没有否定对方，而是让所有人都看到：好方案必须经过同一套规则。这位负责人反而成了流程的维护者。",
+        theory: "《权经》：权乃人授，授为大焉；用制度守住权力边界。"
+      },
+      {
+        label: "直接取消合作",
+        summary: "用否决权证明谁说了算，避免被架空。",
+        quality: "partial",
+        effects: { authority: 3 },
+        resources: { energy: -5, trust: -8, influence: 3 },
+        feedback:
+          "方案停了，但组织记住了你习惯用否决代替规则。下一次对方会带着更隐蔽的联盟回来。",
+        theory: "《韩非子》：法、术、势并用，不能以力代制。"
+      },
+      {
+        label: "让 CEO 裁断",
+        summary: "把边界问题交给更高层，避免自己卷入政治。",
+        quality: "risk",
+        effects: { strategy: 2 },
+        resources: { energy: -3, trust: -5, influence: -5 },
+        feedback:
+          "你把协调难题上交了，短期内安全，但高层会记住你无法横向守住边界。",
+        theory: "《资治通鉴》：推功于人，以维系团结。"
+      }
+    ]
+  },
+  {
+    id: "s9",
+    chapterId: 8,
+    title: "交接断点",
+    kind: "side",
+    context:
+      "你即将晋升，却发现关键业务高度依赖你个人的沟通网络。你休假一天，项目就停滞半天，没人知道下一步该问谁。",
+    stake: "你要把个人经验变成组织能力，而不是让交接变成一次赌博。",
+    options: [
+      {
+        label: "建立决策手册与交接演练",
+        summary: "把高频判断写成清单，让接替者用真实案例演练并验收。",
+        quality: "expert",
+        effects: { structure: 3, stability: 2 },
+        resources: { energy: -8, trust: 6, influence: 5 },
+        feedback:
+          "你离开后，团队第一次在没有你的情况下完成了一次完整决策。经验变成了流程，权力变成了能力。",
+        theory: "《卓有成效的管理者》：管理者必须把时间投入真正重要的决策。"
+      },
+      {
+        label: "只带关键助手熟悉关系",
+        summary: "挑一个人贴身跟学人脉和流程，降低短期风险。",
+        quality: "partial",
+        effects: { deploy: 2, communication: 1 },
+        resources: { energy: -6, trust: 3, influence: -3 },
+        feedback:
+          "单点备份解决了眼前问题，但组织仍然依赖某一个关键人。你走后，断点只是换了名字。",
+        theory: "《贞观政要》：以天下之财，非其人不可治。"
+      },
+      {
+        label: "把问题留给接替者",
+        summary: "相信组织会自然适应，把精力留给新岗位。",
+        quality: "risk",
+        effects: { recovery: 2 },
+        resources: { energy: -4, trust: -4, influence: -6 },
+        feedback:
+          "新岗位还没站稳，旧业务已经失速。你个人赢了晋升，组织付出了代价。",
+        theory: "《孙子兵法》：先为不可胜，以待敌之可胜。"
       }
     ]
   },
@@ -3144,6 +3278,18 @@ export const NODE_INTEL: Record<string, string[]> = {
     "提出辞职的人并不是最失望的人，而是最沉默的人",
     "团队上周已经提交过一份风险预警，但没有被重视"
   ],
+  s7: [
+    "越级汇报发生前，这位下属已经在周报里连续两次提出同类风险",
+    "CEO 关注的是信息是否透明，而不是谁先汇报"
+  ],
+  s8: [
+    "这位负责人过去的方案确实有两项被流程卡住过",
+    "投资人对新合作的态度取决于是否有人愿意承担风险"
+  ],
+  s9: [
+    "最近三次关键决策都依赖你个人确认后才会启动",
+    "接替者已经完成了一轮基础流程学习，但缺少真实案例演练"
+  ],
   "c1b-parachute": [
     "行政主管愿意合作，但不想公开站队",
     "财务经理更在意专业证据"
@@ -3662,21 +3808,22 @@ export function getNodeForRole(
     return base;
   }
   const chapter = getChapter(base.chapterId);
-  const options =
-    base.kind === "main"
-      ? base.options
-      : base.options.map((option, index) => {
-          const set = ROLE_OPTION_SETS[role][option.quality];
-          const variantIndex =
-            (stringHash(`${nodeId}-${role}-${index}`) + index) % set.length;
-          const view = set[variantIndex];
-          return {
-            ...option,
-            label: view.label,
-            summary: `${view.summary} 本章重点是「${chapter.title}」，你还需要判断：${base.stake}`,
-            feedback: view.feedback
-          };
-        });
+  const options = base.options.map((option, index) => {
+    const set = ROLE_OPTION_SETS[role][option.quality];
+    const variantIndex =
+      (stringHash(`${nodeId}-${role}-${index}`) + index) % set.length;
+    const view = set[variantIndex];
+    return {
+      ...option,
+      label: view.label,
+      summary: `${view.summary} 本章重点是「${chapter.title}」，你还需要判断：${base.stake}`,
+      feedback:
+        base.kind === "main"
+          ? `${view.feedback} 判断依据：${option.feedback}`
+          : view.feedback,
+      theory: option.theory
+    };
+  });
   return {
     ...base,
     title: variant.title ?? base.title,

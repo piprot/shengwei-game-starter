@@ -3372,6 +3372,71 @@ h2 {
   font-size: 13px;
 }
 
+.ability-formula {
+  margin: 10px 0 0;
+  padding: 8px 10px;
+  border-left: 3px solid #f2c14e;
+  background: rgba(242, 193, 78, 0.08);
+  color: #f2c14e;
+  font-size: 13px;
+  font-family: "Cambria Math", "Microsoft YaHei", sans-serif;
+}
+
+.ability-example {
+  margin: 6px 0 0;
+  color: #9fb3c8;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.training-teach {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  margin: 16px 0;
+}
+
+.training-teach > div {
+  padding: 14px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--panel);
+}
+
+.training-teach h3 {
+  margin: 0 0 8px;
+  color: #41c7c0;
+  font-size: 14px;
+}
+
+.training-teach code {
+  display: block;
+  color: #f2c14e;
+  font-size: 14px;
+  line-height: 1.6;
+  white-space: pre-wrap;
+}
+
+.training-teach ul {
+  margin: 0;
+  padding-left: 18px;
+  color: #c6d2dc;
+  font-size: 13px;
+}
+
+.training-teach p {
+  margin: 0;
+  color: #c6d2dc;
+  font-size: 13px;
+  line-height: 1.55;
+}
+
+@media (max-width: 900px) {
+  .training-teach {
+    grid-template-columns: 1fr;
+  }
+}
+
 @media (max-width: 720px) {
   .backup-hint {
     flex-direction: column;

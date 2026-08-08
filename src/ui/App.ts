@@ -1406,7 +1406,7 @@ export class AdaptiveGameApp {
             </div>
             <div class="mini-panel">
               <h3>${this.t("situation")}</h3>
-              <p>${this.language === "en" ? `Completed ${summary.chapterCount}/9 chapters, ${this.save.completedSideQuests.length}/6 side quests, ${this.save.completedRandomEvents.length} random events. Latest decision: ${this.latestDecisionText()}.` : `已完成 ${summary.chapterCount}/9 章，支线 ${this.save.completedSideQuests.length}/6，随机事件 ${this.save.completedRandomEvents.length}，最近决策 ${this.latestDecisionText()}。`}</p>
+              <p>${this.language === "en" ? `Completed ${summary.chapterCount}/9 chapters, ${this.save.completedSideQuests.length}/${SIDE_QUEST_ARCS.reduce((count, arc) => count + arc.nodes.length, 0)} side quests, ${this.save.completedRandomEvents.length} random events. Latest decision: ${this.latestDecisionText()}.` : `已完成 ${summary.chapterCount}/9 章，支线 ${this.save.completedSideQuests.length}/${SIDE_QUEST_ARCS.reduce((count, arc) => count + arc.nodes.length, 0)}，随机事件 ${this.save.completedRandomEvents.length}，最近决策 ${this.latestDecisionText()}。`}</p>
             </div>
             ${this.difficultySelectorMarkup()}
             <div class="challenge-panel">
@@ -2309,6 +2309,32 @@ export class AdaptiveGameApp {
           <h3>${escapeHtml(view.story.title)}</h3>
           <p>${escapeHtml(view.story.scenario)}</p>
           <blockquote>${escapeHtml(view.story.lesson)}</blockquote>
+          <section class="training-teach">
+            <div>
+              <h3>${this.t("trainingFormula")}</h3>
+              <code>${escapeHtml(view.formula.expression)}</code>
+              <p class="muted">${escapeHtml(view.formula.explanation)}</p>
+            </div>
+            <div>
+              <h3>${this.t("trainingApplication")}</h3>
+              <ul>
+                ${view.applicationPoints
+                  .map((point) => `<li>${escapeHtml(point)}</li>`)
+                  .join("")}
+              </ul>
+            </div>
+            <div>
+              <h3>${this.t("trainingExamples")}</h3>
+              ${
+                view.workedExamples[0]
+                  ? `
+                    <p>${escapeHtml(view.workedExamples[0].scenario)}</p>
+                    <p class="muted">${escapeHtml(view.workedExamples[0].application)}</p>
+                  `
+                  : ""
+              }
+            </div>
+          </section>
           <button class="primary" data-action="training-start-quiz">${this.t("trainingStartQuiz")}</button>
         </section>
       </main>
@@ -5894,7 +5920,7 @@ export class AdaptiveGameApp {
                   <span>${index + 1}</span>
                   <div>
                     <strong>${escapeHtml(nodeView.title)}</strong>
-                    <em>${nodeDone ? (this.language === "en" ? "Complete" : "已完成") : unlocked ? (this.language === "en" ? "Available" : "可接取") : (this.language === "en" ? "Locked" : "前置未解锁")}</em>
+                    <em>${nodeDone ? (this.language === "en" ? "Complete" : "已完成") : unlocked ? (this.language === "en" ? "Available" : "可接取") : escapeHtml(this.sideNodeLockReason(nodeId))}</em>
                   </div>
                 </button>
               `;
@@ -5913,13 +5939,13 @@ export class AdaptiveGameApp {
     }
     if (
       arc.id === "trust_rebuild" &&
-      this.save.profile.resources.trust < 45
+      this.save.profile.resources.trust < 30
     ) {
       return false;
     }
     if (
       arc.id === "resilience" &&
-      this.save.profile.resources.influence < 45
+      this.save.profile.resources.influence < 30
     ) {
       return false;
     }
@@ -5931,6 +5957,42 @@ export class AdaptiveGameApp {
     return getChapter(node.chapterId).nodeIds.some((mainId) =>
       isNodeComplete(this.save, mainId)
     );
+  }
+
+  private sideNodeLockReason(nodeId: string): string {
+    const arc = SIDE_QUEST_ARCS.find((item) => item.nodes.includes(nodeId));
+    if (!arc) {
+      return this.language === "en" ? "Locked" : "未解锁";
+    }
+    if (
+      arc.id === "trust_rebuild" &&
+      this.save.profile.resources.trust < 30
+    ) {
+      return this.language === "en" ? "Needs Trust 30+" : "需要信任 30+";
+    }
+    if (
+      arc.id === "resilience" &&
+      this.save.profile.resources.influence < 30
+    ) {
+      return this.language === "en"
+        ? "Needs Influence 30+"
+        : "需要影响力 30+";
+    }
+    const index = arc.nodes.indexOf(nodeId);
+    if (index > 0 && !isNodeComplete(this.save, arc.nodes[index - 1])) {
+      return this.language === "en"
+        ? "Previous node required"
+        : "需要先完成上一节点";
+    }
+    const node = getNode(nodeId);
+    const chapterReady = getChapter(node.chapterId).nodeIds.some((mainId) =>
+      isNodeComplete(this.save, mainId)
+    );
+    return chapterReady
+      ? (this.language === "en" ? "Available" : "可接取")
+      : this.language === "en"
+        ? "Finish this chapter's main scenario first"
+        : "先完成本章主线情境";
   }
 
   private nodeRow(node: StoryNode): string {
@@ -5996,6 +6058,16 @@ export class AdaptiveGameApp {
         <div class="ability-bar"><i style="width:${Math.min(100, (level / 6) * 100)}%"></i></div>
         <div class="subskill-list">${detail.subSkills.map((skill) => `<span>${escapeHtml(skill)}</span>`).join("")}</div>
         <p class="training-path">${escapeHtml(detail.trainingPath)}</p>
+        ${
+          EXPANDED_TRAINING[id]?.formula?.expression
+            ? `<p class="ability-formula">${escapeHtml(EXPANDED_TRAINING[id].formula.expression)}</p>`
+            : ""
+        }
+        ${
+          EXPANDED_TRAINING[id]?.workedExamples?.[0]?.scenario
+            ? `<p class="ability-example">${escapeHtml(EXPANDED_TRAINING[id].workedExamples[0].scenario)}</p>`
+            : ""
+        }
         <div class="ability-sources">${detail.sources.slice(0, 2).map((source) => `<span>${escapeHtml(source)}</span>`).join("")}</div>
       </div>
     `;
