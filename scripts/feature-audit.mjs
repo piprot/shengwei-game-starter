@@ -65,6 +65,11 @@ try {
       ];
       save.unlockedChapters = [1, 2];
       localStorage.setItem("adaptive-ascent-save-v1", JSON.stringify(save));
+      localStorage.setItem(
+        "adaptive-ascent-save-role-v1-highPotential",
+        JSON.stringify(save)
+      );
+      localStorage.setItem("adaptive-ascent-active-role-v1", "highPotential");
     }
   });
   await page.reload({ waitUntil: "networkidle" });

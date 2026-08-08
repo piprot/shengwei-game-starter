@@ -63,6 +63,7 @@ import {
   buyTrialEnergyWithInfluence,
   chapterStarCount,
   computeSaveHash,
+  deleteRoleSlot,
   hireTrialAlly,
   investTrialAccelerator,
   isChapterComplete,
@@ -73,6 +74,7 @@ import {
   recordDuelResult,
   resourceStrainFor,
   resolveCloudConflict,
+  roleSlotSummaries,
   retryChapter,
   rotateRandomEventPool,
   roundDurationMsForDifficulty,
@@ -786,6 +788,7 @@ assert(saveState(failed) === false, "saveState should report failure when storag
 globalThis.localStorage.setItem = originalSetItem;
 
 // 损坏主存档时，loadSave 应从 session 备份恢复并留下通知标记
+deleteRoleSlot("highPotential");
 store.set("adaptive-ascent-save-v1", "{broken json");
 const recovered = loadSave();
 assert(
@@ -924,6 +927,42 @@ assert(
     restoredDuel.currentRound === 0 &&
     restoredDuel.roundCount === 3,
   "duel snapshot should restore picks, round, and round count"
+);
+
+// ---- 多角色存档槽：三角色独立存档、切换与删除 ----
+const slotParachute = structuredClone(DEFAULT_SAVE);
+slotParachute.profileCreated = true;
+slotParachute.profile.name = "SlotA";
+slotParachute.profile.role = "parachute";
+slotParachute.playCount = 3;
+assert(saveState(slotParachute), "parachute slot should save");
+
+const slotFounder = structuredClone(DEFAULT_SAVE);
+slotFounder.profileCreated = true;
+slotFounder.profile.name = "SlotB";
+slotFounder.profile.role = "founder";
+assert(saveState(slotFounder), "founder slot should save");
+
+const loadedParachute = loadSave("parachute");
+assert(
+  loadedParachute.profile.name === "SlotA" &&
+    loadedParachute.playCount === 3,
+  "parachute slot should load its own progress"
+);
+const loadedFounder = loadSave("founder");
+assert(
+  loadedFounder.profile.name === "SlotB",
+  "founder slot should load independently"
+);
+const slotSummaries = roleSlotSummaries();
+assert(
+  slotSummaries.filter((slot) => slot.exists).length === 2,
+  "roleSlotSummaries should detect two saved roles"
+);
+deleteRoleSlot("founder");
+assert(
+  loadSave("founder").profileCreated === false,
+  "deleteRoleSlot should clear a single role slot"
 );
 
 console.log("PASS unit test");

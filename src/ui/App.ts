@@ -42,6 +42,7 @@ import {
   consumeCorruptSaveNotice,
   createProfile,
   decisionProfile,
+  deleteRoleSlot,
   importSaveJson,
   isChapterComplete,
   isChapterPassed,
@@ -54,6 +55,7 @@ import {
   resetSave,
   retryChapter,
   resolveCloudConflict,
+  roleSlotSummaries,
   rotateRandomEventPool,
   roundDurationMsForDifficulty,
   saveState,
@@ -954,6 +956,11 @@ export class AdaptiveGameApp {
             <h2>${this.t("settingsTitle")}</h2>
             <p>${this.language === "en" ? "Sound, language, difficulty, save data, and help in one place." : "统一管理声音、语言、难度、存档数据与操作说明。"}</p>
           </button>
+          <button class="menu-card" data-action="open-profile">
+            <span class="card-index">09</span>
+            <h2>${this.language === "en" ? "Role Archives" : "角色档案"}</h2>
+            <p>${this.language === "en" ? "Keep every role's save and switch between parachute, founder, and high potential without deleting progress." : "空降、创业、高潜三套档案独立保存，随时切换，不再删档。"}</p>
+          </button>
         </section>
       </main>
     `;
@@ -971,6 +978,30 @@ export class AdaptiveGameApp {
         <button class="link" data-action="open-menu">${this.t("returnHome")}</button>
       </header>
       <main class="narrow-shell" aria-label="${this.language === "en" ? "Profile creation" : "创建档案"}">
+        ${
+          this.save.profileCreated
+            ? `
+              <section class="role-slot-panel">
+                <p class="eyebrow">${en ? "Role Archives" : "角色档案"}</p>
+                <h2>${en ? "Switch roles without deleting progress" : "切换角色，无需删档"}</h2>
+                <div class="role-slot-list">
+                  ${roleSlotSummaries()
+                    .map((slot) => {
+                      const active = slot.role === this.save.profile.role;
+                      return `
+                        <div class="role-slot-card ${active ? "active" : ""} ${slot.exists ? "" : "empty"}">
+                          <strong>${this.roleDisplay(slot.role).name}</strong>
+                          <span>${slot.exists ? `${escapeHtml(slot.name)} · ${en ? "Chapters" : "章节"} ${slot.chapterCount}/9 · ${en ? "Mastery" : "修炼"} ${slot.masteryPoints}` : (en ? "No save yet" : "未建档")}</span>
+                          <button data-action="${slot.exists ? "switch-role" : "new-role"}" data-role="${slot.role}">${slot.exists ? (active ? (en ? "Current" : "当前") : (en ? "Switch" : "切换")) : (en ? "Create" : "新建")}</button>
+                        </div>
+                      `;
+                    })
+                    .join("")}
+                </div>
+              </section>
+            `
+            : ""
+        }
         <section class="panel profile-panel">
           <p class="eyebrow">${en ? "Build Your Leadership Profile" : "建立领导力档案"}</p>
           <h1>${en ? "Choose Your Starting Identity" : "选择你的初始身份"}</h1>
@@ -3642,6 +3673,46 @@ export class AdaptiveGameApp {
         this.pendingRole = (actionTarget.dataset.role as RoleId) ?? "highPotential";
         this.renderProfile();
         break;
+      case "switch-role": {
+        const role = actionTarget.dataset.role as RoleId;
+        if (!role || !ROLES[role]) break;
+        this.save = loadSave(role);
+        this.pendingRole = role;
+        this.pendingProfile = undefined;
+        this.audio.ui();
+        if (this.save.profileCreated) {
+          this.show("menu");
+        } else {
+          this.show("profile");
+        }
+        break;
+      }
+      case "new-role": {
+        const role = actionTarget.dataset.role as RoleId;
+        if (!role || !ROLES[role]) break;
+        const existing = roleSlotSummaries().find(
+          (slot) => slot.role === role && slot.exists
+        );
+        if (
+          existing &&
+          !window.confirm(
+            this.language === "en"
+              ? `A ${this.roleDisplay(role).name} save already exists. Create a new one and overwrite it?`
+              : `已存在「${this.roleDisplay(role).name}」档案，新建会覆盖它，确定吗？`
+          )
+        ) {
+          break;
+        }
+        if (existing) {
+          deleteRoleSlot(role);
+        }
+        this.save = loadSave(role);
+        this.pendingRole = role;
+        this.pendingProfile = undefined;
+        this.audio.ui();
+        this.show("profile");
+        break;
+      }
       case "open-menu":
         this.audio.ui();
         this.show("menu");
@@ -4114,9 +4185,10 @@ export class AdaptiveGameApp {
               : "确定要清空当前档案和所有进度吗？"
           )
         ) {
-          this.save = resetSave();
+          deleteRoleSlot(this.save.profile.role);
+          this.save = resetSave(this.save.profile.role);
           trackEvent("profile_reset");
-          this.pendingRole = "highPotential";
+          this.pendingRole = this.save.profile.role;
           this.show("profile");
         }
         break;
@@ -4811,8 +4883,10 @@ export class AdaptiveGameApp {
               : "确定要清空当前档案和所有进度吗？"
           )
         ) {
-          this.save = resetSave();
+          deleteRoleSlot(this.save.profile.role);
+          this.save = resetSave(this.save.profile.role);
           trackEvent("profile_reset");
+          this.pendingRole = this.save.profile.role;
           this.show("profile");
         }
         break;

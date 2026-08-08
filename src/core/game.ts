@@ -24,6 +24,9 @@ import type {
 const SAVE_KEY = "adaptive-ascent-save-v1";
 const BACKUP_SAVE_KEY = "adaptive-ascent-save-backup-v1";
 const CORRUPT_SAVE_KEY = "adaptive-ascent-save-corrupt";
+const ROLE_SAVE_PREFIX = "adaptive-ascent-save-role-v1-";
+const ACTIVE_ROLE_KEY = "adaptive-ascent-active-role-v1";
+export const ROLE_IDS: RoleId[] = ["parachute", "founder", "highPotential"];
 
 /** 难度档位对应的资源缩放系数（负面 delta 放大、正面 delta 收窄）。 */
 export const PRESSURE_FACTORS: Record<
@@ -111,7 +114,55 @@ export function createProfile(name: string, role: RoleId): PlayerProfile {
   };
 }
 
-export function loadSave(): SaveState {
+export function roleSaveKey(role: RoleId): string {
+  return `${ROLE_SAVE_PREFIX}${role}`;
+}
+
+function readSlot(role: RoleId): SaveState | null {
+  try {
+    const raw = localStorage.getItem(roleSaveKey(role));
+    if (!raw) {
+      return null;
+    }
+    const parsed = JSON.parse(raw) as SaveState;
+    return parsed.version === DEFAULT_SAVE.version
+      ? normalizeSave(parsed)
+      : migrateSave(parsed);
+  } catch {
+    return null;
+  }
+}
+
+export function loadSave(role?: RoleId): SaveState {
+  if (role) {
+    const slot = readSlot(role);
+    if (slot) {
+      return slot;
+    }
+    const fresh = structuredClone(DEFAULT_SAVE);
+    fresh.profile.role = role;
+    return fresh;
+  }
+  let activeRole: RoleId | null = null;
+  try {
+    activeRole = localStorage.getItem(ACTIVE_ROLE_KEY) as RoleId | null;
+  } catch {
+    activeRole = null;
+  }
+  if (activeRole && ROLE_IDS.includes(activeRole)) {
+    const slot = readSlot(activeRole);
+    if (slot) {
+      return slot;
+    }
+  }
+  const legacy = loadLegacySave();
+  if (legacy.profileCreated) {
+    saveState(legacy);
+  }
+  return legacy;
+}
+
+function loadLegacySave(): SaveState {
   let corruptRaw: string | null = null;
   try {
     const raw = localStorage.getItem(SAVE_KEY);
@@ -318,6 +369,14 @@ export function saveState(save: SaveState): boolean {
   const json = JSON.stringify(save);
   try {
     localStorage.setItem(SAVE_KEY, json);
+    if (save.profileCreated && ROLE_IDS.includes(save.profile.role)) {
+      try {
+        localStorage.setItem(roleSaveKey(save.profile.role), json);
+        localStorage.setItem(ACTIVE_ROLE_KEY, save.profile.role);
+      } catch {
+        // role slot write failure should not block the main save
+      }
+    }
     try {
       sessionStorage.setItem(BACKUP_SAVE_KEY, json);
     } catch {
@@ -362,8 +421,11 @@ export function migrateSave(parsed: any): SaveState {
   return result as SaveState;
 }
 
-export function resetSave(): SaveState {
+export function resetSave(role?: RoleId): SaveState {
   const fresh = structuredClone(DEFAULT_SAVE);
+  if (role) {
+    fresh.profile.role = role;
+  }
   saveState(fresh);
   return fresh;
 }
@@ -380,6 +442,48 @@ export function activateProfile(save: SaveState, profile: PlayerProfile): void {
   save.profile = profile;
   save.profileCreated = true;
   saveState(save);
+}
+
+export interface RoleSlotSummary {
+  role: RoleId;
+  exists: boolean;
+  name: string;
+  chapterCount: number;
+  masteryPoints: number;
+  campaignCompletions: number;
+}
+
+export function roleSlotSummaries(): RoleSlotSummary[] {
+  return ROLE_IDS.map((role) => {
+    const slot = readSlot(role);
+    return {
+      role,
+      exists: Boolean(slot && slot.profileCreated),
+      name: slot?.profile?.name ?? "",
+      chapterCount: slot
+        ? slot.chapterRecords.filter(
+            (record) => record.completedNodeIds.length >= 2
+          ).length
+        : 0,
+      masteryPoints: slot?.masteryPoints ?? 0,
+      campaignCompletions: slot?.campaignCompletions ?? 0
+    };
+  });
+}
+
+export function deleteRoleSlot(role: RoleId): void {
+  try {
+    localStorage.removeItem(roleSaveKey(role));
+  } catch {
+    // ignore
+  }
+  try {
+    if (localStorage.getItem(ACTIVE_ROLE_KEY) === role) {
+      localStorage.removeItem(ACTIVE_ROLE_KEY);
+    }
+  } catch {
+    // ignore
+  }
 }
 
 export function applyStoryChoice(

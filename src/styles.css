@@ -3443,6 +3443,65 @@ h2 {
   }
 }
 
+.role-slot-panel {
+  margin-bottom: 16px;
+  padding: 16px;
+  border: 1px solid rgba(65, 199, 192, 0.35);
+  border-radius: 8px;
+  background: rgba(65, 199, 192, 0.05);
+}
+
+.role-slot-panel h2 {
+  margin: 0 0 10px;
+  color: #e7eef2;
+  font-size: 18px;
+}
+
+.role-slot-list {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+}
+
+.role-slot-card {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--panel);
+}
+
+.role-slot-card.active {
+  border-color: rgba(65, 199, 192, 0.7);
+}
+
+.role-slot-card.empty {
+  opacity: 0.75;
+}
+
+.role-slot-card strong {
+  color: #e7eef2;
+  font-size: 15px;
+}
+
+.role-slot-card span {
+  color: #9fb3c8;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.role-slot-card button {
+  margin-top: auto;
+}
+
+@media (max-width: 720px) {
+  .role-slot-list {
+    grid-template-columns: 1fr;
+  }
+}
+
 /* v1.1 release polish: scene art, save guidance, retry gates, duel resume */
 .story-shell,
 .map-shell {
