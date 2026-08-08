@@ -37,10 +37,14 @@ export const PRESSURE_FACTORS: Record<
 export function roundDurationMsForDifficulty(
   difficulty: "normal" | "pressure" | "extreme"
 ): number {
+  if (difficulty === "normal") return NORMAL_DECISION_MS;
   if (difficulty === "pressure") return 22000;
-  if (difficulty === "extreme") return 14000;
-  return 0;
+  return 14000;
 }
+
+export const NORMAL_DECISION_MS = 30000;
+export const RESOURCE_STRAIN_SOFT = 30;
+export const RESOURCE_STRAIN_HARD = 15;
 
 export const DEFAULT_SAVE: SaveState = {
   version: 1,
@@ -79,6 +83,8 @@ export const DEFAULT_SAVE: SaveState = {
   trialAcceleratorLevel: 0,
   trialOpenAnswers: {},
   hiddenRoutes: [],
+  bestScore: 0,
+  campaignCompletions: 0,
   hiddenRouteProgress: {},
   alternateEndings: [],
   highPressureMode: false,
@@ -149,6 +155,12 @@ function normalizeSave(save: SaveState): SaveState {
     duelWins: Number(save.duelWins) || 0,
     duelLosses: Number(save.duelLosses) || 0,
     playCount: Number(save.playCount) || 0,
+    lastStoryNodeId:
+      typeof save.lastStoryNodeId === "string"
+        ? save.lastStoryNodeId
+        : undefined,
+    bestScore: Number(save.bestScore) || 0,
+    campaignCompletions: Number(save.campaignCompletions) || 0,
     masteryPoints: Number(save.masteryPoints) || 0,
     decisionHistory: Array.isArray(save.decisionHistory)
       ? save.decisionHistory
@@ -404,8 +416,15 @@ export function applyStoryChoice(
       save.chapterRecords.push(record);
     }
     if (record.completedNodeIds.length >= 2) {
-      save.masteryPoints += 10;
-      save.achievements.push(`chapter_${node.chapterId}`);
+      const chapterAchievement = `chapter_${node.chapterId}`;
+      const firstComplete = !save.achievements.includes(chapterAchievement);
+      if (firstComplete) {
+        save.masteryPoints += 10;
+        save.achievements.push(chapterAchievement);
+        if (node.chapterId === 9) {
+          save.campaignCompletions = (save.campaignCompletions ?? 0) + 1;
+        }
+      }
       const nextChapter = node.chapterId + 1;
       if (nextChapter <= 9 && !save.unlockedChapters.includes(nextChapter)) {
         save.unlockedChapters.push(nextChapter);
@@ -440,19 +459,27 @@ function buildOutcome(
     1
   );
   const unlockBonus = relevantLevel >= 5 ? 14 : relevantLevel >= 3 ? 8 : 0;
+  const strain = resourceStrainFor(save, option);
   return {
     option,
     optionIndex,
     gainedAbilityIds,
     resourceDeltas: option.resources,
-    qualityScore: scoreQuality(option.quality, save.profile, unlockBonus)
+    qualityScore: scoreQuality(
+      option.quality,
+      save.profile,
+      unlockBonus,
+      strain
+    ),
+    resourceStrain: strain
   };
 }
 
 export function scoreQuality(
   quality: OptionQuality,
   profile: PlayerProfile,
-  abilityBonus = 0
+  abilityBonus = 0,
+  strain = 0
 ): number {
   const base = quality === "expert" ? 100 : quality === "partial" ? 55 : 20;
   const best = bestAbilityLevel(profile) + abilityBonus;
@@ -460,11 +487,117 @@ export function scoreQuality(
   const roleBest = Math.max(
     ...roleFocus.map((id) => abilityLevel(profile.abilities[id]))
   );
-  return Math.round(base + Math.min(30, best * 3) + Math.min(12, roleBest * 2));
+  return Math.max(
+    0,
+    Math.round(
+      base + Math.min(30, best * 3) + Math.min(12, roleBest * 2) - strain
+    )
+  );
 }
 
 function bestAbilityLevel(profile: PlayerProfile): number {
   return Math.max(...ABILITY_ORDER.map((id) => abilityLevel(profile.abilities[id])));
+}
+
+export type OptionGate =
+  | { kind: "ok" }
+  | {
+      kind: "resource";
+      resource: ResourceKey;
+      needed: number;
+      current: number;
+    }
+  | {
+      kind: "ability";
+      ability: AbilityId;
+      needed: number;
+      current: number;
+    };
+
+export function optionResourceRequirement(
+  option: StoryOption
+): Partial<Record<ResourceKey, number>> {
+  const requirement: Partial<Record<ResourceKey, number>> = {};
+  for (const [key, delta] of Object.entries(option.resources ?? {}) as Array<
+    [ResourceKey, number]
+  >) {
+    if (delta < 0) requirement[key] = Math.abs(delta);
+  }
+  return requirement;
+}
+
+function effectiveDifficulty(
+  save: SaveState
+): "normal" | "pressure" | "extreme" {
+  return save.difficulty !== "normal"
+    ? save.difficulty
+    : save.highPressureMode
+      ? "pressure"
+      : "normal";
+}
+
+export function optionGateFor(
+  save: SaveState,
+  option: StoryOption,
+  chapterId: number
+): OptionGate {
+  const factor = PRESSURE_FACTORS[effectiveDifficulty(save)];
+  for (const [key, needed] of Object.entries(
+    optionResourceRequirement(option)
+  ) as Array<[ResourceKey, number]>) {
+    const current = save.profile.resources[key];
+    const effectiveNeeded = Math.ceil(needed * factor.neg);
+    if (current < effectiveNeeded) {
+      return {
+        kind: "resource",
+        resource: key,
+        needed: effectiveNeeded,
+        current
+      };
+    }
+  }
+  if (option.quality === "expert") {
+    const abilityIds = Object.keys(option.effects ?? {}) as AbilityId[];
+    if (abilityIds.length > 0) {
+      const gate = chapterId >= 8 ? 3 : chapterId >= 5 ? 2 : 1;
+      const best = Math.max(
+        ...abilityIds.map((id) => abilityLevel(save.profile.abilities[id]))
+      );
+      if (best < gate) {
+        const ability = abilityIds.reduce((a, b) =>
+          abilityLevel(save.profile.abilities[a]) >=
+          abilityLevel(save.profile.abilities[b])
+            ? a
+            : b
+        );
+        return {
+          kind: "ability",
+          ability,
+          needed: gate,
+          current: best
+        };
+      }
+    }
+  }
+  return { kind: "ok" };
+}
+
+export function resourceStrainFor(
+  save: SaveState,
+  option: StoryOption
+): number {
+  const factor = PRESSURE_FACTORS[effectiveDifficulty(save)];
+  let strain = 0;
+  for (const [key, delta] of Object.entries(option.resources ?? {}) as Array<
+    [ResourceKey, number]
+  >) {
+    if (delta >= 0) continue;
+    const adjusted = Math.round(delta * factor.neg);
+    const after = save.profile.resources[key] + adjusted;
+    if (after < RESOURCE_STRAIN_HARD) strain += 15;
+    else if (after < RESOURCE_STRAIN_SOFT) strain += 8;
+  }
+  return strain;
 }
 
 export function chapterStarCount(stars: number): number {
@@ -555,6 +688,7 @@ export function recordDuelResult(
     won,
     timestamp: Date.now()
   });
+  save.bestScore = Math.max(save.bestScore ?? 0, playerScore);
   saveState(save);
   return save;
 }
@@ -858,8 +992,13 @@ export function buildDuelProfile(
 
 export function buildAiProfile(role: RoleId, strength: number) {
   const base = createDefaultAbilities();
+  let state = (strength * 1009 + role.charCodeAt(0) * 31 + 12345) >>> 0;
+  const rand = () => {
+    state = (state * 1664525 + 1013904223) >>> 0;
+    return state / 4294967296;
+  };
   for (const id of ABILITY_ORDER) {
-    base[id] = Math.floor((Math.random() * 6 + strength * 3 + 4) % 24);
+    base[id] = Math.floor((rand() * 6 + strength * 3 + 4) % 24);
   }
   const roleDef = ROLES[role];
   for (const [id, exp] of Object.entries(roleDef.startingAbilities) as Array<

@@ -25,7 +25,7 @@ import {
 import { hiddenRouteSteps } from "../src/core/hiddenRoutes.ts";
 
 
-import { ACHIEVEMENTS } from "../src/core/achievements.ts";
+import { ACHIEVEMENTS, isAchievementUnlocked } from "../src/core/achievements.ts";
 import {
   CHAPTERS,
   RANDOM_EVENT_IDS,
@@ -38,15 +38,20 @@ import {
 import { ROLE_OPTION_SETS } from "../src/core/roleOptions.ts";
 import {
   DEFAULT_SAVE,
+  NORMAL_DECISION_MS,
   PRESSURE_FACTORS,
   applyDailyTrialRecovery,
   applyStoryChoice,
+  buildAiProfile,
   buyTrialEnergy,
   buyTrialEnergyWithInfluence,
   computeSaveHash,
   hireTrialAlly,
   investTrialAccelerator,
   migrateSave,
+  optionGateFor,
+  recordDuelResult,
+  resourceStrainFor,
   resolveCloudConflict,
   roundDurationMsForDifficulty,
   scoreQuality
@@ -555,9 +560,48 @@ assert(
 );
 
 // ---- D2：回合时限纯函数 ----
-assert(roundDurationMsForDifficulty("normal") === 0, "normal difficulty is untimed (0ms)");
+assert(
+  roundDurationMsForDifficulty("normal") === NORMAL_DECISION_MS,
+  "normal difficulty should use a soft decision timer"
+);
+assert(NORMAL_DECISION_MS > 0, "normal soft timer must be positive");
 assert(roundDurationMsForDifficulty("pressure") === 22000, "pressure duration should be 22000ms");
 assert(roundDurationMsForDifficulty("extreme") === 14000, "extreme duration should be 14000ms");
+
+const gateSave = structuredClone(DEFAULT_SAVE);
+gateSave.profile.resources.energy = 0;
+const expensiveOption =
+  STORY_NODES.flatMap((n) => n.options).find(
+    (o) => (o.resources?.energy || 0) < 0
+  ) ?? probe2.options[0];
+assert(
+  optionGateFor(gateSave, expensiveOption, 1).kind === "resource",
+  "low energy should gate costly options"
+);
+
+const highChapterExpert = STORY_NODES.filter((n) => n.chapterId >= 8)
+  .flatMap((n) => n.options)
+  .find((o) => o.quality === "expert");
+assert(highChapterExpert, "need an expert option in chapters 8+");
+const abilityGateSave = structuredClone(DEFAULT_SAVE);
+assert(
+  optionGateFor(abilityGateSave, highChapterExpert, 8).kind === "ability",
+  "expert option should require ability level in late chapters"
+);
+
+const strainSave = structuredClone(DEFAULT_SAVE);
+strainSave.profile.resources.energy = 12;
+assert(
+  resourceStrainFor(strainSave, expensiveOption) > 0,
+  "low energy should produce resource strain"
+);
+
+const aiA = buildAiProfile("founder", 4);
+const aiB = buildAiProfile("founder", 4);
+assert(
+  JSON.stringify(aiA) === JSON.stringify(aiB),
+  "AI profile should be deterministic for same role and strength"
+);
 
 // ---- D3：随机干扰文案可解析、随机节点 kind 正确（相关纯逻辑不抛错）----
 assert(
@@ -568,6 +612,60 @@ assert(
 assert(
   RANDOM_EVENT_IDS.every((id) => getNode(id).kind === "random"),
   "every random event id must resolve to a node of kind 'random'"
+);
+
+const bestSave = structuredClone(DEFAULT_SAVE);
+recordDuelResult(bestSave, true, true, 10, "opponent", 88, 70);
+assert(
+  bestSave.bestScore === 88,
+  "recordDuelResult should track local best score"
+);
+
+const achSave = structuredClone(DEFAULT_SAVE);
+achSave.playCount = 1;
+assert(
+  isAchievementUnlocked(achSave, "first_step"),
+  "first_step should unlock after the first decision"
+);
+achSave.completedTraining = ["insight", "deploy", "mobilize", "strategy"];
+assert(
+  isAchievementUnlocked(achSave, "training_four"),
+  "training_four should unlock after four training routes"
+);
+achSave.trialCleared = TRIAL_STAGES.map((stage) => stage.id);
+assert(
+  isAchievementUnlocked(achSave, "trial_all"),
+  "trial_all should unlock after clearing every trial stage"
+);
+achSave.hiddenRoutes = ["ability-insight"];
+assert(
+  isAchievementUnlocked(achSave, "hidden_route"),
+  "hidden_route should unlock after entering a hidden route"
+);
+
+const campaignSave = structuredClone(DEFAULT_SAVE);
+const chapterNineMains = nodesForChapter(9).filter((n) => n.kind === "main");
+for (const n of chapterNineMains) {
+  applyStoryChoice(campaignSave, n.id, 0);
+}
+assert(
+  campaignSave.campaignCompletions === 1,
+  "campaignCompletions should increment once per completed campaign"
+);
+assert(
+  campaignSave.masteryPoints === 10,
+  "chapter mastery should be awarded once per chapter"
+);
+for (const n of chapterNineMains) {
+  applyStoryChoice(campaignSave, n.id, 1);
+}
+assert(
+  campaignSave.campaignCompletions === 1,
+  "campaignCompletions must not double count replays"
+);
+assert(
+  campaignSave.masteryPoints === 10,
+  "chapter mastery must not double count replays"
 );
 
 console.log("PASS unit test");

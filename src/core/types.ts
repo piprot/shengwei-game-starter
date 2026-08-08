@@ -149,6 +149,11 @@ export interface SaveState {
   lastSavedAt?: number;
   /** 存档核心进度的内容哈希。用于云端同步冲突判定（同游玩次数但内容不同也能识别）。 */
   saveHash?: string;
+  lastStoryNodeId?: string;
+  /** 鏈満鏈€楂樺涓嬪緱鍒嗭紝鐢ㄤ簬鏈湴鎴愮哗鐣欏瓨銆?*/
+  bestScore?: number;
+  /** 瀹屾垚鏁翠釜涓冪珷鏉冨姏鏋舵瀯鐨勬鏁帮紝鐢ㄤ簬銆屾父鐜╂鏁般€嶈€屼笉鏄喅绛栨鏁般€?*/
+  campaignCompletions?: number;
 }
 
 export interface ChoiceOutcome {
@@ -157,6 +162,7 @@ export interface ChoiceOutcome {
   gainedAbilityIds: AbilityId[];
   resourceDeltas: Partial<Record<ResourceKey, number>>;
   qualityScore: number;
+  resourceStrain?: number;
 }
 
 export interface DuelResult {

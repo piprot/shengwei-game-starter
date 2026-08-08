@@ -2996,3 +2996,70 @@ h2 {
     min-height: 68px;
   }
 }
+
+.option-card.locked {
+  opacity: 0.45;
+  filter: saturate(0.4);
+  cursor: not-allowed;
+}
+
+.option-card .option-gate-note {
+  display: block;
+  margin-top: 0.4rem;
+  color: #e9826c;
+  font-weight: 700;
+}
+
+.round-timer.urgent {
+  color: #e9826c;
+  font-weight: 800;
+  animation: reveal-pulse 900ms ease-in-out infinite;
+}
+
+.strain-note {
+  margin: 0.6rem 0 0;
+  color: #d97aa2;
+  font-weight: 700;
+}
+
+.resume-card {
+  border-color: #e9b872;
+}
+
+.best-score-badge {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.65rem 0.9rem;
+  border: 1px solid rgba(233, 185, 114, 0.45);
+  border-radius: 8px;
+  background: rgba(233, 185, 114, 0.08);
+}
+
+.best-score-badge span {
+  font-size: 0.78rem;
+  opacity: 0.75;
+}
+
+.best-score-badge strong {
+  font-size: 1.25rem;
+  color: #e9b872;
+}
+
+.outcome-effects.score-pop {
+  animation: score-pop 420ms cubic-bezier(0.2, 0.8, 0.3, 1.2) both;
+}
+
+@keyframes score-pop {
+  0% {
+    transform: scale(0.92);
+    opacity: 0.4;
+  }
+  60% {
+    transform: scale(1.04);
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}

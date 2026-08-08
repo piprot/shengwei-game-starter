@@ -41,6 +41,7 @@ import {
   isChapterComplete,
   isNodeComplete,
   loadSave,
+  optionGateFor,
   optionQualityLabel,
   profileSummary,
   recordDuelResult,
@@ -393,6 +394,7 @@ export class AdaptiveGameApp {
     }
     const seconds = Math.ceil(Math.max(0, this.roundDeadline - Date.now()) / 1000);
     el.style.display = "";
+    el.classList.toggle("urgent", seconds <= 10);
     el.textContent = `${this.t("roundTimer")}：${seconds}s`;
   }
 
@@ -801,6 +803,7 @@ export class AdaptiveGameApp {
           </div>
         </section>
         <section class="menu-grid">
+          ${this.save.lastStoryNodeId ? `<button class="menu-card resume-card" data-action="resume-last-node"><span class="card-index">00</span><h2>${this.t("menuResume")}</h2><p>${this.t("resumeHint")}</p></button>` : ""}
           <button class="menu-card" data-action="open-map" aria-keyshortcuts="M">
             <span class="card-index">01</span>
             <h2>${this.t("mainQuest")}</h2>
@@ -1366,6 +1369,10 @@ export class AdaptiveGameApp {
     const chapter = this.chapterDisplay(getChapter(node.chapterId));
     const showingOutcome = this.lastOutcomeNodeId === node.id && this.lastOutcome;
     const showOnboarding = this.save.playCount === 0 && !showingOutcome;
+    if (!showingOutcome && !this.replayMode) {
+      this.save.lastStoryNodeId = node.id;
+      saveState(this.save);
+    }
     const relevantAbilities = [
       ...new Set(
         node.options.flatMap((option) =>
@@ -1472,16 +1479,30 @@ export class AdaptiveGameApp {
                     <div class="option-list">
                       ${node.options
                         .map(
-                          (option, index) => `
-                            <button class="option-card" data-action="choose-option" data-option="${index}">
-                              <span class="option-letter">${String.fromCharCode(65 + index)}</span>
-                              <span class="option-body">
-                                <strong>${escapeHtml(option.label)}</strong>
-                                <em>${escapeHtml(option.summary)}</em>
-                                <small class="role-move">${this.roleMove(option.quality)}</small>
-                              </span>
-                            </button>
-                          `
+                          (option, index) => {
+                            const gate = optionGateFor(
+                              this.save,
+                              option,
+                              node.chapterId
+                            );
+                            const gateNote =
+                              gate.kind === "resource"
+                                ? `${this.t("optionLockedResource")} ${this.resourceDisplay(gate.resource)} ${gate.needed}`
+                                : gate.kind === "ability"
+                                  ? `${this.t("optionLockedAbility")} ${this.abilityDisplay(gate.ability).name} Lv.${gate.needed}`
+                                  : "";
+                            return `
+                              <button class="option-card ${gate.kind !== "ok" ? "locked" : ""}" data-action="choose-option" data-option="${index}" ${gate.kind !== "ok" ? "disabled" : ""}>
+                                <span class="option-letter">${String.fromCharCode(65 + index)}</span>
+                                <span class="option-body">
+                                  <strong>${escapeHtml(option.label)}</strong>
+                                  <em>${escapeHtml(option.summary)}</em>
+                                  <small class="role-move">${this.roleMove(option.quality)}</small>
+                                  ${gateNote ? `<small class="option-gate-note">${escapeHtml(gateNote)}</small>` : ""}
+                                </span>
+                              </button>
+                            `;
+                          }
                         )
                         .join("")}
                     </div>
@@ -1638,6 +1659,10 @@ export class AdaptiveGameApp {
             <span><strong>${this.save.duelWins}</strong> ${this.language === "en" ? "Wins" : "胜"}</span>
             <span><strong>${this.save.duelLosses}</strong> ${this.language === "en" ? "Losses" : "负"}</span>
             <span><strong>${this.save.masteryPoints}</strong> ${this.language === "en" ? "Mastery" : "修炼点"}</span>
+          </div>
+          <div class="best-score-badge">
+            <span>${this.t("bestScore")}</span>
+            <strong>${this.save.bestScore ?? 0}</strong>
           </div>
           <div class="identity-badge">
             <span>${this.language === "en" ? "Decision Profile" : "决策画像"}</span>
@@ -3173,6 +3198,30 @@ export class AdaptiveGameApp {
         }
         break;
       }
+      case "resume-last-node": {
+        const nodeId = this.save.lastStoryNodeId;
+        if (!nodeId) break;
+        try {
+          const node = getNode(nodeId);
+          this.audio.ui();
+          this.replayMode = false;
+          this.storyNodeId = node.id;
+          this.storyHintRevealed = false;
+          this.pendingBranchNodeId = undefined;
+          this.pendingChapterTransition = undefined;
+          this.lastUnlockedAchievement = undefined;
+          this.lastOutcome = undefined;
+          this.lastOutcomeNodeId = undefined;
+          this.interferenceText =
+            node.kind === "random" ? this.t("interferenceNote") : undefined;
+          this.show("story");
+          this.startRoundTimer();
+        } catch {
+          this.save.lastStoryNodeId = undefined;
+          saveState(this.save);
+        }
+        break;
+      }
       case "select-chapter": {
         const chapterId = Number(actionTarget.dataset.chapter);
         if (this.save.unlockedChapters.includes(chapterId)) {
@@ -4411,6 +4460,14 @@ export class AdaptiveGameApp {
       this.renderStory();
       return;
     }
+    const rawNode = getNode(this.storyNodeId);
+    if (
+      optionGateFor(this.save, rawNode.options[optionIndex], rawNode.chapterId)
+        .kind !== "ok"
+    ) {
+      return;
+    }
+    this.save.lastStoryNodeId = undefined;
     const beforeIds = ACHIEVEMENTS.filter((achievement) =>
       isAchievementUnlocked(this.save, achievement.id)
     ).map((achievement) => achievement.id);
@@ -5591,7 +5648,7 @@ export class AdaptiveGameApp {
         <h2>${escapeHtml(option.label)}</h2>
         <p>${escapeHtml(option.feedback)}</p>
         <blockquote>${escapeHtml(option.theory)}</blockquote>
-        <div class="outcome-effects">
+        <div class="outcome-effects score-pop">
           <span><b>+${outcome.qualityScore}</b> ${this.language === "en" ? "Expert Fit" : "专家契合分"}</span>
           ${outcome.gainedAbilityIds.map((id) => `<span><b>+${option.effects[id] ?? 0}</b> ${this.abilityDisplay(id).name}</span>`).join("")}
           ${(Object.keys(outcome.resourceDeltas) as ResourceKey[])
@@ -5605,6 +5662,7 @@ export class AdaptiveGameApp {
             )
             .join("")}
         </div>
+        ${outcome.resourceStrain ? `<p class="strain-note">${this.t("strainNote")} -${outcome.resourceStrain}</p>` : ""}
         <button class="primary" data-action="${action}">${actionLabel}</button>
       </section>
     `;
