@@ -119,6 +119,7 @@ import {
 } from "../core/trials";
 import { hiddenRouteSteps } from "../core/hiddenRoutes";
 import { ROLE_OPTION_SETS } from "../core/roleOptions";
+import { ROLE_ROADMAPS } from "../core/roleTraining";
 import { uiString, type Language } from "../core/i18n";
 import { readAnalyticsEvents, trackEvent } from "../core/analytics";
 import {
@@ -1825,6 +1826,70 @@ export class AdaptiveGameApp {
           <canvas class="radar" id="ability-radar"></canvas>
           <button class="primary" data-action="open-report">${this.t("viewReport")}</button>
         </section>
+        ${
+          (() => {
+            const roadmap = ROLE_ROADMAPS[this.save.profile.role];
+            const role = this.save.profile.role;
+            const lang = this.language;
+            return `
+              <section class="role-roadmap">
+                <div class="role-roadmap-head">
+                  <p class="eyebrow">${lang === "en" ? "Role Training Roadmap" : "角色训练路线"}</p>
+                  <h2>${escapeHtml(roadmap.theme[lang])}</h2>
+                  <p>${escapeHtml(roadmap.themeDetail[lang])}</p>
+                  <ul class="role-pitfalls">
+                    ${roadmap.pitfalls
+                      .map((pitfall) => `<li>${escapeHtml(pitfall[lang])}</li>`)
+                      .join("")}
+                  </ul>
+                </div>
+                <div class="role-stages">
+                  ${roadmap.stages
+                    .map(
+                      (stage, index) => `
+                        <div class="role-stage">
+                          <span>${index + 1}</span>
+                          <div>
+                            <strong>${escapeHtml(stage.title[lang])}</strong>
+                            <p>${escapeHtml(stage.goal[lang])}</p>
+                            <div class="role-stage-abilities">
+                              ${stage.abilities
+                                .map((id) => {
+                                  const done = this.save.completedTraining.includes(id);
+                                  return `<span class="${done ? "done" : ""}">${this.abilityDisplay(id).name} Lv.${abilityLevel(this.save.profile.abilities[id])}${done ? " ✓" : ""}</span>`;
+                                })
+                                .join("")}
+                            </div>
+                          </div>
+                        </div>
+                      `
+                    )
+                    .join("")}
+                </div>
+                <div class="role-focus-applications">
+                  <h3>${lang === "en" ? "Role Applications" : "角色落地动作"}</h3>
+                  <div class="role-application-grid">
+                    ${ROLES[role].focusAbilities
+                      .map((id) => {
+                        const extra =
+                          lang === "en"
+                            ? EXPANDED_TRAINING_EN[id]
+                            : EXPANDED_TRAINING[id];
+                        return `
+                          <div>
+                            <strong>${this.abilityDisplay(id).name}</strong>
+                            <p>${escapeHtml(extra.roleApplications[role])}</p>
+                            <code>${escapeHtml(extra.formula.expression)}</code>
+                          </div>
+                        `;
+                      })
+                      .join("")}
+                  </div>
+                </div>
+              </section>
+            `;
+          })()
+        }
         <section class="ability-grid">
           ${ABILITY_ORDER.map((id) => this.abilityCard(id)).join("")}
         </section>
@@ -2356,6 +2421,10 @@ export class AdaptiveGameApp {
                   : ""
               }
             </div>
+          </section>
+          <section class="training-panel training-role-panel">
+            <h2>${this.t("trainingRoleApply")} · ${this.roleDisplay(this.save.profile.role).name}</h2>
+            <p>${escapeHtml(view.roleApplications[this.save.profile.role])}</p>
           </section>
           <button class="primary" data-action="training-start-quiz">${this.t("trainingStartQuiz")}</button>
         </section>
@@ -4936,6 +5005,12 @@ export class AdaptiveGameApp {
     this.renderStory();
   }
 
+  private aiOpponentRole(): RoleId {
+    const roles: RoleId[] = ["parachute", "founder", "highPotential"];
+    const counter = (this.save.duelWins ?? 0) + (this.save.duelLosses ?? 0);
+    return roles[counter % roles.length];
+  }
+
   private startAiDuel(): void {
     const human = buildDuelProfile(this.save.profile, this.save.profile.name, "#41c7c0");
     const history = this.save.decisionHistory;
@@ -4949,7 +5024,7 @@ export class AdaptiveGameApp {
       Math.min(4, Math.round(expertRatio * 4 + this.save.duelWins * 0.15))
     );
     const ai = buildAiProfile(
-      "founder",
+      this.aiOpponentRole(),
       strength,
       this.save.profile.abilities
     );
@@ -4963,7 +5038,7 @@ export class AdaptiveGameApp {
   private startChallengeDuel(): void {
     const human = buildDuelProfile(this.save.profile, this.save.profile.name, "#41c7c0");
     const ai = buildAiProfile(
-      "founder",
+      this.aiOpponentRole(),
       4,
       this.save.profile.abilities
     );
@@ -4982,7 +5057,7 @@ export class AdaptiveGameApp {
     );
     const strength = Math.min(5, Math.max(1, Math.round(this.save.duelWins / 4) + 1));
     const ai = buildAiProfile(
-      "founder",
+      this.aiOpponentRole(),
       strength,
       this.save.profile.abilities
     );

@@ -3280,6 +3280,169 @@ h2 {
   line-height: 1.6;
 }
 
+.role-roadmap {
+  margin: 18px 0;
+  padding: 18px;
+  border: 1px solid rgba(65, 199, 192, 0.35);
+  border-radius: 8px;
+  background: rgba(65, 199, 192, 0.05);
+}
+
+.role-roadmap-head .eyebrow {
+  margin-bottom: 6px;
+}
+
+.role-roadmap-head h2 {
+  margin: 0 0 8px;
+  color: #e7eef2;
+  font-size: 22px;
+}
+
+.role-roadmap-head > p {
+  max-width: 860px;
+  margin: 0 0 10px;
+  color: #c6d2dc;
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.role-pitfalls {
+  margin: 0;
+  padding-left: 18px;
+  color: #e9b872;
+  font-size: 13px;
+}
+
+.role-pitfalls li {
+  margin: 4px 0;
+}
+
+.role-stages {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 10px;
+  margin: 16px 0;
+}
+
+.role-stage {
+  display: flex;
+  gap: 10px;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--panel);
+}
+
+.role-stage > span {
+  flex: 0 0 auto;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: #41c7c0;
+  color: #0a1013;
+  font-size: 13px;
+  font-weight: 800;
+  text-align: center;
+  line-height: 24px;
+}
+
+.role-stage strong {
+  display: block;
+  color: #e7eef2;
+  font-size: 14px;
+}
+
+.role-stage p {
+  margin: 4px 0 8px;
+  color: #9fb3c8;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.role-stage-abilities {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.role-stage-abilities span {
+  padding: 3px 7px;
+  border-radius: 999px;
+  background: #1b2731;
+  color: #9fb3c8;
+  font-size: 11px;
+}
+
+.role-stage-abilities span.done {
+  background: rgba(87, 199, 163, 0.18);
+  color: #57c7a3;
+}
+
+.role-focus-applications h3 {
+  margin: 0 0 10px;
+  color: #f2c14e;
+  font-size: 15px;
+}
+
+.role-application-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+}
+
+.role-application-grid > div {
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--panel);
+}
+
+.role-application-grid strong {
+  color: #e7eef2;
+  font-size: 14px;
+}
+
+.role-application-grid p {
+  margin: 6px 0;
+  color: #c6d2dc;
+  font-size: 13px;
+  line-height: 1.55;
+}
+
+.role-application-grid code {
+  display: block;
+  color: #f2c14e;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.training-role-panel {
+  margin-top: 12px;
+}
+
+.training-role-panel h2 {
+  color: #f2c14e;
+}
+
+.training-role-panel p {
+  margin: 8px 0 0;
+  color: #c6d2dc;
+  line-height: 1.6;
+}
+
+@media (max-width: 1000px) {
+  .role-stages {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 720px) {
+  .role-stages,
+  .role-application-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
 /* v1.1 release polish: scene art, save guidance, retry gates, duel resume */
 .story-shell,
 .map-shell {
