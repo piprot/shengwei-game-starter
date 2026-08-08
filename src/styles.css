@@ -3232,6 +3232,54 @@ h2 {
   margin: 3px 0;
 }
 
+.leadership-lens {
+  margin: 12px 0;
+  padding: 10px 12px;
+  border-left: 3px solid #41c7c0;
+  border-radius: 0 8px 8px 0;
+  background: rgba(65, 199, 192, 0.08);
+}
+
+.leadership-lens.partial {
+  border-left-color: #f2c14e;
+  background: rgba(242, 193, 78, 0.08);
+}
+
+.leadership-lens.risk {
+  border-left-color: #e9826c;
+  background: rgba(233, 130, 108, 0.08);
+}
+
+.leadership-lens strong {
+  display: block;
+  margin-bottom: 4px;
+  color: #41c7c0;
+  font-size: 13px;
+}
+
+.leadership-lens.partial strong {
+  color: #f2c14e;
+}
+
+.leadership-lens.risk strong {
+  color: #e9826c;
+}
+
+.leadership-lens p {
+  margin: 0;
+  color: #c6d2dc;
+  font-size: 13px;
+  line-height: 1.55;
+}
+
+.adaptive-note {
+  max-width: 680px;
+  margin: 10px 0 0;
+  color: #9fb3c8;
+  font-size: 13px;
+  line-height: 1.6;
+}
+
 /* v1.1 release polish: scene art, save guidance, retry gates, duel resume */
 .story-shell,
 .map-shell {

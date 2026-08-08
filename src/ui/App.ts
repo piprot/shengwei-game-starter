@@ -1900,6 +1900,7 @@ export class AdaptiveGameApp {
             <span>${this.language === "en" ? "Decision Profile" : "决策画像"}</span>
             <strong>${this.roleDisplay(this.save.profile.role).shortName} · ${decision.identity}</strong>
           </div>
+          <p class="adaptive-note">${this.language === "en" ? `Adaptive ${decision.counts.expert} · Technical ${decision.counts.partial} · Authority ${decision.counts.risk}. Adaptive leadership grows when you diagnose from the balcony, hold the tension, and give the work back; partial moves are technical fixes, and high-risk moves lean on authority or avoidance.` : `自适应 ${decision.counts.expert} · 技术性 ${decision.counts.partial} · 权威/回避 ${decision.counts.risk}。自适应领导力来自登台观察、稳住张力、把工作还给团队；部分有效是技术性解决，高风险回应依赖权威或回避。`}</p>
           <div class="certification-badge ${cert.passed ? "passed" : ""}">
             <span>${this.language === "en" ? "Certification" : "能力认证"}</span>
             <strong>${cert.passed ? (this.language === "en" ? `Certified · ${cert.level}` : `认证通过 · ${cert.level}`) : (this.language === "en" ? `Not Certified · ${cert.next}` : `未认证 · ${cert.next}`)}</strong>
@@ -6201,6 +6202,25 @@ export class AdaptiveGameApp {
     return optionQualityLabel(quality);
   }
 
+  private leadershipLensText(quality: OptionQuality): string {
+    if (this.language === "en") {
+      if (quality === "expert") {
+        return "Adaptive move: diagnose from the balcony, hold the tension, and give the work back to the team. This builds long-term capacity instead of short-term compliance.";
+      }
+      if (quality === "partial") {
+        return "Technical move: it solves the symptom quickly but keeps ownership with you. Follow up by returning the work and adding a check node.";
+      }
+      return "Authority or avoidance move: useful only for urgent technical problems. Used too often, it suppresses dissent and the team stops bringing real information.";
+    }
+    if (quality === "expert") {
+      return "自适应动作：登台观察、稳住张力、把工作还给团队。它建设的是长期能力，而不是短期服从。";
+    }
+    if (quality === "partial") {
+      return "技术性解决：快速处理了症状，但责任仍在你手里。下一步要把工作还回去，并补一个验证节点。";
+    }
+    return "权威或回避动作：只适合紧急的技术问题。用得太多，会压住不同意见，团队不再带真实信息上来。";
+  }
+
   private outcomeMarkup(outcome: ChoiceOutcome): string {
     const option = outcome.option;
     const transitionId = this.pendingChapterTransition;
@@ -6253,6 +6273,10 @@ export class AdaptiveGameApp {
         <h2>${escapeHtml(option.label)}</h2>
         <p>${escapeHtml(option.feedback)}</p>
         <blockquote>${escapeHtml(option.theory)}</blockquote>
+        <div class="leadership-lens ${option.quality}">
+          <strong>${this.language === "en" ? "Adaptive Leadership Lens" : "自适应领导力视角"}</strong>
+          <p>${escapeHtml(this.leadershipLensText(option.quality))}</p>
+        </div>
         <div class="outcome-effects score-pop">
           <span><b>+${outcome.qualityScore}</b> ${this.language === "en" ? "Expert Fit" : "专家契合分"}</span>
           ${outcome.gainedAbilityIds.map((id) => `<span><b>+${option.effects[id] ?? 0}</b> ${this.abilityDisplay(id).name}</span>`).join("")}

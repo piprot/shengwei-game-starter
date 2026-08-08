@@ -607,7 +607,7 @@ export const STORY_NODES: StoryNode[] = [
         label: "建立团队信息公约",
         summary: "在集体层面约定信息同步机制，同时单独和他校准汇报口径。",
         quality: "expert",
-        effects: { mobilize: 3, communication: 2 },
+        effects: { authority: 3, structure: 2 },
         resources: { energy: -7, trust: 6, influence: 5 },
         feedback:
           "你把个人矛盾转化为团队机制，既守住了边界，又没有把下属逼成敌人。",
