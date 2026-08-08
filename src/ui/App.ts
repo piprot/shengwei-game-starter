@@ -1909,6 +1909,11 @@ export class AdaptiveGameApp {
           <button data-action="export-report">${this.t("exportReport")}</button>
           <button data-action="copy-save-link">${this.t("copySaveLink")}</button>
           <p class="save-reminder">${this.language === "en" ? "This save lives only in this browser. Export or copy the link regularly." : "本存档仅保存在当前浏览器，请定期导出或复制链接。"}</p>
+          ${
+            ONLINE_ENABLED
+              ? ""
+              : `<p class="static-lock-note">${this.language === "en" ? "Static build keeps this content: account, cloud save, leaderboard and auto-match are bundled but need the online build plus backend. Local alternatives stay available: export save, copy link, local duo, manual WebRTC." : "静态版已保留这部分内容：账号、云存档、排行榜、云端自动匹配代码均已内置，但需在线版与后端才可启用。本地仍可用：导出存档、复制存档链接、本地双人、手动远程对战。"}</p>`
+          }
           <button class="online-only" data-action="cloud-sync">${this.t("cloudSync")}</button>
           <button class="online-only" data-action="cloud-load">${this.t("cloudLoad")}</button>
           <button class="online-only" data-action="cloud-leaderboard">${this.t("cloudLeaderboard")}</button>
@@ -1948,6 +1953,22 @@ export class AdaptiveGameApp {
             ${this.t("importSave")}
             <input type="file" data-import-save accept="application/json" hidden />
           </label>
+        </section>
+        <section class="local-leaderboard">
+          <h3>${this.language === "en" ? "Local Leaderboard" : "本地排行榜"}</h3>
+          <p>${this.language === "en" ? `Best Duel Score: ${this.save.bestScore ?? 0} 路 Wins ${this.save.duelWins} 路 Losses ${this.save.duelLosses}` : `最佳对局分：${this.save.bestScore ?? 0} 路 胜 ${this.save.duelWins} 路 负 ${this.save.duelLosses}`}</p>
+          ${
+            this.save.duelHistory.length
+              ? `<ul>${this.save.duelHistory
+                  .slice(-5)
+                  .reverse()
+                  .map(
+                    (entry) =>
+                      `<li>${escapeHtml(entry.opponentName)} 路 ${entry.playerScore}:${entry.opponentScore} 路 ${entry.won ? (this.language === "en" ? "Win" : "胜") : (this.language === "en" ? "Loss" : "负")}</li>`
+                  )
+                  .join("")}</ul>`
+              : `<p class="muted">${this.language === "en" ? "Finish a duel to see local records." : "完成一局对战后会显示本地记录。"}</p>`
+          }
         </section>
         <section class="stat-tiles">
           <div class="stat-tile">
@@ -2996,6 +3017,7 @@ export class AdaptiveGameApp {
             <h2>${this.language === "en" ? "About Ascend" : "关于升维"}</h2>
             <p>${this.language === "en" ? "Ascend is an offline-first leadership scenario game based on The Book of Power, Heifetz adaptive leadership, and scenario-golf scoring." : "升维是一款基于《权经》九章架构、Heifetz 自适应领导力与情境高尔夫计分法的可离线领导力情境游戏。"}</p>
             <p class="muted">${this.language === "en" ? "v1.1 路 standard mode has no decision timer; failed chapters can be retried; duels can be resumed after refresh." : "v1.1 路 标准档不计时；未达一星的章节可重打；对局刷新后可续战。"}</p>
+            <p class="muted">${this.language === "en" ? "Static content includes the full campaign, role branches, 9 side quests, training formulas, trials, local duels, save export/import and manual WebRTC. Account, cloud save, leaderboard and auto-match are bundled and become active in the online build." : "静态版包含完整主线、角色分岔、9 个支线、训练公式、试炼、本地对战、存档导出/导入与手动远程对战；账号、云存档、排行榜与自动匹配已内置，在线版构建后启用。"}</p>
           </div>
         </section>
       </main>
@@ -3278,6 +3300,11 @@ export class AdaptiveGameApp {
           <button class="primary" data-action="finish-remote">${en ? "Complete Connection" : "完成连接"}</button>
           <p class="status-text" role="status" aria-live="polite">${this.remoteStatus}</p>
         </div>
+        ${
+          ONLINE_ENABLED
+            ? ""
+            : `<p class="static-lock-note">${en ? "Cloud auto-match is bundled but needs the online build and room server. Manual remote via invite code works without a server." : "云端自动匹配代码已内置，但需在线版与房间服务器；手动邀请码远程对战无需服务器即可使用。"}</p>`
+        }
         <div class="remote-match online-only">
           <h2>${en ? "Cloud Auto-Match" : "云端自动匹配"}</h2>
           <p>${en ? "Connect to the room server and match automatically without exchanging invite codes. The server must be deployed or running locally first." : "连接服务端后自动匹配对手，不需要手动交换邀请码。需先部署或本地运行房间服务器。"}</p>

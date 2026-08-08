@@ -3179,7 +3179,57 @@ h2 {
 }
 
 .online-off .online-only {
-  display: none !important;
+  display: revert;
+  opacity: 0.62;
+  filter: grayscale(0.35);
+  pointer-events: none;
+}
+
+.online-off .online-only input,
+.online-off .online-only button {
+  pointer-events: none;
+}
+
+.static-lock-note {
+  margin: 10px 0 0;
+  padding: 10px 12px;
+  border: 1px solid rgba(65, 199, 192, 0.4);
+  border-radius: 8px;
+  background: rgba(65, 199, 192, 0.08);
+  color: #a9dfc8;
+  font-size: 13px;
+  line-height: 1.55;
+}
+
+.local-leaderboard {
+  margin-top: 14px;
+  padding: 12px 14px;
+  border: 1px solid rgba(242, 193, 78, 0.35);
+  border-radius: 8px;
+  background: rgba(242, 193, 78, 0.06);
+}
+
+.local-leaderboard h3 {
+  margin: 0 0 8px;
+  color: #f2c14e;
+  font-size: 14px;
+}
+
+.local-leaderboard p {
+  margin: 4px 0;
+  color: #c6d2dc;
+  font-size: 13px;
+}
+
+.local-leaderboard ul {
+  margin: 6px 0 0;
+  padding-left: 18px;
+  color: #9fb3c8;
+  font-size: 13px;
+}
+
+.local-leaderboard li {
+  margin: 3px 0;
 }
 
 /* v1.1 release polish: scene art, save guidance, retry gates, duel resume */
