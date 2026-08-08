@@ -324,6 +324,11 @@ export const TRIAL_STAGES: TrialStageDef[] = [
         explanation:
           "这不是单点采购题，而是供应链、销售承诺、财务现金流的联合决策。正确做法是同时管理短期交付、中期替代源和长期结构风险。",
         referenceAnswer: "用应急交付、替代认证和双源机制组成组合方案。",
+        calculation: {
+          prompt: "替换供应商报价高 30%。原材料年采购额 1200 万元，替换后年采购成本增加多少万元？",
+          answer: 360,
+          unit: "万元"
+        },
         followUp: {
           prompt:
             "替代供应商已给出报价，但客户要求 72 小时内交付。你的组合方案里哪个环节最优先？",
@@ -456,7 +461,12 @@ export const TRIAL_STAGES: TrialStageDef[] = [
         answer: 0,
         explanation:
           "财务判断必须基于同一套成本口径，否则账面利润可能掩盖真实风险。",
-        referenceAnswer: "先统一成本科目和税务口径。"
+        referenceAnswer: "先统一成本科目和税务口径。",
+        calculation: {
+          prompt: "库存账面 800 万元，盘点差异 12%，真实库存应为多少万元？",
+          answer: 704,
+          unit: "万元"
+        }
       }
     }
   },

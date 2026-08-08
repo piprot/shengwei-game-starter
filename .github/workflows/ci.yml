@@ -71,6 +71,9 @@ jobs:
       - name: Ability balance gate
         run: npm run ability-balance
 
+      - name: Save cross-browser round-trip
+        run: npm run save-roundtrip
+
       # 3) 端到端冒烟：Playwright + Microsoft Edge 频道
       - name: Install Playwright browser (Microsoft Edge)
         run: npx playwright install --with-deps msedge

@@ -1804,6 +1804,186 @@ export const RANDOM_NODE_EN: Record<
           "The Analects: the gentleman seeks causes in himself; the petty person seeks them in others."
       }
     ]
+  },
+  r21: {
+    title: "Credit Claimed by Another Department",
+    context:
+      "The project you pushed is showing results, but another department credited it in their monthly report. Your team is furious and wants a public correction.",
+    stake: "Handle the credit dispute without breaking collaboration.",
+    intel: [
+      "The other report cites your internal data.",
+      "Their leader is competing for the same promotion slot."
+    ],
+    options: [
+      {
+        label: "Put contributions into a shared mechanism",
+        summary: "Create a joint credit record so both sides see the contribution.",
+        feedback: "You turned a fight into shared assets, and collaboration deepened.",
+        theory: "The Analects: the gentleman completes what is good in others."
+      },
+      {
+        label: "Correct their report publicly",
+        summary: "State the real contribution at the meeting to protect team morale.",
+        feedback: "The credit was clarified, but the other department became defensive.",
+        theory: "The Art of War: unite with civility, discipline with martial order."
+      },
+      {
+        label: "Stay silent and deliver",
+        summary: "Focus on delivery; deal with credit later.",
+        feedback: "The team saw you as weak, and credit began to skew.",
+        theory: "The Art of War: first make yourself invincible."
+      }
+    ]
+  },
+  r22: {
+    title: "New Key Hire Excluded",
+    context:
+      "In the team you joined, veterans are collectively freezing out the new key hire: no shared information, no meeting invites, and private gossip.",
+    stake: "Do not take sides, and do not let the team split.",
+    intel: [
+      "A veteran lost the promotion race to the new hire.",
+      "The new hire has already delivered one critical result independently."
+    ],
+    options: [
+      {
+        label: "Rebuild collaboration through a shared task",
+        summary: "Make veterans and the new hire interdependent on one key project.",
+        feedback: "Collaboration rebuilt through work; veterans saw the real value.",
+        theory: "Zhenguan Essentials: set aside weakness and use strength."
+      },
+      {
+        label: "Publicly empower the new hire",
+        summary: "Make the position untouchable with visible authority.",
+        feedback: "The position held, but exclusion moved to a subtler level.",
+        theory: "Han Feizi: the wise ruler lets capable people use their minds."
+      },
+      {
+        label: "Move the new hire to another team",
+        summary: "Avoid conflict by rearranging the assignment.",
+        feedback: "Conflict disappeared, but the organization learned to avoid management.",
+        theory: "Comprehensive Mirror: plug the crack early."
+      }
+    ]
+  },
+  r23: {
+    title: "Supplier Kickback Clue",
+    context:
+      "The finance manager privately tells you the procurement lead may have accepted supplier kickbacks, but the only evidence is an unusual reconciliation.",
+    stake: "Protect integrity without spooking the suspect.",
+    intel: [
+      "The unusual amounts have risen for three straight months.",
+      "Finance and procurement had one public argument earlier."
+    ],
+    options: [
+      {
+        label: "Collect evidence through an audit loop",
+        summary: "Put the reconciliation into an independent audit and establish facts first.",
+        feedback: "You let evidence and process speak, and the organization trusted you more.",
+        theory: "Han Feizi: once the law stands, even a mediocre ruler can govern."
+      },
+      {
+        label: "Interview the procurement lead immediately",
+        summary: "Apply pressure face to face and demand an explanation.",
+        feedback: "The lead denied everything and began destroying traces.",
+        theory: "The Art of War: control others without being controlled."
+      },
+      {
+        label: "Treat it as rumor",
+        summary: "With insufficient evidence, do not disturb anyone.",
+        feedback: "Once rumors spread, the organization suspected you of shielding misconduct.",
+        theory: "The Analects: the gentleman seeks causes in himself."
+      }
+    ]
+  },
+  r24: {
+    title: "Team Opposes New Performance Review",
+    context:
+      "After the new performance review is announced, the team objects openly at the all-hands meeting, citing opaque criteria and shrinking rewards.",
+    stake: "Do not withdraw or impose; make the standard itself earn trust.",
+    intel: [
+      "The loudest opponents have not read the new algorithm.",
+      "A pilot dataset exists and can be published."
+    ],
+    options: [
+      {
+        label: "Publish the algorithm and run a pilot",
+        summary: "Open the scoring logic and pilot results, then collect feedback for a month.",
+        feedback: "Opposition became improvement input, and the standard earned backing.",
+        theory: "Zhenguan Essentials: finish well as you started and keep people's trust."
+      },
+      {
+        label: "Push forward and restate the rules",
+        summary: "Make clear the reform will not stop because of objection.",
+        feedback: "The plan landed, but the team started gaming the minimum standard.",
+        theory: "The Art of War: discipline with civility and martial order together."
+      },
+      {
+        label: "Withdraw and research again",
+        summary: "Calm the emotion first and revisit standards later.",
+        feedback: "Emotions cooled, but the next reform will meet the same distrust.",
+        theory: "The Art of War: invincibility lies in yourself."
+      }
+    ]
+  },
+  r25: {
+    title: "Major Customer Cuts Orders",
+    context:
+      "Your largest customer suddenly cuts next quarter's orders by 40%, citing budget adjustment. The sales team wants to visit and plead together.",
+    stake: "Behind the cut is often a real cause; pleading is not the first step.",
+    intel: [
+      "The decision came from the customer's new finance lead.",
+      "The customer is internally discussing a second supplier."
+    ],
+    options: [
+      {
+        label: "Interview key people inside the customer first",
+        summary: "Find the real decision chain behind the budget change before responding.",
+        feedback: "You found a new finance lead and a concrete reopening path.",
+        theory: "The Record of Characters: observe choices across situations to see real motive."
+      },
+      {
+        label: "Visit with the whole team and plead",
+        summary: "Win back the order with sincerity.",
+        feedback: "Sincerity arrived, but the real reason stayed hidden; the next cut is coming.",
+        theory: "The Analects: worry about not understanding people, not about being understood."
+      },
+      {
+        label: "Accept the cut and compress costs",
+        summary: "Adjust the budget quickly and stop asking why.",
+        feedback: "Numbers aligned, but the systemic problem was covered up.",
+        theory: "The Art of War: first make yourself invincible."
+      }
+    ]
+  },
+  r26: {
+    title: "Departing Leader Wants to Return",
+    context:
+      "A key person who left a year ago now wants to rejoin with new experience and industry resources, but the original team already has a replacement.",
+    stake: "Returning must not rely on old affection; give both old and new talent a fair growth path.",
+    intel: [
+      "The returning leader's resources do not conflict with existing clients.",
+      "The replacement has completed two delivery cycles and is waiting for a promotion promise."
+    ],
+    options: [
+      {
+        label: "Design a dual growth path",
+        summary: "Give the returning leader and existing talent different focus areas.",
+        feedback: "The return brought resources without pushing out current talent; a real bench formed.",
+        theory: "Zhenguan Essentials: sustaining is harder than starting; continuity needs ownership."
+      },
+      {
+        label: "Restore the original role directly",
+        summary: "Show sincerity with the old title and ask the team to adjust.",
+        feedback: "The return landed, but the replacement lost confidence and the team shook.",
+        theory: "Han Feizi: clear responsibility is the art of using people."
+      },
+      {
+        label: "Politely decline and stay in touch",
+        summary: "Protect the current team and treat the returnee as an external resource.",
+        feedback: "The team stabilized, but you lost the chance to internalize external resources.",
+        theory: "The Art of War: seek advantage from the situation."
+      }
+    ]
   }
 };
 

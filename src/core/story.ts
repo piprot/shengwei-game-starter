@@ -3036,12 +3036,241 @@ export const STORY_NODES: StoryNode[] = [
         theory: "《论语》：君子求诸己，小人求诸人。"
       }
     ]
+  },
+  {
+    id: "r21",
+    chapterId: 4,
+    title: "跨部门抢功",
+    kind: "random",
+    context:
+      "你们推动的项目初见成效，另一个部门却把成果写进了自己的月报。团队很气愤，要求你公开澄清。",
+    stake: "处理抢功不能只争对错，还要保住协作关系。",
+    options: [
+      {
+        label: "把贡献写进共享机制",
+        summary: "建立联合功劳记录，让双方都看到贡献，而不是互相拆台。",
+        quality: "expert",
+        effects: { communication: 3, mobilize: 2 },
+        resources: { energy: -6, trust: 6, influence: 6 },
+        feedback: "你没有把抢功变成战争，而是让功劳变成可共享的资产，协作反而加深。",
+        theory: "《论语》：君子成人之美，不成人之恶。"
+      },
+      {
+        label: "公开纠正对方的月报",
+        summary: "在会上说明真实贡献，避免团队士气受损。",
+        quality: "partial",
+        effects: { authority: 2 },
+        resources: { energy: -5, trust: -4, influence: 4 },
+        feedback: "功劳澄清了，但对方部门从此开始防备你们。",
+        theory: "《孙子兵法》：令之以文，齐之以武。"
+      },
+      {
+        label: "暂时忍让",
+        summary: "先专注交付，功劳以后再说。",
+        quality: "risk",
+        effects: { recovery: 2 },
+        resources: { energy: -3, trust: -3, influence: -5 },
+        feedback: "团队觉得你不够硬气，跨部门功劳从此开始失衡。",
+        theory: "《孙子兵法》：先为不可胜，以待敌之可胜。"
+      }
+    ]
+  },
+  {
+    id: "r22",
+    chapterId: 3,
+    title: "空降骨干被排挤",
+    kind: "random",
+    context:
+      "你空降的团队里，老员工开始集体冷落新来的骨干：不共享信息、不邀请会议、私下议论。",
+    stake: "处理排挤不能站队，也不能放任组织分裂。",
+    options: [
+      {
+        label: "用共同任务重建协作",
+        summary: "让新老成员在同一个关键任务里互为依赖，而不是先谈感情。",
+        quality: "expert",
+        effects: { deploy: 3, communication: 2 },
+        resources: { energy: -7, trust: 6, influence: 5 },
+        feedback: "协作从任务开始重建，老员工看到了新骨干的真实价值。",
+        theory: "《贞观政要》：舍短取长，各尽其能。"
+      },
+      {
+        label: "单独给新骨干立威",
+        summary: "公开授权新骨干，让老员工知道位置不可动摇。",
+        quality: "partial",
+        effects: { authority: 3 },
+        resources: { energy: -5, trust: -6, influence: 4 },
+        feedback: "位置稳了，但老员工把排挤转到了更隐蔽的层面。",
+        theory: "《韩非子》：明主之道，使智者尽其虑。"
+      },
+      {
+        label: "把新骨干调去别的组",
+        summary: "避免冲突，重新安排岗位。",
+        quality: "risk",
+        effects: { recovery: 2 },
+        resources: { energy: -3, trust: -4, influence: -4 },
+        feedback: "冲突暂时消失，但组织学会了用换人回避管理问题。",
+        theory: "《资治通鉴》：防微杜渐。"
+      }
+    ]
+  },
+  {
+    id: "r23",
+    chapterId: 6,
+    title: "供应商回扣线索",
+    kind: "random",
+    context:
+      "财务经理私下告诉你，采购负责人可能长期收受供应商回扣，但证据只是一张异常对账单。",
+    stake: "处理腐败必须既守住底线，又不能打草惊蛇。",
+    options: [
+      {
+        label: "用审计闭环收集证据",
+        summary: "把异常对账单放进独立审计，先查清事实再处理。",
+        quality: "expert",
+        effects: { structure: 3, authority: 2 },
+        resources: { energy: -8, trust: 5, influence: 7 },
+        feedback: "你没有靠猜测定罪，而是让证据和流程替你说话，组织反而更信任你。",
+        theory: "《韩非子》：法度既立，虽庸主可治。"
+      },
+      {
+        label: "立即约谈采购负责人",
+        summary: "当面施压，逼对方交代。",
+        quality: "partial",
+        effects: { authority: 3 },
+        resources: { energy: -5, trust: -3, influence: 2 },
+        feedback: "对方否认并开始销毁痕迹，你失去了取证的主动权。",
+        theory: "《孙子兵法》：致人而不致于人。"
+      },
+      {
+        label: "当作流言不予处理",
+        summary: "证据不足，先不惊动任何人。",
+        quality: "risk",
+        effects: { recovery: 2 },
+        resources: { energy: -2, trust: -6, influence: -5 },
+        feedback: "流言传开后，组织开始怀疑你在包庇，底线问题变得模糊。",
+        theory: "《论语》：君子求诸己，小人求诸人。"
+      }
+    ]
+  },
+  {
+    id: "r24",
+    chapterId: 7,
+    title: "团队公开反对新考核",
+    kind: "random",
+    context:
+      "新的绩效考核方案公布后，团队在全员会上公开反对，认为标准不透明、奖励会缩水。",
+    stake: "考核改革不能靠撤回或强压，要让标准本身获得信任。",
+    options: [
+      {
+        label: "先公布算法与试运行数据",
+        summary: "把评分逻辑和模拟结果公开，用一个月试运行收集反馈。",
+        quality: "expert",
+        effects: { structure: 3, communication: 2 },
+        resources: { energy: -7, trust: 7, influence: 5 },
+        feedback: "反对变成了改进意见，考核标准第一次获得团队背书。",
+        theory: "《贞观政要》：善始慎终，取信于人。"
+      },
+      {
+        label: "坚持推行并重申规则",
+        summary: "明确改革不会因为反对而停止。",
+        quality: "partial",
+        effects: { authority: 3 },
+        resources: { energy: -5, trust: -6, influence: 3 },
+        feedback: "方案落地了，但团队开始用最低标准应付考核。",
+        theory: "《孙子兵法》：齐之以武，也要令之以文。"
+      },
+      {
+        label: "撤回方案重新调研",
+        summary: "先平息情绪，标准问题交给以后。",
+        quality: "risk",
+        effects: { recovery: 2 },
+        resources: { energy: -4, trust: 2, influence: -6 },
+        feedback: "情绪平了，但下一次改革会面对同样的不信任。",
+        theory: "《孙子兵法》：不可胜在己，可胜在敌。"
+      }
+    ]
+  },
+  {
+    id: "r25",
+    chapterId: 8,
+    title: "客户临时砍单",
+    kind: "random",
+    context:
+      "最大客户突然把下季度订单砍掉 40%，理由是预算调整。销售团队准备集体登门求情。",
+    stake: "砍单背后往往有真实原因，求情不是第一步。",
+    options: [
+      {
+        label: "先访谈客户内部关键人",
+        summary: "找到预算调整的真实决策链，再决定如何回应。",
+        quality: "expert",
+        effects: { insight: 3, strategy: 2 },
+        resources: { energy: -7, trust: 5, influence: 6 },
+        feedback: "你发现砍单来自一位新财务负责人，并找到了重新合作的切口。",
+        theory: "《人物志》：观察人在不同情境中的取舍，才能看见真实动机。"
+      },
+      {
+        label: "带全队上门求情",
+        summary: "用诚意打动客户，争取挽回订单。",
+        quality: "partial",
+        effects: { communication: 2 },
+        resources: { energy: -6, trust: 3, influence: -3 },
+        feedback: "诚意到了，但你没有拿到真实原因，下次砍单仍会发生。",
+        theory: "《论语》：不患人之不己知，患不知人也。"
+      },
+      {
+        label: "接受砍单并立刻压成本",
+        summary: "快速调整预算，不再追问原因。",
+        quality: "risk",
+        effects: { execution: 2 },
+        resources: { energy: -5, trust: -3, influence: -5 },
+        feedback: "数字暂时对齐，但系统性问题被掩盖了。",
+        theory: "《孙子兵法》：先为不可胜。"
+      }
+    ]
+  },
+  {
+    id: "r26",
+    chapterId: 9,
+    title: "离职骨干回归",
+    kind: "random",
+    context:
+      "一年前离职的骨干带着新经验和行业资源回来，希望你邀请他重新加入，但原团队已有新人顶替。",
+    stake: "回归不能只靠旧情，要让新旧人才都看到公平的成长通道。",
+    options: [
+      {
+        label: "设计双通道成长路径",
+        summary: "让回归者与现有人才各有主攻，避免零和竞争。",
+        quality: "expert",
+        effects: { deploy: 3, stability: 2 },
+        resources: { energy: -8, trust: 6, influence: 6 },
+        feedback: "回归者带来了资源，现有人才也没有被挤掉，组织第一次有了真正的梯队。",
+        theory: "《贞观政要》：创业难，守成更难，关键在于持续担当。"
+      },
+      {
+        label: "直接恢复原职",
+        summary: "用原有职位表达诚意，让团队配合调整。",
+        quality: "partial",
+        effects: { execution: 2 },
+        resources: { energy: -5, trust: -6, influence: 2 },
+        feedback: "回归者到位了，但顶替者失去信心，团队开始动荡。",
+        theory: "《韩非子》：用人之道，贵在明白责任。"
+      },
+      {
+        label: "婉拒并保持联系",
+        summary: "避免破坏现有团队，把回归者当外部资源。",
+        quality: "risk",
+        effects: { recovery: 2 },
+        resources: { energy: -3, trust: 3, influence: -6 },
+        feedback: "团队稳定了，但你失去了把外部资源内化的机会。",
+        theory: "《孙子兵法》：善战者，求之于势。"
+      }
+    ]
   }
 ];
 
 export const RANDOM_EVENT_IDS = [
   "r1", "r2", "r3", "r4", "r5", "r6", "r7", "r8", "r9", "r10",
-  "r11", "r12", "r13", "r14", "r15", "r16", "r17", "r18", "r19", "r20"
+  "r11", "r12", "r13", "r14", "r15", "r16", "r17", "r18", "r19", "r20",
+  "r21", "r22", "r23", "r24", "r25", "r26"
 ];
 for (const id of RANDOM_EVENT_IDS) {
   const node = STORY_NODES.find((item) => item.id === id);
@@ -3068,12 +3297,18 @@ export const RANDOM_EVENT_META: Record<string, { weight: number; chapterId: numb
   r17: { weight: 4, chapterId: 7 },
   r18: { weight: 5, chapterId: 8 },
   r19: { weight: 4, chapterId: 3 },
-  r20: { weight: 5, chapterId: 9 }
+  r20: { weight: 5, chapterId: 9 },
+  r21: { weight: 4, chapterId: 4 },
+  r22: { weight: 3, chapterId: 3 },
+  r23: { weight: 4, chapterId: 6 },
+  r24: { weight: 4, chapterId: 7 },
+  r25: { weight: 5, chapterId: 8 },
+  r26: { weight: 5, chapterId: 9 }
 };
 
 function randomEventCategory(eventId: string): "expert" | "risk" | "partial" {
-  const expertEvents = new Set(["r2", "r7", "r15", "r18", "r20"]);
-  const riskEvents = new Set(["r3", "r5", "r12", "r17", "r19"]);
+  const expertEvents = new Set(["r2", "r7", "r15", "r18", "r20", "r21", "r26"]);
+  const riskEvents = new Set(["r3", "r5", "r12", "r17", "r19", "r23", "r25"]);
   if (expertEvents.has(eventId)) return "expert";
   if (riskEvents.has(eventId)) return "risk";
   return "partial";
@@ -3478,6 +3713,30 @@ export const NODE_INTEL: Record<string, string[]> = {
   r20: [
     "CEO 更想看到你如何管理边界，而不是简单接受",
     "新业务有一半资源可以来自现有团队冗余"
+  ],
+  r21: [
+    "对方部门的月报引用的是你们内部数据",
+    "他们的负责人正在争取同一批晋升名额"
+  ],
+  r22: [
+    "老员工曾在新骨干的岗位竞选中落选",
+    "新骨干已经独立交付过一个关键成果"
+  ],
+  r23: [
+    "异常对账单上的金额连续三个月递增",
+    "财务经理此前与采购负责人有过一次公开争执"
+  ],
+  r24: [
+    "反对最激烈的几个人并不了解新算法",
+    "团队里有一份现成的试运行数据可以公开"
+  ],
+  r25: [
+    "砍单决定来自客户新上任的财务负责人",
+    "客户内部仍在讨论是否要引入第二供应商"
+  ],
+  r26: [
+    "回归骨干带来的行业资源与现有客户不冲突",
+    "顶替者已经完成两个交付周期，正在等待晋升承诺"
   ]
 };
 
