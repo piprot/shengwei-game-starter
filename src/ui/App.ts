@@ -2067,7 +2067,7 @@ export class AdaptiveGameApp {
           <button class="online-only" data-action="cloud-load">${this.t("cloudLoad")}</button>
           <button class="online-only" data-action="cloud-leaderboard">${this.t("cloudLeaderboard")}</button>
           <div class="account-panel online-only">
-            <h3>${this.t("accountTitle")}</h3>
+            <h2>${this.t("accountTitle")}</h2>
             ${
               this.cloudAccountName
                 ? `<p class="account-name">${this.t("accountName")}：${escapeHtml(this.cloudAccountName)}</p>`
