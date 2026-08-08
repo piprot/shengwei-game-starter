@@ -3165,6 +3165,7 @@ export class AdaptiveGameApp {
             <button data-action="open-assessment">${this.t("assessmentReopen")}</button>
             <button data-action="export-save">${this.t("exportSave")}</button>
             <button data-action="export-analytics">${this.language === "en" ? "Export Event Log" : "导出事件日志"}</button>
+            <button data-action="export-return-package">${this.language === "en" ? "Export Return Package" : "生成回传包"}</button>
             <button data-action="import-save">${this.t("importSave")}</button>
             <label class="file-button">
               ${this.t("importSave")}
@@ -4110,6 +4111,9 @@ export class AdaptiveGameApp {
         break;
       case "export-analytics":
         this.exportAnalytics();
+        break;
+      case "export-return-package":
+        this.exportReturnPackage();
         break;
       case "export-report-card": {
         const canvas = this.root.querySelector<HTMLCanvasElement>(
@@ -5761,6 +5765,26 @@ export class AdaptiveGameApp {
     const anchor = document.createElement("a");
     anchor.href = url;
     anchor.download = `${this.language === "en" ? "Ascend-events" : "升维事件日志"}.json`;
+    anchor.click();
+    URL.revokeObjectURL(url);
+    this.audio.ui();
+  }
+
+  private exportReturnPackage(): void {
+    const payload = {
+      version: APP_VERSION,
+      exportedAt: new Date().toISOString(),
+      build: ONLINE_ENABLED ? "online" : "static",
+      save: this.save,
+      events: readAnalyticsEvents()
+    };
+    const blob = new Blob([JSON.stringify(payload, null, 2)], {
+      type: "application/json"
+    });
+    const url = URL.createObjectURL(blob);
+    const anchor = document.createElement("a");
+    anchor.href = url;
+    anchor.download = `${this.language === "en" ? "Ascend-return-package" : "升维回传包"}.json`;
     anchor.click();
     URL.revokeObjectURL(url);
     this.audio.ui();
