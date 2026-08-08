@@ -6,6 +6,8 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
+    "build:static": "tsc && vite build --mode static",
+    "build:online": "tsc && vite build --mode online",
     "preview": "vite preview",
     "test": "node scripts/smoke.mjs",
     "test:unit": "node --experimental-strip-types scripts/unit-test.mjs",
@@ -17,6 +19,7 @@
     "test:i18n-browser": "node --experimental-strip-types scripts/i18n-browser-audit.mjs",
     "test:device-screenshots": "node --experimental-strip-types scripts/device-audit.mjs",
     "test:features": "node scripts/feature-audit.mjs",
+    "test:accessibility": "node --experimental-strip-types scripts/accessibility-audit.mjs",
     "test:rtc": "node --experimental-strip-types scripts/rtc-audit.mjs",
     "server": "node server/index.mjs",
     "test:server": "node scripts/server-smoke.mjs",
@@ -26,6 +29,7 @@
     "recovery:github": "node scripts/github-recovery.mjs"
   },
   "devDependencies": {
+    "@axe-core/playwright": "^4.12.1",
     "playwright": "^1.62.1",
     "typescript": "^7.0.2",
     "vite": "^8.2.0"

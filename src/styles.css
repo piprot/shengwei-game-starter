@@ -5,9 +5,9 @@
   --panel-2: #17262e;
   --panel-3: #1d3039;
   --ink: #e7eef2;
-  --muted: #9fb3c8;
+  --muted: #b9cad8;
   --line: rgba(159, 179, 200, 0.18);
-  --teal: #41c7c0;
+  --teal: #4fd2cc;
   --gold: #f2c14e;
   --coral: #e9826c;
   --blue: #4db7d6;
@@ -95,14 +95,14 @@ button:hover:not(:disabled) {
 }
 
 button:disabled {
-  opacity: 0.42;
+  opacity: 0.72;
   cursor: not-allowed;
 }
 
 button.primary {
   background: var(--teal);
   border-color: var(--teal);
-  color: #07252a;
+  color: #033237;
   font-weight: 800;
 }
 
@@ -1177,7 +1177,8 @@ h2 {
 }
 
 .node-row.done {
-  opacity: 0.72;
+  border-color: rgba(87, 199, 163, 0.45);
+  background: rgba(87, 199, 163, 0.07);
 }
 
 .node-state {
@@ -3175,4 +3176,8 @@ h2 {
     transform: scale(1);
     opacity: 1;
   }
+}
+
+.online-off .online-only {
+  display: none !important;
 }

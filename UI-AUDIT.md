@@ -27,6 +27,7 @@
 - 远程 WebRTC 支持通过 `VITE_TURN_URL` / `VITE_TURN_USERNAME` / `VITE_TURN_CREDENTIAL` 注入 TURN
 - 1v1 计分加入 trust / influence / capital 资源加成，不再只有精力参与
 - 新增 localStorage 匿名事件日志（建档、章节决策、每日领取、训练、试炼、对决、重置）
+- 新增 `npm run test:accessibility`：axe-core 全页审计，桌面/手机 8 个视图 0 严重违规
 
 ## 当前问题
 
