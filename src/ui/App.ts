@@ -43,6 +43,7 @@ import {
   createProfile,
   decisionProfile,
   deleteRoleSlot,
+  globalArchiveStats,
   importSaveJson,
   isChapterComplete,
   isChapterPassed,
@@ -64,8 +65,12 @@ import {
 import {
   CHAPTERS,
   CHAPTER_REFLECTIONS,
+  forkNodeForRoute,
   NODE_INTEL,
   RANDOM_EVENT_IDS,
+  RANDOM_EVENT_META,
+  randomEventEligibleCount,
+  randomEventVariantContext,
   nextRandomEvent,
   SIDE_QUEST_ARCS,
   getChapter,
@@ -134,6 +139,7 @@ import {
   CHAPTER_EN,
   CHAPTER_REFLECTION_EN,
   CHALLENGE_EN,
+  FORK_NODE_EN,
   MAIN_NODE_EN,
   MAIN_NODE_THEORY_EN,
   NPC_EN,
@@ -154,7 +160,7 @@ const DUEL_SNAPSHOT_KEY = "adaptive-ascent-duel-snapshot-v1";
 const SAVE_BACKUP_HINT_KEY = "adaptive-ascent-backup-hint-dismissed";
 const GUIDE_KEY = "adaptive-ascent-guide-v1";
 const GUIDE_REWARD_KEY = "adaptive-ascent-guide-reward";
-const APP_VERSION = "1.3.0";
+const APP_VERSION = "1.4.0";
 
 type View =
   | "menu"
@@ -246,6 +252,7 @@ export class AdaptiveGameApp {
   private endingChoice?: string;
   private pendingBranchNodeId?: string;
   private pendingChapterTransition?: number;
+  private pendingForkNodeId?: string;
   private lastUnlockedAchievement?: string;
   private lastOutcome?: ChoiceOutcome;
   private lastOutcomeNodeId?: string;
@@ -555,6 +562,18 @@ export class AdaptiveGameApp {
   }
 
   private storyNodeDisplay(node: StoryNode): StoryNode {
+    if (node.kind === "random" && this.language === "zh") {
+      const variant = randomEventVariantContext(
+        this.save.profile.role,
+        this.save.difficulty,
+        this.save.randomEventCycle ?? 0,
+        "zh"
+      );
+      return {
+        ...node,
+        context: `${node.context} ${variant}`.trim()
+      };
+    }
     if (this.language !== "en") return node;
     if (node.kind === "side") {
       const side = SIDE_NODE_EN[node.id];
@@ -573,10 +592,16 @@ export class AdaptiveGameApp {
     if (node.kind === "random") {
       const random = RANDOM_NODE_EN[node.id];
       if (!random) return node;
+      const variant = randomEventVariantContext(
+        this.save.profile.role,
+        this.save.difficulty,
+        this.save.randomEventCycle ?? 0,
+        "en"
+      );
       return {
         ...node,
         title: random.title,
-        context: random.context,
+        context: `${random.context} ${variant}`.trim(),
         stake: random.stake,
         options: node.options.map((option, index) => ({
           ...option,
@@ -585,6 +610,19 @@ export class AdaptiveGameApp {
       };
     }
     if (node.kind === "branch") {
+      const fork = FORK_NODE_EN[node.id];
+      if (fork) {
+        return {
+          ...node,
+          title: fork.title,
+          context: fork.context,
+          stake: fork.stake,
+          options: node.options.map((option, index) => ({
+            ...option,
+            ...(fork.options[index] ?? {})
+          }))
+        };
+      }
       const branch = BRANCH_NODE_EN[node.id];
       if (!branch) return node;
       return {
@@ -1007,19 +1045,33 @@ export class AdaptiveGameApp {
                 <p class="eyebrow">${en ? "Role Archives" : "角色档案"}</p>
                 <h2>${en ? "Switch roles without deleting progress" : "切换角色，无需删档"}</h2>
                 <p class="role-slot-totals">${(() => {
-                  const totals = roleSlotSummaries();
-                  const savedRoles = totals.filter((slot) => slot.exists).length;
-                  const totalMastery = totals.reduce(
-                    (sum, slot) => sum + slot.masteryPoints,
-                    0
-                  );
-                  const completedRoles = totals.filter(
-                    (slot) => slot.campaignCompletions > 0
-                  ).length;
+                  const stats = globalArchiveStats();
+                  const savedRoles = stats.savedRoles;
+                  const totalMastery = stats.totalMastery;
+                  const completedRoles = stats.completedRoles;
                   return en
-                    ? `Saved roles ${savedRoles}/3 · Mastery ${totalMastery} · Completed ${completedRoles}/3`
-                    : `已建档 ${savedRoles}/3 · 累计修炼 ${totalMastery} · 通关角色 ${completedRoles}/3`;
+                    ? `Saved roles ${savedRoles}/3 · Mastery ${totalMastery} · Completed ${completedRoles}/3 · Chapters ${stats.totalChapters}/27 · Duels ${stats.totalDuels} · Trials ${stats.totalTrials} · Global achievements ${stats.uniqueAchievements}/${ACHIEVEMENTS.length}`
+                    : `已建档 ${savedRoles}/3 · 累计修炼 ${totalMastery} · 通关角色 ${completedRoles}/3 · 章节 ${stats.totalChapters}/27 · 对局 ${stats.totalDuels} · 试炼 ${stats.totalTrials} · 全局成就 ${stats.uniqueAchievements}/${ACHIEVEMENTS.length}`;
                 })()}</p>
+                ${
+                  (() => {
+                    const stats = globalArchiveStats();
+                    const allRolesDone = stats.savedRoles === 3 && stats.completedRoles === 3;
+                    const masteryFull = stats.totalMastery >= 100;
+                    const label = allRolesDone
+                      ? en
+                        ? "All-role completion achieved"
+                        : "全角色通关达成"
+                      : masteryFull
+                        ? en
+                          ? "100+ cumulative mastery achieved"
+                          : "累计修炼 100+ 达成"
+                        : en
+                          ? "Global archive grows across roles"
+                          : "跨角色全局档案持续积累";
+                    return `<div class="role-global-badge">${label}</div>`;
+                  })()
+                }
                 <div class="role-slot-list">
                   ${roleSlotSummaries()
                     .map((slot) => {
@@ -1393,7 +1445,11 @@ export class AdaptiveGameApp {
     const mainNodes = chapter.nodeIds.map(getNode);
     const chapterDone = isChapterComplete(this.save, chapter.id);
     const chapterPassed = isChapterPassed(this.save, chapter.id);
-    const availableRandom = nextRandomEvent(this.save);
+    const availableRandom = nextRandomEvent({
+      ...this.save,
+      role: this.save.profile.role,
+      difficulty: this.save.difficulty
+    });
     this.root.innerHTML = `
       <header class="topbar">
         <div class="brand">${this.t("brand")}</div>
@@ -1552,19 +1608,36 @@ export class AdaptiveGameApp {
               <h3>${this.language === "en" ? "Event Log" : "事件簿"}</h3>
               <p class="muted">${
                 this.language === "en"
-                  ? `Completed ${this.save.completedRandomEvents.length} / ${RANDOM_EVENT_IDS.length} random events`
-                  : `已完成 ${this.save.completedRandomEvents.length} / ${RANDOM_EVENT_IDS.length} 个随机事件`
+                  ? `Completed ${this.save.completedRandomEvents.length} / ${randomEventEligibleCount(this.save)} random events for your role and difficulty`
+                  : `已完成 ${this.save.completedRandomEvents.length} / ${randomEventEligibleCount(this.save)} 个当前角色与难度可触发事件`
               }</p>
               <div class="event-book-list">
                 ${RANDOM_EVENT_IDS.map((id) => {
                   const done = this.save.completedRandomEvents.includes(id);
+                  const meta = RANDOM_EVENT_META[id];
+                  const roleLocked = Boolean(
+                    meta?.roles && !meta.roles.includes(this.save.profile.role)
+                  );
+                  const difficultyLocked = Boolean(
+                    meta?.difficulties &&
+                      !meta.difficulties.includes(this.save.difficulty)
+                  );
                   let title = id;
                   try {
                     title = this.storyNodeDisplay(getNode(id)).title;
                   } catch {
                     // keep id
                   }
-                  return `<span class="${done ? "done" : ""}" title="${escapeAttr(title)}">${done ? "✓" : "○"}${escapeHtml(title)}</span>`;
+                  const lockLabel = roleLocked
+                    ? this.language === "en"
+                      ? "role"
+                      : "角色"
+                    : difficultyLocked
+                      ? this.language === "en"
+                        ? "difficulty"
+                        : "难度"
+                      : "";
+                  return `<span class="${done ? "done" : ""}" title="${escapeAttr(title)}">${done ? "✓" : "○"}${escapeHtml(title)}${lockLabel ? `<em>${lockLabel}</em>` : ""}</span>`;
                 }).join("")}
               </div>
             </div>
@@ -1850,6 +1923,11 @@ export class AdaptiveGameApp {
                 })
                 .join("")}
             </div>
+            ${
+              this.pendingForkNodeId
+                ? `<button class="primary fork-entry-button" data-action="enter-fork">${this.language === "en" ? "Enter Route Fork" : "进入路线分叉"}</button>`
+                : ""
+            }
           </div>
           ${ 
             next
@@ -4919,6 +4997,7 @@ export class AdaptiveGameApp {
           this.save.routePath[chapterId] = route;
           this.persistSave();
           trackEvent("route_choice", { chapterId, route });
+          this.pendingForkNodeId = forkNodeForRoute(chapterId, route);
           this.renderChapterTransition();
         }
         break;
@@ -4930,6 +5009,20 @@ export class AdaptiveGameApp {
         }
         break;
       case "continue-transition-map": {
+        const forkId = this.pendingForkNodeId;
+        if (forkId) {
+          this.audio.ui();
+          this.storyNodeId = forkId;
+          this.storyHintRevealed = false;
+          this.pendingBranchNodeId = undefined;
+          this.lastOutcome = undefined;
+          this.lastOutcomeNodeId = undefined;
+          this.lastUnlockedAchievement = undefined;
+          this.interferenceText = undefined;
+          this.show("story");
+          this.startRoundTimer();
+          break;
+        }
         const completed = this.pendingChapterTransition;
         this.pendingChapterTransition = undefined;
         this.lastOutcome = undefined;
@@ -4940,6 +5033,36 @@ export class AdaptiveGameApp {
         }
         this.audio.ui();
         this.show("map");
+        break;
+      }
+      case "enter-fork": {
+        const forkId = this.pendingForkNodeId;
+        if (forkId) {
+          this.audio.ui();
+          this.storyNodeId = forkId;
+          this.storyHintRevealed = false;
+          this.pendingBranchNodeId = undefined;
+          this.lastOutcome = undefined;
+          this.lastOutcomeNodeId = undefined;
+          this.lastUnlockedAchievement = undefined;
+          this.interferenceText = undefined;
+          this.show("story");
+          this.startRoundTimer();
+        }
+        break;
+      }
+      case "finish-fork": {
+        this.pendingForkNodeId = undefined;
+        this.pendingBranchNodeId = undefined;
+        this.lastOutcome = undefined;
+        this.lastOutcomeNodeId = undefined;
+        this.lastUnlockedAchievement = undefined;
+        this.audio.ui();
+        if (this.pendingChapterTransition) {
+          this.renderChapterTransition();
+        } else {
+          this.show("map");
+        }
         break;
       }
       case "continue-branch": {
@@ -5247,7 +5370,8 @@ export class AdaptiveGameApp {
     const highAbility = (
       Object.keys(outcome.option.effects) as AbilityId[]
     ).find((id) => abilityLevel(this.save.profile.abilities[id]) >= 3);
-    if (outcome.option.quality === "expert" && highAbility) {
+    const isForkNode = this.pendingForkNodeId === baseNode.id;
+    if (!isForkNode && outcome.option.quality === "expert" && highAbility) {
       this.hiddenBranchAbilityId = highAbility;
       this.pendingBranchNodeId = `ability-${highAbility}`;
     } else {
@@ -5442,10 +5566,11 @@ export class AdaptiveGameApp {
     };
     peer.onStatus = (status) => {
       if (status === "failed" || status === "disconnected" || status === "closed") {
+        this.saveDuelSnapshot();
         this.remoteStatus =
           this.language === "en"
-            ? "Connection lost. Return to the lobby and try again."
-            : "连接已断开，请返回大厅重试。";
+            ? "Connection lost. A resume snapshot was saved; return to the lobby to continue against AI."
+            : "连接已断开，已保存续战快照；返回大厅可转为 AI 续战。";
         this.audio.risk();
       } else {
         this.remoteStatus = status;
@@ -5554,7 +5679,7 @@ export class AdaptiveGameApp {
   }
 
   private saveDuelSnapshot(): void {
-    if (!this.duelEngine || this.duelMode === "remote") {
+    if (!this.duelEngine) {
       return;
     }
     try {
@@ -6638,26 +6763,33 @@ export class AdaptiveGameApp {
   private outcomeMarkup(outcome: ChoiceOutcome): string {
     const option = outcome.option;
     const transitionId = this.pendingChapterTransition;
-    const action = transitionId
-      ? "continue-transition"
-      : this.pendingBranchNodeId
-        ? "continue-branch"
-        : "continue-story";
-    const actionLabel = transitionId
+    const forkId = this.pendingForkNodeId;
+    const action = forkId
+      ? "finish-fork"
+      : transitionId
+        ? "continue-transition"
+        : this.pendingBranchNodeId
+          ? "continue-branch"
+          : "continue-story";
+    const actionLabel = forkId
       ? this.language === "en"
-        ? "View Chapter Transition"
-        : "查看章节过渡"
-      : this.pendingBranchNodeId
+        ? "Finish Fork"
+        : "完成分叉"
+      : transitionId
         ? this.language === "en"
-          ? this.pendingBranchNodeId.startsWith("ability-")
-            ? "Enter Advanced Review"
-            : "Enter Role Branch"
-          : this.pendingBranchNodeId.startsWith("ability-")
-            ? "进入高阶复盘"
-            : "进入角色分岔"
-        : this.language === "en"
-          ? "Back to Map"
-          : "返回地图";
+          ? "View Chapter Transition"
+          : "查看章节过渡"
+        : this.pendingBranchNodeId
+          ? this.language === "en"
+            ? this.pendingBranchNodeId.startsWith("ability-")
+              ? "Enter Advanced Review"
+              : "Enter Role Branch"
+            : this.pendingBranchNodeId.startsWith("ability-")
+              ? "进入高阶复盘"
+              : "进入角色分岔"
+          : this.language === "en"
+            ? "Back to Map"
+            : "返回地图";
     const streak = this.expertStreak();
     const encouragement =
       option.quality === "expert"

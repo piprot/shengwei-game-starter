@@ -1038,6 +1038,263 @@ export const BRANCH_NODE_EN: Record<
     context:
       "You are about to be promoted, but your successor is not fully ready and the project is at a critical point.",
     stake: "Complete the handoff safely while showing the organization you can take on more responsibility."
+  },
+  "c4-fork-expert": {
+    title: "Momentum Checkpoint: Co-Author Committee",
+    context:
+      "You chose to make opponents co-authors. Now the first committee meeting must produce verifiable results instead of becoming another debate.",
+    stake: "Prove that inviting opponents in is not a concession but a mechanism that makes the plan stronger."
+  },
+  "c4-fork-partial": {
+    title: "Momentum Checkpoint: Backing Buys Time",
+    context:
+      "You chose to use executive backing to suppress debate. The backing has arrived, but you have 48 hours to give the execution layer a collaboration method that works without commands.",
+    stake: "Backing can only be used once; turn it into the team's own process."
+  },
+  "c4-fork-risk": {
+    title: "Momentum Checkpoint: Bypassing Resistance to Accelerate the Pilot",
+    context:
+      "You chose to run the pilot first. Results are better than expected, but the departments you bypassed are now jointly questioning its validity.",
+    stake: "Turn the pilot from your personal push into evidence the whole organization can see."
+  },
+  "c7-fork-expert": {
+    title: "Consolidation Checkpoint: Runway Checklist",
+    context:
+      "You chose to hand key judgments to the successor through a runway. Now the runway needs boundaries: what he may decide alone, and what must trigger dual review.",
+    stake: "Make the runway accelerate growth without becoming a new dependency."
+  },
+  "c7-fork-partial": {
+    title: "Consolidation Checkpoint: Delegation with Review",
+    context:
+      "You chose to give the successor more decision rights. He submitted a budget adjustment that contains a risk you did not anticipate.",
+    stake: "Rejecting it directly would destroy the delegation; approving it may expose the organization to risk. You need a review protocol."
+  },
+  "c7-fork-risk": {
+    title: "Consolidation Checkpoint: Keeping the Final Gate",
+    context:
+      "You chose to keep personally reviewing key decisions. Now volume is rising and your inbox and calendar are becoming the organization's bottleneck.",
+    stake: "Find a way to keep the final judgment while removing the single-point bottleneck."
+  }
+};
+
+export const FORK_NODE_EN: Record<
+  string,
+  {
+    title: string;
+    context: string;
+    stake: string;
+    intel: string[];
+    options: Array<{
+      label: string;
+      summary: string;
+      feedback: string;
+      theory: string;
+    }>;
+  }
+> = {
+  "c4-fork-expert": {
+    title: "Momentum Checkpoint: Co-Author Committee",
+    context:
+      "You chose to make opponents co-authors. Now the first committee meeting must produce verifiable results instead of becoming another debate.",
+    stake: "Prove that inviting opponents in is not a concession but a mechanism that makes the plan stronger.",
+    intel: [
+      "Members care whether their own topics are actually adopted.",
+      "The first deliverable decides whether opponents keep participating.",
+      "A 24-hour deliverable must be verifiable, not just supportive."
+    ],
+    options: [
+      {
+        label: "Give each member a verifiable topic and a 24-hour deliverable",
+        summary: "Turn opponents from commentators into deliverers and lock participation with results.",
+        feedback:
+          "Opponents owned the plan for the first time; the meeting moved from positions to commitments.",
+        theory: "The Analects: promote the straight and the people follow."
+      },
+      {
+        label: "Let the committee advise but not decide",
+        summary: "Keep the final call and avoid slowing the plan down.",
+        feedback:
+          "The form existed, but members quickly saw their opinions would not be adopted.",
+        theory: "Han Feizi: law, power, and tactics must work together."
+      },
+      {
+        label: "Remove the loudest opponent from the committee",
+        summary: "Protect efficiency by limiting access.",
+        feedback:
+          "Resistance seemed to disappear but moved underground.",
+        theory: "The Art of War: first make yourself invincible."
+      }
+    ]
+  },
+  "c4-fork-partial": {
+    title: "Momentum Checkpoint: Backing Buys Time",
+    context:
+      "You chose to use executive backing to suppress debate. The backing has arrived, but you have 48 hours to give the execution layer a collaboration method that works without commands.",
+    stake: "Backing can only be used once; turn it into the team's own process.",
+    intel: [
+      "Executive backing has only one expiry.",
+      "A three-party pilot pact is more executable than a command.",
+      "The first jointly confirmed delivery node must exist within 48 hours."
+    ],
+    options: [
+      {
+        label: "Turn the backing into a three-party pilot pact",
+        summary: "Let sales, delivery, and finance confirm the pilot boundary, owners, and review nodes.",
+        feedback:
+          "Executive support became executable rules; teams align through the pact, not commands.",
+        theory: "Han Feizi: once the law stands, even a mediocre ruler can govern."
+      },
+      {
+        label: "Require departments to comply by deadline",
+        summary: "Use deadlines instead of one-by-one communication.",
+        feedback:
+          "Compliance arrived, but departments only checked boxes; real collaboration did not happen.",
+        theory: "The Art of War: unite them with culture and discipline."
+      },
+      {
+        label: "Push dissent back into private channels",
+        summary: "Let public meetings show only support.",
+        feedback:
+          "The surface quieted, but key information began flowing around you.",
+        theory: "Comprehensive Mirror: plug the crack before the storm."
+      }
+    ]
+  },
+  "c4-fork-risk": {
+    title: "Momentum Checkpoint: Bypassing Resistance to Accelerate the Pilot",
+    context:
+      "You chose to run the pilot first. Results are better than expected, but the departments you bypassed are now jointly questioning its validity.",
+    stake: "Turn the pilot from your personal push into evidence the whole organization can see.",
+    intel: [
+      "Pilot data must be public to answer the joint challenge.",
+      "The bypassed departments are waiting for an inconsistency in the numbers.",
+      "Every metric on the board needs an owner."
+    ],
+    options: [
+      {
+        label: "Turn pilot data into a public verification board",
+        summary: "Let skeptics see the same data and invite them to add validation conditions.",
+        feedback:
+          "The challenge was answered by data; the pilot became shared language.",
+        theory: "On Contradiction: practice is the only standard of truth."
+      },
+      {
+        label: "Expand the pilot with supporters first",
+        summary: "Prove the direction faster, then deal with the questions.",
+        feedback:
+          "Faster, but the opposing departments see you still pushing outside the circle.",
+        theory: "The Book of Power: small wins first."
+      },
+      {
+        label: "Withdraw the pilot and wait for consensus",
+        summary: "Calm the dispute and wait for a safer launch window.",
+        feedback:
+          "Dispute shrank, but the organization learned to block new attempts with questions.",
+        theory: "The Art of War: invincibility lies in yourself."
+      }
+    ]
+  },
+  "c7-fork-expert": {
+    title: "Consolidation Checkpoint: Runway Checklist",
+    context:
+      "You chose to hand key judgments to the successor through a runway. Now the runway needs boundaries: what he may decide alone, and what must trigger dual review.",
+    stake: "Make the runway accelerate growth without becoming a new dependency.",
+    intel: [
+      "The successor fears authority being quietly taken back.",
+      "The risk-tier checklist needs to be public.",
+      "Dual review should only appear on high-risk decisions."
+    ],
+    options: [
+      {
+        label: "Split independent decisions by risk tier",
+        summary: "Delegate low risk, coach medium risk, dual-review high risk, and publish the list.",
+        feedback:
+          "The successor learned which judgments are his; the organization began running on rules, not people.",
+        theory: "Zhenguan Essentials: finish well as you started."
+      },
+      {
+        label: "Let the successor handle low-risk work first",
+        summary: "Practice safely while you keep the key judgments.",
+        feedback:
+          "Safe, but every key judgment still passed through you.",
+        theory: "Comprehensive Mirror: use people's strengths."
+      },
+      {
+        label: "Hand over full authority immediately",
+        summary: "Accelerate growth with real decisions and no review.",
+        feedback:
+          "The successor was independent, but the first unguarded mistake shook team trust.",
+        theory: "The Art of War: win when top and bottom share the same will."
+      }
+    ]
+  },
+  "c7-fork-partial": {
+    title: "Consolidation Checkpoint: Delegation with Review",
+    context:
+      "You chose to give the successor more decision rights. He submitted a budget adjustment that contains a risk you did not anticipate.",
+    stake: "Rejecting it directly would destroy the delegation; approving it may expose the organization to risk. You need a review protocol.",
+    intel: [
+      "The successor's plan contains one real risk.",
+      "A stop-loss condition protects delegation better than verbal trust.",
+      "A 30-day review node turns the risk into learning material."
+    ],
+    options: [
+      {
+        label: "Ask him to add a stop-loss condition and a 30-day review node",
+        summary: "Do not take back the decision; add guardrails and make the risk a coaching moment.",
+        feedback:
+          "You neither took back the decision nor ignored the risk; the organization gained a reusable delegation template.",
+        theory: "Han Feizi: let capable people exhaust their thinking."
+      },
+      {
+        label: "You make the final call this time",
+        summary: "Control the risk first, then explain your judgment.",
+        feedback:
+          "The risk was blocked, but the successor learned to wait for your approval first.",
+        theory: "The Book of Power: authority is granted."
+      },
+      {
+        label: "Execute his plan directly",
+        summary: "Buy growth with trust and let the organization absorb the risk.",
+        feedback:
+          "Trust was shown, but the organization paid for unguarded risk.",
+        theory: "The Art of War: first make yourself invincible."
+      }
+    ]
+  },
+  "c7-fork-risk": {
+    title: "Consolidation Checkpoint: Keeping the Final Gate",
+    context:
+      "You chose to keep personally reviewing key decisions. Now volume is rising and your inbox and calendar are becoming the organization's bottleneck.",
+    stake: "Find a way to keep the final judgment while removing the single-point bottleneck.",
+    intel: [
+      "The whole organization schedules decisions around your calendar.",
+      "Three standard questions can filter most requests.",
+      "Exception review keeps your gate on high-risk judgments."
+    ],
+    options: [
+      {
+        label: "Split review into three standard questions",
+        summary: "Require every request to answer goal, evidence, and stop-loss; review only exceptions.",
+        feedback:
+          "You remain the final gate, but the organization starts calibrating itself first; the bottleneck loosened.",
+        theory: "Comprehensive Mirror: plug the crack early."
+      },
+      {
+        label: "Add more approval meetings",
+        summary: "Absorb the request volume with more synchronization time.",
+        feedback:
+          "Decisions moved a little faster, but your calendar swallowed the gain.",
+        theory: "Han Feizi: once the law stands..."
+      },
+      {
+        label: "Let an assistant pre-filter requests",
+        summary: "Remove low-value information and keep only key decisions.",
+        feedback:
+          "You saved time, but the organization began guessing the assistant's preferences.",
+        theory: "The Book of Power: authority exists to be used."
+      }
+    ]
   }
 };
 
@@ -1984,6 +2241,346 @@ export const RANDOM_NODE_EN: Record<
         theory: "The Art of War: seek advantage from the situation."
       }
     ]
+  },
+  r27: {
+    title: "The Plan Leaked Early",
+    context:
+      "The restructuring plan you planned to announce tomorrow appeared in another department's group chat today, complete with a watermark. The source is clearly internal.",
+    stake: "Blame is not the point. The point is keeping leaks from blocking the next change.",
+    intel: [
+      "The watermark narrows the leak to a small circle.",
+      "The other department shared it to test whether you will punish or ignore.",
+      "A second version can turn the leak into a controlled probe."
+    ],
+    options: [
+      {
+        label: "Publish two switchable versions of the plan",
+        summary: "Keep the key changes, separate certain from exploratory information, and observe the leak path.",
+        feedback:
+          "You did not start with blame; the plan gained anti-leak capability and a controlled disclosure window.",
+        theory: "Han Feizi: matters succeed in secrecy and fail through loose talk."
+      },
+      {
+        label: "Announce a formal leak investigation",
+        summary: "Use a clear stance to make information boundaries untouchable.",
+        feedback:
+          "The warning landed, but people moved to more hidden channels and information became harder to see.",
+        theory: "The Art of War: first make yourself invincible."
+      },
+      {
+        label: "Postpone the plan and wait for the source to surface",
+        summary: "Do not publish until the leak resolves itself.",
+        feedback:
+          "You protected short-term calm but lost the window; the next change will be more passive.",
+        theory: "The Analects: worry about knowing others, not about being known."
+      }
+    ]
+  },
+  r28: {
+    title: "The Predecessor's Favor Ledger",
+    context:
+      "The predecessor left a private document listing who owes him favors and who promised to support the new leader. The admin lead hints this ledger is more accurate than the org chart.",
+    stake: "Favor accounts are real resources, but using them directly makes you the continuation of old politics.",
+    intel: [
+      "The ledger contains names not visible in the formal structure.",
+      "Each favor maps to a different expected payoff.",
+      "Translating it into collaboration conditions avoids inheriting the debt."
+    ],
+    options: [
+      {
+        label: "Translate the favor ledger into a collaboration map",
+        summary: "Extract each person's cooperation conditions instead of debts, making the ledger a verifiable resource.",
+        feedback:
+          "You used the information without inheriting the debt, turning historical resources into neutral assets.",
+        theory: "The Book of Character: watch changes to see nature."
+      },
+      {
+        label: "Verify the ledger privately and visit each name",
+        summary: "Confirm each favor before deciding how to use it.",
+        feedback:
+          "You learned real motivations, but the organization now assumes you continue the predecessor's faction play.",
+        theory: "The Book of Power: small wins first."
+      },
+      {
+        label: "Burn the ledger",
+        summary: "Refuse all private relationships and restart from public process.",
+        feedback:
+          "The gesture was clean, but you also rejected the best first-hand intelligence and will pay tuition longer.",
+        theory: "The Art of War: know yourself and know the other."
+      }
+    ]
+  },
+  r29: {
+    title: "The Star Employee Suddenly Quits",
+    context:
+      "The employee controlling 70% of client relationships suddenly resigns for personal growth, but before leaving he scheduled private talks with three high-potential colleagues.",
+    stake: "Retaining him is not the only goal. Decide whether this is attrition or a team structure problem.",
+    intel: [
+      "The three high-potential colleagues were invited in a specific order.",
+      "His reasons include a promotion path that was never written down.",
+      "The client relationships are concentrated by habit, not by contract."
+    ],
+    options: [
+      {
+        label: "Interview the high-potential colleagues he mentored first",
+        summary: "Read the resignation as an organizational signal before designing a retention plan.",
+        feedback:
+          "You saw the bench structure behind the departure; the retention plan relied on organizational capacity, not a raise.",
+        theory: "The Book of Character: observe feelings and changes."
+      },
+      {
+        label: "Offer double the retention package",
+        summary: "Buy time with resources and stabilize client relationships.",
+        feedback:
+          "He stayed temporarily, but other leaders began pricing their own resignations.",
+        theory: "Zhenguan Essentials: using the wrong talent makes governance hard."
+      },
+      {
+        label: "Accept the resignation and recruit urgently",
+        summary: "Respect the choice and backfill externally.",
+        feedback:
+          "The role was filled, but client trust and tacit knowledge were not; the organization pays tuition long term.",
+        theory: "The Art of War: first make yourself invincible."
+      }
+    ]
+  },
+  r30: {
+    title: "Budget Cut by 20% Overnight",
+    context:
+      "The day before the quarterly kickoff, finance tells you the project budget is cut 20% because the group needs cash. The team already planned delivery around the original budget.",
+    stake: "Give a new battle map within two days instead of turning the cut into an emotional event.",
+    intel: [
+      "The cut lands on discretionary spend, not on the three committed client nodes.",
+      "The team's delivery plan has seven workstreams, but two can be compressed.",
+      "Finance is watching whether you re-plan or complain."
+    ],
+    options: [
+      {
+        label: "Re-prioritize the budget by key results",
+        summary: "Split delivery into must-keep, deferrable, and cuttable tiers with owners and checkpoints.",
+        feedback:
+          "Resource constraints became priority discipline; the team learned which three things cannot be lost.",
+        theory: "The Effective Executive: concentrate on a few truly important tasks."
+      },
+      {
+        label: "Lower delivery standards across the board",
+        summary: "Protect the quarter's numbers and adjust standards later.",
+        feedback:
+          "Numbers held, but standards were diluted and acceptance disputes spilled to clients.",
+        theory: "The Art of War: value victory, not prolonged campaigns."
+      },
+      {
+        label: "Appeal to the group to restore the budget",
+        summary: "Use delivery risk to argue for resources.",
+        feedback:
+          "You bought a buffer, but the group concluded you cannot make choices under constraints.",
+        theory: "The Book of Power: authority is granted."
+      }
+    ]
+  },
+  r31: {
+    title: "Two Executives Fight Publicly",
+    context:
+      "At the operating meeting, the sales VP and product VP argue in front of the CEO: one blames broken delivery, the other blames reckless promises. The CEO turns to you.",
+    stake: "Your next sentence decides whether the meeting returns to facts or becomes a faction choice.",
+    intel: [
+      "The customer contract contains a deadline the sales side promised without a delivery review.",
+      "Product has a completion report showing two blockers from sales data.",
+      "The CEO is testing whether you can separate facts from alliances."
+    ],
+    options: [
+      {
+        label: "Lock down customer facts and delivery facts first",
+        summary: "Turn the argument into two verifiable lists so both sides redefine the problem on data.",
+        feedback:
+          "You did not judge; the meeting returned from emotion to facts and both sides finally discussed the same table.",
+        theory: "On Contradiction: grasp the principal contradiction."
+      },
+      {
+        label: "Support the sales side to protect the client",
+        summary: "Give the client certainty now and review internally later.",
+        feedback:
+          "The client was protected, but product concluded you favor sales and started defensive collaboration.",
+        theory: "Comprehensive Mirror: plug cracks early."
+      },
+      {
+        label: "Adjourn and calm each side privately",
+        summary: "Avoid taking a public side.",
+        feedback:
+          "The surface calmed, but both sides concluded you have no position; the next fight moved to private channels.",
+        theory: "The Analects: harmony without sameness."
+      }
+    ]
+  },
+  r32: {
+    title: "A Critical Process Depends on One Person",
+    context:
+      "You discover that renewal, pricing, and collection all depend on the same senior manager. When he takes annual leave, the business visibly stalls.",
+    stake: "Turn him into a teacher of the system, not the system itself.",
+    intel: [
+      "He already documents decisions in personal notes.",
+      "Two juniors have completed similar work under his review.",
+      "His fear is being replaced, not being asked to teach."
+    ],
+    options: [
+      {
+        label: "Use a 30-day runway to turn the process into a checklist",
+        summary: "Have him mentor two juniors, write judgment rules into a checklist, and let a junior drill a real case.",
+        feedback:
+          "Dependency did not become confrontation; he became the system builder and the organization gained replicable capability.",
+        theory: "Zhenguan Essentials: finish well as you started."
+      },
+      {
+        label: "Hire an assistant to share the load",
+        summary: "Reduce single-point risk with headcount and defer process work.",
+        feedback:
+          "The assistant arrived, but judgment still concentrated on one person; the bottleneck was postponed.",
+        theory: "Han Feizi: let capable people exhaust their thinking."
+      },
+      {
+        label: "Demand he write the method immediately",
+        summary: "Copy experience into documentation fast.",
+        feedback:
+          "The document aged quickly and he felt publicly stripped of value; cooperation dropped.",
+        theory: "Comprehensive Mirror: use people's strengths."
+      }
+    ]
+  },
+  r33: {
+    title: "The Client Demands an Unverified Feature Immediately",
+    context:
+      "Using contract renewal as leverage, the largest client demands an unverified feature go live in two weeks; engineering says it needs at least six.",
+    stake: "Promising will burn out the team; refusing may lose the client. Find a third path.",
+    intel: [
+      "The client's key user is willing to participate in a 30-day joint acceptance.",
+      "Two of the six weeks come from internal sign-off, not engineering.",
+      "The renewal is signed by a sponsor who needs a visible result."
+    ],
+    options: [
+      {
+        label: "Split the need into a minimal testable version",
+        summary: "Ship a simplified version that validates the core assumption and agree on a 30-day joint acceptance node.",
+        feedback:
+          "You did not choose between promise and refusal; the client became a validation partner with exit boundaries.",
+        theory: "On Contradiction: grasp the principal contradiction."
+      },
+      {
+        label: "Promise two weeks and ask the team to work overtime",
+        summary: "Meet the client and absorb internal cost with overtime.",
+        feedback:
+          "The date held, but the team answered with attrition and burnout; the next delivery chain broke.",
+        theory: "The Art of War: value victory, not prolonged campaigns."
+      },
+      {
+        label: "Refuse the demand and wait for the contract term",
+        summary: "Protect engineering boundaries and resist contract leverage.",
+        feedback:
+          "The principle held, but the relationship entered a freeze and your leverage shrank.",
+        theory: "The Book of Power: authority is granted."
+      }
+    ]
+  },
+  r34: {
+    title: "The Successor's First Independent Decision",
+    context:
+      "You are about to be promoted. The successor must handle her first crisis alone: a supplier defaults and the client is waiting. She brings two options to you.",
+    stake: "How you answer decides whether she learns to decide or learns to wait for you.",
+    intel: [
+      "She already knows the client's preferred option.",
+      "Her first option protects delivery; her second protects cash.",
+      "She has not written a stop-loss condition for either."
+    ],
+    options: [
+      {
+        label: "Ask her for a conclusion and failure conditions first",
+        summary: "Have her state the recommendation, evidence, and stop-loss before you add one risk she missed.",
+        feedback:
+          "She came with a complete judgment, not a question; the handoff actually began.",
+        theory: "Comprehensive Mirror: finish well as you started."
+      },
+      {
+        label: "Give her your answer directly",
+        summary: "Solve the crisis first and explain the decision process after.",
+        feedback:
+          "The crisis was solved, but she learned to check with you before the next one.",
+        theory: "The Book of Power: authority exists to be used."
+      },
+      {
+        label: "Let her handle it alone with full responsibility",
+        summary: "Accelerate growth with a real crisis and no guardrails.",
+        feedback:
+          "Independence appeared, but without guardrails one failure may push her back into dependency.",
+        theory: "The Art of War: win when top and bottom share the same will."
+      }
+    ]
+  },
+  r35: {
+    title: "The CEO Asks You to Diagnose the Organization Publicly",
+    context:
+      "At the all-hands meeting, the CEO suddenly asks you to diagnose the organization publicly and says, 'You are new, so you see it most clearly.' The room goes quiet.",
+    stake: "Too sharp alienates people; too smooth loses credibility. You need one honest, actionable sentence.",
+    intel: [
+      "The CEO wants a testable observation, not a list of complaints.",
+      "The room is listening for whether you will name real evidence.",
+      "One verifiable next step turns diagnosis into a shared agenda."
+    ],
+    options: [
+      {
+        label: "Give three verifiable observations",
+        summary: "Pair each observation with evidence and one next action, turning diagnosis into a checklist.",
+        feedback:
+          "You neither took sides nor talked in circles; the all-hands treated diagnosis as an executable agenda.",
+        theory: "The Analects: without correct names, words do not flow."
+      },
+      {
+        label: "Praise the organization first, then ask one soft question",
+        summary: "Keep the mood safe while leaving a question mark.",
+        feedback:
+          "The room stayed calm, but the CEO will not ask you again because you gave no judgment.",
+        theory: "The Book of Power: small wins first."
+      },
+      {
+        label: "Name one department's problem directly",
+        summary: "Use specific criticism to show sharp observation.",
+        feedback:
+          "You showed edge, but the whole department went defensive and information will be filtered.",
+        theory: "The Art of War: first make yourself invincible."
+      }
+    ]
+  },
+  r36: {
+    title: "An Anonymous Letter Arrives at Midnight",
+    context:
+      "At midnight you receive an anonymous letter accusing the purchasing manager of conflicts of interest with a supplier. It is signed 'a colleague who knows' and contains no evidence.",
+    stake: "The letter may be truth or faction tooling. Protect the fairness of the investigation first.",
+    intel: [
+      "The letter's claims match an unusual contract renewal from last quarter.",
+      "The anonymous sender likely works inside purchasing or finance.",
+      "No evidence means acting directly will destroy the investigation window."
+    ],
+    options: [
+      {
+        label: "Turn the letter into an independent audit lead",
+        summary: "Keep the source private, put the abnormal records into an independent audit, and let evidence replace the letter.",
+        feedback:
+          "You neither treated the letter as a verdict nor ignored it; the organization saw your standard of fairness.",
+        theory: "Han Feizi: once the law stands, even a mediocre ruler can govern."
+      },
+      {
+        label: "Interview the purchasing manager immediately",
+        summary: "Judge quickly through direct conversation.",
+        feedback:
+          "He denied it and began erasing traces; you lost the evidence window and the news spread.",
+        theory: "The Art of War: control the opponent, do not be controlled."
+      },
+      {
+        label: "Hand the letter to higher leadership",
+        summary: "Avoid the risk and let the organization decide.",
+        feedback:
+          "You avoided risk but also gave up judgment; the investigation will drift beyond your control.",
+        theory: "The Book of Power: authority is granted."
+      }
+    ]
   }
 };
 
@@ -2599,6 +3196,18 @@ export const ACHIEVEMENT_EN: Record<
   alternate_ending: {
     name: "Alternate Ending Collector",
     description: "Record one alternate ending"
+  },
+  random_rotation: {
+    name: "Event Rotator",
+    description: "Complete one full random event cycle and start a new one"
+  },
+  random_rotation_2: {
+    name: "Second-Cycle Strategist",
+    description: "Complete two event cycles and unlock role and difficulty variants"
+  },
+  random_collector: {
+    name: "Event Collector",
+    description: "Complete every random event in one cycle"
   },
   chapter_1: {
     name: "Chapter 1 Complete",

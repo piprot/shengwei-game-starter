@@ -127,6 +127,8 @@ export interface SaveState {
   /** 每日挑战领取记录：键为 "YYYY-MM-DD"，值为当天已领取的挑战 id 列表。跨天自然重置，故「每日」可重复领取。 */
   claimedDaily: Record<string, string[]>;
   claimedWeekly?: Record<string, string[]>;
+  /** 随机事件轮换周期：每清空一次事件池 +1，用于生成角色/难度变体与二周目差异。 */
+  randomEventCycle?: number;
   assessmentScore: number;
   completedRandomEvents: string[];
   completedBranchNodes: string[];

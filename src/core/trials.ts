@@ -382,6 +382,12 @@ export const TRIAL_STAGES: TrialStageDef[] = [
         explanation:
           "人才梯队不是提拔或压制二选一，而是用岗位成果、带教机制和陪跑周期同时管理组织连续性与个人动机。",
         referenceAnswer: "定义成果标准，用陪跑计划和带教机制建设梯队。",
+        calculation: {
+          prompt:
+            "5 名高潜员工每人 90 天陪跑共 90 小时，其中 40 小时由外部课程覆盖，其余由 2 名导师带教。每名导师平均带教多少小时？",
+          answer: 25,
+          unit: "小时"
+        },
         followUp: {
           prompt:
             "高潜员工表示 90 天陪跑太长，希望立刻有明确晋升通道。你如何调整？",
@@ -429,7 +435,13 @@ export const TRIAL_STAGES: TrialStageDef[] = [
         answer: 0,
         explanation:
           "营销增长应先用小成本验证转化假设，再放大预算；过早全面铺开容易把资源烧在没有验证的渠道上。",
-        referenceAnswer: "用三个低预算渠道做 30 天验证。"
+        referenceAnswer: "用三个低预算渠道做 30 天验证。",
+        calculation: {
+          prompt:
+            "三个低预算渠道各投入 2 万元，30 天验证后转化率最高的渠道 ROI 为 3。该渠道带来多少万元收入？",
+          answer: 6,
+          unit: "万元"
+        }
       }
     }
   },
@@ -495,7 +507,13 @@ export const TRIAL_STAGES: TrialStageDef[] = [
         answer: 0,
         explanation:
           "商业机会和风险边界可以同时管理；没有边界地先启动，会把付款、IP 和验收责任都变成不确定。",
-        referenceAnswer: "先签三页临时协议，明确风险边界。"
+        referenceAnswer: "先签三页临时协议，明确风险边界。",
+        calculation: {
+          prompt:
+            "临时协议共 3 页，付款条款占 1 页，知识产权边界占半页，验收与交付占半页。剩余违约与退出条款占多少页？",
+          answer: 1,
+          unit: "页"
+        }
       }
     }
   },
@@ -524,7 +542,13 @@ export const TRIAL_STAGES: TrialStageDef[] = [
         answer: 0,
         explanation:
           "客户信任依赖可验证的补救承诺，内部追责应放在稳定客户之后。",
-        referenceAnswer: "先给可验证的补救计划。"
+        referenceAnswer: "先给可验证的补救计划。",
+        calculation: {
+          prompt:
+            "补救计划承诺 48 小时内给出根因，72 小时内给出整改时间表。两个承诺节点之间相隔多少小时？",
+          answer: 24,
+          unit: "小时"
+        }
       }
     }
   },
@@ -559,7 +583,13 @@ export const TRIAL_STAGES: TrialStageDef[] = [
         answer: 0,
         explanation:
           "激励不是二选一；绩优需要成长路径，躺平需要底线和重新启动的机制。",
-        referenceAnswer: "同时给绩优成长路径，给躺平底线和帮扶机制。"
+        referenceAnswer: "同时给绩优成长路径，给躺平底线和帮扶机制。",
+        calculation: {
+          prompt:
+            "团队共 20 人，绩优员工占 30%，躺平员工占 15%，其余为稳定执行者。稳定执行者有多少人？",
+          answer: 11,
+          unit: "人"
+        }
       }
     }
   },
@@ -591,7 +621,13 @@ export const TRIAL_STAGES: TrialStageDef[] = [
         answer: 0,
         explanation:
           "资源争取需要风险清单和关键结果作为证据；默默加班或偷偷缩范围都会让组织失去校准机会。",
-        referenceAnswer: "用交付风险清单和关键结果争取资源。"
+        referenceAnswer: "用交付风险清单和关键结果争取资源。",
+        calculation: {
+          prompt:
+            "交付延期 6 周，其中 2 周来自资源被抽走、1 周来自验收流程，其余来自需求变更。需求变更占多少周？",
+          answer: 3,
+          unit: "周"
+        }
       }
     }
   }

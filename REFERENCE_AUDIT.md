@@ -24,3 +24,21 @@
 
 - 不直接引入重型 AI 模型，避免让浏览器版失去离线可玩性。
 - 不直接替换现有引擎，优先用这些项目的设计原则做本地化落地。
+
+## 2026-08-09 补充检索（第二批次）
+
+在进一步做分支、事件与中期分叉前，补充检索并参照以下开源项目：
+
+| 项目 | 地址 | 可参照点 |
+| --- | --- | --- |
+| ChoiceScript | https://github.com/dfabulich/choicescript | 多选叙事语言、条件分支、持久存档与统计收集，适合参考“选项即数据”的表达方式 |
+| Parchment | https://github.com/curiousdannii/parchment | 交互小说 Web 播放器，保存/恢复与跨页面状态一致性 |
+| Undum | https://github.com/idmillington/undum | “情境（situation）”节点模型、可叠加特质（qualities）、存档格式，与当前主线/支线/分支节点模型同构 |
+| Fungus | https://github.com/snozbot/fungus | 带立绘与音效的叙事流编排，佐证“章节背景 + 角色立绘 + 分轨音频”的呈现结构 |
+| Jonathan-Havener/LeadershipGame | https://github.com/Jonathan-Havener/LeadershipGame | 领导力主题游戏仓库，用于对照同类题材的关卡与决策呈现 |
+
+落地取舍：
+
+- 分支手写化沿用 ChoiceScript 的“选项文本 + 条件效果”思路，但保留当前 `branchVariantFor` 按章节/品质回落机制，避免新增运行时依赖。
+- 随机事件池参照 Undum 的“情境 + 特质”模型，把角色与难度档做成事件池过滤条件，并用事件周期计数制造二周目差异，而不是简单清空列表。
+- 中期分叉采用“路线检查点节点”：第 4/7 章选择路线后进入专属分叉节点，分叉选项继续影响后续事件权重与结局复盘，落实 NOT HERE 的确定性故事图思想。

@@ -13,6 +13,50 @@ export type BranchVariantSet = Record<
 >;
 
 export const BRANCH_VARIANTS: Record<number, BranchVariantSet> = {
+  1: {
+    expert: {
+      zh: {
+        label: "先用 48 小时最小验证建立第一份可核对的成果",
+        summary: "把诊断结论压成一个可验证动作，让团队先看到确定性。",
+        feedback: "你没有被“先熟悉再动手”的惯性拖住，第一份可核对的成果让授权问题自然松动。",
+        theory: "《权经》：携为上，功次之；权乃人授，授为大焉。"
+      },
+      en: {
+        label: "Build a first verifiable result within 48 hours",
+        summary: "Compress the diagnosis into one testable action so the team sees certainty first.",
+        feedback: "You were not held back by the get-to-know-the-team rhythm; the first verifiable result loosened the authority problem naturally.",
+        theory: "The Book of Power: small wins come first; authority is granted by people."
+      }
+    },
+    partial: {
+      zh: {
+        label: "先与高层对齐 90 天目标再动作",
+        summary: "向上对齐指标与边界，把第一周交给正式授权。",
+        feedback: "目标对齐了，但团队仍看不到你的第一份判断，信任积累慢了一步。",
+        theory: "《孙子兵法》：先为不可胜，以待敌之可胜。"
+      },
+      en: {
+        label: "Align the 90-day goal with leadership before acting",
+        summary: "Agree on metrics and boundaries first and spend the first week inside formal authority.",
+        feedback: "The goal aligned, but the team still had not seen your first judgment, so trust accumulated slowly.",
+        theory: "The Art of War: first make yourself invincible, then wait for the enemy to be vincible."
+      }
+    },
+    risk: {
+      zh: {
+        label: "跳过访谈直接推动业务动作",
+        summary: "用行动速度证明价值，不浪费第一周在关系上。",
+        feedback: "动作很快，但组织还没有准备好接收，第一波阻力从暗处提前出现。",
+        theory: "《论语》：不患人之不己知，患不知人也。"
+      },
+      en: {
+        label: "Skip the interviews and push business action directly",
+        summary: "Prove value with speed instead of spending the first week on relationships.",
+        feedback: "The action was fast, but the organization was not ready to receive it, and the first resistance surfaced early.",
+        theory: "The Analects: do not worry that others do not know you; worry that you do not know others."
+      }
+    }
+  },
   2: {
     expert: {
       zh: {

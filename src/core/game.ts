@@ -7,7 +7,10 @@ import {
   rankForTotal,
   totalAbilityLevels
 } from "./abilities.ts";
-import { RANDOM_EVENT_IDS, getNode } from "./story.ts";
+import {
+  getNode,
+  randomEventEligibleCount
+} from "./story.ts";
 import type {
   AbilityId,
   ChoiceOutcome,
@@ -74,6 +77,7 @@ export const DEFAULT_SAVE: SaveState = {
   claimedChallenges: [],
   claimedDaily: {},
   claimedWeekly: {},
+  randomEventCycle: 0,
   assessmentScore: 0,
   completedRandomEvents: [],
   completedBranchNodes: [],
@@ -260,6 +264,7 @@ function normalizeSave(save: SaveState): SaveState {
       save.claimedWeekly && typeof save.claimedWeekly === "object"
         ? { ...save.claimedWeekly }
         : {},
+    randomEventCycle: Math.max(0, Number(save.randomEventCycle) || 0),
     assessmentScore: Number(save.assessmentScore) || 0,
     completedRandomEvents: Array.isArray(save.completedRandomEvents)
       ? save.completedRandomEvents
@@ -337,6 +342,7 @@ export function computeSaveHash(save: SaveState): string {
     duh: (save.duelHistory ?? []).length,
     cc: save.claimedChallenges,
     cd: save.claimedDaily,
+    rec: save.randomEventCycle ?? 0,
     as: save.assessmentScore,
     cre: save.completedRandomEvents,
     cbn: save.completedBranchNodes,
@@ -474,6 +480,51 @@ export function roleSlotSummaries(): RoleSlotSummary[] {
       campaignCompletions: slot?.campaignCompletions ?? 0
     };
   });
+}
+
+export interface GlobalArchiveStats {
+  savedRoles: number;
+  completedRoles: number;
+  totalMastery: number;
+  totalChapters: number;
+  totalDuels: number;
+  totalTrials: number;
+  uniqueAchievements: number;
+}
+
+/** 跨角色全局成就层：把三个存档槽的进度聚合成可见的档案资产。 */
+export function globalArchiveStats(): GlobalArchiveStats {
+  const slots = ROLE_IDS.map(readSlot).filter(
+    (slot): slot is SaveState => Boolean(slot && slot.profileCreated)
+  );
+  const achievementIds = new Set<string>();
+  for (const slot of slots) {
+    for (const id of slot.achievements ?? []) {
+      achievementIds.add(id);
+    }
+  }
+  return {
+    savedRoles: slots.length,
+    completedRoles: slots.filter((slot) => (slot.campaignCompletions ?? 0) > 0)
+      .length,
+    totalMastery: slots.reduce((sum, slot) => sum + slot.masteryPoints, 0),
+    totalChapters: slots.reduce(
+      (sum, slot) =>
+        sum +
+        slot.chapterRecords.filter((record) => record.completedNodeIds.length >= 2)
+          .length,
+      0
+    ),
+    totalDuels: slots.reduce(
+      (sum, slot) => sum + (slot.duelWins ?? 0) + (slot.duelLosses ?? 0),
+      0
+    ),
+    totalTrials: slots.reduce(
+      (sum, slot) => sum + (slot.trialCleared ?? []).length,
+      0
+    ),
+    uniqueAchievements: achievementIds.size
+  };
 }
 
 export function deleteRoleSlot(role: RoleId): void {
@@ -1031,12 +1082,16 @@ export function applyDailyResourceRecovery(save: SaveState): boolean {
 
 /** 闅忔満浜嬩欢鍏ㄩ儴瀹屾垚鍚庢壄鍔ㄤ簨浠舵睜锛岄噸鏂板彲鎺ヨЕ骞剁粰涓€娆″皬濂栧姳銆?*/
 export function rotateRandomEventPool(save: SaveState): boolean {
-  if (save.completedRandomEvents.length < RANDOM_EVENT_IDS.length) {
+  if (save.completedRandomEvents.length < randomEventEligibleCount(save)) {
     return false;
   }
   save.completedRandomEvents = [];
-  save.masteryPoints += 5;
+  save.randomEventCycle = (save.randomEventCycle ?? 0) + 1;
+  save.masteryPoints += save.randomEventCycle >= 2 ? 8 : 5;
   save.achievements.push("random_rotation");
+  if (save.randomEventCycle >= 2) {
+    save.achievements.push("random_rotation_2");
+  }
   save.achievements = [...new Set(save.achievements)];
   saveState(save);
   return true;

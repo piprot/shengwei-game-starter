@@ -1,5 +1,8 @@
 import { totalAbilityLevels } from "./abilities.ts";
-import { SIDE_QUEST_ARCS } from "./story.ts";
+import {
+  randomEventEligibleCount,
+  SIDE_QUEST_ARCS
+} from "./story.ts";
 import { TRIAL_STAGES } from "./trials.ts";
 import type { SaveState } from "./types";
 
@@ -76,6 +79,24 @@ export const ACHIEVEMENTS: AchievementDef[] = [
     name: "备选结局收集者",
     description: "记录一条备选结局",
     icon: "27"
+  },
+  {
+    id: "random_rotation",
+    name: "事件轮换手",
+    description: "完成一轮全部随机事件并开启新周期",
+    icon: "28"
+  },
+  {
+    id: "random_rotation_2",
+    name: "二周目策士",
+    description: "完成两轮事件轮换，解锁角色与难度变体",
+    icon: "29"
+  },
+  {
+    id: "random_collector",
+    name: "事件收藏家",
+    description: "在同一周期内完成全部随机事件",
+    icon: "30"
   },
   ...Array.from({ length: 9 }, (_, index) => ({
     id: `chapter_${index + 1}`,
@@ -173,6 +194,15 @@ export function isAchievementUnlocked(save: SaveState, id: string): boolean {
   if (id === "alternate_ending") {
     return save.alternateEndings.length >= 1;
   }
+  if (id === "random_rotation") {
+    return (save.randomEventCycle ?? 0) >= 1;
+  }
+  if (id === "random_rotation_2") {
+    return (save.randomEventCycle ?? 0) >= 2;
+  }
+  if (id === "random_collector") {
+    return save.completedRandomEvents.length >= randomEventEligibleCount(save);
+  }
   if (id.startsWith("chapter_")) {
     const chapterId = Number(id.split("_")[1]);
     return Boolean(
@@ -258,6 +288,15 @@ export function achievementProgress(
     return { current: save.hiddenRoutes.length, target: 1 };
   if (id === "alternate_ending")
     return { current: save.alternateEndings.length, target: 1 };
+  if (id === "random_rotation")
+    return { current: Math.min(1, save.randomEventCycle ?? 0), target: 1 };
+  if (id === "random_rotation_2")
+    return { current: Math.min(2, save.randomEventCycle ?? 0), target: 2 };
+  if (id === "random_collector")
+    return {
+      current: save.completedRandomEvents.length,
+      target: randomEventEligibleCount(save)
+    };
   if (id.startsWith("chapter_")) {
     const chapterId = Number(id.split("_")[1]);
     const record = save.chapterRecords.find(

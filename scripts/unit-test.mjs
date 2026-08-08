@@ -42,10 +42,13 @@ import {
   RANDOM_EVENT_IDS,
   RANDOM_EVENT_META,
   STORY_NODES,
+  forkNodeForRoute,
   getNode,
   nodesForChapter,
   nextRandomEvent,
-  randomEventAffinity
+  randomEventAffinity,
+  randomEventEligibleCount,
+  randomEventVariantContext
 } from "../src/core/story.ts";
 import { ROLE_OPTION_SETS } from "../src/core/roleOptions.ts";
 import { DuelEngine } from "../src/core/duel.ts";
@@ -290,6 +293,58 @@ const routeEvent = nextRandomEvent({
 assert(
   typeof routeEvent === "string" && routeEvent.length > 0,
   "nextRandomEvent should accept routePath and still return an event"
+);
+
+assert(
+  forkNodeForRoute(4, "expert") === "c4-fork-expert" &&
+    forkNodeForRoute(7, "partial") === "c7-fork-partial" &&
+    forkNodeForRoute(1, "expert") === undefined,
+  "route forks should exist for chapters 4/7 only"
+);
+for (const forkId of [
+  "c4-fork-expert",
+  "c4-fork-partial",
+  "c4-fork-risk",
+  "c7-fork-expert",
+  "c7-fork-partial",
+  "c7-fork-risk"
+]) {
+  assert(getNode(forkId).options.length === 3, `${forkId} must have 3 options`);
+}
+const eligible = randomEventEligibleCount({
+  profile: { role: "highPotential" },
+  difficulty: "normal"
+});
+assert(
+  eligible > 20 && eligible <= RANDOM_EVENT_IDS.length,
+  "eligible event count should be within the pool"
+);
+const roleSave = structuredClone(DEFAULT_SAVE);
+roleSave.profile.role = "parachute";
+const parachuteEligible = randomEventEligibleCount(roleSave);
+assert(
+  parachuteEligible < RANDOM_EVENT_IDS.length,
+  "role filtering should shrink the eligible pool"
+);
+roleSave.completedRandomEvents = [...RANDOM_EVENT_IDS];
+assert(
+  rotateRandomEventPool(roleSave),
+  "role-filtered full pool should rotate"
+);
+assert(
+  (roleSave.randomEventCycle ?? 0) >= 1 &&
+    roleSave.achievements.includes("random_rotation"),
+  "rotation should advance the event cycle"
+);
+const variant = randomEventVariantContext(
+  "parachute",
+  "extreme",
+  1,
+  "zh"
+);
+assert(
+  variant.includes("空降") && variant.includes("极限"),
+  "event variant should include role and difficulty pressure"
 );
 
 for (const role of Object.keys(ROLE_OPTION_SETS)) {

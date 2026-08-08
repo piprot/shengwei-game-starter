@@ -3516,6 +3516,17 @@ h2 {
   font-size: 13px;
 }
 
+.role-global-badge {
+  display: inline-block;
+  margin: 0 0 12px;
+  padding: 6px 10px;
+  border: 1px solid rgba(226, 142, 82, 0.55);
+  border-radius: 8px;
+  background: rgba(226, 142, 82, 0.12);
+  color: #f2c14e;
+  font-size: 12px;
+}
+
 .guide-tasks {
   display: flex;
   flex-wrap: wrap;

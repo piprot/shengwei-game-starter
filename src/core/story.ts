@@ -152,7 +152,7 @@ export const STORY_NODES: StoryNode[] = [
         label: "先约核心骨干喝咖啡",
         summary: "逐个访谈，记录谁在影响决策、谁在隐瞒什么。",
         quality: "expert",
-        effects: { insight: 3, communication: 2 },
+        effects: { insight: 3, communication: 2, structure: 1 },
         resources: { energy: -8, trust: 8, influence: 4 },
         feedback:
           "你通过非正式访谈摸清了真实权力地图，也给了对方表达的空间。数据缺口背后不是流程问题，而是信任问题。",
@@ -239,7 +239,7 @@ export const STORY_NODES: StoryNode[] = [
         label: "先立功再争权",
         summary: "用两周内可交付的小胜利证明自己，再谈资源授权。",
         quality: "expert",
-        effects: { execution: 3, strategy: 2 },
+        effects: { execution: 3, strategy: 2, communication: 1 },
         resources: { energy: -8, trust: 5, influence: 7 },
         feedback:
           "你没有停在“权力不够”的抱怨里，而是用可验证的成果换授权。这正是《权经》所说的“携为上，功次之”。",
@@ -280,7 +280,7 @@ export const STORY_NODES: StoryNode[] = [
         label: "先讲事实，再邀请提问",
         summary: "用数据说明现状，把问题开放给所有人，并现场记录。",
         quality: "expert",
-        effects: { communication: 3, mobilize: 2 },
+        effects: { communication: 3, mobilize: 2, strategy: 1 },
         resources: { energy: -7, trust: 7, influence: 5 },
         feedback:
           "你没有被质疑激怒，反而把质疑变成了公共议题。沉默者开始说话，反对者也愿意把真实顾虑摆上台面。",
@@ -321,7 +321,7 @@ export const STORY_NODES: StoryNode[] = [
         label: "按关键岗位重新匹配",
         summary: "先定义未来 6 个月的关键岗位，再用人岗匹配决定去留。",
         quality: "expert",
-        effects: { deploy: 3, structure: 2 },
+        effects: { deploy: 3, structure: 2, insight: 1 },
         resources: { energy: -9, trust: 3, influence: 6 },
         feedback:
           "你没有被资历和亲疏绑架，而是先定义组织需要什么，再决定谁留下。名单里有争议，但逻辑清晰。",
@@ -362,7 +362,7 @@ export const STORY_NODES: StoryNode[] = [
         label: "授权边界并验收结果",
         summary: "明确告诉他决策权限、判断标准和汇报节点，然后让他自己闭环。",
         quality: "expert",
-        effects: { deploy: 3, authority: 2 },
+        effects: { deploy: 3, authority: 2, insight: 1 },
         resources: { energy: -5, trust: 8, influence: 5 },
         feedback:
           "你第一次把责任完整交给别人。他做砸了一件事，但学会了自主判断；你从救火队长变成了组织者。",
@@ -485,7 +485,7 @@ export const STORY_NODES: StoryNode[] = [
         label: "用关键结果倒推行动",
         summary: "把目标拆成 3 个关键结果，每个结果配负责人、里程碑和验收标准。",
         quality: "expert",
-        effects: { structure: 3, execution: 2 },
+        effects: { structure: 3, execution: 2, authority: 1 },
         resources: { energy: -8, trust: 4, influence: 6 },
         feedback:
           "你给团队的不是口号，而是一张能每天检查的作战图。目标开始变得真实。",
@@ -526,7 +526,7 @@ export const STORY_NODES: StoryNode[] = [
         label: "重排优先级，砍掉非关键项",
         summary: "重新审视管线，停掉三个低价值项目，把火力集中到最大机会。",
         quality: "expert",
-        effects: { execution: 3, structure: 2 },
+        effects: { execution: 3, structure: 2, authority: 1 },
         resources: { energy: -6, trust: 5, influence: 6 },
         feedback:
           "你没有靠更多加班解决问题，而是靠取舍。团队第一次感到目标是可以被管理的。",
@@ -690,7 +690,7 @@ export const STORY_NODES: StoryNode[] = [
         label: "建立决策复盘知识库",
         summary: "把高频决策做成检查清单和案例库，让团队按流程复现你的判断。",
         quality: "expert",
-        effects: { stability: 3, structure: 2 },
+        effects: { stability: 3, structure: 2, deploy: 1 },
         resources: { energy: -9, trust: 4, influence: 6 },
         feedback:
           "你开始把个人经验产品化。即使你不在场，组织也能稳定运行，这是固权的最高形态。",
@@ -1492,7 +1492,7 @@ export const STORY_NODES: StoryNode[] = [
         label: "先定义岗位成果，再评估人选",
         summary: "让人才判断从印象变成岗位匹配证据。",
         quality: "expert",
-        effects: { deploy: 3, structure: 2 },
+        effects: { deploy: 3, structure: 2, insight: 1 },
         resources: { energy: -7, trust: 6, influence: 5 },
         feedback: "你让人事决定变得可解释，团队开始用成果而非关系理解你。",
         theory: "《贞观政要》：用非其才，必难致治。"
@@ -1720,7 +1720,7 @@ export const STORY_NODES: StoryNode[] = [
         label: "用关键结果倒排行动和责任人",
         summary: "把目标拆成三个可验证结果，并让每个人认领。",
         quality: "expert",
-        effects: { structure: 3, execution: 2 },
+        effects: { structure: 3, execution: 2, authority: 1 },
         resources: { energy: -7, trust: 5, influence: 6 },
         feedback: "目标第一次变成可检查的作战图，团队不再只点头。",
         theory: "德鲁克：把资源集中在真正重要的少数任务上。"
@@ -3264,20 +3264,636 @@ export const STORY_NODES: StoryNode[] = [
         theory: "《孙子兵法》：善战者，求之于势。"
       }
     ]
+  },
+  {
+    id: "r27",
+    chapterId: 4,
+    title: "方案提前泄露",
+    kind: "random",
+    context:
+      "你准备在会上公布的重组方案提前一天出现在另一个部门的群聊里，版本带水印，源头显然在内部。",
+    stake: "追责不是重点，重点是让信息泄漏不再成为下一次变革的绊脚石。",
+    options: [
+      {
+        label: "把方案改成两个可切换版本再公布",
+        summary: "保留关键调整，把确定性信息与试探信息分开，观察泄漏路径。",
+        quality: "expert",
+        effects: { structure: 3, strategy: 2 },
+        resources: { energy: -7, trust: 6, influence: 6 },
+        feedback: "你没有先追责，而是让方案本身获得抗泄漏能力，下一次披露有了可控的验证窗口。",
+        theory: "《韩非子》：事以密成，语以泄败。"
+      },
+      {
+        label: "当众宣布彻查泄密者",
+        summary: "用明确姿态立威，让所有人知道信息边界不可触碰。",
+        quality: "partial",
+        effects: { authority: 3 },
+        resources: { energy: -5, trust: -6, influence: 4 },
+        feedback: "威慑立住了，但大家开始用更隐蔽的方式传消息，信息流反而更难看见。",
+        theory: "《孙子兵法》：先为不可胜，以待敌之可胜。"
+      },
+      {
+        label: "推迟方案并等待内部自净",
+        summary: "先不公布，等泄漏源自然暴露。",
+        quality: "risk",
+        effects: { recovery: 2 },
+        resources: { energy: -4, trust: 2, influence: -5 },
+        feedback: "你保住了短期平静，却让方案失去窗口期，下一次变化会更被动。",
+        theory: "《论语》：不患人之不己知，患不知人也。"
+      }
+    ]
+  },
+  {
+    id: "r28",
+    chapterId: 2,
+    title: "前任留下的人情清单",
+    kind: "random",
+    context:
+      "前任交接时留下一份私密文档：谁欠他人情、谁曾承诺配合新负责人。行政主管暗示这份清单比组织架构图更准。",
+    stake: "人情账是真实资源，但直接使用它，你会成为前任政治的延续。",
+    options: [
+      {
+        label: "把人情清单翻译成合作地图",
+        summary: "拆出每个人愿意配合的成果条件，而不是欠债关系，让清单变成可验证的合作资源。",
+        quality: "expert",
+        effects: { insight: 3, communication: 2 },
+        resources: { energy: -7, trust: 6, influence: 6 },
+        feedback: "你借用了信息，却没有继承前任的人情债，第一次把历史资源变成中性资产。",
+        theory: "《人物志》：观其变而见其性，察其安而知其志。"
+      },
+      {
+        label: "私下核对清单并逐一拜访",
+        summary: "先确认每条人情的真实性，再决定如何使用。",
+        quality: "partial",
+        effects: { strategy: 2 },
+        resources: { energy: -7, trust: 2, influence: 3 },
+        feedback: "你掌握了很多真实动机，但组织也开始默认你延续前任的派系玩法。",
+        theory: "《权经》：携为上，功次之。"
+      },
+      {
+        label: "直接烧掉清单",
+        summary: "拒绝继承任何私密关系，从公开流程重新开始。",
+        quality: "risk",
+        effects: { recovery: 2 },
+        resources: { energy: -3, trust: -5, influence: -2 },
+        feedback: "姿态干净了，但你也拒绝了最有价值的一手情报，未来要花更久补课。",
+        theory: "《孙子兵法》：知彼知己，百战不殆。"
+      }
+    ]
+  },
+  {
+    id: "r29",
+    chapterId: 3,
+    title: "明星员工突然提离职",
+    kind: "random",
+    context:
+      "掌管 70% 客户关系的明星员工突然提离职，理由是个人成长，但他在离开前约谈了三位高潜同事。",
+    stake: "留住他不是唯一目标，你要判断这是流失信号还是团队结构问题。",
+    options: [
+      {
+        label: "先访谈他带过的高潜同事",
+        summary: "把离职当作组织信号读取，先了解谁在跟随、谁在观望，再决定挽留方案。",
+        quality: "expert",
+        effects: { insight: 3, deploy: 2 },
+        resources: { energy: -7, trust: 5, influence: 5 },
+        feedback: "你看到了离职背后的梯队结构，挽留方案第一次不是靠涨薪而是靠组织承接力。",
+        theory: "《人物志》八观：观其情，察其变。"
+      },
+      {
+        label: "开双倍挽留条件",
+        summary: "用资源换时间，先把最关键的客户关系稳住。",
+        quality: "partial",
+        effects: { communication: 2 },
+        resources: { energy: -7, trust: -3, influence: 4 },
+        feedback: "人暂时留住了，但其他骨干开始用同样方式试探价格，激励结构开始变形。",
+        theory: "《贞观政要》：用非其才，必难致治。"
+      },
+      {
+        label: "接受离职并紧急招聘",
+        summary: "尊重个人选择，用外部人才补位。",
+        quality: "risk",
+        effects: { execution: 2 },
+        resources: { energy: -5, trust: -5, influence: -6 },
+        feedback: "招聘补上了岗位，却补不上客户信任和隐性知识，组织开始支付长期学费。",
+        theory: "《孙子兵法》：先为不可胜。"
+      }
+    ]
+  },
+  {
+    id: "r30",
+    chapterId: 5,
+    title: "预算被临时砍掉 20%",
+    kind: "random",
+    context:
+      "季度启动会前一天，财务通知你的项目预算被砍 20%，理由是集团要集中现金。团队已经按原预算排好交付计划。",
+    stake: "你要在两天内给出新作战图，而不是把砍预算变成情绪事件。",
+    options: [
+      {
+        label: "按关键结果重排预算优先级",
+        summary: "把交付拆成必保、可延、可砍三档，并给每个档位配上负责人和验证节点。",
+        quality: "expert",
+        effects: { execution: 3, strategy: 2 },
+        resources: { energy: -7, trust: 5, influence: 6 },
+        feedback: "你让资源约束变成优先级纪律，团队第一次知道哪三件事绝不能丢。",
+        theory: "《卓有成效的管理者》：要事优先。"
+      },
+      {
+        label: "全员降级交付标准",
+        summary: "先保住季度数字，把标准调整放到交付之后。",
+        quality: "partial",
+        effects: { authority: 2 },
+        resources: { energy: -6, trust: -5, influence: 2 },
+        feedback: "数字保住了，但交付标准被集体稀释，验收争议开始外溢到客户。",
+        theory: "《孙子兵法》：兵贵胜，不贵久。"
+      },
+      {
+        label: "向集团申诉要求恢复预算",
+        summary: "用数据和交付风险争取资源，不默认接受约束。",
+        quality: "risk",
+        effects: { strategy: 2 },
+        resources: { energy: -5, trust: -3, influence: -5 },
+        feedback: "你争取到了缓冲，却让集团认为你不擅长在约束下做选择。",
+        theory: "《权经》：权乃人授。"
+      }
+    ]
+  },
+  {
+    id: "r31",
+    chapterId: 6,
+    title: "两个高管公开争吵",
+    kind: "random",
+    context:
+      "经营会上，销售副总裁和产品副总裁当着 CEO 的面争吵：一个指责交付失信，一个指责销售乱承诺。CEO 把目光转向你。",
+    stake: "你的一句话会决定会议是回到事实，还是变成站队。",
+    options: [
+      {
+        label: "先锁住客户事实与交付事实",
+        summary: "把争吵转成两份可核对的事实清单，让双方在数据面前重新定义问题。",
+        quality: "expert",
+        effects: { structure: 3, communication: 2 },
+        resources: { energy: -7, trust: 6, influence: 6 },
+        feedback: "你没有当裁判，而是把会议从情绪拉回事实，双方第一次愿意在同一张表上讨论。",
+        theory: "《矛盾论》：抓主要矛盾。"
+      },
+      {
+        label: "支持销售侧先保客户",
+        summary: "先给客户确定性，内部问题之后再复盘。",
+        quality: "partial",
+        effects: { authority: 2 },
+        resources: { energy: -5, trust: -3, influence: 3 },
+        feedback: "客户被保护了，但产品团队认为你偏袒销售，后续协作开始设防。",
+        theory: "《资治通鉴》：防微杜渐。"
+      },
+      {
+        label: "宣布散会私下分别安抚",
+        summary: "避免公开站队，把矛盾移到一对一沟通。",
+        quality: "risk",
+        effects: { recovery: 2 },
+        resources: { energy: -3, trust: -6, influence: -4 },
+        feedback: "表面平息了，但双方都认为你没有立场，下一次会在更私密的场合开战。",
+        theory: "《论语》：君子和而不同。"
+      }
+    ]
+  },
+  {
+    id: "r32",
+    chapterId: 7,
+    title: "关键流程依赖一个人",
+    kind: "random",
+    context:
+      "你发现客户续约、报价、催款三个关键流程都依赖同一位资深经理，他请年假时业务会明显停顿。",
+    stake: "你要把他变成体系的老师，而不是把他变成体系本身。",
+    options: [
+      {
+        label: "用 30 天陪跑把流程沉淀成清单",
+        summary: "让他带教两名骨干，把判断规则写进检查清单，并让新人独立演练一个真实案例。",
+        quality: "expert",
+        effects: { stability: 3, deploy: 2 },
+        resources: { energy: -7, trust: 6, influence: 5 },
+        feedback: "依赖没有变成对抗，资深经理第一次被当成体系建设者，组织获得了可复制能力。",
+        theory: "《贞观政要》：善始慎终。"
+      },
+      {
+        label: "先招一名助手分担",
+        summary: "用新增人手降低单点风险，流程留到以后。",
+        quality: "partial",
+        effects: { execution: 2 },
+        resources: { energy: -6, trust: 2, influence: 2 },
+        feedback: "助手到岗了，但判断仍集中在一个人身上，瓶颈只是被延后。",
+        theory: "《韩非子》：明主之道，使智者尽其虑。"
+      },
+      {
+        label: "要求他把方法立即写出来",
+        summary: "用书面材料快速复制经验。",
+        quality: "risk",
+        effects: { authority: 2 },
+        resources: { energy: -4, trust: -8, influence: -1 },
+        feedback: "书面材料很快过时，他也觉得自己的价值被公开剥夺，配合度下降。",
+        theory: "《资治通鉴》：用人之长。"
+      }
+    ]
+  },
+  {
+    id: "r33",
+    chapterId: 8,
+    title: "客户要求立即上线未验证功能",
+    kind: "random",
+    context:
+      "大客户以合同续签为筹码，要求两周内上线一个尚未验证的新功能；研发团队认为至少需要六周。",
+    stake: "承诺会让团队透支，拒绝会让客户流失，你需要第三种路径。",
+    options: [
+      {
+        label: "把需求拆成可试用的最小版本",
+        summary: "先交付能验证核心假设的简化版，并约定 30 天联合验收节点，把风险转成共担实验。",
+        quality: "expert",
+        effects: { structure: 3, communication: 2 },
+        resources: { energy: -7, trust: 5, influence: 6 },
+        feedback: "你没有在承诺与拒绝之间二选一，而是把客户变成验证伙伴，双方都有可退出的边界。",
+        theory: "《矛盾论》：抓主要矛盾。"
+      },
+      {
+        label: "承诺两周上线并要求团队加班",
+        summary: "先满足客户，内部成本用加班消化。",
+        quality: "partial",
+        effects: { execution: 2 },
+        resources: { energy: -9, trust: -6, influence: 3 },
+        feedback: "上线日期保住了，但团队以离职和倦怠回应，下一轮交付开始连锁延期。",
+        theory: "《孙子兵法》：兵贵胜，不贵久。"
+      },
+      {
+        label: "拒绝需求并等待合同到期再谈",
+        summary: "守住研发边界，不让客户用合同绑架计划。",
+        quality: "risk",
+        effects: { recovery: 2 },
+        resources: { energy: -4, trust: -8, influence: -5 },
+        feedback: "原则守住了，但客户关系进入冷冻期，你的谈判筹码也随之减少。",
+        theory: "《权经》：权乃人授。"
+      }
+    ]
+  },
+  {
+    id: "r34",
+    chapterId: 9,
+    title: "继任者第一次独立决策",
+    kind: "random",
+    context:
+      "你准备晋升，继任者需要独立处理第一场危机：供应商违约，客户在等方案。她带着两套方案来请教你。",
+    stake: "你的回答方式决定她是学会决策，还是学会等你。",
+    options: [
+      {
+        label: "先让她给结论和失败条件",
+        summary: "要求她先说出推荐方案、依据和止损条件，你再补充一个她没看见的风险。",
+        quality: "expert",
+        effects: { stability: 3, communication: 2 },
+        resources: { energy: -6, trust: 6, influence: 6 },
+        feedback: "她第一次带着完整判断来讨论，而不是带着问题来等你，交接真正开始发生。",
+        theory: "《资治通鉴》：善始慎终。"
+      },
+      {
+        label: "直接给出你的答案",
+        summary: "先解决危机，再把决策过程讲给她听。",
+        quality: "partial",
+        effects: { authority: 2 },
+        resources: { energy: -5, trust: 2, influence: 3 },
+        feedback: "危机解决了，但她学会了在下次危机前先来问你，组织仍依赖你。",
+        theory: "《权经》：权惟用，不为大也。"
+      },
+      {
+        label: "让她独自处理并承担全部责任",
+        summary: "用真实危机加速成长，不提供任何护栏。",
+        quality: "risk",
+        effects: { execution: 2 },
+        resources: { energy: -6, trust: -6, influence: 2 },
+        feedback: "独立感有了，但她在关键决策上缺少护栏，一次失败可能让她退回依赖。",
+        theory: "《孙子兵法》：上下同欲者胜。"
+      }
+    ]
+  },
+  {
+    id: "r35",
+    chapterId: 2,
+    title: "CEO 当众问你对组织诊断",
+    kind: "random",
+    context:
+      "全员会上，CEO 突然让你当众给出组织诊断，并说“你是新来的，看得最清楚”。全场安静下来。",
+    stake: "太尖锐会得罪人，太圆滑会失去公信力，你需要一句既诚实又可行动的话。",
+    options: [
+      {
+        label: "给出三个可验证观察",
+        summary: "每个观察都配一个证据和下一步动作，让诊断成为可以一起检查的清单。",
+        quality: "expert",
+        effects: { structure: 3, communication: 2 },
+        resources: { energy: -6, trust: 6, influence: 6 },
+        feedback: "你既没有站队也没有空谈，全员第一次把“诊断”当成可执行的会议议题。",
+        theory: "《论语》：名不正则言不顺，言不顺则事不成。"
+      },
+      {
+        label: "先肯定组织再给一个温和问题",
+        summary: "保持会议气氛，同时留下一个安全的问题入口。",
+        quality: "partial",
+        effects: { communication: 2 },
+        resources: { energy: -5, trust: 3, influence: 2 },
+        feedback: "场面稳住了，但 CEO 下次不会再当众问你，因为你没有给出判断。",
+        theory: "《权经》：携为上。"
+      },
+      {
+        label: "点名一个部门的问题",
+        summary: "用具体批评展示你的观察力。",
+        quality: "risk",
+        effects: { authority: 2 },
+        resources: { energy: -6, trust: -8, influence: 2 },
+        feedback: "你展示了锋芒，也让整个部门进入防御，下一次信息会先经过过滤。",
+        theory: "《孙子兵法》：先为不可胜。"
+      }
+    ]
+  },
+  {
+    id: "r36",
+    chapterId: 6,
+    title: "深夜收到匿名举报信",
+    kind: "random",
+    context:
+      "深夜你收到匿名举报信，指称采购经理与供应商存在利益输送，落款是“知情同事”，没有具体证据。",
+    stake: "举报信可能是真相，也可能是派系工具，你要先保护调查的公正性。",
+    options: [
+      {
+        label: "把举报信转成独立审计线索",
+        summary: "不公开信源，把异常采购记录放进独立审计，用证据链代替举报信本身。",
+        quality: "expert",
+        effects: { structure: 3, authority: 2 },
+        resources: { energy: -7, trust: 5, influence: 6 },
+        feedback: "你没有把匿名信当成定罪证据，也没有忽视它，组织第一次看到你对公正性的底线。",
+        theory: "《韩非子》：法度既立，虽庸主可治。"
+      },
+      {
+        label: "立即约谈采购经理",
+        summary: "用直接对话快速判断真假。",
+        quality: "partial",
+        effects: { authority: 3 },
+        resources: { energy: -5, trust: -4, influence: 2 },
+        feedback: "对方否认并开始销毁痕迹，你失去了取证窗口，消息也传遍公司。",
+        theory: "《孙子兵法》：致人而不致于人。"
+      },
+      {
+        label: "把举报信交给更高层处理",
+        summary: "避开风险，让组织更高层决定调查方式。",
+        quality: "risk",
+        effects: { recovery: 2 },
+        resources: { energy: -3, trust: -3, influence: -4 },
+        feedback: "你避开了风险，也交出了对组织的判断权，后续调查会脱离你的控制。",
+        theory: "《权经》：权乃人授。"
+      }
+    ]
+  },
+  {
+    id: "c4-fork-expert",
+    chapterId: 4,
+    title: "驭势路线检查点：共同作者委员会",
+    kind: "branch",
+    context:
+      "你选择了把反对者变成共同作者。现在需要让委员会在第一次会议上就产出可验收成果，而不是变成新的扯皮会。",
+    stake: "你要证明“把反对者请进来”不是让步，而是让方案更硬的机制。",
+    options: [
+      {
+        label: "给每位委员一个可验收议题和 24 小时交付物",
+        summary: "让反对者从评论者变成交付者，用成果锁定参与。",
+        quality: "expert",
+        effects: { mobilize: 3, structure: 2 },
+        resources: { energy: -7, trust: 7, influence: 6 },
+        feedback: "反对者第一次为方案负责，会议从立场陈述变成交付承诺。",
+        theory: "《论语》：举直错诸枉，则民服。"
+      },
+      {
+        label: "让委员会只做建议不做决策",
+        summary: "保留最终决策权，避免委员会拖慢节奏。",
+        quality: "partial",
+        effects: { authority: 2 },
+        resources: { energy: -5, trust: -3, influence: 2 },
+        feedback: "形式有了，但成员很快发现意见不会被采纳，热度下降。",
+        theory: "《韩非子》：法势术并用。"
+      },
+      {
+        label: "把最激烈反对者踢出委员会",
+        summary: "用权限排除干扰，保证会议效率。",
+        quality: "risk",
+        effects: { authority: 2 },
+        resources: { energy: -5, trust: -8, influence: 2 },
+        feedback: "阻力看似消失，实际转入地下，下一次反对会以更隐蔽的方式出现。",
+        theory: "《孙子兵法》：先为不可胜。"
+      }
+    ]
+  },
+  {
+    id: "c4-fork-partial",
+    chapterId: 4,
+    title: "驭势路线检查点：背书换时间",
+    kind: "branch",
+    context:
+      "你选择用高层背书压制争议。现在高层已经表态，但你必须在 48 小时内给执行层一个不靠命令也能运转的协作方式。",
+    stake: "背书只能用一次，你要把它转成团队自己的流程。",
+    options: [
+      {
+        label: "把背书转成三方确认的试点公约",
+        summary: "让销售、交付、财务共同确认试点边界、责任人与复盘节点。",
+        quality: "expert",
+        effects: { authority: 3, communication: 2 },
+        resources: { energy: -7, trust: 6, influence: 6 },
+        feedback: "高层支持变成了可执行的协作规则，团队开始用公约而不是命令对齐。",
+        theory: "《韩非子》：法度既立，虽庸主可治。"
+      },
+      {
+        label: "要求各部门限期配合",
+        summary: "用截止时间推动执行，不再逐部门沟通。",
+        quality: "partial",
+        effects: { execution: 2 },
+        resources: { energy: -6, trust: -4, influence: 3 },
+        feedback: "配合到了，但各部门只是应付节点，真实协作仍未发生。",
+        theory: "《孙子兵法》：令之以文，齐之以武。"
+      },
+      {
+        label: "把反对声音压回私下",
+        summary: "让公开场合只保留支持声音，减少阻力。",
+        quality: "risk",
+        effects: { authority: 2 },
+        resources: { energy: -4, trust: -8, influence: 2 },
+        feedback: "表面安静了，但关键信息开始绕开你流动。",
+        theory: "《资治通鉴》：防微杜渐。"
+      }
+    ]
+  },
+  {
+    id: "c4-fork-risk",
+    chapterId: 4,
+    title: "驭势路线检查点：绕过阻力加速试点",
+    kind: "branch",
+    context:
+      "你选择先跑试点。现在试点结果比预期好，但被你绕过的部门开始联合质疑试点有效性。",
+    stake: "你要让试点从“你个人推动”变成“组织共同看见的证据”。",
+    options: [
+      {
+        label: "把试点数据做成公开验证看板",
+        summary: "让质疑者看到同一套口径的数据，并邀请他们补充验证条件。",
+        quality: "expert",
+        effects: { execution: 3, communication: 2 },
+        resources: { energy: -7, trust: 5, influence: 6 },
+        feedback: "质疑被数据挡回，试点第一次成为组织共同的语言。",
+        theory: "《矛盾论》：实践是检验真理的唯一标准。"
+      },
+      {
+        label: "先让支持者扩大试点范围",
+        summary: "用更快的结果证明方向，再回头处理质疑。",
+        quality: "partial",
+        effects: { execution: 2 },
+        resources: { energy: -6, trust: -3, influence: 2 },
+        feedback: "试点更快了，但反对部门认为你仍在圈外推进，裂痕加深。",
+        theory: "《权经》：携为上。"
+      },
+      {
+        label: "撤掉试点等待共识",
+        summary: "先平息质疑，再寻找更稳妥的启动时机。",
+        quality: "risk",
+        effects: { recovery: 2 },
+        resources: { energy: -4, trust: -5, influence: -4 },
+        feedback: "争议小了，但组织学会用质疑阻止任何新尝试。",
+        theory: "《孙子兵法》：不可胜在己。"
+      }
+    ]
+  },
+  {
+    id: "c7-fork-expert",
+    chapterId: 7,
+    title: "固权路线检查点：陪跑清单",
+    kind: "branch",
+    context:
+      "你选择用陪跑把关键判断交给接班人。现在需要给陪跑设边界：哪些决策他可以独立做，哪些必须触发双人复核。",
+    stake: "你要让陪跑既加速成长，又不变成另一种依赖。",
+    options: [
+      {
+        label: "按风险档位划分独立决策清单",
+        summary: "低风险放权、中风险带教、高风险双人复核，并公开清单。",
+        quality: "expert",
+        effects: { stability: 3, deploy: 2 },
+        resources: { energy: -7, trust: 6, influence: 6 },
+        feedback: "接班人第一次知道哪些判断属于他，组织开始按规则而不是按人运行。",
+        theory: "《贞观政要》：善始慎终。"
+      },
+      {
+        label: "让接班人先处理低风险事务",
+        summary: "先安全练手，关键决策仍由你亲自完成。",
+        quality: "partial",
+        effects: { execution: 2 },
+        resources: { energy: -5, trust: 2, influence: 2 },
+        feedback: "安全了，但关键判断仍全部由你做出，接班周期被拉长。",
+        theory: "《资治通鉴》：用人之长。"
+      },
+      {
+        label: "直接全权交接",
+        summary: "用真实决策加速成长，不再设置复核。",
+        quality: "risk",
+        effects: { authority: 2 },
+        resources: { energy: -5, trust: -5, influence: 2 },
+        feedback: "接班人独立了，但没有护栏的第一次失误会动摇团队信任。",
+        theory: "《孙子兵法》：上下同欲者胜。"
+      }
+    ]
+  },
+  {
+    id: "c7-fork-partial",
+    chapterId: 7,
+    title: "固权路线检查点：放权与复核",
+    kind: "branch",
+    context:
+      "你选择给接班人更多决策权。现在他提交了一份预算调整方案，其中有一个你没有预料到的风险。",
+    stake: "直接驳回会毁掉放权，放行又可能让组织承受风险，你需要一个复核协议。",
+    options: [
+      {
+        label: "让他在方案里补上止损条件和 30 天复盘节点",
+        summary: "不夺回决策，只补护栏，让这次风险变成一次带教。",
+        quality: "expert",
+        effects: { stability: 3, communication: 2 },
+        resources: { energy: -6, trust: 6, influence: 5 },
+        feedback: "你既没有抢回决策，也没有放任风险，组织第一次有了可学习的放权模板。",
+        theory: "《韩非子》：明主之道，使智者尽其虑。"
+      },
+      {
+        label: "这次先由你最终拍板",
+        summary: "先控制风险，再解释你的判断依据。",
+        quality: "partial",
+        effects: { authority: 2 },
+        resources: { energy: -5, trust: -4, influence: 2 },
+        feedback: "风险挡住了，但接班人学会了重要决策先等你表态。",
+        theory: "《权经》：权乃人授。"
+      },
+      {
+        label: "直接按他的方案执行",
+        summary: "用信任换取成长，让组织承担可能的风险。",
+        quality: "risk",
+        effects: { execution: 2 },
+        resources: { energy: -5, trust: -5, influence: -3 },
+        feedback: "信任表达了，但组织为未设防的风险支付了代价。",
+        theory: "《孙子兵法》：先为不可胜。"
+      }
+    ]
+  },
+  {
+    id: "c7-fork-risk",
+    chapterId: 7,
+    title: "固权路线检查点：继续亲自把关",
+    kind: "branch",
+    context:
+      "你选择继续亲自把关关键决策。现在业务量上升，你的邮箱和会议开始成为全组织的瓶颈。",
+    stake: "你要找到一种不交出判断权、但能解除单点瓶颈的方式。",
+    options: [
+      {
+        label: "把把关拆成三道标准问题",
+        summary: "让所有请示先回答目标、依据、止损，你只复核例外。",
+        quality: "expert",
+        effects: { structure: 3, stability: 2 },
+        resources: { energy: -7, trust: 5, influence: 6 },
+        feedback: "你仍然是最终把关人，但组织开始先自我校准，瓶颈第一次松动。",
+        theory: "《资治通鉴》：防微杜渐。"
+      },
+      {
+        label: "增加审批会议频率",
+        summary: "用更多同步时间消化请示量。",
+        quality: "partial",
+        effects: { execution: 2 },
+        resources: { energy: -8, trust: -2, influence: 2 },
+        feedback: "决策更快了一点，但你的时间被会议吞掉，瓶颈上移。",
+        theory: "《韩非子》：法度既立。"
+      },
+      {
+        label: "让秘书代你筛选请示",
+        summary: "先过滤掉低价值信息，只留关键决策。",
+        quality: "risk",
+        effects: { authority: 2 },
+        resources: { energy: -4, trust: -6, influence: -3 },
+        feedback: "你的时间省下了，但组织开始揣测秘书的偏好，权力路径变得扭曲。",
+        theory: "《权经》：权惟用。"
+      }
+    ]
   }
 ];
 
 export const RANDOM_EVENT_IDS = [
   "r1", "r2", "r3", "r4", "r5", "r6", "r7", "r8", "r9", "r10",
   "r11", "r12", "r13", "r14", "r15", "r16", "r17", "r18", "r19", "r20",
-  "r21", "r22", "r23", "r24", "r25", "r26"
+  "r21", "r22", "r23", "r24", "r25", "r26", "r27", "r28", "r29", "r30",
+  "r31", "r32", "r33", "r34", "r35", "r36"
 ];
 for (const id of RANDOM_EVENT_IDS) {
   const node = STORY_NODES.find((item) => item.id === id);
   if (node) node.kind = "random";
 }
 
-export const RANDOM_EVENT_META: Record<string, { weight: number; chapterId: number }> = {
+export type RandomEventMeta = {
+  weight: number;
+  chapterId: number;
+  roles?: RoleId[];
+  difficulties?: Array<"normal" | "pressure" | "extreme">;
+};
+
+export const RANDOM_EVENT_META: Record<string, RandomEventMeta> = {
   r1: { weight: 3, chapterId: 2 },
   r2: { weight: 3, chapterId: 3 },
   r3: { weight: 4, chapterId: 5 },
@@ -3303,12 +3919,41 @@ export const RANDOM_EVENT_META: Record<string, { weight: number; chapterId: numb
   r23: { weight: 4, chapterId: 6 },
   r24: { weight: 4, chapterId: 7 },
   r25: { weight: 5, chapterId: 8 },
-  r26: { weight: 5, chapterId: 9 }
+  r26: { weight: 5, chapterId: 9 },
+  r27: { weight: 4, chapterId: 4 },
+  r28: { weight: 4, chapterId: 2, roles: ["parachute"] },
+  r29: { weight: 4, chapterId: 3, roles: ["founder"] },
+  r30: { weight: 4, chapterId: 5, roles: ["parachute"] },
+  r31: {
+    weight: 4,
+    chapterId: 6,
+    difficulties: ["pressure", "extreme"]
+  },
+  r32: { weight: 4, chapterId: 7, roles: ["founder"] },
+  r33: {
+    weight: 4,
+    chapterId: 8,
+    roles: ["highPotential"],
+    difficulties: ["pressure", "extreme"]
+  },
+  r34: { weight: 4, chapterId: 9, roles: ["highPotential"] },
+  r35: { weight: 4, chapterId: 2 },
+  r36: {
+    weight: 4,
+    chapterId: 6,
+    difficulties: ["pressure", "extreme"]
+  }
 };
 
 function randomEventCategory(eventId: string): "expert" | "risk" | "partial" {
-  const expertEvents = new Set(["r2", "r7", "r15", "r18", "r20", "r21", "r26"]);
-  const riskEvents = new Set(["r3", "r5", "r12", "r17", "r19", "r23", "r25"]);
+  const expertEvents = new Set([
+    "r2", "r7", "r15", "r18", "r20", "r21", "r26", "r27", "r30", "r32",
+    "r34"
+  ]);
+  const riskEvents = new Set([
+    "r3", "r5", "r12", "r17", "r19", "r23", "r25", "r29", "r31", "r33",
+    "r36"
+  ]);
   if (expertEvents.has(eventId)) return "expert";
   if (riskEvents.has(eventId)) return "risk";
   return "partial";
@@ -3327,13 +3972,18 @@ export function nextRandomEvent(save: {
   unlockedChapters: number[];
   decisionHistory?: Array<{ nodeId: string; quality: OptionQuality }>;
   routePath?: Record<number, "expert" | "risk" | "partial">;
+  role?: RoleId;
+  difficulty?: "normal" | "pressure" | "extreme";
 }): string | undefined {
   const eligible = RANDOM_EVENT_IDS.filter((id) => {
     const meta = RANDOM_EVENT_META[id];
     return (
       meta &&
       !save.completedRandomEvents.includes(id) &&
-      save.unlockedChapters.includes(meta.chapterId)
+      save.unlockedChapters.includes(meta.chapterId) &&
+      (!meta.roles || meta.roles.includes(save.role ?? "highPotential")) &&
+      (!meta.difficulties ||
+        meta.difficulties.includes(save.difficulty ?? "normal"))
     );
   });
   if (eligible.length === 0) return undefined;
@@ -3372,6 +4022,63 @@ function weightedEventWeight(
   return RANDOM_EVENT_META[id].weight * (0.8 + affinity * 0.7);
 }
 
+/** 事件池按角色 / 难度档 / 轮换周期给出的情境变体，让二周目与不同角色看到不同开场压力。 */
+export function randomEventVariantContext(
+  role: RoleId,
+  difficulty: "normal" | "pressure" | "extreme",
+  cycle: number,
+  language: "zh" | "en"
+): string {
+  const roleLine =
+    language === "en"
+      ? role === "parachute"
+        ? "As the parachute executive, every first-week judgment is being compared against the old team's expectations."
+        : role === "founder"
+          ? "As the founder, every choice directly touches cash flow, morale, and your own authority."
+          : "As a high-potential contributor, you hold no formal mandate, so you must move through judgment and consensus."
+      : role === "parachute"
+        ? "作为空降负责人，你的第一周判断正在被组织反复对照。"
+        : role === "founder"
+          ? "作为创始人，你的每个选择都会直接影响现金、士气与你的权威。"
+          : "作为高潜骨干，你没有正式授权，只能靠判断与共识推进。";
+  const difficultyLine =
+    language === "en"
+      ? difficulty === "pressure"
+        ? "Pressure mode: resource losses are amplified, so every next step must be verifiable."
+        : difficulty === "extreme"
+          ? "Extreme mode: interference is heavier, so every promise needs a stop-loss condition."
+          : "Standard mode: you have more room to validate assumptions, but windows still close."
+      : difficulty === "pressure"
+        ? "高压档下资源损耗放大，你必须在更短时间内给出可核对的下一步。"
+        : difficulty === "extreme"
+          ? "极限档下突发干扰增加，任何承诺都要先设止损条件。"
+          : "标准档下你有更多空间验证假设，但机会窗口也会收窄。";
+  const cycleLine =
+    cycle > 0
+      ? language === "en"
+        ? `Event cycle ${cycle + 1}: the pool has been reshuffled by role and difficulty, and some intel has changed.`
+        : `第 ${cycle + 1} 轮事件周期开启，事件池已按角色与难度重新洗牌，部分情报出现新变化。`
+      : "";
+  return `${roleLine} ${difficultyLine} ${cycleLine}`.trim();
+}
+
+/** 当前角色与难度档下，事件池实际可完成的事件数（用于轮换门槛与进度展示）。 */
+export function randomEventEligibleCount(save: {
+  profile?: { role?: RoleId };
+  difficulty?: "normal" | "pressure" | "extreme";
+}): number {
+  const role = save.profile?.role ?? "highPotential";
+  const difficulty = save.difficulty ?? "normal";
+  return RANDOM_EVENT_IDS.filter((id) => {
+    const meta = RANDOM_EVENT_META[id];
+    return (
+      meta &&
+      (!meta.roles || meta.roles.includes(role)) &&
+      (!meta.difficulties || meta.difficulties.includes(difficulty))
+    );
+  }).length;
+}
+
 export function getChapter(id: number): ChapterDef {
   const chapter = CHAPTERS.find((item) => item.id === id);
   if (!chapter) {
@@ -3386,6 +4093,17 @@ export function getNode(id: string): StoryNode {
     throw new Error(`Missing story node ${id}`);
   }
   return node;
+}
+
+/** 第 4/7 章在路线选择后进入的中期分叉节点；其他章节返回 undefined，保持主线节奏。 */
+export function forkNodeForRoute(
+  chapterId: number,
+  route: "expert" | "risk" | "partial"
+): string | undefined {
+  if (chapterId === 4 || chapterId === 7) {
+    return `c${chapterId}-fork-${route}`;
+  }
+  return undefined;
 }
 
 export function nodesForChapter(chapterId: number): StoryNode[] {
@@ -3634,6 +4352,36 @@ export const NODE_INTEL: Record<string, string[]> = {
     "接替者已经独立处理过两次关键危机",
     "项目手册只覆盖了流程，没有覆盖判断依据"
   ],
+  "c4-fork-expert": [
+    "委员会成员更在意自己的议题是否被真正采纳",
+    "第一个可验收交付物决定了反对者是否愿意继续参与",
+    "24 小时交付物必须是可核对的，而不是表态"
+  ],
+  "c4-fork-partial": [
+    "高层背书只剩一次有效期",
+    "三方试点公约比命令更可能被执行层接受",
+    "48 小时内必须有第一个共同确认的交付节点"
+  ],
+  "c4-fork-risk": [
+    "试点数据只有公开化才能回应联合质疑",
+    "被绕过的部门在等待数据口径不一致的破绽",
+    "看板上的每个指标都必须有负责人"
+  ],
+  "c7-fork-expert": [
+    "接班人更怕的是被悄悄收回权力",
+    "风险分档清单需要写进公开规则",
+    "双人复核只应出现在高风险决策"
+  ],
+  "c7-fork-partial": [
+    "接班人提交的方案里有一个真实风险",
+    "止损条件比口头信任更能保护放权",
+    "30 天复盘节点让风险变成学习材料"
+  ],
+  "c7-fork-risk": [
+    "全组织开始按你的时间表安排决策",
+    "三道标准问题可以过滤大部分请示",
+    "例外复核仍保留你对高风险判断的把关"
+  ],
   r1: [
     "CEO 最近最担心的是组织是否开始失去方向",
     "他给你一句话的机会，其实是在测试你是否已经进入状态"
@@ -3737,6 +4485,56 @@ export const NODE_INTEL: Record<string, string[]> = {
   r26: [
     "回归骨干带来的行业资源与现有客户不冲突",
     "顶替者已经完成两个交付周期，正在等待晋升承诺"
+  ],
+  r27: [
+    "水印把泄漏源缩小到一个小圈子",
+    "对方部门转发它，是在测试你会惩罚还是无视",
+    "第二个版本可以把泄漏变成可控试探"
+  ],
+  r28: [
+    "清单里有正式架构上看不到的名字",
+    "每笔人情都对应不同的预期回报",
+    "把它翻译成合作条件可以避免继承债务"
+  ],
+  r29: [
+    "三位高潜同事被按特定顺序约谈",
+    "他的离职理由里有一条从未写下的晋升路径",
+    "客户关系是习惯性集中，而不是合同性集中"
+  ],
+  r30: [
+    "砍掉的预算集中在非承诺性支出",
+    "七个工作流里有两条可以压缩",
+    "财务在观察你会重新规划还是抱怨"
+  ],
+  r31: [
+    "客户合同里的交付期限没有经过交付侧评审",
+    "产品侧有一份显示两个阻塞点的完成报告",
+    "CEO 在测试你能否把事实与阵营分开"
+  ],
+  r32: [
+    "资深经理已经在个人笔记里沉淀判断",
+    "两名骨干曾在他的复核下完成过相似工作",
+    "他担心的是被替换，而不是被要求带教"
+  ],
+  r33: [
+    "客户的关键用户愿意参与 30 天联合验收",
+    "六周里有两周来自内部签批，而不是研发",
+    "续签的发起人需要一件可见的成果"
+  ],
+  r34: [
+    "她已经知道客户偏好的方案",
+    "她的两个方案一个保交付、一个保现金",
+    "两个方案都没有写止损条件"
+  ],
+  r35: [
+    "CEO 想要一个可检验的观察，而不是抱怨清单",
+    "全场在听你会不会给出真实证据",
+    "一个可执行的下一步能把诊断变成共同议题"
+  ],
+  r36: [
+    "举报内容与上季度一次异常合同续约吻合",
+    "匿名发送者很可能在采购或财务内部",
+    "没有证据时直接行动会毁掉取证窗口"
   ]
 };
 

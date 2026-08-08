@@ -71,6 +71,9 @@ jobs:
       - name: Ability balance gate
         run: npm run ability-balance
 
+      - name: Balance simulation gate
+        run: npm run balance-sim
+
       - name: Save cross-browser round-trip
         run: npm run save-roundtrip
 
