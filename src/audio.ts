@@ -6,6 +6,7 @@ export class GameAudio {
   private musicNodes: AudioNode[] = [];
   private musicGain?: GainNode;
   private ambientScene: "menu" | "story" | "duel" = "menu";
+  private sfxVolume = 0.9;
   private muted = false;
   private musicMuted = false;
 
@@ -20,7 +21,7 @@ export class GameAudio {
       }
       this.context = new AudioContextClass();
       this.master = this.context.createGain();
-      this.master.gain.value = this.muted ? 0 : 0.9;
+      this.master.gain.value = this.muted ? 0 : this.sfxVolume;
       this.master.connect(this.context.destination);
     }
     if (this.context.state === "suspended") {
@@ -31,7 +32,14 @@ export class GameAudio {
   setMuted(muted: boolean): void {
     this.muted = muted;
     if (this.master) {
-      this.master.gain.value = muted ? 0 : 0.9;
+      this.master.gain.value = muted ? 0 : this.sfxVolume;
+    }
+  }
+
+  setSfxVolume(volume: number): void {
+    this.sfxVolume = Math.max(0, Math.min(1, volume / 100));
+    if (this.master) {
+      this.master.gain.value = this.muted ? 0 : this.sfxVolume;
     }
   }
 

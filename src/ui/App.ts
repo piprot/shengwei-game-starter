@@ -151,7 +151,9 @@ import { renderRelationGraph } from "./relationsArt";
 const ONLINE_ENABLED = import.meta.env.VITE_ENABLE_ONLINE === "true";
 const DUEL_SNAPSHOT_KEY = "adaptive-ascent-duel-snapshot-v1";
 const SAVE_BACKUP_HINT_KEY = "adaptive-ascent-backup-hint-dismissed";
-const APP_VERSION = "1.1.0";
+const GUIDE_KEY = "adaptive-ascent-guide-v1";
+const GUIDE_REWARD_KEY = "adaptive-ascent-guide-reward";
+const APP_VERSION = "1.3.0";
 
 type View =
   | "menu"
@@ -184,6 +186,9 @@ export class AdaptiveGameApp {
     localStorage.getItem("adaptive-ascent-music") === "1";
   private musicVolume = Number(
     localStorage.getItem("adaptive-ascent-music-volume") || 60
+  );
+  private sfxVolume = Number(
+    localStorage.getItem("adaptive-ascent-sfx-volume") || 90
   );
   private fontScale = Number(
     localStorage.getItem("adaptive-ascent-font-scale") || 1
@@ -318,6 +323,7 @@ export class AdaptiveGameApp {
     document.documentElement.classList.toggle("online-off", !ONLINE_ENABLED);
     document.documentElement.lang = this.language;
     this.audio.setMuted(this.muted);
+    this.audio.setSfxVolume(this.sfxVolume);
     document.documentElement.style.fontSize = `${this.fontScale * 100}%`;
     this.save = loadSave();
     if (this.save.profileCreated) {
@@ -896,13 +902,15 @@ export class AdaptiveGameApp {
         ${
           started && this.save.playCount === 0
             ? `
-              <section class="first-run-guide">
-                <strong>${this.language === "en" ? "Three steps to your first decision" : "三步完成第一次决策"}</strong>
-                <ol>
-                  <li>${this.language === "en" ? "Create your profile and check your ability map." : "创建档案并查看能力图谱。"}</li>
-                  <li>${this.language === "en" ? "Enter Chapter One and read the intel before deciding." : "进入第一章，先看情报再决策。"}</li>
-                  <li>${this.language === "en" ? "Use the review report to pick training after the first scenario." : "完成第一个情境后，用复盘报告决定训练方向。"}</li>
-                </ol>
+              <section class="first-run-guide interactive-guide">
+                <strong>${this.language === "en" ? "Three guided tasks" : "三个引导任务"}</strong>
+                <p class="muted">${this.language === "en" ? "Finish all three to earn +2 mastery." : "完成全部三项可获得 +2 修炼点。"}</p>
+                <div class="guide-tasks">
+                  <button data-action="guide-ability" ${this.guideSteps().includes("ability") ? "disabled" : ""}>${this.language === "en" ? "1. Open Ability Map" : "1. 查看能力图谱"}${this.guideSteps().includes("ability") ? " ✓" : ""}</button>
+                  <button data-action="open-map" ${this.guideSteps().includes("map") ? "disabled" : ""}>${this.language === "en" ? "2. Finish your first decision" : "2. 完成第一次决策"}${this.guideSteps().includes("map") ? " ✓" : ""}</button>
+                  <button data-action="open-report" ${this.guideSteps().includes("report") ? "disabled" : ""}>${this.language === "en" ? "3. Open the Review Report" : "3. 查看复盘报告"}${this.guideSteps().includes("report") ? " ✓" : ""}</button>
+                </div>
+                ${this.guideSteps().length >= 3 ? `<p class="guide-done">${this.language === "en" ? "Guide complete" : "引导完成"}</p>` : ""}
               </section>
             `
             : ""
@@ -984,6 +992,20 @@ export class AdaptiveGameApp {
               <section class="role-slot-panel">
                 <p class="eyebrow">${en ? "Role Archives" : "角色档案"}</p>
                 <h2>${en ? "Switch roles without deleting progress" : "切换角色，无需删档"}</h2>
+                <p class="role-slot-totals">${(() => {
+                  const totals = roleSlotSummaries();
+                  const savedRoles = totals.filter((slot) => slot.exists).length;
+                  const totalMastery = totals.reduce(
+                    (sum, slot) => sum + slot.masteryPoints,
+                    0
+                  );
+                  const completedRoles = totals.filter(
+                    (slot) => slot.campaignCompletions > 0
+                  ).length;
+                  return en
+                    ? `Saved roles ${savedRoles}/3 · Mastery ${totalMastery} · Completed ${completedRoles}/3`
+                    : `已建档 ${savedRoles}/3 · 累计修炼 ${totalMastery} · 通关角色 ${completedRoles}/3`;
+                })()}</p>
                 <div class="role-slot-list">
                   ${roleSlotSummaries()
                     .map((slot) => {
@@ -1018,6 +1040,7 @@ export class AdaptiveGameApp {
                     const roleView = this.roleDisplay(role.id);
                     return `
                     <button type="button" class="role-card ${this.pendingRole === role.id ? "selected" : ""}" data-action="select-role" data-role="${role.id}">
+                      <img class="role-portrait" src="./art/role-${role.id}.svg" alt="${roleView.name}" />
                       <span class="role-name">${roleView.name}</span>
                       <span class="role-desc">${en ? ROLE_EN[role.id].description : role.description}</span>
                       <span class="role-start">${en ? `Start: ${role.startingResources.energy} Energy / ${role.startingResources.trust} Trust` : `起点：${role.startingResources.energy} 精力 / ${role.startingResources.trust} 信任`}</span>
@@ -1483,7 +1506,15 @@ export class AdaptiveGameApp {
                         <span>${challenge.current} / ${challenge.target}</span>
                         <p>${escapeHtml(this.challengeDisplay(challenge).description)}</p>
                       </div>
-                      <small>${challenge.done ? this.t("claimed") : this.t("inProgress")}</small>
+                      ${
+                        (this.save.claimedWeekly?.[weekKey()] ?? []).includes(
+                          challenge.id
+                        )
+                          ? `<small>${this.t("claimed")}</small>`
+                          : challenge.done
+                            ? `<button data-action="claim-weekly" data-challenge="${challenge.id}">${this.t("claim")}${challenge.reward}</button>`
+                            : `<small>${this.t("inProgress")}</small>`
+                      }
                     </div>
                   `
                 )
@@ -2006,6 +2037,8 @@ export class AdaptiveGameApp {
           <button data-action="export-report">${this.t("exportReport")}</button>
           <button data-action="copy-save-link">${this.t("copySaveLink")}</button>
           <p class="save-reminder">${this.language === "en" ? "This save lives only in this browser. Export or copy the link regularly." : "本存档仅保存在当前浏览器，请定期导出或复制链接。"}</p>
+          <button data-action="export-report-card">${this.language === "en" ? "Generate Report Card" : "生成报告卡片"}</button>
+          <canvas id="report-card-canvas" width="900" height="520" hidden></canvas>
           ${
             ONLINE_ENABLED
               ? ""
@@ -2065,6 +2098,14 @@ export class AdaptiveGameApp {
                   )
                   .join("")}</ul>`
               : `<p class="muted">${this.language === "en" ? "Finish a duel to see local records." : "完成一局对战后会显示本地记录。"}</p>`
+          }
+        </section>
+        <section class="wrong-answer-review">
+          <h3>${this.language === "en" ? "Judgment Review (Missed Expert Moves)" : "判断错题集（未选专家项）"}</h3>
+          ${
+            this.wrongAnswerMarkup()
+              ? `<div class="wrong-answer-list">${this.wrongAnswerMarkup()}</div>`
+              : `<p class="muted">${this.language === "en" ? "No missed expert moves yet. Keep choosing deliberately." : "暂无错选，继续保持有意识判断。"}</p>`
           }
         </section>
         <section class="stat-tiles">
@@ -3079,6 +3120,17 @@ export class AdaptiveGameApp {
                 <option value="100" ${this.musicVolume === 100 ? "selected" : ""}>100</option>
               </select>
             </label>
+            <label class="field">
+              <span>${en ? "SFX Volume" : "音效音量"}</span>
+              <select data-select="sfx-volume">
+                <option value="0" ${this.sfxVolume === 0 ? "selected" : ""}>0</option>
+                <option value="25" ${this.sfxVolume === 25 ? "selected" : ""}>25</option>
+                <option value="50" ${this.sfxVolume === 50 ? "selected" : ""}>50</option>
+                <option value="75" ${this.sfxVolume === 75 ? "selected" : ""}>75</option>
+                <option value="100" ${this.sfxVolume === 100 ? "selected" : ""}>100</option>
+              </select>
+            </label>
+            <button data-action="preview-sfx">${en ? "Preview SFX" : "试听音效"}</button>
             <button data-action="toggle-language">${this.t("language")}</button>
           </div>
           <div class="settings-panel">
@@ -3723,6 +3775,9 @@ export class AdaptiveGameApp {
         break;
       case "open-map":
         this.audio.ui();
+        if (this.save.profileCreated && this.save.playCount === 0) {
+          this.markGuideStep("map");
+        }
         this.interferenceText = undefined;
         this.replayMode = false;
         this.selectedChapter =
@@ -3767,12 +3822,25 @@ export class AdaptiveGameApp {
         }
         break;
       }
+      case "guide-ability":
+        if (this.save.profileCreated && this.save.playCount === 0) {
+          this.markGuideStep("ability");
+        }
+        this.audio.ui();
+        this.show("ability");
+        break;
       case "open-ability":
         this.audio.ui();
+        if (this.save.profileCreated && this.save.playCount === 0) {
+          this.markGuideStep("ability");
+        }
         this.show("ability");
         break;
       case "open-report":
         this.audio.ui();
+        if (this.save.profileCreated && this.save.playCount === 0) {
+          this.markGuideStep("report");
+        }
         this.show("report");
         break;
       case "open-ending":
@@ -4024,6 +4092,65 @@ export class AdaptiveGameApp {
       case "export-analytics":
         this.exportAnalytics();
         break;
+      case "export-report-card": {
+        const canvas = this.root.querySelector<HTMLCanvasElement>(
+          "#report-card-canvas"
+        );
+        if (canvas) {
+          const ctx = canvas.getContext("2d");
+          if (ctx) {
+            const summary = profileSummary(this.save);
+            const decision = decisionProfile(this.save);
+            const bg = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
+            bg.addColorStop(0, "#0a1013");
+            bg.addColorStop(1, "#17262e");
+            ctx.fillStyle = bg;
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.fillStyle = "#f2c14e";
+            ctx.font = "700 30px 'Microsoft YaHei', sans-serif";
+            ctx.fillText("升维 · Ascend", 48, 70);
+            ctx.fillStyle = "#e7eef2";
+            ctx.font = "700 40px 'Microsoft YaHei', sans-serif";
+            ctx.fillText(
+              `${this.save.profile.name} · ${summary.rank.name}`,
+              48,
+              150
+            );
+            ctx.fillStyle = "#9fb3c8";
+            ctx.font = "22px 'Microsoft YaHei', sans-serif";
+            ctx.fillText(
+              `${this.language === "en" ? "Total Ability" : "综合能力值"} ${summary.total} · ${this.language === "en" ? "Chapters" : "章节"} ${summary.chapterCount}/9`,
+              48,
+              220
+            );
+            ctx.fillText(
+              `${this.language === "en" ? "Adaptive" : "自适应"} ${decision.counts.expert} · ${this.language === "en" ? "Technical" : "技术性"} ${decision.counts.partial} · ${this.language === "en" ? "Authority" : "权威/回避"} ${decision.counts.risk}`,
+              48,
+              280
+            );
+            ctx.fillText(
+              `${this.language === "en" ? "Best Duel" : "最佳对局"} ${this.save.bestScore ?? 0} · ${this.language === "en" ? "Mastery" : "修炼"} ${this.save.masteryPoints}`,
+              48,
+              330
+            );
+            ctx.fillStyle = "#f2c14e";
+            ctx.fillText(
+              this.language === "en"
+                ? "Ascend · adaptive leadership scenario game"
+                : "升维 · 自适应领导力情境游戏",
+              48,
+              440
+            );
+            const url = canvas.toDataURL("image/png");
+            const anchor = document.createElement("a");
+            anchor.href = url;
+            anchor.download = `${this.language === "en" ? "Ascend-report" : "升维报告卡片"}.png`;
+            anchor.click();
+          }
+        }
+        this.audio.ui();
+        break;
+      }
       case "copy-save-link":
         this.copySaveLink(actionTarget);
         break;
@@ -4153,6 +4280,10 @@ export class AdaptiveGameApp {
         localStorage.setItem("adaptive-ascent-muted", this.muted ? "1" : "0");
         this.audio.setMuted(this.muted);
         this.render();
+        break;
+      case "preview-sfx":
+        this.audio.ensure();
+        this.audio.expert();
         break;
       case "toggle-music":
         this.musicMuted = !this.musicMuted;
@@ -4687,6 +4818,27 @@ export class AdaptiveGameApp {
         }
         break;
       }
+      case "claim-weekly": {
+        const challengeId = actionTarget.dataset.challenge ?? "";
+        const week = weekKey();
+        const weekly = weeklyChallenges(this.save);
+        const reward =
+          weekly.find((challenge) => challenge.id === challengeId)?.reward ?? 4;
+        this.save.claimedWeekly = {
+          ...(this.save.claimedWeekly ?? {}),
+          [week]: [
+            ...((this.save.claimedWeekly ?? {})[week] ?? []),
+            challengeId
+          ]
+        };
+        this.save.masteryPoints += reward;
+        this.save.trialEnergy = clamp(this.save.trialEnergy + 15, 0, 100);
+        this.persistSave();
+        trackEvent("weekly_claim", { challengeId });
+        this.audio.expert();
+        this.renderMap();
+        break;
+      }
       case "toggle-pressure":
         this.save.highPressureMode = !this.save.highPressureMode;
         this.persistSave();
@@ -4913,6 +5065,17 @@ export class AdaptiveGameApp {
         String(this.musicVolume)
       );
       this.audio.setMusicVolume(this.musicVolume);
+      if (this.view === "settings") {
+        this.renderSettings();
+      }
+    }
+    if (target.dataset.select === "sfx-volume") {
+      this.sfxVolume = Number(target.value) || 0;
+      localStorage.setItem(
+        "adaptive-ascent-sfx-volume",
+        String(this.sfxVolume)
+      );
+      this.audio.setSfxVolume(this.sfxVolume);
       if (this.view === "settings") {
         this.renderSettings();
       }
@@ -5255,9 +5418,17 @@ export class AdaptiveGameApp {
       this.maybeStartRemoteDuel();
     };
     peer.onStatus = (status) => {
-      this.remoteStatus = status;
-      if (this.view === "duelLobby") {
-        this.renderDuelLobby();
+      if (status === "failed" || status === "disconnected" || status === "closed") {
+        this.remoteStatus =
+          this.language === "en"
+            ? "Connection lost. Return to the lobby and try again."
+            : "连接已断开，请返回大厅重试。";
+        this.audio.risk();
+      } else {
+        this.remoteStatus = status;
+      }
+      if (this.view === "duelLobby" || this.view === "duel") {
+        this.render();
       }
     };
     peer.onMessage = (message) => this.handleRemoteMessage(message);
@@ -6245,6 +6416,20 @@ export class AdaptiveGameApp {
             ? `<p class="ability-example">${escapeHtml(EXPANDED_TRAINING[id].workedExamples[0].scenario)}</p>`
             : ""
         }
+        ${
+          (() => {
+            const next = TRIAL_STAGES.find((stage) =>
+              stage.gates.some(
+                (gate) =>
+                  gate.abilityId === id && gate.level > abilityLevel(exp)
+              )
+            );
+            if (!next) return "";
+            const nextLevel = next.gates.find((gate) => gate.abilityId === id)
+              ?.level;
+            return `<p class="ability-next-gate">${this.language === "en" ? "Next gate" : "下一门"}：Lv.${nextLevel} · ${escapeHtml(next.name)}</p>`;
+          })()
+        }
         <div class="ability-sources">${detail.sources.slice(0, 2).map((source) => `<span>${escapeHtml(source)}</span>`).join("")}</div>
       </div>
     `;
@@ -6370,6 +6555,43 @@ export class AdaptiveGameApp {
     return "权威或回避动作：只适合紧急的技术问题。用得太多，会压住不同意见，团队不再带真实信息上来。";
   }
 
+  private wrongAnswerMarkup(): string {
+    const wrong = this.save.decisionHistory
+      .filter((record) => record.quality !== "expert")
+      .slice(-8)
+      .reverse();
+    return wrong
+      .map((record) => {
+        let node: StoryNode | null = null;
+        try {
+          node = getNode(record.nodeId);
+        } catch {
+          node = null;
+        }
+        if (!node) {
+          return "";
+        }
+        const expert = node.options.find(
+          (option) => option.quality === "expert"
+        );
+        const chosen = node.options[record.optionIndex];
+        const focus = getChapter(node.chapterId).focus[0];
+        return `
+          <div class="wrong-answer-card">
+            <strong>${escapeHtml(node.title)}</strong>
+            <p><b>${this.qualityLabel(record.quality)}</b> · ${escapeHtml(chosen?.label ?? "")}</p>
+            ${
+              expert
+                ? `<p class="expert-ref">${this.language === "en" ? "Expert baseline" : "专家基准"}：${escapeHtml(expert.label)} · ${escapeHtml(expert.theory)}</p>`
+                : ""
+            }
+            <button data-action="open-training" data-ability="${focus}">${this.language === "en" ? "Train This Ability" : "训练该能力"}</button>
+          </div>
+        `;
+      })
+      .join("");
+  }
+
   private outcomeMarkup(outcome: ChoiceOutcome): string {
     const option = outcome.option;
     const transitionId = this.pendingChapterTransition;
@@ -6480,6 +6702,36 @@ export class AdaptiveGameApp {
       : this.language === "en"
         ? "No decision yet"
         : "尚未决策";
+  }
+
+  private guideSteps(): string[] {
+    try {
+      const raw = localStorage.getItem(GUIDE_KEY);
+      const parsed = raw ? JSON.parse(raw) : [];
+      return Array.isArray(parsed) ? parsed : [];
+    } catch {
+      return [];
+    }
+  }
+
+  private markGuideStep(step: string): void {
+    const steps = [...new Set([...this.guideSteps(), step])];
+    try {
+      localStorage.setItem(GUIDE_KEY, JSON.stringify(steps));
+    } catch {
+      // ignore
+    }
+    if (steps.length >= 3 && !localStorage.getItem(GUIDE_REWARD_KEY)) {
+      try {
+        localStorage.setItem(GUIDE_REWARD_KEY, "1");
+      } catch {
+        // ignore
+      }
+      this.save.masteryPoints += 2;
+      this.persistSave();
+      trackEvent("guide_complete");
+      this.audio.expert();
+    }
   }
 
   private nextRankNeed(total: number): number {

@@ -126,6 +126,7 @@ export interface SaveState {
   claimedChallenges: string[];
   /** 每日挑战领取记录：键为 "YYYY-MM-DD"，值为当天已领取的挑战 id 列表。跨天自然重置，故「每日」可重复领取。 */
   claimedDaily: Record<string, string[]>;
+  claimedWeekly?: Record<string, string[]>;
   assessmentScore: number;
   completedRandomEvents: string[];
   completedBranchNodes: string[];

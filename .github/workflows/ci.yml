@@ -68,6 +68,9 @@ jobs:
       - name: Unit tests
         run: npm run test:unit
 
+      - name: Ability balance gate
+        run: npm run ability-balance
+
       # 3) 端到端冒烟：Playwright + Microsoft Edge 频道
       - name: Install Playwright browser (Microsoft Edge)
         run: npx playwright install --with-deps msedge

@@ -15,6 +15,7 @@
     "content-audit": "node --experimental-strip-types scripts/content-audit.mjs",
     "leadership-audit": "node --experimental-strip-types scripts/leadership-audit.mjs",
     "role-audit": "node --experimental-strip-types scripts/role-audit.mjs",
+    "ability-balance": "node --experimental-strip-types scripts/ability-balance.mjs",
     "balance-sim": "node --experimental-strip-types scripts/balance-sim.mjs",
     "coach:export": "node --experimental-strip-types scripts/coach-export.mjs",
     "deploy:check": "node scripts/deploy-check.mjs",

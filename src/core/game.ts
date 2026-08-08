@@ -73,6 +73,7 @@ export const DEFAULT_SAVE: SaveState = {
   duelHistory: [],
   claimedChallenges: [],
   claimedDaily: {},
+  claimedWeekly: {},
   assessmentScore: 0,
   completedRandomEvents: [],
   completedBranchNodes: [],
@@ -254,6 +255,10 @@ function normalizeSave(save: SaveState): SaveState {
     claimedDaily:
       save.claimedDaily && typeof save.claimedDaily === "object"
         ? save.claimedDaily
+        : {},
+    claimedWeekly:
+      save.claimedWeekly && typeof save.claimedWeekly === "object"
+        ? { ...save.claimedWeekly }
         : {},
     assessmentScore: Number(save.assessmentScore) || 0,
     completedRandomEvents: Array.isArray(save.completedRandomEvents)
@@ -486,6 +491,21 @@ export function deleteRoleSlot(role: RoleId): void {
   }
 }
 
+function boostLowestFocusAbility(save: SaveState): void {
+  const focus = ROLES[save.profile.role].focusAbilities;
+  if (focus.length === 0) {
+    return;
+  }
+  const lowest = focus.reduce((a, b) =>
+    save.profile.abilities[a] <= save.profile.abilities[b] ? a : b
+  );
+  save.profile.abilities[lowest] = clamp(
+    save.profile.abilities[lowest] + 1,
+    0,
+    40
+  );
+}
+
 export function applyStoryChoice(
   save: SaveState,
   nodeId: string,
@@ -566,6 +586,7 @@ export function applyStoryChoice(
     if (!save.completedSideQuests.includes(nodeId)) {
       save.completedSideQuests.push(nodeId);
       save.masteryPoints += 5;
+      boostLowestFocusAbility(save);
     }
   } else if (node.kind === "branch") {
     if (!save.completedBranchNodes.includes(nodeId)) {
@@ -935,8 +956,8 @@ export function applyTrainingResult(
     }
   } else {
     // 鍥涘埌澶嶄範缁欏皬棰濊兘閲忥紝閬垮厤鈥滀簩娆￠浂鏀剁泭鈥濓紝浣嗕笉鍐嶆彁渚涜兘鍔涚粡楠屻€?
-    save.masteryPoints += 1;
-    save.trialEnergy = clamp(save.trialEnergy + 4, 0, 100);
+    save.masteryPoints += 2;
+    save.trialEnergy = clamp(save.trialEnergy + 6, 0, 100);
   }
   save.trainingScores[abilityId] = Math.max(
     save.trainingScores[abilityId] ?? 0,
@@ -1200,7 +1221,7 @@ export function completePracticeTask(
   if (save.completedPracticeTasks.includes(taskId)) {
     // 淇偧浠诲姟鍙噸澶嶇粌涔狅紝閲嶅涔犲彧缁欏皬棰濊兘閲忥紝涓嶅啀澧炲姞鑳藉姏缁忛獙銆?
     save.trialEnergy = clamp(
-      save.trialEnergy + Math.max(2, Math.floor(rewardEnergy / 3)),
+      save.trialEnergy + Math.max(3, Math.floor(rewardEnergy / 2)),
       0,
       100
     );

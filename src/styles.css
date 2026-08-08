@@ -3502,6 +3502,104 @@ h2 {
   }
 }
 
+.role-portrait {
+  display: block;
+  width: 72px;
+  height: 86px;
+  margin: 0 auto 8px;
+  border-radius: 8px;
+  object-fit: cover;
+}
+
+.role-slot-totals {
+  margin: 0 0 12px;
+  color: #9fb3c8;
+  font-size: 13px;
+}
+
+.guide-tasks {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.guide-tasks button {
+  padding: 8px 12px;
+  border: 1px solid rgba(65, 199, 192, 0.5);
+  border-radius: 8px;
+  background: rgba(65, 199, 192, 0.1);
+  color: #41c7c0;
+  font-size: 13px;
+}
+
+.guide-tasks button:disabled {
+  opacity: 0.55;
+  text-decoration: line-through;
+}
+
+.guide-done {
+  margin: 10px 0 0;
+  color: #57c7a3;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.wrong-answer-review {
+  margin: 16px 0;
+}
+
+.wrong-answer-review h3 {
+  margin: 0 0 10px;
+  color: #e9826c;
+  font-size: 15px;
+}
+
+.wrong-answer-list {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+}
+
+.wrong-answer-card {
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--panel);
+}
+
+.wrong-answer-card strong {
+  color: #e7eef2;
+  font-size: 14px;
+}
+
+.wrong-answer-card p {
+  margin: 6px 0;
+  color: #c6d2dc;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.wrong-answer-card .expert-ref {
+  color: #f2c14e;
+}
+
+.wrong-answer-card button {
+  margin-top: 4px;
+}
+
+.ability-next-gate {
+  margin: 6px 0 0;
+  color: #4db7d6;
+  font-size: 12px;
+}
+
+@media (max-width: 720px) {
+  .wrong-answer-list {
+    grid-template-columns: 1fr;
+  }
+}
+
 /* v1.1 release polish: scene art, save guidance, retry gates, duel resume */
 .story-shell,
 .map-shell {
