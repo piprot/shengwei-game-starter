@@ -54,74 +54,111 @@ function makeSave() {
   return save;
 }
 
+async function overflow(page) {
+  return page.evaluate(
+    () => document.documentElement.scrollWidth - document.documentElement.clientWidth
+  );
+}
+
+const sizes = [
+  { name: "360x800", width: 360, height: 800, mobile: true },
+  { name: "720x1280", width: 720, height: 1280, mobile: true },
+  { name: "1080x2400", width: 1080, height: 2400, mobile: true },
+  { name: "1024x768", width: 1024, height: 768, mobile: false },
+  { name: "844x390-landscape", width: 844, height: 390, mobile: true }
+];
+
 try {
   await waitForServer();
   const browser = await chromium.launch({ channel: "msedge", headless: true });
+  const results = [];
 
-  for (const size of [
-    { name: "720x1280", width: 720, height: 1280 },
-    { name: "1080x2400", width: 1080, height: 2400 }
-  ]) {
+  for (const size of sizes) {
     for (const lang of ["zh", "en"]) {
-      const page = await browser.newPage({
-        viewport: { width: size.width, height: size.height },
-        deviceScaleFactor: 1,
-        isMobile: true,
-        hasTouch: true
-      });
-      const errors = [];
-      page.on("pageerror", (error) => errors.push(error.stack || error.message));
-      page.on("console", (message) => {
-        if (message.type() === "error") errors.push(message.text());
-      });
-      await page.goto(url, { waitUntil: "networkidle" });
-      await page.evaluate(
-        ({ saveJson, langValue }) => {
-          localStorage.setItem("adaptive-ascent-save-v1", saveJson);
-          localStorage.setItem("adaptive-ascent-lang", langValue);
-        },
-        { saveJson: JSON.stringify(makeSave()), langValue: lang }
-      );
-      await page.reload({ waitUntil: "networkidle" });
-      const menu = `${outDir}/${size.name}-${lang}-menu.png`;
-      await page.screenshot({ path: menu, fullPage: true });
-      await page.click("button.primary[data-action=open-map]");
-      await page.waitForSelector(
-        lang === "en" ? "text=Nine Chapters of Power" : "text=九章权力架构"
-      );
-      await page.screenshot({
-        path: `${outDir}/${size.name}-${lang}-map.png`,
-        fullPage: true
-      });
-      await page.locator(".node-row").first().click();
-      await page.waitForSelector(
-        lang === "en" ? "text=Current Test" : "text=当前考验"
-      );
-      await page.screenshot({
-        path: `${outDir}/${size.name}-${lang}-story.png`,
-        fullPage: true
-      });
-      await page.click(
-        lang === "en" ? "text=Back to Map" : "text=返回主线地图"
-      );
-      await page.waitForSelector(
-        lang === "en" ? "text=Nine Chapters of Power" : "text=九章权力架构"
-      );
-      await page.click("[data-action=open-report]");
-      await page.waitForSelector(
-        lang === "en" ? "text=Review Report" : "text=复盘报告"
-      );
-      await page.screenshot({
-        path: `${outDir}/${size.name}-${lang}-report.png`,
-        fullPage: true
-      });
-      if (errors.length > 0) {
-        throw new Error(`${size.name}/${lang} errors: ${errors.join(" | ")}`);
+      for (const fontScale of size.mobile ? [1, 1.5] : [1]) {
+        const tag = `${size.name}-${lang}-${fontScale === 1.5 ? "fs15" : "fs1"}`;
+        const page = await browser.newPage({
+          viewport: { width: size.width, height: size.height },
+          deviceScaleFactor: 1,
+          isMobile: size.mobile,
+          hasTouch: size.mobile
+        });
+        const errors = [];
+        page.on("pageerror", (error) => errors.push(error.stack || error.message));
+        page.on("console", (message) => {
+          if (message.type() === "error") errors.push(message.text());
+        });
+        await page.goto(url, { waitUntil: "domcontentloaded" });
+        await page.evaluate(
+          ({ saveJson, langValue, scale }) => {
+            localStorage.setItem("adaptive-ascent-save-v1", saveJson);
+            localStorage.setItem("adaptive-ascent-lang", langValue);
+            localStorage.setItem("adaptive-ascent-font-scale", String(scale));
+          },
+          {
+            saveJson: JSON.stringify(makeSave()),
+            langValue: lang,
+            scale: fontScale
+          }
+        );
+        await page.reload({ waitUntil: "domcontentloaded" });
+        await page.waitForSelector(
+          lang === "en" ? "text=Ascend" : "text=升维"
+        );
+        const menuOverflow = await overflow(page);
+        await page.screenshot({ path: `${outDir}/${tag}-menu.png`, fullPage: true });
+
+        await page.click("button.primary[data-action=open-map]");
+        await page.waitForSelector(
+          lang === "en" ? "text=Nine Chapters of Power" : "text=九章权力架构"
+        );
+        const mapOverflow = await overflow(page);
+        await page.screenshot({ path: `${outDir}/${tag}-map.png`, fullPage: true });
+
+        await page.locator(".node-row").first().click();
+        await page.waitForSelector(
+          lang === "en" ? "text=Current Test" : "text=当前考验"
+        );
+        const storyOverflow = await overflow(page);
+        await page.screenshot({ path: `${outDir}/${tag}-story.png`, fullPage: true });
+
+        await page.click(lang === "en" ? "text=Back to Map" : "text=返回主线地图");
+        await page.waitForSelector(
+          lang === "en" ? "text=Nine Chapters of Power" : "text=九章权力架构"
+        );
+        await page.click("[data-action=open-report]");
+        await page.waitForSelector(
+          lang === "en" ? "text=Review Report" : "text=复盘报告"
+        );
+        const reportOverflow = await overflow(page);
+        await page.screenshot({
+          path: `${outDir}/${tag}-report.png`,
+          fullPage: true
+        });
+
+        results.push({ tag, menuOverflow, mapOverflow, storyOverflow, reportOverflow, errors: errors.length });
+        if (
+          errors.length > 0 ||
+          menuOverflow > 0 ||
+          mapOverflow > 0 ||
+          storyOverflow > 0 ||
+          reportOverflow > 0
+        ) {
+          throw new Error(
+            `${tag} failed: errors=${errors.length} overflow=${JSON.stringify({
+              menuOverflow,
+              mapOverflow,
+              storyOverflow,
+              reportOverflow
+            })}`
+          );
+        }
+        await page.close();
       }
-      await page.close();
     }
   }
   await browser.close();
+  console.log(JSON.stringify(results, null, 2));
   console.log(`PASS device screenshots -> ${outDir}`);
 } finally {
   server.kill();

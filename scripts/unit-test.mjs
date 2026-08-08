@@ -6,6 +6,12 @@ globalThis.localStorage = {
   setItem: (key, value) => store.set(key, String(value)),
   removeItem: (key) => store.delete(key)
 };
+const backupStore = new Map();
+globalThis.sessionStorage = {
+  getItem: (key) => (backupStore.has(key) ? backupStore.get(key) : null),
+  setItem: (key, value) => backupStore.set(key, String(value)),
+  removeItem: (key) => backupStore.delete(key)
+};
 
 import { abilityLevel, totalAbilityLevels } from "../src/core/abilities.ts";
 import { ASSESSMENT_QUESTIONS } from "../src/core/assessment.ts";
@@ -27,13 +33,19 @@ import { hiddenRouteSteps } from "../src/core/hiddenRoutes.ts";
 
 import { ACHIEVEMENTS, isAchievementUnlocked } from "../src/core/achievements.ts";
 import {
+  claimableChallenges,
+  dailyChallenges,
+  todayKey
+} from "../src/core/challenges.ts";
+import {
   CHAPTERS,
   RANDOM_EVENT_IDS,
   RANDOM_EVENT_META,
   STORY_NODES,
   getNode,
   nodesForChapter,
-  nextRandomEvent
+  nextRandomEvent,
+  randomEventAffinity
 } from "../src/core/story.ts";
 import { ROLE_OPTION_SETS } from "../src/core/roleOptions.ts";
 import {
@@ -48,12 +60,14 @@ import {
   computeSaveHash,
   hireTrialAlly,
   investTrialAccelerator,
+  loadSave,
   migrateSave,
   optionGateFor,
   recordDuelResult,
   resourceStrainFor,
   resolveCloudConflict,
   roundDurationMsForDifficulty,
+  saveState,
   scoreQuality
 } from "../src/core/game.ts";
 import { uiString } from "../src/core/i18n.ts";
@@ -244,6 +258,18 @@ assert(
   }) === undefined,
   "no random event should be offered after all are complete"
 );
+assert(
+  randomEventAffinity("r2", { expert: 1, risk: 0, partial: 0 }) === 1,
+  "expert-preference events should react to expert ratio"
+);
+assert(
+  randomEventAffinity("r3", { expert: 0, risk: 1, partial: 0 }) === 1,
+  "risk-preference events should react to risk ratio"
+);
+assert(
+  randomEventAffinity("r1", { expert: 0, risk: 0, partial: 1 }) === 1,
+  "gradual-preference events should react to partial ratio"
+);
 
 for (const role of Object.keys(ROLE_OPTION_SETS)) {
   for (const quality of ["expert", "partial", "risk"]) {
@@ -430,6 +456,14 @@ assert(migrated.profile.abilities.structure >= 0, "migrated should fill default 
 assert(migrated.profile.resources.trust >= 0, "migrated should fill default resources");
 assert(migrated.customFlag === true, "migrated should preserve unknown field customFlag");
 assert(migrated.mysteryField === "keep-me", "migrated should preserve unknown field mysteryField");
+const routedSave = migrateSave({
+  ...structuredClone(DEFAULT_SAVE),
+  routePath: { 2: "risk", 5: "expert" }
+});
+assert(
+  routedSave.routePath[2] === "risk" && routedSave.routePath[5] === "expert",
+  "migrateSave should preserve routePath choices"
+);
 
 // ---- resolveCloudConflict 双校验 ----
 const localA = { ...structuredClone(DEFAULT_SAVE), lastSavedAt: 1000, saveHash: "h1", playCount: 5 };
@@ -657,7 +691,13 @@ assert(
   "chapter mastery should be awarded once per chapter"
 );
 for (const n of chapterNineMains) {
-  applyStoryChoice(campaignSave, n.id, 1);
+  let threw = false;
+  try {
+    applyStoryChoice(campaignSave, n.id, 1);
+  } catch {
+    threw = true;
+  }
+  assert(threw, "completed node must not be re-settled");
 }
 assert(
   campaignSave.campaignCompletions === 1,
@@ -666,6 +706,76 @@ assert(
 assert(
   campaignSave.masteryPoints === 10,
   "chapter mastery must not double count replays"
+);
+
+// ---- 每日挑战：跨天重置（claimedDaily 按日期隔离）----
+const challengeSave = structuredClone(DEFAULT_SAVE);
+challengeSave.decisionHistory.push(
+  { nodeId: "c1n1", optionIndex: 0, quality: "expert", qualityScore: 100, chapterId: 1 },
+  { nodeId: "c1n2", optionIndex: 0, quality: "expert", qualityScore: 100, chapterId: 1 },
+  { nodeId: "c2n1", optionIndex: 0, quality: "expert", qualityScore: 100, chapterId: 2 },
+  { nodeId: "c2n2", optionIndex: 0, quality: "expert", qualityScore: 100, chapterId: 2 },
+  { nodeId: "c3n1", optionIndex: 0, quality: "expert", qualityScore: 100, chapterId: 3 },
+  { nodeId: "c3n2", optionIndex: 0, quality: "expert", qualityScore: 100, chapterId: 3 }
+);
+challengeSave.completedSideQuests = ["s1", "s2", "s3", "s4", "s5", "s6"];
+challengeSave.duelWins = 2;
+challengeSave.duelLosses = 1;
+challengeSave.completedRandomEvents = ["r1", "r2"];
+challengeSave.completedBranchNodes = ["c2b-parachute", "c3b-parachute", "c4b-parachute"];
+challengeSave.completedTraining = Object.keys(challengeSave.profile.abilities);
+challengeSave.trialCleared = TRIAL_STAGES.map((stage) => stage.id);
+challengeSave.completedPracticeTasks = ["p1", "p2", "p3", "p4", "p5"];
+challengeSave.chapterRecords = CHAPTERS.map((chapter) => ({
+  chapterId: chapter.id,
+  completedNodeIds: chapter.nodeIds.slice(0, 2),
+  stars: 220
+}));
+for (const abilityId of Object.keys(challengeSave.profile.abilities)) {
+  challengeSave.profile.abilities[abilityId] = 40;
+}
+const todayChallenge = dailyChallenges(challengeSave)[0];
+const yesterday = new Date(Date.now() - 24 * 60 * 60 * 1000)
+  .toISOString()
+  .slice(0, 10);
+challengeSave.claimedDaily[yesterday] = [todayChallenge.id];
+assert(
+  claimableChallenges(challengeSave).some((challenge) => challenge.id === todayChallenge.id),
+  "yesterday's claim must not block today's challenge"
+);
+challengeSave.claimedDaily[todayKey()] = [todayChallenge.id];
+assert(
+  !claimableChallenges(challengeSave).some((challenge) => challenge.id === todayChallenge.id),
+  "today's claim must block today's challenge"
+);
+assert(
+  dailyChallenges(challengeSave).length === 3,
+  "dailyChallenges should always return 3 challenges"
+);
+
+// ---- saveState：写失败返回 false，loadSave 可回退到 session 备份 ----
+const backupSave = structuredClone(DEFAULT_SAVE);
+backupSave.profileCreated = true;
+backupSave.profile.name = "Backup";
+assert(saveState(backupSave) === true, "normal saveState should succeed");
+const originalSetItem = globalThis.localStorage.setItem;
+globalThis.localStorage.setItem = () => {
+  throw new Error("quota exceeded");
+};
+const failed = structuredClone(DEFAULT_SAVE);
+assert(saveState(failed) === false, "saveState should report failure when storage is full");
+globalThis.localStorage.setItem = originalSetItem;
+
+// 损坏主存档时，loadSave 应从 session 备份恢复并留下通知标记
+store.set("adaptive-ascent-save-v1", "{broken json");
+const recovered = loadSave();
+assert(
+  recovered.profileCreated === false,
+  "loadSave should fall back to default/backup instead of throwing"
+);
+assert(
+  store.has("adaptive-ascent-save-corrupt"),
+  "corrupt save should leave a recovery notice"
 );
 
 console.log("PASS unit test");

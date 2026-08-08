@@ -48,6 +48,12 @@ export async function initDb() {
     ALTER TABLE accounts
     ADD COLUMN IF NOT EXISTS password_hash TEXT
   `);
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS revoked_tokens (
+      token TEXT PRIMARY KEY,
+      revoked_at TIMESTAMPTZ NOT NULL DEFAULT now()
+    )
+  `);
 }
 
 export async function dbHealth() {
@@ -137,6 +143,27 @@ export async function leaderboard(limit = 50) {
     ...row,
     percentile: Math.round(((rows.length - index - 1) / rows.length) * 100)
   }));
+}
+
+export async function revokeToken(token) {
+  if (!pool) return;
+  await pool.query(
+    `
+      INSERT INTO revoked_tokens (token, revoked_at)
+      VALUES ($1, now())
+      ON CONFLICT (token) DO NOTHING
+    `,
+    [token]
+  );
+}
+
+export async function isTokenRevoked(token) {
+  if (!pool) return false;
+  const result = await pool.query(
+    `SELECT 1 FROM revoked_tokens WHERE token = $1 LIMIT 1`,
+    [token]
+  );
+  return result.rowCount > 0;
 }
 
 function abilityLevel(exp) {

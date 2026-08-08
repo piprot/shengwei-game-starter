@@ -629,6 +629,22 @@ h2 {
   line-height: 1.6;
 }
 
+.achievement-card-progress {
+  width: 100%;
+  height: 6px;
+  margin-top: 10px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.achievement-card-progress i {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, var(--teal), var(--gold));
+}
+
 .achievement-card small {
   color: var(--gold);
   white-space: nowrap;
@@ -1322,6 +1338,39 @@ h2 {
   width: 100%;
 }
 
+.event-book-panel {
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--panel-2);
+}
+
+.event-book-panel h3 {
+  margin: 0 0 6px;
+  color: var(--gold);
+  font-size: 14px;
+}
+
+.event-book-list {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px;
+  margin-top: 10px;
+}
+
+.event-book-list span {
+  overflow: hidden;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.4;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.event-book-list span.done {
+  color: var(--teal);
+}
+
 .story-shell {
   width: min(1180px, 100%);
 }
@@ -1469,6 +1518,48 @@ h2 {
   line-height: 1.9;
 }
 
+.route-choice-panel {
+  margin: 18px 0;
+  padding: 16px;
+  border: 1px solid rgba(87, 199, 163, 0.3);
+  border-radius: 8px;
+  background: rgba(87, 199, 163, 0.07);
+}
+
+.route-choice-panel h3 {
+  margin: 0 0 6px;
+  color: var(--teal);
+  font-size: 14px;
+}
+
+.route-choice-panel p {
+  margin: 0 0 12px;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.route-choice-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.route-choice-actions button {
+  min-height: 44px;
+  padding: 0 14px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--panel-2);
+  color: var(--text);
+  cursor: pointer;
+}
+
+.route-choice-actions button.selected {
+  border-color: var(--teal);
+  background: rgba(87, 199, 163, 0.16);
+  color: var(--teal);
+}
+
 .next-chapter {
   margin: 22px 0;
   padding: 16px;
@@ -1501,6 +1592,28 @@ h2 {
 
 .back-link {
   margin-bottom: 14px;
+}
+
+.route-banner {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 12px;
+  padding: 10px 14px;
+  border: 1px solid rgba(242, 193, 78, 0.35);
+  border-radius: 8px;
+  background: rgba(242, 193, 78, 0.09);
+}
+
+.route-banner strong {
+  color: var(--gold);
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.route-banner span {
+  color: var(--text);
+  font-weight: 700;
 }
 
 .scenario-panel {

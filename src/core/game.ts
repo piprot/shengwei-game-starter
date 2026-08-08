@@ -22,6 +22,8 @@ import type {
 } from "./types.ts";
 
 const SAVE_KEY = "adaptive-ascent-save-v1";
+const BACKUP_SAVE_KEY = "adaptive-ascent-save-backup-v1";
+const CORRUPT_SAVE_KEY = "adaptive-ascent-save-corrupt";
 
 /** 难度档位对应的资源缩放系数（负面 delta 放大、正面 delta 收窄）。 */
 export const PRESSURE_FACTORS: Record<
@@ -87,6 +89,7 @@ export const DEFAULT_SAVE: SaveState = {
   campaignCompletions: 0,
   hiddenRouteProgress: {},
   alternateEndings: [],
+  routePath: {},
   highPressureMode: false,
   difficulty: "normal"
 };
@@ -108,6 +111,7 @@ export function createProfile(name: string, role: RoleId): PlayerProfile {
 }
 
 export function loadSave(): SaveState {
+  let corruptRaw: string | null = null;
   try {
     const raw = localStorage.getItem(SAVE_KEY);
     if (!raw) {
@@ -119,8 +123,32 @@ export function loadSave(): SaveState {
     }
     return normalizeSave(parsed);
   } catch {
-    return structuredClone(DEFAULT_SAVE);
+    try {
+      corruptRaw = localStorage.getItem(SAVE_KEY);
+    } catch {
+      corruptRaw = null;
+    }
   }
+  if (corruptRaw) {
+    try {
+      localStorage.setItem(CORRUPT_SAVE_KEY, corruptRaw.slice(0, 4000));
+    } catch {
+      // 通知标记写不进去也不阻断恢复流程
+    }
+  }
+  try {
+    const backup = sessionStorage.getItem(BACKUP_SAVE_KEY);
+    if (backup) {
+      const parsed = JSON.parse(backup) as SaveState;
+      if (parsed.version !== DEFAULT_SAVE.version) {
+        return migrateSave(parsed);
+      }
+      return normalizeSave(parsed);
+    }
+  } catch {
+    // 备份也不可用时回默认档
+  }
+  return structuredClone(DEFAULT_SAVE);
 }
 
 function normalizeSave(save: SaveState): SaveState {
@@ -218,6 +246,10 @@ function normalizeSave(save: SaveState): SaveState {
     alternateEndings: Array.isArray(save.alternateEndings)
       ? save.alternateEndings
       : [],
+    routePath:
+      save.routePath && typeof save.routePath === "object"
+        ? { ...save.routePath }
+        : {},
     highPressureMode: Boolean(save.highPressureMode),
     difficulty:
       save.difficulty === "pressure" || save.difficulty === "extreme"
@@ -264,7 +296,8 @@ export function computeSaveHash(save: SaveState): string {
       save.trialOpenAnswers,
       save.hiddenRoutes,
       save.hiddenRouteProgress,
-      save.alternateEndings
+      save.alternateEndings,
+      save.routePath
     ],
     diff: save.difficulty
   };
@@ -276,10 +309,40 @@ export function computeSaveHash(save: SaveState): string {
   return (hash >>> 0).toString(36);
 }
 
-export function saveState(save: SaveState): void {
+export function saveState(save: SaveState): boolean {
   save.lastSavedAt = Date.now();
   save.saveHash = computeSaveHash(save);
-  localStorage.setItem(SAVE_KEY, JSON.stringify(save));
+  const json = JSON.stringify(save);
+  try {
+    localStorage.setItem(SAVE_KEY, json);
+    try {
+      sessionStorage.setItem(BACKUP_SAVE_KEY, json);
+    } catch {
+      // session 备份失败不阻断主存档
+    }
+    return true;
+  } catch {
+    try {
+      sessionStorage.setItem(BACKUP_SAVE_KEY, json);
+    } catch {
+      // 主存档与备份都失败，由调用方提示导出
+    }
+    return false;
+  }
+}
+
+/** 读取并清除损坏存档通知标记；返回损坏原始内容片段（用于提示导出）。 */
+export function consumeCorruptSaveNotice(): string | null {
+  try {
+    const raw = localStorage.getItem(CORRUPT_SAVE_KEY);
+    if (raw) {
+      localStorage.removeItem(CORRUPT_SAVE_KEY);
+      return raw;
+    }
+  } catch {
+    // ignore
+  }
+  return null;
 }
 
 /**
@@ -321,6 +384,10 @@ export function applyStoryChoice(
   nodeId: string,
   optionIndex: number
 ): ChoiceOutcome {
+  // 已完成节点只能通过显式「重打」模式回看，不能再次结算，否则能力/资源/修炼点会被无限刷取。
+  if (isNodeComplete(save, nodeId)) {
+    throw new Error(`completed node cannot be resolved again: ${nodeId}`);
+  }
   const node = getNode(nodeId);
   const option = node.options[optionIndex];
   const outcome = buildOutcome(save, option, optionIndex);

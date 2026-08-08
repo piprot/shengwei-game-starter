@@ -2936,6 +2936,18 @@ export const RANDOM_EVENT_META: Record<string, { weight: number; chapterId: numb
   r20: { weight: 5, chapterId: 9 }
 };
 
+/** 决策风格偏好：让随机事件派发受前序选择影响（轻量剧情分叉）。 */
+export function randomEventAffinity(
+  eventId: string,
+  ratios: { expert: number; risk: number; partial: number }
+): number {
+  const expertEvents = new Set(["r2", "r7", "r15", "r18", "r20"]);
+  const riskEvents = new Set(["r3", "r5", "r12", "r17", "r19"]);
+  if (expertEvents.has(eventId)) return ratios.expert;
+  if (riskEvents.has(eventId)) return ratios.risk;
+  return ratios.partial;
+}
+
 export function nextRandomEvent(save: {
   completedRandomEvents: string[];
   unlockedChapters: number[];
@@ -2950,15 +2962,32 @@ export function nextRandomEvent(save: {
   });
   if (eligible.length === 0) return undefined;
   const totalWeight = eligible.reduce(
-    (sum, id) => sum + RANDOM_EVENT_META[id].weight,
+    (sum, id) => sum + weightedEventWeight(id, save),
     0
   );
   let roll = Math.random() * totalWeight;
   for (const id of eligible) {
-    roll -= RANDOM_EVENT_META[id].weight;
+    roll -= weightedEventWeight(id, save);
     if (roll <= 0) return id;
   }
   return eligible[0];
+}
+
+function weightedEventWeight(
+  id: string,
+  save: {
+    completedRandomEvents: string[];
+    unlockedChapters: number[];
+    decisionHistory?: Array<{ nodeId: string; quality: OptionQuality }>;
+  }
+): number {
+  const history = save.decisionHistory ?? [];
+  const total = Math.max(1, history.length);
+  const expert = history.filter((record) => record.quality === "expert").length / total;
+  const risk = history.filter((record) => record.quality === "risk").length / total;
+  const partial = history.filter((record) => record.quality === "partial").length / total;
+  const affinity = randomEventAffinity(id, { expert, risk, partial });
+  return RANDOM_EVENT_META[id].weight * (0.8 + affinity * 0.7);
 }
 
 export function getChapter(id: number): ChapterDef {

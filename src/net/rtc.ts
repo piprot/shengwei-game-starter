@@ -25,6 +25,23 @@ const STUN_SERVERS: RTCIceServer[] = [
   { urls: "stun:stun1.l.google.com:19302" }
 ];
 
+/** STUN 之外，允许通过构建变量注入 TURN（无 TURN 时保持纯 STUN 降级）。 */
+function iceServers(): RTCIceServer[] {
+  const servers = [...STUN_SERVERS];
+  const turnUrl = import.meta.env.VITE_TURN_URL;
+  if (typeof turnUrl === "string" && turnUrl.trim()) {
+    const turnServer: RTCIceServer = { urls: turnUrl.trim() };
+    const username = import.meta.env.VITE_TURN_USERNAME;
+    const credential = import.meta.env.VITE_TURN_CREDENTIAL;
+    if (username && credential) {
+      turnServer.username = username;
+      turnServer.credential = credential;
+    }
+    servers.push(turnServer);
+  }
+  return servers;
+}
+
 export class ManualRtcPeer {
   readonly pc: RTCPeerConnection;
   readonly seed: number;
@@ -164,7 +181,7 @@ export class ManualRtcPeer {
 
 function createPeerConnection(): RTCPeerConnection {
   return new RTCPeerConnection({
-    iceServers: STUN_SERVERS,
+    iceServers: iceServers(),
     iceCandidatePoolSize: 4
   });
 }

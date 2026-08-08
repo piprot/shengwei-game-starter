@@ -142,6 +142,8 @@ export interface SaveState {
   hiddenRoutes: string[];
   hiddenRouteProgress: Record<string, number>;
   alternateEndings: string[];
+  /** 章节完成时选择的章末路线：精准 / 高压 / 渐进。影响随机事件加权与结局复盘。 */
+  routePath: Record<number, "expert" | "risk" | "partial">;
   highPressureMode: boolean;
   /** 难度档位：标准 / 高压 / 极限。驱动资源缩放、回合时限与突发干扰。 */
   difficulty: "normal" | "pressure" | "extreme";

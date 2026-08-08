@@ -158,6 +158,19 @@ async function runClient() {
   ) {
     throw new Error("Leaderboard entries missing score/signature");
   }
+  ws.send(JSON.stringify({ type: "logout", token: registered.token }));
+  await wait("logged_out");
+  ws.send(
+    JSON.stringify({
+      type: "cloud_save",
+      token: registered.token,
+      save: validSave
+    })
+  );
+  const revokedError = await wait("error");
+  if (!/账号不存在|Token/.test(String(revokedError.message))) {
+    throw new Error("Revoked token should be rejected after logout");
+  }
   ws.close();
 }
 

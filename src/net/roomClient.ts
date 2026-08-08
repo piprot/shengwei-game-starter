@@ -6,6 +6,7 @@ export type RoomServerMessage =
   | { type: "recovery_reissued"; code: string; account: unknown }
   | { type: "logged_in"; account: unknown }
   | { type: "save_ok" }
+  | { type: "logged_out" }
   | {
       type: "leaderboard";
       entries: Array<{
@@ -97,6 +98,10 @@ export class RoomClient {
   cloudSave(token: string, save: SaveState): void {
     this.token = token;
     this.send({ type: "cloud_save", token, save });
+  }
+
+  logout(token: string): void {
+    this.send({ type: "logout", token });
   }
 
   leaderboard(): void {

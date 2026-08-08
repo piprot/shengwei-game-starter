@@ -35,11 +35,13 @@
 - `npm run i18n-audit` 独立检查全部剧情节点/NPC/成就/测评/能力/每日挑战英文覆盖
 - `npm run test:i18n-browser` 自动验证英文随机事件与角色分岔渲染
 - `npm run audit` 增加英文主线流程桌面/手机溢出与错误检查
+- `npm run i18n-audit` 覆盖 14 个每日挑战 ID，不再只抽查旧 5 个
+- 建档、测评、能力子技能/训练路径的深层英文已由 `content-audit` / `i18n-audit` 全量校验通过
 
 ## 未完成
 
-- 建档页、30 题测评页、能力子技能/训练路径的深层文案
 - 真机 VoiceOver / TalkBack 读屏验收
+- 公网双端 WebRTC 与云端功能真实验收（服务端部署后）
 
 ## 下一步
 

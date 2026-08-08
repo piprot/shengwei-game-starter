@@ -22,28 +22,16 @@ check(
   "render.yaml defines the web service",
   /adaptive-ascent-server/.test(render)
 );
-check(
-  "render.yaml defines PostgreSQL",
-  /databases:/.test(render)
-);
-check(
-  "render.yaml generates JWT_SECRET",
-  /JWT_SECRET/.test(render)
-);
+check("render.yaml defines PostgreSQL", /databases:/.test(render));
+check("render.yaml generates JWT_SECRET", /JWT_SECRET/.test(render));
 
 const dockerfile = read("Dockerfile");
 check("Dockerfile exists", dockerfile.length > 0);
-check(
-  "Dockerfile runs the Node server",
-  /server\/index\.mjs/.test(dockerfile)
-);
+check("Dockerfile runs the Node server", /server\/index\.mjs/.test(dockerfile));
 
 const ci = read(".github/workflows/ci.yml");
 check("CI workflow exists", ci.length > 0);
-check(
-  "CI injects VITE_ROOM_SERVER_URL",
-  /VITE_ROOM_SERVER_URL/.test(ci)
-);
+check("CI injects VITE_ROOM_SERVER_URL", /VITE_ROOM_SERVER_URL/.test(ci));
 
 const pkg = read("package.json");
 check("package.json exists", pkg.length > 0);
@@ -51,10 +39,7 @@ check(
   "package.json has server script",
   /"server"\s*:\s*"node server\/index\.mjs"/.test(pkg)
 );
-check(
-  "package.json has test:server",
-  /"test:server"/.test(pkg)
-);
+check("package.json has test:server", /"test:server"/.test(pkg));
 
 const server = read("server/index.mjs");
 check(
@@ -65,10 +50,7 @@ check(
   "server exposes JSON health endpoint",
   /dbHealth\(\)/.test(server) && /status:/.test(server)
 );
-check(
-  "server signs leaderboard scores",
-  /createScoreSignature/.test(server)
-);
+check("server signs leaderboard scores", /createScoreSignature/.test(server));
 
 const validation = read("server/validation.mjs");
 check("server has save schema validation", /validateSave/.test(validation));
@@ -80,10 +62,7 @@ check(
 );
 
 const schema = read("server/schema.sql");
-check(
-  "schema stores leaderboard score signature",
-  /score_sig/.test(schema)
-);
+check("schema stores leaderboard score signature", /score_sig/.test(schema));
 
 const failed = checks.filter((item) => !item.ok);
 console.log(JSON.stringify(checks, null, 2));

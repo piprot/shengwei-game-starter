@@ -131,7 +131,7 @@ try {
     await page.click("button.primary[data-action=open-map]");
     await page.waitForSelector("text=Diagnose");
     const englishMapOverflow = await overflow(page);
-    await page.click("text=First Week");
+    await page.locator(".node-row:not([disabled])").first().click();
     await page.waitForSelector("text=Current Test");
     const englishStoryOverflow = await overflow(page);
     const englishErrors = errors.length - errorsBeforeEnglish;

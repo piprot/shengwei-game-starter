@@ -95,8 +95,8 @@ for (const question of ASSESSMENT_QUESTIONS) {
 for (const arc of SIDE_QUEST_ARCS) {
   hasEnglish(SIDE_ARC_EN, arc.id, "side arc");
 }
-for (const id of ["expert_3", "side_1", "duel_1", "chapter_1", "rank_20"]) {
-  hasEnglish(CHALLENGE_EN, id, "challenge");
+for (const challengeId of Object.keys(CHALLENGE_EN)) {
+  hasEnglish(CHALLENGE_EN, challengeId, "challenge");
 }
 
 if (problems.length > 0) {
@@ -115,6 +115,7 @@ console.log(
       achievements: ACHIEVEMENTS.length,
       assessmentQuestions: ASSESSMENT_QUESTIONS.length,
       roleOptionSets: Object.keys(ROLE_OPTION_EN).length * 3,
+      challenges: Object.keys(CHALLENGE_EN).length,
       status: "full"
     },
     null,

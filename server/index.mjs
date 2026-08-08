@@ -18,7 +18,9 @@ import {
   getAccountByUsername,
   getAccountByRecovery,
   initDb,
+  isTokenRevoked,
   leaderboard as dbLeaderboard,
+  revokeToken,
   upsertAccount
 } from "./db.mjs";
 import { cleanSave, serverAbilityScore, validateSave } from "./validation.mjs";
@@ -68,6 +70,17 @@ const wss = new WebSocketServer({
 const rooms = new Map();
 const matchQueue = [];
 const rateBuckets = new Map();
+const revokedTokens = new Set();
+
+async function isRevoked(token) {
+  if (revokedTokens.has(token)) return true;
+  return dbEnabled ? await isTokenRevoked(token) : false;
+}
+
+async function resolveAccount(token) {
+  if (await isRevoked(token)) return null;
+  return dbEnabled ? await getAccount(token) : accountForToken(token);
+}
 
 function consumeRate(key, limit, windowMs) {
   const now = Date.now();
@@ -180,6 +193,7 @@ const roomCleanup = setInterval(() => {
 roomCleanup.unref?.();
 
 function accountForToken(token) {
+  if (revokedTokens.has(token)) return null;
   return store.accounts[token];
 }
 
@@ -308,9 +322,7 @@ wss.on("connection", (socket, request) => {
           send(socket, { type: "error", message: "Token 无效或已过期" });
           return;
         }
-        const account = dbEnabled
-          ? await getAccount(token)
-          : accountForToken(token);
+        const account = await resolveAccount(token);
         if (!account) {
           send(socket, { type: "error", message: "账号不存在" });
           return;
@@ -400,7 +412,7 @@ wss.on("connection", (socket, request) => {
           send(socket, { type: "error", message: "Token 无效或已过期" });
           return;
         }
-        const account = dbEnabled ? await getAccount(token) : accountForToken(token);
+        const account = await resolveAccount(token);
         if (!account) {
           send(socket, { type: "error", message: "账号不存在" });
           return;
@@ -439,6 +451,20 @@ wss.on("connection", (socket, request) => {
           persist();
         }
         send(socket, { type: "save_ok" });
+        break;
+      }
+      case "logout": {
+        const token = String(message.token || "");
+        if (!verifyToken(token)) {
+          send(socket, { type: "error", message: "Token 无效或已过期" });
+          return;
+        }
+        revokedTokens.add(token);
+        if (dbEnabled) {
+          await revokeToken(token);
+        }
+        socket.accountToken = undefined;
+        send(socket, { type: "logged_out" });
         break;
       }
       case "leaderboard": {

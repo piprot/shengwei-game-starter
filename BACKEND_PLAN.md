@@ -78,7 +78,7 @@ npm run test:server
 
 上线前仍需补齐：
 
-- Token 刷新与会话撤销
+- Token 刷新已完成；会话撤销已加入 `logout`，并写入 `revoked_tokens` 表（PostgreSQL 模式重启后仍生效）
 - HTTPS / WSS
 - 数据库迁移与备份
 - 排行榜客户端验签/防重复提交

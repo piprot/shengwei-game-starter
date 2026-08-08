@@ -227,3 +227,86 @@ export function unlockedCount(save: SaveState): number {
     isAchievementUnlocked(save, achievement.id)
   ).length;
 }
+
+/** 成就进度（未解锁时给玩家可见的剩余目标）。 */
+export function achievementProgress(
+  save: SaveState,
+  id: string
+): { current: number; target: number } {
+  if (id === "first_step") return { current: save.playCount, target: 1 };
+  if (id === "assessment_done")
+    return { current: save.assessmentScore > 0 ? 1 : 0, target: 1 };
+  if (id === "training_first")
+    return { current: save.completedTraining.length, target: 1 };
+  if (id === "training_four")
+    return { current: save.completedTraining.length, target: 4 };
+  if (id === "training_all")
+    return { current: save.completedTraining.length, target: 10 };
+  if (id === "trial_first")
+    return { current: save.trialCleared.length, target: 1 };
+  if (id === "trial_five")
+    return { current: save.trialCleared.length, target: 5 };
+  if (id === "trial_all")
+    return { current: save.trialCleared.length, target: TRIAL_STAGES.length };
+  if (id === "mba_clear")
+    return {
+      current: save.trialCleared.filter((trialId) => trialId.startsWith("mba_"))
+        .length,
+      target: 1
+    };
+  if (id === "hidden_route")
+    return { current: save.hiddenRoutes.length, target: 1 };
+  if (id === "alternate_ending")
+    return { current: save.alternateEndings.length, target: 1 };
+  if (id.startsWith("chapter_")) {
+    const chapterId = Number(id.split("_")[1]);
+    const record = save.chapterRecords.find(
+      (item) => item.chapterId === chapterId
+    );
+    return {
+      current: record ? record.completedNodeIds.length : 0,
+      target: 2
+    };
+  }
+  if (id === "perfect_chapter") {
+    const best = Math.max(0, ...save.chapterRecords.map((record) => record.stars));
+    return { current: Math.min(1, best / 220), target: 1 };
+  }
+  if (id === "all_side") {
+    const arcNodes = SIDE_QUEST_ARCS.flatMap((arc) => arc.nodes);
+    return {
+      current: arcNodes.filter((nodeId) =>
+        save.completedSideQuests.includes(nodeId)
+      ).length,
+      target: arcNodes.length
+    };
+  }
+  if (id.startsWith("side_")) {
+    const arc = SIDE_QUEST_ARCS.find(
+      (item) => item.id === id.replace("side_", "")
+    );
+    if (arc) {
+      return {
+        current: arc.nodes.filter((nodeId) =>
+          save.completedSideQuests.includes(nodeId)
+        ).length,
+        target: arc.nodes.length
+      };
+    }
+  }
+  if (id === "duel_winner") return { current: save.duelWins, target: 1 };
+  if (id === "duel_ten")
+    return { current: save.duelWins + save.duelLosses, target: 10 };
+  if (id === "rank_leader")
+    return { current: totalAbilityLevels(save.profile.abilities), target: 38 };
+  if (id === "role_ending") {
+    const record = save.chapterRecords.find((item) => item.chapterId === 9);
+    return {
+      current: record ? record.completedNodeIds.length : 0,
+      target: 2
+    };
+  }
+  if (id === "master")
+    return { current: totalAbilityLevels(save.profile.abilities), target: 48 };
+  return { current: 0, target: 1 };
+}

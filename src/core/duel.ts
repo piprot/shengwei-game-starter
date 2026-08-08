@@ -55,7 +55,11 @@ export class DuelEngine {
       );
       const quality =
         option.quality === "expert" ? 1 : option.quality === "partial" ? 0.55 : 0.2;
-      return quality * (2 + focus) + Math.random() * 0.35;
+      return (
+        quality * (2 + focus) +
+        resourceBonus(player) / 40 +
+        Math.random() * 0.35
+      );
     });
     const bestIndex = relevant.indexOf(Math.max(...relevant));
     this.pick(playerIndex, bestIndex);
@@ -122,14 +126,20 @@ export class DuelEngine {
     return Math.round(
       base +
         relevantLevel * 4 +
-        profile.resources.energy / 15 +
+        resourceBonus(profile) +
         Math.min(15, combo * 5)
     );
   }
 }
 
-export function seededIndex(seed: number): number {
-  return Math.abs(Math.floor(seed * 7919)) % 100000;
+/** 四项资源的综合加成：让 1v1 不再只由精力和能力决定。 */
+function resourceBonus(profile: DuelProfile): number {
+  return (
+    profile.resources.energy / 15 +
+    profile.resources.trust / 25 +
+    profile.resources.influence / 30 +
+    profile.resources.capital / 35
+  );
 }
 
 export function duelSeed(): number {

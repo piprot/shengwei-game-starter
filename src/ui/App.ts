@@ -9,6 +9,7 @@ import {
 } from "../core/abilities";
 import {
   ACHIEVEMENTS,
+  achievementProgress,
   isAchievementUnlocked,
   unlockedCount
 } from "../core/achievements";
@@ -35,6 +36,7 @@ import {
   buildDuelProfile,
   chapterStarCount,
   clamp,
+  consumeCorruptSaveNotice,
   createProfile,
   decisionProfile,
   importSaveJson,
@@ -106,6 +108,7 @@ import {
 import { hiddenRouteSteps } from "../core/hiddenRoutes";
 import { ROLE_OPTION_SETS } from "../core/roleOptions";
 import { uiString, type Language } from "../core/i18n";
+import { trackEvent } from "../core/analytics";
 import {
   ABILITY_EN,
   ABILITY_DETAIL_EN,
@@ -294,12 +297,36 @@ export class AdaptiveGameApp {
     this.audio.setMuted(this.muted);
     document.documentElement.style.fontSize = `${this.fontScale * 100}%`;
     this.save = loadSave();
+    trackEvent("session_start", { language: this.language });
+    const corruptSave = consumeCorruptSaveNotice();
+    if (corruptSave) {
+      window.setTimeout(() => {
+        window.alert(
+          this.language === "en"
+            ? "Local save was damaged. A backup was restored when possible. Export your progress now to avoid losing it."
+            : "检测到本地存档损坏，已尽可能恢复备份。请立即导出当前进度，避免丢失。"
+        );
+      }, 0);
+    }
     this.restoreFromHash();
     this.root.addEventListener("click", (event) => this.handleClick(event));
     this.root.addEventListener("submit", (event) => this.handleSubmit(event));
     this.root.addEventListener("change", (event) => this.handleChange(event));
     document.addEventListener("keydown", (event) => this.handleShortcut(event));
     this.show("menu");
+  }
+
+  /** 显式保存入口：写失败时立刻提醒玩家导出，避免静默丢档。 */
+  private persistSave(): boolean {
+    const ok = saveState(this.save);
+    if (!ok) {
+      window.alert(
+        this.language === "en"
+          ? "Save failed. Export your progress before continuing."
+          : "存档写入失败，请先导出进度再继续。"
+      );
+    }
+    return ok;
   }
 
   private handleShortcut(event: KeyboardEvent): void {
@@ -1081,14 +1108,34 @@ export class AdaptiveGameApp {
           ${ACHIEVEMENTS.map((achievement) => {
             const done = isAchievementUnlocked(this.save, achievement.id);
             const view = this.achievementDisplay(achievement.id);
+            const progress = achievementProgress(this.save, achievement.id);
+            const pct = Math.min(
+              100,
+              Math.round((progress.current / progress.target) * 100)
+            );
             return `
               <div class="achievement-card ${done ? "unlocked" : "locked"}">
                 <span class="achievement-icon">${achievement.icon}</span>
                 <div>
                   <h2>${view.name}</h2>
                   <p>${view.description}</p>
+                  <div class="achievement-card-progress" aria-label="${escapeHtml(
+                    done
+                      ? this.language === "en"
+                        ? "Unlocked"
+                        : "已解锁"
+                      : `${progress.current} / ${progress.target}`
+                  )}">
+                    <i style="width:${done ? 100 : pct}%"></i>
+                  </div>
                 </div>
-                <small>${done ? (this.language === "en" ? "Unlocked" : "已解锁") : (this.language === "en" ? "Locked" : "未解锁")}</small>
+                <small>${
+                  done
+                    ? this.language === "en"
+                      ? "Unlocked"
+                      : "已解锁"
+                    : `${progress.current} / ${progress.target}`
+                }</small>
               </div>
             `;
           }).join("")}
@@ -1295,7 +1342,7 @@ export class AdaptiveGameApp {
             </div>
             <div class="random-event-panel">
               <h3>${this.t("randomEvent")}</h3>
-              ${
+              ${ 
                 availableRandom
                   ? `
                     <p>${this.t("randomAvailable")}</p>
@@ -1303,6 +1350,26 @@ export class AdaptiveGameApp {
                   `
                   : `<p class="muted">${this.t("randomDone")}</p>`
               }
+            </div>
+            <div class="event-book-panel">
+              <h3>${this.language === "en" ? "Event Log" : "事件簿"}</h3>
+              <p class="muted">${
+                this.language === "en"
+                  ? `Completed ${this.save.completedRandomEvents.length} / ${RANDOM_EVENT_IDS.length} random events`
+                  : `已完成 ${this.save.completedRandomEvents.length} / ${RANDOM_EVENT_IDS.length} 个随机事件`
+              }</p>
+              <div class="event-book-list">
+                ${RANDOM_EVENT_IDS.map((id) => {
+                  const done = this.save.completedRandomEvents.includes(id);
+                  let title = id;
+                  try {
+                    title = this.storyNodeDisplay(getNode(id)).title;
+                  } catch {
+                    // keep id
+                  }
+                  return `<span class="${done ? "done" : ""}" title="${escapeAttr(title)}">${done ? "✓" : "○"}${escapeHtml(title)}</span>`;
+                }).join("")}
+              </div>
             </div>
             <div class="mini-panel">
               <h3>${this.t("currentProgress")}</h3>
@@ -1358,6 +1425,24 @@ export class AdaptiveGameApp {
       </div>`;
   }
 
+  /** 上一章章末路线横幅：让玩家看到选择真的带到了下一章。 */
+  private routeBannerMarkup(chapterId: number): string {
+    const route = this.save.routePath[chapterId - 1];
+    if (!route) return "";
+    const labelKey =
+      route === "expert"
+        ? "routeExpert"
+        : route === "risk"
+          ? "routeRisk"
+          : "routePartial";
+    return `
+      <div class="route-banner" role="status">
+        <strong>${escapeHtml(this.t("routeBannerPrefix"))}</strong>
+        <span>${escapeHtml(this.t(labelKey))}</span>
+      </div>
+    `;
+  }
+
   private renderStory(): void {
     if (!this.storyNodeId) {
       this.show("map");
@@ -1371,7 +1456,7 @@ export class AdaptiveGameApp {
     const showOnboarding = this.save.playCount === 0 && !showingOutcome;
     if (!showingOutcome && !this.replayMode) {
       this.save.lastStoryNodeId = node.id;
-      saveState(this.save);
+      this.persistSave();
     }
     const relevantAbilities = [
       ...new Set(
@@ -1392,6 +1477,7 @@ export class AdaptiveGameApp {
         </div>
       </header>
       <main class="story-shell" aria-label="${this.language === "en" ? "Story scenario" : "剧情情境"}">
+        ${this.routeBannerMarkup(node.chapterId)}
         ${this.replayMode ? `<button class="link replay-exit" data-action="open-map">${this.t("replayExit")}</button>` : ""}
         <button class="link back-link" data-action="open-map">${this.t("backToMap")}</button>
         <section class="story-art">
@@ -1537,7 +1623,25 @@ export class AdaptiveGameApp {
           <p class="eyebrow">${this.language === "en" ? `Chapter ${chapter.code} ${this.t("chapterComplete")}` : `第 ${chapter.code} 章完成`}</p>
           <h1>${this.chapterDisplay(chapter).title}</h1>
           <p class="transition-summary">${escapeHtml(this.chapterReflectionText(chapter.id))}</p>
-          ${
+          <div class="route-choice-panel">
+            <h3>${this.t("routeTitle")}</h3>
+            <p class="muted">${this.t("routeHint")}</p>
+            <div class="route-choice-actions">
+              ${(["expert", "risk", "partial"] as const)
+                .map((route) => {
+                  const selected = this.save.routePath[chapter.id] === route;
+                  const labelKey =
+                    route === "expert"
+                      ? "routeExpert"
+                      : route === "risk"
+                        ? "routeRisk"
+                        : "routePartial";
+                  return `<button class="${selected ? "selected" : ""}" data-action="choose-route" data-chapter="${chapter.id}" data-route="${route}">${this.t(labelKey)}</button>`;
+                })
+                .join("")}
+            </div>
+          </div>
+          ${ 
             next
               ? `
                 <div class="next-chapter">
@@ -2847,6 +2951,10 @@ export class AdaptiveGameApp {
     } else if (decision.counts.partial >= 8) {
       style = "partial";
     }
+    const finalRoute = this.save.routePath[9];
+    if (finalRoute === "expert" || finalRoute === "risk" || finalRoute === "partial") {
+      style = finalRoute;
+    }
     const styleLabels = {
       expert: en ? "Precise" : "精准决策",
       risk: en ? "High-Pressure" : "高压破局",
@@ -3053,6 +3161,11 @@ export class AdaptiveGameApp {
             engine.scores[playerIndex],
             engine.scores[opponentIndex]
           );
+          trackEvent("duel_result", {
+            mode: this.duelMode,
+            won: humanWon,
+            rounds: engine.roundCount
+          });
         }
       }
       const result = engine.toResult();
@@ -3176,6 +3289,11 @@ export class AdaptiveGameApp {
       case "open-node": {
         const nodeId = actionTarget.dataset.node;
         if (nodeId) {
+          // 已完成节点只用于展示，不可再次结算；重打请走 replay-chapter。
+          if (isNodeComplete(this.save, nodeId)) {
+            this.audio.ui();
+            return;
+          }
           this.audio.ui();
           this.replayMode = false;
           this.storyNodeId = nodeId;
@@ -3203,6 +3321,11 @@ export class AdaptiveGameApp {
         if (!nodeId) break;
         try {
           const node = getNode(nodeId);
+          if (isNodeComplete(this.save, node.id)) {
+            this.save.lastStoryNodeId = undefined;
+            this.persistSave();
+            break;
+          }
           this.audio.ui();
           this.replayMode = false;
           this.storyNodeId = node.id;
@@ -3218,7 +3341,7 @@ export class AdaptiveGameApp {
           this.startRoundTimer();
         } catch {
           this.save.lastStoryNodeId = undefined;
-          saveState(this.save);
+          this.persistSave();
         }
         break;
       }
@@ -3490,6 +3613,12 @@ export class AdaptiveGameApp {
           scored.correct,
           scored.total
         );
+        trackEvent("training_result", {
+          abilityId: this.trainingAbilityId,
+          correct: scored.correct,
+          total: scored.total,
+          firstComplete: result.firstComplete
+        });
         this.trainingResult = { ...result, answered: scored.answered };
         this.trainingStage = "result";
         if (result.correct === scored.total) {
@@ -3580,6 +3709,9 @@ export class AdaptiveGameApp {
         break;
       }
       case "cloud-logout":
+        if (this.cloudToken && this.roomClient) {
+          this.roomClient.logout(this.cloudToken);
+        }
         this.cloudToken = "";
         this.cloudRecoveryCode = "";
         this.cloudAccountName = undefined;
@@ -3659,6 +3791,7 @@ export class AdaptiveGameApp {
           )
         ) {
           this.save = resetSave();
+          trackEvent("profile_reset");
           this.pendingRole = "highPotential";
           this.show("profile");
         }
@@ -4151,7 +4284,8 @@ export class AdaptiveGameApp {
             challengeId
           ];
           this.save.masteryPoints += reward;
-          saveState(this.save);
+          this.persistSave();
+          trackEvent("daily_claim", { challengeId });
           this.audio.expert();
           this.renderMap();
         }
@@ -4159,7 +4293,7 @@ export class AdaptiveGameApp {
       }
       case "toggle-pressure":
         this.save.highPressureMode = !this.save.highPressureMode;
-        saveState(this.save);
+        this.persistSave();
         this.audio.ui();
         this.renderMap();
         break;
@@ -4170,7 +4304,7 @@ export class AdaptiveGameApp {
         if (difficulty === "normal" || difficulty === "pressure" || difficulty === "extreme") {
           this.audio.ui();
           this.save.difficulty = difficulty;
-          saveState(this.save);
+          this.persistSave();
           if (this.view === "settings") {
             this.renderSettings();
           } else {
@@ -4204,6 +4338,20 @@ export class AdaptiveGameApp {
         this.interferenceText = undefined;
         this.show("map");
         break;
+      case "choose-route": {
+        const chapterId = Number(actionTarget.dataset.chapter);
+        const route = actionTarget.dataset.route;
+        if (
+          Number.isFinite(chapterId) &&
+          (route === "expert" || route === "risk" || route === "partial")
+        ) {
+          this.save.routePath[chapterId] = route;
+          this.persistSave();
+          trackEvent("route_choice", { chapterId, route });
+          this.renderChapterTransition();
+        }
+        break;
+      }
       case "continue-transition":
         if (this.pendingChapterTransition) {
           this.audio.ui();
@@ -4334,6 +4482,7 @@ export class AdaptiveGameApp {
           )
         ) {
           this.save = resetSave();
+          trackEvent("profile_reset");
           this.show("profile");
         }
         break;
@@ -4413,6 +4562,10 @@ export class AdaptiveGameApp {
       this.save.achievements = [...new Set(this.save.achievements)];
     }
     activateProfile(this.save, this.pendingProfile);
+    trackEvent("profile_created", {
+      role: this.save.profile.role,
+      assessment: applyAssessment
+    });
     this.pendingProfile = undefined;
     this.audio.startAmbient();
     this.audio.setMusicMuted(this.musicMuted);
@@ -4460,6 +4613,10 @@ export class AdaptiveGameApp {
       this.renderStory();
       return;
     }
+    if (isNodeComplete(this.save, this.storyNodeId)) {
+      this.renderStory();
+      return;
+    }
     const rawNode = getNode(this.storyNodeId);
     if (
       optionGateFor(this.save, rawNode.options[optionIndex], rawNode.chapterId)
@@ -4472,6 +4629,11 @@ export class AdaptiveGameApp {
       isAchievementUnlocked(this.save, achievement.id)
     ).map((achievement) => achievement.id);
     const outcome = applyStoryChoice(this.save, this.storyNodeId, optionIndex);
+    trackEvent("story_choice", {
+      nodeId: this.storyNodeId,
+      quality: outcome.option.quality,
+      chapterId: getNode(this.storyNodeId).chapterId
+    });
     const afterIds = ACHIEVEMENTS.filter((achievement) =>
       isAchievementUnlocked(this.save, achievement.id)
     ).map((achievement) => achievement.id);
@@ -5384,7 +5546,7 @@ export class AdaptiveGameApp {
               const unlocked = this.canEnterSideNode(nodeId);
               const nodeDone = isNodeComplete(this.save, nodeId);
               return `
-                <button class="quest-node ${nodeDone ? "done" : ""} ${unlocked ? "" : "locked"}" data-action="open-node" data-node="${nodeId}" ${unlocked ? "" : "disabled"}>
+                <button class="quest-node ${nodeDone ? "done" : ""} ${unlocked ? "" : "locked"}" data-action="open-node" data-node="${nodeId}" ${unlocked && !nodeDone ? "" : "disabled aria-disabled=\"true\""}>
                   <span>${index + 1}</span>
                   <div>
                     <strong>${escapeHtml(nodeView.title)}</strong>
@@ -5447,7 +5609,7 @@ export class AdaptiveGameApp {
         ? "Available"
         : "可进入";
     return `
-      <button class="node-row ${done ? "done" : ""}" data-action="open-node" data-node="${node.id}">
+      <button class="node-row ${done ? "done" : ""}" data-action="open-node" data-node="${node.id}" ${done ? "disabled aria-disabled=\"true\"" : ""}>
         <span class="node-state">${done ? "✓" : node.kind === "side" ? "支" : chapter.code}</span>
         <span>
           <strong>${escapeHtml(view.title)}</strong>
