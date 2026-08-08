@@ -121,6 +121,7 @@ import {
 } from "../core/trials";
 import { hiddenRouteSteps } from "../core/hiddenRoutes";
 import { ROLE_OPTION_SETS } from "../core/roleOptions";
+import { branchVariantFor } from "../core/branchVariants";
 import { ROLE_ROADMAPS } from "../core/roleTraining";
 import { uiString, type Language } from "../core/i18n";
 import { readAnalyticsEvents, trackEvent } from "../core/analytics";
@@ -592,6 +593,19 @@ export class AdaptiveGameApp {
         context: branch.context,
         stake: branch.stake,
         options: node.options.map((option, index) => {
+          const handwritten = branchVariantFor(
+            node.chapterId,
+            option.quality,
+            "en"
+          );
+          if (handwritten) {
+            return {
+              ...option,
+              label: handwritten.label,
+              summary: handwritten.summary,
+              feedback: handwritten.feedback
+            };
+          }
           const set = ROLE_OPTION_EN[this.save.profile.role][option.quality];
           const sourceSet =
             ROLE_OPTION_SETS[this.save.profile.role][option.quality];
@@ -1662,6 +1676,11 @@ export class AdaptiveGameApp {
       </header>
       <main class="story-shell" style="--chapter-art:url('./art/chapter-${chapter.id}.svg')" aria-label="${this.language === "en" ? "Story scenario" : "剧情情境"}">
         ${this.routeBannerMarkup(node.chapterId)}
+        ${
+          node.chapterId === 4 || node.chapterId === 7
+            ? `<div class="route-checkpoint" role="status">${this.language === "en" ? "Route checkpoint: your earlier choices are now shaping upcoming events and endings." : "路线分叉：此前的选择正在改变后续事件与结局权重。"}</div>`
+            : ""
+        }
         ${this.replayMode ? `<button class="link replay-exit" data-action="open-map">${this.t("replayExit")}</button>` : ""}
         <button class="link back-link" data-action="open-map">${this.t("backToMap")}</button>
         <section class="story-art">

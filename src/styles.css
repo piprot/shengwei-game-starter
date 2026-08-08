@@ -3600,6 +3600,16 @@ h2 {
   }
 }
 
+.route-checkpoint {
+  margin: 0 0 12px;
+  padding: 10px 14px;
+  border: 1px solid rgba(242, 193, 78, 0.4);
+  border-radius: 8px;
+  background: rgba(242, 193, 78, 0.08);
+  color: #f2c14e;
+  font-size: 13px;
+}
+
 /* v1.1 release polish: scene art, save guidance, retry gates, duel resume */
 .story-shell,
 .map-shell {

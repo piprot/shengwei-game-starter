@@ -6,6 +6,7 @@ import type {
   StoryNode
 } from "./types";
 import { ROLE_OPTION_SETS } from "./roleOptions.ts";
+import { branchVariantFor } from "./branchVariants.ts";
 
 export const CHAPTERS: ChapterDef[] = [
   {
@@ -3925,7 +3926,9 @@ function buildBranchNodes(): void {
         context: `${template.context} ${roleLens(role)}`,
         stake: template.stake,
         options: BRANCH_QUALITIES.map((quality, index) => {
-          const view = ROLE_OPTION_SETS[role][quality][index % 3];
+          const handwritten = branchVariantFor(chapter.id, quality, "zh");
+          const view =
+            handwritten ?? ROLE_OPTION_SETS[role][quality][index % 3];
           const effects: Partial<Record<AbilityId, number>> =
             quality === "expert"
               ? { [chapter.focus[0]]: 3, [chapter.focus[1]]: 1 }
@@ -3944,7 +3947,9 @@ function buildBranchNodes(): void {
                   ? { energy: -6, trust: 2, influence: 2 }
                   : { energy: -7, trust: -5, influence: -2 },
             feedback: view.feedback,
-            theory: CHAPTER_REFLECTIONS[chapter.id]
+            theory: handwritten
+              ? handwritten.theory
+              : CHAPTER_REFLECTIONS[chapter.id]
           };
         })
       });
