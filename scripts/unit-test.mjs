@@ -270,6 +270,16 @@ assert(
   randomEventAffinity("r1", { expert: 0, risk: 0, partial: 1 }) === 1,
   "gradual-preference events should react to partial ratio"
 );
+const routeEvent = nextRandomEvent({
+  completedRandomEvents: [],
+  unlockedChapters: [2, 3],
+  decisionHistory: [],
+  routePath: { 1: "expert" }
+});
+assert(
+  typeof routeEvent === "string" && routeEvent.length > 0,
+  "nextRandomEvent should accept routePath and still return an event"
+);
 
 for (const role of Object.keys(ROLE_OPTION_SETS)) {
   for (const quality of ["expert", "partial", "risk"]) {

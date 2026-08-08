@@ -2936,21 +2936,27 @@ export const RANDOM_EVENT_META: Record<string, { weight: number; chapterId: numb
   r20: { weight: 5, chapterId: 9 }
 };
 
+function randomEventCategory(eventId: string): "expert" | "risk" | "partial" {
+  const expertEvents = new Set(["r2", "r7", "r15", "r18", "r20"]);
+  const riskEvents = new Set(["r3", "r5", "r12", "r17", "r19"]);
+  if (expertEvents.has(eventId)) return "expert";
+  if (riskEvents.has(eventId)) return "risk";
+  return "partial";
+}
+
 /** 决策风格偏好：让随机事件派发受前序选择影响（轻量剧情分叉）。 */
 export function randomEventAffinity(
   eventId: string,
   ratios: { expert: number; risk: number; partial: number }
 ): number {
-  const expertEvents = new Set(["r2", "r7", "r15", "r18", "r20"]);
-  const riskEvents = new Set(["r3", "r5", "r12", "r17", "r19"]);
-  if (expertEvents.has(eventId)) return ratios.expert;
-  if (riskEvents.has(eventId)) return ratios.risk;
-  return ratios.partial;
+  return ratios[randomEventCategory(eventId)];
 }
 
 export function nextRandomEvent(save: {
   completedRandomEvents: string[];
   unlockedChapters: number[];
+  decisionHistory?: Array<{ nodeId: string; quality: OptionQuality }>;
+  routePath?: Record<number, "expert" | "risk" | "partial">;
 }): string | undefined {
   const eligible = RANDOM_EVENT_IDS.filter((id) => {
     const meta = RANDOM_EVENT_META[id];
@@ -2979,6 +2985,7 @@ function weightedEventWeight(
     completedRandomEvents: string[];
     unlockedChapters: number[];
     decisionHistory?: Array<{ nodeId: string; quality: OptionQuality }>;
+    routePath?: Record<number, "expert" | "risk" | "partial">;
   }
 ): number {
   const history = save.decisionHistory ?? [];
@@ -2986,7 +2993,12 @@ function weightedEventWeight(
   const expert = history.filter((record) => record.quality === "expert").length / total;
   const risk = history.filter((record) => record.quality === "risk").length / total;
   const partial = history.filter((record) => record.quality === "partial").length / total;
-  const affinity = randomEventAffinity(id, { expert, risk, partial });
+  const route = Object.values(save.routePath ?? {}).at(-1) ?? "";
+  const routeBoost = randomEventCategory(id) === route ? 0.9 : 0;
+  const affinity = Math.max(
+    randomEventAffinity(id, { expert, risk, partial }),
+    routeBoost
+  );
   return RANDOM_EVENT_META[id].weight * (0.8 + affinity * 0.7);
 }
 
