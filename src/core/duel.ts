@@ -1,4 +1,9 @@
-import { ABILITY_ORDER, ROLES, abilityLevel } from "./abilities.ts";
+import {
+  ABILITY_ORDER,
+  ROLES,
+  abilityLevel,
+  createDefaultAbilities
+} from "./abilities.ts";
 import { duelNodes } from "./story.ts";
 import type {
   AbilityId,
@@ -8,9 +13,21 @@ import type {
   StoryNode
 } from "./types.ts";
 
+export const DUEL_ROUND_TIMEOUT_MS = 60000;
+
+export interface DuelSnapshot {
+  players: DuelProfile[];
+  nodes: StoryNode[];
+  roundCount: number;
+  currentRound: number;
+  scores: [number, number];
+  picks: [number | null, number | null];
+  roundResults: DuelResult["roundResults"];
+}
+
 export class DuelEngine {
-  readonly players: [DuelProfile, DuelProfile];
-  readonly nodes: StoryNode[];
+  players: [DuelProfile, DuelProfile];
+  nodes: StoryNode[];
   readonly roundCount: number;
   currentRound = 0;
   scores: [number, number] = [0, 0];
@@ -48,22 +65,94 @@ export class DuelEngine {
   aiPick(playerIndex: 0 | 1): number {
     const player = this.players[playerIndex];
     const node = this.node;
-    const relevant = node.options.map((option) => {
+    const strength = player.strength ?? 2;
+    const expertChance = strength <= 1 ? 0.45 : strength <= 3 ? 0.65 : 0.85;
+    const expertIndexes: number[] = [];
+    const fallbackIndexes: number[] = [];
+    node.options.forEach((option, index) => {
+      if (option.quality === "expert") {
+        expertIndexes.push(index);
+      } else {
+        fallbackIndexes.push(index);
+      }
+    });
+    const preferExpert = Math.random() < expertChance;
+    const pool =
+      preferExpert && expertIndexes.length > 0
+        ? expertIndexes
+        : fallbackIndexes.length > 0
+          ? fallbackIndexes
+          : expertIndexes;
+    const scored = pool.map((index) => {
+      const option = node.options[index];
       const focus = (Object.keys(option.effects) as AbilityId[]).reduce(
         (best, id) => Math.max(best, abilityLevel(player.abilities[id])),
         1
       );
       const quality =
-        option.quality === "expert" ? 1 : option.quality === "partial" ? 0.55 : 0.2;
-      return (
-        quality * (2 + focus) +
-        resourceBonus(player) / 40 +
-        Math.random() * 0.35
-      );
+        option.quality === "expert"
+          ? 1
+          : option.quality === "partial"
+            ? 0.55
+            : 0.2;
+      return {
+        index,
+        score:
+          quality * (2 + focus) +
+          resourceBonus(player) / 40 +
+          Math.random() * 0.35
+      };
     });
-    const bestIndex = relevant.indexOf(Math.max(...relevant));
+    const bestIndex = scored.reduce((best, current) =>
+      current.score > best.score ? current : best
+    ).index;
     this.pick(playerIndex, bestIndex);
     return bestIndex;
+  }
+
+  /** 鍥炲悎瓒呮椂鏃跺己鍒朵负鏌愪綅鐜╁鏀惧叆椋庨櫓鍥炲悎锛岄槻姝㈠弻鏂逛笉閫夋垨涓€鏂归€冨紑鑰屾案涔呭寕璧枫€?*/
+  forceTimeoutPick(playerIndex: 0 | 1): void {
+    if (this.picks[playerIndex] !== null) {
+      return;
+    }
+    const riskIndex = this.node.options.findIndex(
+      (option) => option.quality === "risk"
+    );
+    this.pick(
+      playerIndex,
+      riskIndex >= 0 ? riskIndex : this.node.options.length - 1
+    );
+  }
+
+  toSnapshot(): DuelSnapshot {
+    return {
+      players: [...this.players],
+      nodes: [...this.nodes],
+      roundCount: this.roundCount,
+      currentRound: this.currentRound,
+      scores: [...this.scores] as [number, number],
+      picks: [...this.picks] as [number | null, number | null],
+      roundResults: this.roundResults
+    };
+  }
+
+  static fromSnapshot(snapshot: DuelSnapshot): DuelEngine {
+    const dummy: DuelProfile = {
+      name: "",
+      role: "highPotential",
+      abilities: createDefaultAbilities(),
+      resources: { energy: 75, trust: 60, influence: 40, capital: 45 },
+      color: "#41c7c0",
+      isHuman: true
+    };
+    const engine = new DuelEngine(dummy, dummy, snapshot.roundCount, 1);
+    engine.players = snapshot.players as [DuelProfile, DuelProfile];
+    engine.nodes = snapshot.nodes;
+    engine.currentRound = snapshot.currentRound;
+    engine.scores = snapshot.scores;
+    engine.picks = snapshot.picks;
+    engine.roundResults = snapshot.roundResults;
+    return engine;
   }
 
   get finished(): boolean {

@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 900" preserveAspectRatio="xMidYMid slice">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#1a1c24"/>
+      <stop offset="0.55" stop-color="#2b3245"/>
+      <stop offset="1" stop-color="#0d1016"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="0.5" cy="0.5" r="0.6">
+      <stop offset="0" stop-color="#9fb3c8" stop-opacity="0.2"/>
+      <stop offset="1" stop-color="#9fb3c8" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <rect width="1600" height="900" fill="url(#bg)"/>
+  <rect width="1600" height="900" fill="url(#glow)"/>
+  <g stroke="#9fb3c8" stroke-opacity="0.3" stroke-width="2">
+    <path d="M180 700C400 320 700 900 900 380S1200 160 1420 520"/>
+    <path d="M300 760C520 420 780 820 1020 300S1240 200 1380 440"/>
+    <path d="M140 620C360 240 660 800 880 260S1240 120 1460 460"/>
+  </g>
+  <g fill="#f2c14e" fill-opacity="0.85">
+    <circle cx="900" cy="380" r="12"/>
+    <circle cx="420" cy="520" r="7"/>
+    <circle cx="1180" cy="360" r="7"/>
+    <circle cx="680" cy="620" r="5"/>
+  </g>
+  <g fill="#4db7d6" fill-opacity="0.7">
+    <circle cx="740" cy="280" r="5"/>
+    <circle cx="1080" cy="560" r="5"/>
+    <circle cx="500" cy="700" r="5"/>
+  </g>
+  <g fill="none" stroke="#e9826c" stroke-opacity="0.4" stroke-width="1.6">
+    <path d="M900 380l-220 140M900 380l280-20M900 380l-180 240"/>
+  </g>
+  <text x="80" y="110" fill="#e7eef2" font-size="46" font-family="Georgia, serif" font-weight="700" opacity="0.9">VIII</text>
+  <text x="80" y="150" fill="#9fb3c8" font-size="18" font-family="Verdana, sans-serif" letter-spacing="4">ADAPT</text>
+</svg>

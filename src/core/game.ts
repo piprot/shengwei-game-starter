@@ -7,7 +7,7 @@ import {
   rankForTotal,
   totalAbilityLevels
 } from "./abilities.ts";
-import { getNode } from "./story.ts";
+import { RANDOM_EVENT_IDS, getNode } from "./story.ts";
 import type {
   AbilityId,
   ChoiceOutcome,
@@ -44,9 +44,10 @@ export function roundDurationMsForDifficulty(
   return 14000;
 }
 
-export const NORMAL_DECISION_MS = 30000;
+export const NORMAL_DECISION_MS = 0;
 export const RESOURCE_STRAIN_SOFT = 30;
 export const RESOURCE_STRAIN_HARD = 15;
+export const MAX_HISTORY_LENGTH = 200;
 
 export const DEFAULT_SAVE: SaveState = {
   version: 1,
@@ -191,9 +192,11 @@ function normalizeSave(save: SaveState): SaveState {
     campaignCompletions: Number(save.campaignCompletions) || 0,
     masteryPoints: Number(save.masteryPoints) || 0,
     decisionHistory: Array.isArray(save.decisionHistory)
-      ? save.decisionHistory
+      ? save.decisionHistory.slice(-MAX_HISTORY_LENGTH)
       : [],
-    duelHistory: Array.isArray(save.duelHistory) ? save.duelHistory : [],
+    duelHistory: Array.isArray(save.duelHistory)
+      ? save.duelHistory.slice(-MAX_HISTORY_LENGTH)
+      : [],
     claimedChallenges: Array.isArray(save.claimedChallenges)
       ? save.claimedChallenges
       : [],
@@ -400,6 +403,9 @@ export function applyStoryChoice(
     chapterId: node.chapterId
   };
   save.decisionHistory.push(decisionRecord);
+  if (save.decisionHistory.length > MAX_HISTORY_LENGTH) {
+    save.decisionHistory = save.decisionHistory.slice(-MAX_HISTORY_LENGTH);
+  }
 
   for (const [abilityId, gained] of Object.entries(option.effects) as Array<
     [AbilityId, number]
@@ -445,7 +451,7 @@ export function applyStoryChoice(
     );
   } else {
     save.profile.resources.capital = clamp(
-      save.profile.resources.capital + 1,
+      save.profile.resources.capital - 1,
       0,
       100
     );
@@ -485,7 +491,8 @@ export function applyStoryChoice(
     if (record.completedNodeIds.length >= 2) {
       const chapterAchievement = `chapter_${node.chapterId}`;
       const firstComplete = !save.achievements.includes(chapterAchievement);
-      if (firstComplete) {
+      const passed = record.stars >= CHAPTER_PASS_STARS;
+      if (firstComplete && passed) {
         save.masteryPoints += 10;
         save.achievements.push(chapterAchievement);
         if (node.chapterId === 9) {
@@ -493,7 +500,11 @@ export function applyStoryChoice(
         }
       }
       const nextChapter = node.chapterId + 1;
-      if (nextChapter <= 9 && !save.unlockedChapters.includes(nextChapter)) {
+      if (
+        passed &&
+        nextChapter <= 9 &&
+        !save.unlockedChapters.includes(nextChapter)
+      ) {
         save.unlockedChapters.push(nextChapter);
       }
     }
@@ -626,7 +637,8 @@ export function optionGateFor(
   if (option.quality === "expert") {
     const abilityIds = Object.keys(option.effects ?? {}) as AbilityId[];
     if (abilityIds.length > 0) {
-      const gate = chapterId >= 8 ? 3 : chapterId >= 5 ? 2 : 1;
+      const gate =
+        chapterId >= 8 ? 4 : chapterId >= 5 ? 3 : chapterId >= 2 ? 2 : 1;
       const best = Math.max(
         ...abilityIds.map((id) => abilityLevel(save.profile.abilities[id]))
       );
@@ -667,16 +679,43 @@ export function resourceStrainFor(
   return strain;
 }
 
+/** 瀵艰嚧涓嬩竴绔犺В閿佺殑鏈€浣庡垎鏁帮紙涓€鏄燂級銆?*/
+export const CHAPTER_PASS_STARS = 100;
+
 export function chapterStarCount(stars: number): number {
-  if (stars >= 220) return 3;
-  if (stars >= 160) return 2;
-  if (stars >= 80) return 1;
+  if (stars >= 200) return 3;
+  if (stars >= 150) return 2;
+  if (stars >= CHAPTER_PASS_STARS) return 1;
   return 0;
 }
 
 export function isChapterComplete(save: SaveState, chapterId: number): boolean {
   const record = save.chapterRecords.find((item) => item.chapterId === chapterId);
   return Boolean(record && record.completedNodeIds.length >= 2);
+}
+
+/** 绔犺妭鏄惁杈惧埌涓€鏄熼棬妲涳紙鍙В閿佷笅涓€绔犮€佸彲鍏ュ骇澶嶇洏锛夈€?*/
+export function isChapterPassed(save: SaveState, chapterId: number): boolean {
+  const record = save.chapterRecords.find((item) => item.chapterId === chapterId);
+  return Boolean(
+    record &&
+      record.completedNodeIds.length >= 2 &&
+      record.stars >= CHAPTER_PASS_STARS
+  );
+}
+
+/** 宸叉瀯鎴愪絾鏈揪涓€鏄熺殑绔犺妭鍙噸鏂板啋闄╋紝娓呴櫎璇ョ珷鑺傝褰曚笌鍐崇瓥鍘嗗彶鍚庨噸鏂扮粨绠椼€?*/
+export function retryChapter(save: SaveState, chapterId: number): void {
+  save.chapterRecords = save.chapterRecords.filter(
+    (record) => record.chapterId !== chapterId
+  );
+  save.decisionHistory = save.decisionHistory.filter(
+    (record) => record.chapterId !== chapterId
+  );
+  save.achievements = save.achievements.filter(
+    (achievement) => achievement !== `chapter_${chapterId}`
+  );
+  saveState(save);
 }
 
 export function isNodeComplete(save: SaveState, nodeId: string): boolean {
@@ -755,6 +794,9 @@ export function recordDuelResult(
     won,
     timestamp: Date.now()
   });
+  if (save.duelHistory.length > MAX_HISTORY_LENGTH) {
+    save.duelHistory = save.duelHistory.slice(-MAX_HISTORY_LENGTH);
+  }
   save.bestScore = Math.max(save.bestScore ?? 0, playerScore);
   saveState(save);
   return save;
@@ -787,6 +829,10 @@ export function applyTrainingResult(
     if (save.completedTraining.length >= 10) {
       save.achievements.push("training_all");
     }
+  } else {
+    // 鍥涘埌澶嶄範缁欏皬棰濊兘閲忥紝閬垮厤鈥滀簩娆￠浂鏀剁泭鈥濓紝浣嗕笉鍐嶆彁渚涜兘鍔涚粡楠屻€?
+    save.masteryPoints += 1;
+    save.trialEnergy = clamp(save.trialEnergy + 4, 0, 100);
   }
   save.trainingScores[abilityId] = Math.max(
     save.trainingScores[abilityId] ?? 0,
@@ -823,6 +869,50 @@ export function applyDailyTrialRecovery(save: SaveState): boolean {
   );
   save.trialHp = clamp(save.trialHp + 50, 0, 100);
   save.lastTrialEnergyDate = today;
+  saveState(save);
+  return true;
+}
+
+/** 涓绘儏璧勬簮锛堢簿鍔涖€佷俊浠汇€佸奖鍝嶅姏銆佺粍缁囪祫婧愶級姣忔棩浣庨鎭㈠涓€娆★紝璁╄祫婧愮幆鏈夊彲鎰熺煡鐨勬仮澶嶈矾寰勩€?*/
+export function applyDailyResourceRecovery(save: SaveState): boolean {
+  const today = todayDateKey();
+  if (save.lastResourceDate === today) {
+    return false;
+  }
+  save.profile.resources.energy = clamp(
+    save.profile.resources.energy + 10,
+    0,
+    100
+  );
+  save.profile.resources.trust = clamp(
+    save.profile.resources.trust + 4,
+    0,
+    100
+  );
+  save.profile.resources.influence = clamp(
+    save.profile.resources.influence + 3,
+    0,
+    100
+  );
+  save.profile.resources.capital = clamp(
+    save.profile.resources.capital + 3,
+    0,
+    100
+  );
+  save.lastResourceDate = today;
+  saveState(save);
+  return true;
+}
+
+/** 闅忔満浜嬩欢鍏ㄩ儴瀹屾垚鍚庢壄鍔ㄤ簨浠舵睜锛岄噸鏂板彲鎺ヨЕ骞剁粰涓€娆″皬濂栧姳銆?*/
+export function rotateRandomEventPool(save: SaveState): boolean {
+  if (save.completedRandomEvents.length < RANDOM_EVENT_IDS.length) {
+    return false;
+  }
+  save.completedRandomEvents = [];
+  save.masteryPoints += 5;
+  save.achievements.push("random_rotation");
+  save.achievements = [...new Set(save.achievements)];
   saveState(save);
   return true;
 }
@@ -1004,7 +1094,14 @@ export function completePracticeTask(
   rewardExp: number
 ): boolean {
   if (save.completedPracticeTasks.includes(taskId)) {
-    return false;
+    // 淇偧浠诲姟鍙噸澶嶇粌涔狅紝閲嶅涔犲彧缁欏皬棰濊兘閲忥紝涓嶅啀澧炲姞鑳藉姏缁忛獙銆?
+    save.trialEnergy = clamp(
+      save.trialEnergy + Math.max(2, Math.floor(rewardEnergy / 3)),
+      0,
+      100
+    );
+    saveState(save);
+    return true;
   }
   save.completedPracticeTasks.push(taskId);
   save.trialEnergy = clamp(save.trialEnergy + rewardEnergy, 0, 100);
@@ -1057,21 +1154,31 @@ export function buildDuelProfile(
   };
 }
 
-export function buildAiProfile(role: RoleId, strength: number) {
+export function buildAiProfile(
+  role: RoleId,
+  strength: number,
+  playerAbilities?: Record<AbilityId, number>
+) {
   const base = createDefaultAbilities();
   let state = (strength * 1009 + role.charCodeAt(0) * 31 + 12345) >>> 0;
   const rand = () => {
     state = (state * 1664525 + 1013904223) >>> 0;
     return state / 4294967296;
   };
+  const playerMean = playerAbilities
+    ? ABILITY_ORDER.reduce((sum, id) => sum + (playerAbilities[id] ?? 0), 0) /
+      ABILITY_ORDER.length
+    : 6 + strength * 2;
+  const scale = 0.55 + strength * 0.22;
   for (const id of ABILITY_ORDER) {
-    base[id] = Math.floor((rand() * 6 + strength * 3 + 4) % 24);
+    const jitter = (rand() - 0.5) * (4 + strength * 2);
+    base[id] = Math.round(clamp(playerMean * scale + jitter, 0, 40));
   }
   const roleDef = ROLES[role];
   for (const [id, exp] of Object.entries(roleDef.startingAbilities) as Array<
     [AbilityId, number]
   >) {
-    base[id] += exp + strength;
+    base[id] = clamp(base[id] + exp + strength, 0, 40);
   }
   return {
     name: roleDef.shortName + "陪练",
@@ -1079,7 +1186,8 @@ export function buildAiProfile(role: RoleId, strength: number) {
     abilities: base,
     resources: { energy: 75, trust: 45, influence: 50, capital: 40 },
     color: "#e9826c",
-    isHuman: false
+    isHuman: false,
+    strength: Math.max(0, Math.min(5, strength))
   };
 }
 

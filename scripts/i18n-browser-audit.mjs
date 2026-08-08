@@ -56,6 +56,9 @@ try {
   const save = structuredClone(DEFAULT_SAVE);
   save.profileCreated = true;
   save.profile.role = "highPotential";
+  for (const abilityId of Object.keys(save.profile.abilities)) {
+    save.profile.abilities[abilityId] = 4;
+  }
   save.playCount = 1;
   save.unlockedChapters = [1, 2, 3, 4, 5, 6, 7, 8, 9];
   save.completedRandomEvents = [];

@@ -48,24 +48,33 @@ import {
   randomEventAffinity
 } from "../src/core/story.ts";
 import { ROLE_OPTION_SETS } from "../src/core/roleOptions.ts";
+import { DuelEngine } from "../src/core/duel.ts";
 import {
+  CHAPTER_PASS_STARS,
   DEFAULT_SAVE,
   NORMAL_DECISION_MS,
   PRESSURE_FACTORS,
+  applyDailyResourceRecovery,
   applyDailyTrialRecovery,
   applyStoryChoice,
+  applyTrainingResult,
   buildAiProfile,
   buyTrialEnergy,
   buyTrialEnergyWithInfluence,
+  chapterStarCount,
   computeSaveHash,
   hireTrialAlly,
   investTrialAccelerator,
+  isChapterComplete,
+  isChapterPassed,
   loadSave,
   migrateSave,
   optionGateFor,
   recordDuelResult,
   resourceStrainFor,
   resolveCloudConflict,
+  retryChapter,
+  rotateRandomEventPool,
   roundDurationMsForDifficulty,
   saveState,
   scoreQuality
@@ -345,7 +354,7 @@ for (const [resource, delta] of Object.entries(option.resources)) {
       ? { trust: 1, influence: 1 }
       : option.quality === "partial"
         ? { influence: 1 }
-        : { capital: 1 };
+        : { capital: -1 };
   const expected = Math.max(
     0,
     Math.min(100, beforeResources[resource] + (delta || 0) + (production[resource] || 0))
@@ -387,7 +396,7 @@ if (probe) {
       ? { trust: 1, influence: 1 }
       : probe.options[0].quality === "partial"
         ? { influence: 1 }
-        : { capital: 1 };
+        : { capital: -1 };
   for (const [resource, delta] of Object.entries(res)) {
     const d = delta || 0;
     const expectNormal = Math.max(
@@ -555,7 +564,7 @@ for (const difficulty of ["normal", "pressure", "extreme"]) {
       ? { trust: 1, influence: 1 }
       : probe2.options[0].quality === "partial"
         ? { influence: 1 }
-        : { capital: 1 };
+        : { capital: -1 };
   for (const [resource, delta] of Object.entries(probeRes)) {
     const d = delta || 0;
     const expected = Math.max(
@@ -606,9 +615,9 @@ assert(
 // ---- D2：回合时限纯函数 ----
 assert(
   roundDurationMsForDifficulty("normal") === NORMAL_DECISION_MS,
-  "normal difficulty should use a soft decision timer"
+  "normal difficulty should not run a decision timer"
 );
-assert(NORMAL_DECISION_MS > 0, "normal soft timer must be positive");
+assert(NORMAL_DECISION_MS === 0, "standard mode must not time decisions");
 assert(roundDurationMsForDifficulty("pressure") === 22000, "pressure duration should be 22000ms");
 assert(roundDurationMsForDifficulty("extreme") === 14000, "extreme duration should be 14000ms");
 
@@ -786,6 +795,135 @@ assert(
 assert(
   store.has("adaptive-ascent-save-corrupt"),
   "corrupt save should leave a recovery notice"
+);
+
+// ---- v1.1 修復回归：星级门槛 / 重打 / 经济闭合 / 恢复循环 / 事件轮转 ----
+assert(chapterStarCount(200) === 3, "200 stars should be 3 stars");
+assert(chapterStarCount(150) === 2, "150 stars should be 2 stars");
+assert(
+  chapterStarCount(CHAPTER_PASS_STARS) === 1,
+  "one-star threshold should be 1 star"
+);
+assert(
+  chapterStarCount(CHAPTER_PASS_STARS - 1) === 0,
+  "below one-star threshold should be 0 stars"
+);
+
+const failChapter = structuredClone(DEFAULT_SAVE);
+const failNodes = nodesForChapter(1);
+applyStoryChoice(failChapter, failNodes[0].id, 2);
+applyStoryChoice(failChapter, failNodes[1].id, 1);
+assert(
+  !failChapter.unlockedChapters.includes(2),
+  "sub-star chapter must not unlock the next chapter"
+);
+assert(
+  !isChapterPassed(failChapter, 1),
+  "chapter with low stars should not pass"
+);
+retryChapter(failChapter, 1);
+assert(
+  !failChapter.unlockedChapters.includes(2),
+  "retry must not auto-unlock the next chapter"
+);
+assert(
+  !isChapterComplete(failChapter, 1),
+  "retry should clear the chapter record"
+);
+assert(
+  failChapter.decisionHistory.length === 0,
+  "retry should clear the chapter's decision history"
+);
+
+const passChapter = structuredClone(DEFAULT_SAVE);
+const passNodes = nodesForChapter(1);
+applyStoryChoice(passChapter, passNodes[0].id, 0);
+applyStoryChoice(passChapter, passNodes[1].id, 0);
+assert(
+  passChapter.unlockedChapters.includes(2) && isChapterPassed(passChapter, 1),
+  "expert chapter should pass and unlock the next chapter"
+);
+
+const recovery = structuredClone(DEFAULT_SAVE);
+recovery.profile.resources.energy = 50;
+assert(
+  applyDailyResourceRecovery(recovery),
+  "daily resource recovery should apply once"
+);
+assert(
+  recovery.profile.resources.energy === 60,
+  "energy should recover +10 per day"
+);
+assert(
+  !applyDailyResourceRecovery(recovery),
+  "daily resource recovery should not repeat on the same day"
+);
+
+const rotation = structuredClone(DEFAULT_SAVE);
+rotation.completedRandomEvents = [...RANDOM_EVENT_IDS];
+assert(rotateRandomEventPool(rotation), "full event pool should rotate");
+assert(
+  rotation.completedRandomEvents.length === 0,
+  "rotation should reset the event pool"
+);
+assert(!rotateRandomEventPool(rotation), "rotation requires a full pool");
+
+const riskNode = STORY_NODES.find((node) =>
+  node.options.some((option) => option.quality === "risk")
+);
+const riskOptionIndex = riskNode.options.findIndex(
+  (option) => option.quality === "risk"
+);
+const riskEconomy = structuredClone(DEFAULT_SAVE);
+const capitalBefore = riskEconomy.profile.resources.capital;
+applyStoryChoice(riskEconomy, riskNode.id, riskOptionIndex);
+assert(
+  riskEconomy.profile.resources.capital <= capitalBefore,
+  "risk choice must never grant free capital"
+);
+
+const repeatTraining = structuredClone(DEFAULT_SAVE);
+repeatTraining.completedTraining = ["insight"];
+repeatTraining.trialEnergy = 50;
+const energyBeforeRepeat = repeatTraining.trialEnergy;
+applyTrainingResult(repeatTraining, "insight", 4, 4);
+assert(
+  repeatTraining.trialEnergy > energyBeforeRepeat,
+  "repeat training should restore trial energy"
+);
+
+const capHistory = structuredClone(DEFAULT_SAVE);
+for (let i = 0; i < 250; i += 1) {
+  capHistory.decisionHistory.push({
+    nodeId: `cap-${i}`,
+    optionIndex: 0,
+    quality: "expert",
+    qualityScore: 100,
+    chapterId: 1
+  });
+}
+saveState(capHistory);
+const capped = loadSave();
+assert(
+  capped.decisionHistory.length <= 200,
+  "decision history should be capped at 200 entries"
+);
+
+const duelProfile = structuredClone(DEFAULT_SAVE).profile;
+const humanProfile = {
+  ...duelProfile,
+  color: "#41c7c0",
+  isHuman: true
+};
+const aiProfile = buildAiProfile("founder", 3);
+const duel = new DuelEngine(humanProfile, aiProfile, 3, 42);
+duel.pick(0, 0);
+const restoredDuel = DuelEngine.fromSnapshot(duel.toSnapshot());
+assert(
+  restoredDuel.picks[0] === 0 &&
+    restoredDuel.currentRound === 0 &&
+    restoredDuel.roundCount === 3,
+  "duel snapshot should restore picks, round, and round count"
 );
 
 console.log("PASS unit test");

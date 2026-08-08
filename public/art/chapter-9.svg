@@ -1,0 +1,39 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 900" preserveAspectRatio="xMidYMid slice">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#241c10"/>
+      <stop offset="0.55" stop-color="#3a3119"/>
+      <stop offset="1" stop-color="#120f08"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="0.5" cy="0.32" r="0.5">
+      <stop offset="0" stop-color="#f2c14e" stop-opacity="0.32"/>
+      <stop offset="1" stop-color="#f2c14e" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <rect width="1600" height="900" fill="url(#bg)"/>
+  <rect width="1600" height="900" fill="url(#glow)"/>
+  <g fill="#f2c14e" fill-opacity="0.9">
+    <circle cx="800" cy="260" r="46"/>
+    <circle cx="800" cy="260" r="60" fill="none" stroke="#f2c14e" stroke-opacity="0.4" stroke-width="2"/>
+  </g>
+  <g stroke="#f2c14e" stroke-opacity="0.5" stroke-width="2">
+    <path d="M800 320v120"/>
+    <path d="M760 430h80"/>
+  </g>
+  <g fill="#3a3119">
+    <rect x="380" y="520" width="840" height="260" rx="14"/>
+    <rect x="440" y="620" width="200" height="80" rx="8"/>
+    <rect x="700" y="620" width="200" height="80" rx="8"/>
+    <rect x="960" y="620" width="200" height="80" rx="8"/>
+  </g>
+  <g fill="#7fb069" fill-opacity="0.8">
+    <rect x="440" y="640" width="80" height="8" rx="4"/>
+    <rect x="700" y="640" width="80" height="8" rx="4"/>
+    <rect x="960" y="640" width="80" height="8" rx="4"/>
+  </g>
+  <g stroke="#e7eef2" stroke-opacity="0.3" stroke-width="1.4">
+    <path d="M800 520v-40M540 620v-30M800 620v-30M1060 620v-30"/>
+  </g>
+  <text x="80" y="110" fill="#e7eef2" font-size="46" font-family="Georgia, serif" font-weight="700" opacity="0.9">IX</text>
+  <text x="80" y="150" fill="#9fb3c8" font-size="18" font-family="Verdana, sans-serif" letter-spacing="4">LEGACY</text>
+</svg>

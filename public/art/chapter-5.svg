@@ -1,0 +1,39 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 900" preserveAspectRatio="xMidYMid slice">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#1c1324"/>
+      <stop offset="0.6" stop-color="#2c1d3e"/>
+      <stop offset="1" stop-color="#0e0a13"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="0.35" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#d97aa2" stop-opacity="0.24"/>
+      <stop offset="1" stop-color="#d97aa2" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <rect width="1600" height="900" fill="url(#bg)"/>
+  <rect width="1600" height="900" fill="url(#glow)"/>
+  <g fill="none" stroke="#d97aa2" stroke-opacity="0.4">
+    <rect x="240" y="200" width="1120" height="520" rx="12"/>
+    <path d="M240 320h1120M240 440h1120M240 560h1120M240 680h1120"/>
+    <path d="M600 200v520M960 200v520"/>
+  </g>
+  <g fill="#d97aa2" fill-opacity="0.8">
+    <rect x="300" y="250" width="250" height="50" rx="6"/>
+    <rect x="300" y="360" width="180" height="50" rx="6"/>
+    <rect x="300" y="470" width="210" height="50" rx="6"/>
+    <rect x="640" y="250" width="260" height="50" rx="6"/>
+    <rect x="640" y="360" width="200" height="50" rx="6"/>
+    <rect x="1000" y="250" width="300" height="50" rx="6"/>
+  </g>
+  <g fill="#f2c14e">
+    <rect x="640" y="470" width="120" height="50" rx="6"/>
+    <circle cx="1180" cy="470" r="8"/>
+    <circle cx="1180" cy="590" r="6"/>
+    <circle cx="540" cy="590" r="6"/>
+  </g>
+  <g stroke="#e7eef2" stroke-opacity="0.3" stroke-width="1.4">
+    <path d="M1180 470v110M540 590h120M820 490v90"/>
+  </g>
+  <text x="80" y="110" fill="#e7eef2" font-size="46" font-family="Georgia, serif" font-weight="700" opacity="0.9">V</text>
+  <text x="80" y="150" fill="#9fb3c8" font-size="18" font-family="Verdana, sans-serif" letter-spacing="4">DELIVER</text>
+</svg>

@@ -15,11 +15,14 @@ import {
 } from "../core/achievements";
 import {
   DuelEngine,
+  DUEL_ROUND_TIMEOUT_MS,
+  type DuelSnapshot,
   duelSeed,
   recommendedTraining
 } from "../core/duel";
 import {
   activateProfile,
+  applyDailyResourceRecovery,
   applyStoryChoice,
   applyTrainingResult,
   applyTrialAnswer,
@@ -41,6 +44,7 @@ import {
   decisionProfile,
   importSaveJson,
   isChapterComplete,
+  isChapterPassed,
   isNodeComplete,
   loadSave,
   optionGateFor,
@@ -48,7 +52,9 @@ import {
   profileSummary,
   recordDuelResult,
   resetSave,
+  retryChapter,
   resolveCloudConflict,
+  rotateRandomEventPool,
   roundDurationMsForDifficulty,
   saveState,
   scoreQuality
@@ -85,7 +91,13 @@ import {
   certificationLevel
 } from "../core/assessment";
 import { NPCS, npcRelation } from "../core/npcs";
-import { dailyChallenges, todayKey } from "../core/challenges";
+import {
+  dailyChallenges,
+  todayKey,
+  weekEndsAt,
+  weekKey,
+  weeklyChallenges
+} from "../core/challenges";
 import { scoreTrainingAnswers } from "../core/training";
 import {
   EXPANDED_TRAINING,
@@ -108,7 +120,7 @@ import {
 import { hiddenRouteSteps } from "../core/hiddenRoutes";
 import { ROLE_OPTION_SETS } from "../core/roleOptions";
 import { uiString, type Language } from "../core/i18n";
-import { trackEvent } from "../core/analytics";
+import { readAnalyticsEvents, trackEvent } from "../core/analytics";
 import {
   ABILITY_EN,
   ABILITY_DETAIL_EN,
@@ -132,6 +144,11 @@ import { renderAbilityRadar } from "./charts";
 import { renderPowerBoard } from "./art";
 import { renderTrainingBoard } from "./trainingArt";
 import { renderRelationGraph } from "./relationsArt";
+
+const ONLINE_ENABLED = import.meta.env.VITE_ENABLE_ONLINE === "true";
+const DUEL_SNAPSHOT_KEY = "adaptive-ascent-duel-snapshot-v1";
+const SAVE_BACKUP_HINT_KEY = "adaptive-ascent-backup-hint-dismissed";
+const APP_VERSION = "1.1.0";
 
 type View =
   | "menu"
@@ -264,6 +281,8 @@ export class AdaptiveGameApp {
   private duelPredictionPhase = false;
   private duelPredictionCorrect?: boolean;
   private duelPredictionHistory: boolean[] = [];
+  private duelRoundTimerId?: number;
+  private resourceRecoveryNote = false;
   private roomClient?: RoomClient;
   private cloudToken = localStorage.getItem("adaptive-ascent-cloud-token") || "";
   private cloudRecoveryCode =
@@ -293,10 +312,14 @@ export class AdaptiveGameApp {
 
   constructor(root: HTMLElement) {
     this.root = root;
+    document.documentElement.classList.toggle("online-off", !ONLINE_ENABLED);
     document.documentElement.lang = this.language;
     this.audio.setMuted(this.muted);
     document.documentElement.style.fontSize = `${this.fontScale * 100}%`;
     this.save = loadSave();
+    if (this.save.profileCreated) {
+      this.resourceRecoveryNote = applyDailyResourceRecovery(this.save);
+    }
     trackEvent("session_start", { language: this.language });
     const corruptSave = consumeCorruptSaveNotice();
     if (corruptSave) {
@@ -448,8 +471,21 @@ export class AdaptiveGameApp {
 
   show(view: View): void {
     this.stopRoundTimer();
+    if (view !== "duel") {
+      this.stopDuelRoundTimer();
+    }
     this.view = view;
+    const scene =
+      view === "story" ? "story" : view === "duel" ? "duel" : "menu";
+    this.audio.setAmbientScene(scene);
     this.render();
+  }
+
+  private stopDuelRoundTimer(): void {
+    if (this.duelRoundTimerId !== undefined) {
+      window.clearTimeout(this.duelRoundTimerId);
+      this.duelRoundTimerId = undefined;
+    }
   }
 
   private t(key: Parameters<typeof uiString>[1]): string {
@@ -491,6 +527,21 @@ export class AdaptiveGameApp {
 
   private resourceDisplay(key: ResourceKey): string {
     return this.language === "en" ? RESOURCE_EN[key] : RESOURCE_NAMES[key];
+  }
+
+  private storyOptionOrder(node: StoryNode): number[] {
+    const order = node.options.map((_, index) => index);
+    const seed =
+      (node.id.length * 131 +
+        node.chapterId * 17 +
+        this.save.playCount * 7 +
+        this.save.profile.role.length) %
+      Math.max(1, order.length);
+    for (let i = 1; i < order.length; i += 1) {
+      const j = (i + seed * (i + 1)) % (i + 1);
+      [order[i], order[j]] = [order[j], order[i]];
+    }
+    return order;
   }
 
   private storyNodeDisplay(node: StoryNode): StoryNode {
@@ -822,6 +873,37 @@ export class AdaptiveGameApp {
             <p>${this.language === "en" ? `Completed ${summary.chapterCount} / 9 chapters` : `已通关 ${summary.chapterCount} / 9 章`}</p>
           </div>
         </section>
+        ${
+          started && localStorage.getItem(SAVE_BACKUP_HINT_KEY) !== "1"
+            ? `
+              <section class="backup-hint">
+                <div>
+                  <strong>${this.language === "en" ? "Your progress lives in this browser" : "进度仅保存在当前浏览器"}</strong>
+                  <p>${this.language === "en" ? "Export your save or copy the save link after each session so clearing the cache never loses progress." : "每次游玩后导出存档或复制存档链接，清缓存也不怕丢进度。"}</p>
+                </div>
+                <div class="backup-hint-actions">
+                  <button data-action="export-save">${this.t("exportSave")}</button>
+                  <button data-action="copy-save-link">${this.t("copySaveLink")}</button>
+                  <button data-action="dismiss-backup-hint">${this.language === "en" ? "Got it" : "知道了"}</button>
+                </div>
+              </section>
+            `
+            : ""
+        }
+        ${
+          started && this.save.playCount === 0
+            ? `
+              <section class="first-run-guide">
+                <strong>${this.language === "en" ? "Three steps to your first decision" : "三步完成第一次决策"}</strong>
+                <ol>
+                  <li>${this.language === "en" ? "Create your profile and check your ability map." : "创建档案并查看能力图谱。"}</li>
+                  <li>${this.language === "en" ? "Enter Chapter One and read the intel before deciding." : "进入第一章，先看情报再决策。"}</li>
+                  <li>${this.language === "en" ? "Use the review report to pick training after the first scenario." : "完成第一个情境后，用复盘报告决定训练方向。"}</li>
+                </ol>
+              </section>
+            `
+            : ""
+        }
         <section class="scene-art">
           <canvas class="power-board" id="power-board" aria-label="${this.language === "en" ? "Power relationship sandbox diagram" : "权力关系沙盘示意图"}"></canvas>
           <div class="scene-caption">
@@ -1241,6 +1323,7 @@ export class AdaptiveGameApp {
     const chapter = getChapter(this.selectedChapter);
     const mainNodes = chapter.nodeIds.map(getNode);
     const chapterDone = isChapterComplete(this.save, chapter.id);
+    const chapterPassed = isChapterPassed(this.save, chapter.id);
     const availableRandom = nextRandomEvent(this.save);
     this.root.innerHTML = `
       <header class="topbar">
@@ -1251,7 +1334,12 @@ export class AdaptiveGameApp {
           <span>${summary.rank.name}</span>
         </div>
       </header>
-      <main class="map-shell" aria-label="${this.language === "en" ? "Campaign map" : "主线地图"}">
+      <main class="map-shell" style="--chapter-art:url('./art/chapter-${chapter.id}.svg')" aria-label="${this.language === "en" ? "Campaign map" : "主线地图"}">
+        ${
+          this.resourceRecoveryNote
+            ? `<div class="recovery-banner" role="status">${this.language === "en" ? "Daily resource recovery applied." : "今日资源恢复已生效，精力、信任、影响力和组织资源小幅回升。"}</div>`
+            : ""
+        }
         <section class="map-head">
           <div>
             <p class="eyebrow">${this.t("mainQuest")}</p>
@@ -1282,7 +1370,17 @@ export class AdaptiveGameApp {
                     <h3>${this.t("chapterReflectionTitle")}</h3>
                     <p>${escapeHtml(this.chapterReflectionText(chapter.id))}</p>
                   </section>
+                  ${
+                    chapterPassed
+                      ? ""
+                      : `<p class="star-gate-warning">${this.language === "en" ? "This chapter did not reach one star. Retry it to unlock the next chapter." : "本章未达到一星，需重新挑战才能解锁下一章。"}</p>`
+                  }
                   <button class="replay-chapter-button" data-action="replay-chapter" data-chapter="${chapter.id}">${this.t("replayChapter")}</button>
+                  ${
+                    chapterPassed
+                      ? ""
+                      : `<button class="retry-chapter-button" data-action="retry-chapter" data-chapter="${chapter.id}">${this.language === "en" ? "Retry Chapter" : "重新挑战本章"}</button>`
+                  }
                 `
                 : ""
             }
@@ -1340,6 +1438,25 @@ export class AdaptiveGameApp {
                 )
                 .join("")}
             </div>
+            <div class="challenge-panel weekly-panel">
+              <h3>${this.language === "en" ? "Weekly Challenges" : "每周挑战"}</h3>
+              <p class="muted">${this.language === "en" ? `Week ${weekKey()} 路 resets in ${Math.max(0, Math.ceil((weekEndsAt() - Date.now()) / 3600000))}h` : `本周 ${weekKey()} 路 ${Math.max(0, Math.ceil((weekEndsAt() - Date.now()) / 3600000))} 小时后重置`}</p>
+              ${weeklyChallenges(this.save)
+                .map(
+                  (challenge) => `
+                    <div class="challenge-row ${challenge.done ? "done" : ""}">
+                      <div>
+                        <strong>${escapeHtml(this.challengeDisplay(challenge).title)}</strong>
+                        <small>${this.challengeCategoryLabel(challenge.category)}</small>
+                        <span>${challenge.current} / ${challenge.target}</span>
+                        <p>${escapeHtml(this.challengeDisplay(challenge).description)}</p>
+                      </div>
+                      <small>${challenge.done ? this.t("claimed") : this.t("inProgress")}</small>
+                    </div>
+                  `
+                )
+                .join("")}
+            </div>
             <div class="random-event-panel">
               <h3>${this.t("randomEvent")}</h3>
               ${ 
@@ -1348,7 +1465,10 @@ export class AdaptiveGameApp {
                     <p>${this.t("randomAvailable")}</p>
                     <button data-action="open-node" data-node="${availableRandom}">${this.t("handleRandomEvent")}</button>
                   `
-                  : `<p class="muted">${this.t("randomDone")}</p>`
+                  : `
+                    <p class="muted">${this.t("randomDone")}</p>
+                    <button data-action="rotate-events">${this.language === "en" ? "Rotate Event Pool" : "轮转事件池"}</button>
+                  `
               }
             </div>
             <div class="event-book-panel">
@@ -1465,6 +1585,7 @@ export class AdaptiveGameApp {
         )
       )
     ];
+    const optionOrder = this.storyOptionOrder(node);
     const unlockAbility = relevantAbilities.find(
       (id) => abilityLevel(this.save.profile.abilities[id]) >= 3
     );
@@ -1476,7 +1597,7 @@ export class AdaptiveGameApp {
           <span id="round-timer" class="round-timer" style="display:none"></span>
         </div>
       </header>
-      <main class="story-shell" aria-label="${this.language === "en" ? "Story scenario" : "剧情情境"}">
+      <main class="story-shell" style="--chapter-art:url('./art/chapter-${chapter.id}.svg')" aria-label="${this.language === "en" ? "Story scenario" : "剧情情境"}">
         ${this.routeBannerMarkup(node.chapterId)}
         ${this.replayMode ? `<button class="link replay-exit" data-action="open-map">${this.t("replayExit")}</button>` : ""}
         <button class="link back-link" data-action="open-map">${this.t("backToMap")}</button>
@@ -1563,9 +1684,10 @@ export class AdaptiveGameApp {
                       }
                     </div>
                     <div class="option-list">
-                      ${node.options
+                      ${optionOrder
                         .map(
-                          (option, index) => {
+                          (originalIndex, index) => {
+                            const option = node.options[originalIndex];
                             const gate = optionGateFor(
                               this.save,
                               option,
@@ -1578,7 +1700,7 @@ export class AdaptiveGameApp {
                                   ? `${this.t("optionLockedAbility")} ${this.abilityDisplay(gate.ability).name} Lv.${gate.needed}`
                                   : "";
                             return `
-                              <button class="option-card ${gate.kind !== "ok" ? "locked" : ""}" data-action="choose-option" data-option="${index}" ${gate.kind !== "ok" ? "disabled" : ""}>
+                              <button class="option-card ${gate.kind !== "ok" ? "locked" : ""}" data-action="choose-option" data-option="${originalIndex}" ${gate.kind !== "ok" ? "disabled" : ""}>
                                 <span class="option-letter">${String.fromCharCode(65 + index)}</span>
                                 <span class="option-body">
                                   <strong>${escapeHtml(option.label)}</strong>
@@ -1602,6 +1724,12 @@ export class AdaptiveGameApp {
     const storyArt = this.root.querySelector<HTMLCanvasElement>("#story-art");
     if (storyArt) {
       renderPowerBoard(storyArt, node.id.length * 11 + node.chapterId * 13);
+    }
+    const relationsArt = this.root.querySelector<HTMLCanvasElement>(
+      "#outcome-relations"
+    );
+    if (relationsArt) {
+      renderRelationGraph(relationsArt, this.save);
     }
   }
 
@@ -1780,10 +1908,11 @@ export class AdaptiveGameApp {
           <button data-action="export-save">${this.t("exportSave")}</button>
           <button data-action="export-report">${this.t("exportReport")}</button>
           <button data-action="copy-save-link">${this.t("copySaveLink")}</button>
-          <button data-action="cloud-sync">${this.t("cloudSync")}</button>
-          <button data-action="cloud-load">${this.t("cloudLoad")}</button>
-          <button data-action="cloud-leaderboard">${this.t("cloudLeaderboard")}</button>
-          <div class="account-panel">
+          <p class="save-reminder">${this.language === "en" ? "This save lives only in this browser. Export or copy the link regularly." : "本存档仅保存在当前浏览器，请定期导出或复制链接。"}</p>
+          <button class="online-only" data-action="cloud-sync">${this.t("cloudSync")}</button>
+          <button class="online-only" data-action="cloud-load">${this.t("cloudLoad")}</button>
+          <button class="online-only" data-action="cloud-leaderboard">${this.t("cloudLeaderboard")}</button>
+          <div class="account-panel online-only">
             <h3>${this.t("accountTitle")}</h3>
             ${
               this.cloudAccountName
@@ -1803,7 +1932,7 @@ export class AdaptiveGameApp {
               <button data-action="cloud-logout">${this.t("accountLogout")}</button>
             </div>
           </div>
-          <span class="cloud-status" role="status" aria-live="polite">${this.cloudStatus}</span>
+          <span class="cloud-status online-only" role="status" aria-live="polite">${this.cloudStatus}</span>
           ${
             this.cloudConflict
               ? `
@@ -1845,7 +1974,7 @@ export class AdaptiveGameApp {
         ${
           this.cloudEntries.length
             ? `
-              <section class="cloud-leaderboard">
+              <section class="cloud-leaderboard online-only">
                 <h2>${this.language === "en" ? "Cloud Leaderboard" : "云端排行榜"}</h2>
                 <div class="cloud-leaderboard-list">
                   ${this.cloudEntries
@@ -2816,12 +2945,14 @@ export class AdaptiveGameApp {
             <h2>${this.t("settingsData")}</h2>
             <button data-action="open-assessment">${this.t("assessmentReopen")}</button>
             <button data-action="export-save">${this.t("exportSave")}</button>
+            <button data-action="export-analytics">${this.language === "en" ? "Export Event Log" : "导出事件日志"}</button>
             <button data-action="import-save">${this.t("importSave")}</button>
             <label class="file-button">
               ${this.t("importSave")}
               <input type="file" data-import-save accept="application/json" hidden />
             </label>
             <button data-action="reset-profile">${this.t("resetProfile")}</button>
+            <p class="muted">${this.language === "en" ? `Version ${APP_VERSION} 路 Static build` : `版本 ${APP_VERSION} 路 静态版`}</p>
           </div>
           <div class="settings-panel">
             <h2>${this.t("settingsAccessibility")}</h2>
@@ -2834,6 +2965,11 @@ export class AdaptiveGameApp {
               <button data-action="settings-font-size" data-size="1.15">115%</button>
             </div>
             <p class="muted">${en ? "Reduced-motion preferences are respected by the UI." : "界面已支持系统减少动态效果偏好。"}</p>
+          </div>
+          <div class="settings-panel">
+            <h2>${this.language === "en" ? "About Ascend" : "关于升维"}</h2>
+            <p>${this.language === "en" ? "Ascend is an offline-first leadership scenario game based on The Book of Power, Heifetz adaptive leadership, and scenario-golf scoring." : "升维是一款基于《权经》九章架构、Heifetz 自适应领导力与情境高尔夫计分法的可离线领导力情境游戏。"}</p>
+            <p class="muted">${this.language === "en" ? "v1.1 路 standard mode has no decision timer; failed chapters can be retried; duels can be resumed after refresh." : "v1.1 路 标准档不计时；未达一星的章节可重打；对局刷新后可续战。"}</p>
           </div>
         </section>
       </main>
@@ -3029,6 +3165,11 @@ export class AdaptiveGameApp {
             <button class="${this.duelMode === "local" ? "active" : ""}" data-action="set-duel-mode" data-mode="local">${this.language === "en" ? "Local Duo" : "本地双人"}</button>
             <button class="${this.duelMode === "remote" ? "active" : ""}" data-action="set-duel-mode" data-mode="remote">${this.language === "en" ? "Remote" : "远程对战"}</button>
           </div>
+          ${
+            this.hasDuelSnapshot()
+              ? `<button class="primary resume-duel-button" data-action="resume-duel">${this.language === "en" ? "Resume Duel" : "继续上次对局"}</button>`
+              : ""
+          }
         </section>
         <section class="lobby-panel">
           <div class="lobby-row">
@@ -3050,6 +3191,7 @@ export class AdaptiveGameApp {
                   <p>${this.language === "en" ? "The system builds an opponent from each scenario's expert baseline and your ability level, then adjusts difficulty based on your expert-decision rate. Best for sustained decision training." : "系统会根据每道情境的专家基准和你的能力水平生成对手，并基于你的专家判断率动态调整难度。适合持续训练决策质量。"}</p>
                   <button class="primary" data-action="start-ai-duel">${this.language === "en" ? "Start Duel" : "开始对战"}</button>
                   <button data-action="start-challenge-duel">${this.language === "en" ? "7-Round Challenge" : "7 回合挑战赛"}</button>
+                  <button data-action="start-endless-duel">${this.language === "en" ? "Endless Challenge" : "无尽挑战"}</button>
                 </div>
               `
               : this.duelMode === "local"
@@ -3071,6 +3213,11 @@ export class AdaptiveGameApp {
     const en = this.language === "en";
     return `
       <div class="remote-lobby">
+        ${
+          !import.meta.env.VITE_TURN_URL
+            ? `<p class="experimental-note">${en ? "Experimental: without a TURN server, strict NAT networks may not connect." : "实验性功能：未配置 TURN，严格 NAT 下可能无法建立连接。"}</p>`
+            : ""
+        }
         <div class="remote-create">
           <h2>${en ? "Create Room" : "创建房间"}</h2>
           <p>${en ? "Generate an invite code, send it to your opponent, and wait for their answer code." : "生成邀请码后发给对手，对手会返回一个应答码。"}</p>
@@ -3105,7 +3252,7 @@ export class AdaptiveGameApp {
           <button class="primary" data-action="finish-remote">${en ? "Complete Connection" : "完成连接"}</button>
           <p class="status-text" role="status" aria-live="polite">${this.remoteStatus}</p>
         </div>
-        <div class="remote-match">
+        <div class="remote-match online-only">
           <h2>${en ? "Cloud Auto-Match" : "云端自动匹配"}</h2>
           <p>${en ? "Connect to the room server and match automatically without exchanging invite codes. The server must be deployed or running locally first." : "连接服务端后自动匹配对手，不需要手动交换邀请码。需先部署或本地运行房间服务器。"}</p>
           <button class="primary" data-action="cloud-match">${en ? "Start Matching" : "开始匹配"}</button>
@@ -3123,6 +3270,9 @@ export class AdaptiveGameApp {
   private renderDuel(): void {
     const engine = this.duelEngine;
     const en = this.language === "en";
+    if (engine && !engine.finished) {
+      this.startDuelRoundTimer();
+    }
     if (!engine) {
       this.root.innerHTML = `
         <main class="duel-waiting" aria-label="${this.language === "en" ? "Waiting for opponent" : "等待对手"}">
@@ -3167,6 +3317,7 @@ export class AdaptiveGameApp {
             rounds: engine.roundCount
           });
         }
+        this.clearDuelSnapshot();
       }
       const result = engine.toResult();
       this.root.innerHTML = this.duelResultMarkup(engine, result);
@@ -3285,6 +3436,15 @@ export class AdaptiveGameApp {
     }
     this.audio.ensure();
 
+    if (!ONLINE_ENABLED && action.startsWith("cloud-")) {
+      this.cloudStatus =
+        this.language === "en"
+          ? "Online mode is disabled in this build."
+          : "当前为静态版，未启用云端功能。";
+      this.render();
+      return;
+    }
+
     switch (action) {
       case "open-node": {
         const nodeId = actionTarget.dataset.node;
@@ -3393,6 +3553,26 @@ export class AdaptiveGameApp {
         }
         break;
       }
+      case "retry-chapter": {
+        const chapterId = Number(actionTarget.dataset.chapter);
+        const chapter = CHAPTERS.find((item) => item.id === chapterId);
+        if (chapter && isChapterComplete(this.save, chapter.id)) {
+          retryChapter(this.save, chapter.id);
+          trackEvent("chapter_retry", { chapterId });
+          this.audio.ui();
+          this.replayMode = false;
+          this.storyNodeId = chapter.nodeIds[0];
+          this.storyHintRevealed = false;
+          this.pendingBranchNodeId = undefined;
+          this.pendingChapterTransition = undefined;
+          this.lastUnlockedAchievement = undefined;
+          this.lastOutcome = undefined;
+          this.lastOutcomeNodeId = undefined;
+          this.interferenceText = undefined;
+          this.show("story");
+        }
+        break;
+      }
       case "open-ability":
         this.audio.ui();
         this.show("ability");
@@ -3402,7 +3582,7 @@ export class AdaptiveGameApp {
         this.show("report");
         break;
       case "open-ending":
-        if (isChapterComplete(this.save, 9)) {
+        if (isChapterPassed(this.save, 9)) {
           this.audio.ui();
           this.show("ending");
         }
@@ -3647,8 +3827,29 @@ export class AdaptiveGameApp {
       case "export-report":
         this.exportReport();
         break;
+      case "export-analytics":
+        this.exportAnalytics();
+        break;
       case "copy-save-link":
         this.copySaveLink(actionTarget);
+        break;
+      case "import-save": {
+        const input =
+          this.root.querySelector<HTMLInputElement>("input[data-import-save]");
+        input?.click();
+        break;
+      }
+      case "dismiss-backup-hint":
+        localStorage.setItem(SAVE_BACKUP_HINT_KEY, "1");
+        this.audio.ui();
+        this.renderMenu();
+        break;
+      case "rotate-events":
+        if (rotateRandomEventPool(this.save)) {
+          trackEvent("random_events_rotated");
+          this.audio.expert();
+          this.renderMap();
+        }
         break;
       case "cloud-sync":
         void this.cloudSync();
@@ -4411,6 +4612,12 @@ export class AdaptiveGameApp {
       case "start-challenge-duel":
         this.startChallengeDuel();
         break;
+      case "start-endless-duel":
+        this.startEndlessDuel();
+        break;
+      case "resume-duel":
+        this.resumeDuel();
+        break;
       case "start-local-duel":
         this.startLocalDuel();
         break;
@@ -4651,7 +4858,7 @@ export class AdaptiveGameApp {
     this.lastOutcomeNodeId = this.storyNodeId;
     const baseNode = getNode(this.storyNodeId);
     this.pendingChapterTransition =
-      baseNode.kind === "main" && isChapterComplete(this.save, baseNode.chapterId)
+      baseNode.kind === "main" && isChapterPassed(this.save, baseNode.chapterId)
         ? baseNode.chapterId
         : undefined;
     const highAbility = (
@@ -4687,7 +4894,11 @@ export class AdaptiveGameApp {
       1,
       Math.min(4, Math.round(expertRatio * 4 + this.save.duelWins * 0.15))
     );
-    const ai = buildAiProfile("founder", strength);
+    const ai = buildAiProfile(
+      "founder",
+      strength,
+      this.save.profile.abilities
+    );
     this.audio.ensure();
     this.audio.round();
     this.duelEngine = new DuelEngine(human, ai, this.duelRounds, duelSeed());
@@ -4697,7 +4908,30 @@ export class AdaptiveGameApp {
 
   private startChallengeDuel(): void {
     const human = buildDuelProfile(this.save.profile, this.save.profile.name, "#41c7c0");
-    const ai = buildAiProfile("founder", 4);
+    const ai = buildAiProfile(
+      "founder",
+      4,
+      this.save.profile.abilities
+    );
+    this.audio.ensure();
+    this.audio.round();
+    this.duelEngine = new DuelEngine(human, ai, 7, duelSeed());
+    this.duelRecorded = false;
+    this.show("duel");
+  }
+
+  private startEndlessDuel(): void {
+    const human = buildDuelProfile(
+      this.save.profile,
+      this.save.profile.name,
+      "#41c7c0"
+    );
+    const strength = Math.min(5, Math.max(1, Math.round(this.save.duelWins / 4) + 1));
+    const ai = buildAiProfile(
+      "founder",
+      strength,
+      this.save.profile.abilities
+    );
     this.audio.ensure();
     this.audio.round();
     this.duelEngine = new DuelEngine(human, ai, 7, duelSeed());
@@ -4899,6 +5133,7 @@ export class AdaptiveGameApp {
         this.duelRevealing = false;
         this.duelRevealTimer = undefined;
         engine.resolvePendingRound();
+        this.saveDuelSnapshot();
         this.duelPrediction = undefined;
         this.duelPredictionPhase = false;
         this.duelPredictionCorrect = undefined;
@@ -4921,6 +5156,91 @@ export class AdaptiveGameApp {
     }
   }
 
+  private saveDuelSnapshot(): void {
+    if (!this.duelEngine || this.duelMode === "remote") {
+      return;
+    }
+    try {
+      localStorage.setItem(
+        DUEL_SNAPSHOT_KEY,
+        JSON.stringify({
+          mode: this.duelMode,
+          hotSeatTurn: this.hotSeatTurn,
+          localPassed: this.localPassed,
+          engine: this.duelEngine.toSnapshot()
+        })
+      );
+    } catch {
+      // 蹇呴』闈欓粯澶辫触锛屼笉褰卞搷瀵瑰眬
+    }
+  }
+
+  private clearDuelSnapshot(): void {
+    try {
+      localStorage.removeItem(DUEL_SNAPSHOT_KEY);
+    } catch {
+      // ignore
+    }
+  }
+
+  private hasDuelSnapshot(): boolean {
+    try {
+      return Boolean(localStorage.getItem(DUEL_SNAPSHOT_KEY));
+    } catch {
+      return false;
+    }
+  }
+
+  private resumeDuel(): void {
+    try {
+      const raw = localStorage.getItem(DUEL_SNAPSHOT_KEY);
+      if (!raw) {
+        return;
+      }
+      const parsed = JSON.parse(raw) as {
+        mode: DuelMode;
+        hotSeatTurn: 0 | 1;
+        localPassed: boolean;
+        engine: DuelSnapshot;
+      };
+      this.duelMode = parsed.mode === "remote" ? "ai" : parsed.mode;
+      this.hotSeatTurn = parsed.hotSeatTurn ?? 0;
+      this.localPassed = Boolean(parsed.localPassed);
+      this.duelEngine = DuelEngine.fromSnapshot(parsed.engine);
+      this.duelRecorded = false;
+      this.audio.ensure();
+      this.audio.round();
+      this.show("duel");
+    } catch {
+      this.clearDuelSnapshot();
+    }
+  }
+
+  private startDuelRoundTimer(): void {
+    this.stopDuelRoundTimer();
+    if (this.duelMode === "remote" || !this.duelEngine) {
+      return;
+    }
+    this.duelRoundTimerId = window.setTimeout(() => {
+      this.duelRoundTimerId = undefined;
+      const engine = this.duelEngine;
+      if (!engine || engine.finished) {
+        return;
+      }
+      if (engine.picks[0] === null) {
+        engine.forceTimeoutPick(0);
+      }
+      if (engine.picks[1] === null) {
+        engine.forceTimeoutPick(1);
+      }
+      this.duelPrediction = undefined;
+      this.duelPredictionPhase = false;
+      engine.resolvePendingRound();
+      this.saveDuelSnapshot();
+      this.renderDuel();
+    }, DUEL_ROUND_TIMEOUT_MS);
+  }
+
   private duelPick(target: HTMLElement): void {
     const engine = this.duelEngine;
     if (!engine) {
@@ -4930,8 +5250,10 @@ export class AdaptiveGameApp {
     const optionIndex = Number(target.dataset.option);
     if (this.duelMode === "ai") {
       engine.pick(0, optionIndex);
+      this.saveDuelSnapshot();
       window.setTimeout(() => {
         engine.aiPick(1);
+        this.saveDuelSnapshot();
         this.maybeRevealDuelRound();
       }, 650);
       this.renderDuel();
@@ -4939,6 +5261,7 @@ export class AdaptiveGameApp {
     }
     if (this.duelMode === "local") {
       engine.pick(this.hotSeatTurn, optionIndex);
+      this.saveDuelSnapshot();
       if (this.hotSeatTurn === 0 && engine.picks[0] !== null) {
         this.localPassed = false;
         this.hotSeatTurn = 1;
@@ -5031,6 +5354,20 @@ export class AdaptiveGameApp {
     const anchor = document.createElement("a");
     anchor.href = url;
     anchor.download = `${this.language === "en" ? "Ascend" : "升维"}-${this.save.profile.name}-${this.language === "en" ? "save" : "存档"}.json`;
+    anchor.click();
+    URL.revokeObjectURL(url);
+    this.audio.ui();
+  }
+
+  private exportAnalytics(): void {
+    const events = readAnalyticsEvents();
+    const blob = new Blob([JSON.stringify(events, null, 2)], {
+      type: "application/json"
+    });
+    const url = URL.createObjectURL(blob);
+    const anchor = document.createElement("a");
+    anchor.href = url;
+    anchor.download = `${this.language === "en" ? "Ascend-events" : "升维事件日志"}.json`;
     anchor.click();
     URL.revokeObjectURL(url);
     this.audio.ui();
@@ -5144,6 +5481,13 @@ export class AdaptiveGameApp {
   }
 
   private async ensureCloudClient(): Promise<RoomClient> {
+    if (!ONLINE_ENABLED) {
+      throw new Error(
+        this.language === "en"
+          ? "Online mode is disabled in this build."
+          : "当前为静态版，未启用云端功能。"
+      );
+    }
     if (this.roomClient) {
       return this.roomClient;
     }
@@ -5825,6 +6169,21 @@ export class AdaptiveGameApp {
             .join("")}
         </div>
         ${outcome.resourceStrain ? `<p class="strain-note">${this.t("strainNote")} -${outcome.resourceStrain}</p>` : ""}
+        <div class="outcome-resources">
+          ${(Object.keys(RESOURCE_NAMES) as ResourceKey[])
+            .map((key) => {
+              const value = this.save.profile.resources[key];
+              return `
+                <span class="outcome-resource ${value < 30 ? "low" : ""}">
+                  <b>${this.resourceDisplay(key)}</b>
+                  <i><em style="width:${Math.round(value)}%"></em></i>
+                  <small>${Math.round(value)}</small>
+                </span>
+              `;
+            })
+            .join("")}
+        </div>
+        <canvas id="outcome-relations" class="outcome-relations" aria-label="${this.language === "en" ? "Relationship graph after this decision" : "本次决策后的人物关系图"}"></canvas>
         <button class="primary" data-action="${action}">${actionLabel}</button>
       </section>
     `;

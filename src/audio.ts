@@ -5,6 +5,7 @@ export class GameAudio {
   private musicTimer?: number;
   private musicNodes: AudioNode[] = [];
   private musicGain?: GainNode;
+  private ambientScene: "menu" | "story" | "duel" = "menu";
   private muted = false;
   private musicMuted = false;
 
@@ -120,11 +121,12 @@ export class GameAudio {
     this.tone(783.99, 0.34, "sine", 0.022, 0.32);
   }
 
-  startAmbient(): void {
+  startAmbient(scene: "menu" | "story" | "duel" = "menu"): void {
     this.ensure();
     if (!this.context || !this.master || this.ambientGain) {
       return;
     }
+    this.ambientScene = scene;
     const gain = this.context.createGain();
     gain.gain.value = this.muted ? 0 : 0.012;
     if (!this.musicGain) {
@@ -155,26 +157,55 @@ export class GameAudio {
     this.ambientGain = gain;
     this.musicNodes = [oscillator, second, third, filter, gain];
 
-    const chords = [
-      [220, 261.63, 329.63],
-      [174.61, 220, 261.63],
-      [196, 246.94, 293.66],
-      [146.83, 220, 293.66]
-    ];
-    const melodies = [
-      [329.63, 392, 440, 392],
-      [293.66, 349.23, 392, 349.23],
-      [329.63, 392, 440, 493.88],
-      [261.63, 329.63, 392, 329.63]
-    ];
+    const chords: Record<"menu" | "story" | "duel", number[][]> = {
+      menu: [
+        [220, 261.63, 329.63],
+        [174.61, 220, 261.63],
+        [196, 246.94, 293.66],
+        [146.83, 220, 293.66]
+      ],
+      story: [
+        [196, 246.94, 293.66],
+        [220, 261.63, 329.63],
+        [174.61, 220, 261.63],
+        [164.81, 207.65, 246.94]
+      ],
+      duel: [
+        [174.61, 220, 261.63],
+        [130.81, 174.61, 220],
+        [146.83, 196, 246.94],
+        [155.56, 207.65, 261.63]
+      ]
+    };
+    const melodies: Record<"menu" | "story" | "duel", number[][]> = {
+      menu: [
+        [329.63, 392, 440, 392],
+        [293.66, 349.23, 392, 349.23],
+        [329.63, 392, 440, 493.88],
+        [261.63, 329.63, 392, 329.63]
+      ],
+      story: [
+        [392, 440, 493.88, 440],
+        [349.23, 392, 440, 392],
+        [329.63, 392, 440, 523.25],
+        [293.66, 349.23, 415.3, 349.23]
+      ],
+      duel: [
+        [440, 523.25, 587.33, 523.25],
+        [392, 493.88, 587.33, 493.88],
+        [415.3, 523.25, 659.25, 523.25],
+        [349.23, 440, 523.25, 440]
+      ]
+    };
     let musicIndex = 0;
     const playPhrase = () => {
       if (!this.context || !this.master || this.muted) return;
-      const chord = chords[musicIndex % chords.length];
+      const chord = chords[this.ambientScene][musicIndex % chords[this.ambientScene].length];
       chord.forEach((freq, index) => {
         this.tone(freq, 2.4, index === 1 ? "triangle" : "sine", 0.006, index * 0.06);
       });
-      const melody = melodies[musicIndex % melodies.length];
+      const melody =
+        melodies[this.ambientScene][musicIndex % melodies[this.ambientScene].length];
       melody.forEach((freq, index) => {
         this.tone(freq, 1.5, index % 2 === 0 ? "sine" : "triangle", 0.007, 0.2 + index * 0.45);
       });
@@ -184,16 +215,25 @@ export class GameAudio {
     this.musicTimer = window.setInterval(playPhrase, 3600);
   }
 
+  setAmbientScene(scene: "menu" | "story" | "duel"): void {
+    if (this.ambientScene === scene && this.ambientGain) {
+      return;
+    }
+    this.stopAmbient();
+    this.startAmbient(scene);
+  }
+
   stopAmbient(): void {
     if (this.musicTimer !== undefined) {
       window.clearInterval(this.musicTimer);
       this.musicTimer = undefined;
     }
     if (this.context && this.ambientGain) {
-      this.ambientGain.gain.setTargetAtTime(0, this.context.currentTime, 0.2);
+      const fading = this.ambientGain;
+      this.ambientGain = undefined;
+      fading.gain.setTargetAtTime(0, this.context.currentTime, 0.2);
       window.setTimeout(() => {
-        this.ambientGain?.disconnect();
-        this.ambientGain = undefined;
+        fading.disconnect();
       }, 500);
     }
   }

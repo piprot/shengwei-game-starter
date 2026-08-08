@@ -3662,18 +3662,21 @@ export function getNodeForRole(
     return base;
   }
   const chapter = getChapter(base.chapterId);
-  const options = base.options.map((option, index) => {
-    const set = ROLE_OPTION_SETS[role][option.quality];
-    const variantIndex =
-      (stringHash(`${nodeId}-${role}-${index}`) + index) % set.length;
-    const view = set[variantIndex];
-    return {
-      ...option,
-      label: view.label,
-      summary: `${view.summary} 本章重点是「${chapter.title}」，你还需要判断：${base.stake}`,
-      feedback: `${view.feedback} 结合本章复盘：${CHAPTER_REFLECTIONS[chapter.id]}`
-    };
-  });
+  const options =
+    base.kind === "main"
+      ? base.options
+      : base.options.map((option, index) => {
+          const set = ROLE_OPTION_SETS[role][option.quality];
+          const variantIndex =
+            (stringHash(`${nodeId}-${role}-${index}`) + index) % set.length;
+          const view = set[variantIndex];
+          return {
+            ...option,
+            label: view.label,
+            summary: `${view.summary} 本章重点是「${chapter.title}」，你还需要判断：${base.stake}`,
+            feedback: view.feedback
+          };
+        });
   return {
     ...base,
     title: variant.title ?? base.title,

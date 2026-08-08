@@ -83,6 +83,8 @@ export interface DuelProfile {
   resources: Record<ResourceKey, number>;
   color: string;
   isHuman: boolean;
+  /** AI 闅惧害寮哄害锛堝奖鍝嶉€夋嫨绮惧噯鐜囷級銆?*/
+  strength?: number;
 }
 
 export interface ChapterRecord {
@@ -149,6 +151,7 @@ export interface SaveState {
   difficulty: "normal" | "pressure" | "extreme";
   /** 最近一次本地保存的时间戳（毫秒）。用于云端同步冲突判定。 */
   lastSavedAt?: number;
+  lastResourceDate?: string;
   /** 存档核心进度的内容哈希。用于云端同步冲突判定（同游玩次数但内容不同也能识别）。 */
   saveHash?: string;
   lastStoryNodeId?: string;

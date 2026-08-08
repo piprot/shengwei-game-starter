@@ -84,11 +84,11 @@ try {
   await page.click("text=空降首周");
   await page.waitForSelector("text=当前考验");
   await page.click(".option-card");
-  await page.waitForSelector("text=专家级应对");
+  await page.waitForSelector(".outcome-panel");
   await page.click("text=进入角色分岔");
   await page.waitForSelector("text=当前考验");
   await page.click(".option-card");
-  await page.waitForSelector("text=返回地图");
+  await page.waitForSelector(".outcome-panel");
   await page.click("text=返回地图");
   await page.waitForSelector("text=九章权力架构");
 

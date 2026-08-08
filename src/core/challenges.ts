@@ -175,6 +175,51 @@ export function dailyChallenges(save: SaveState): ChallengeState[] {
     });
 }
 
+/** 鏈€杩戜竴鍛ㄧ殑绱㈠紩锛屽舰寮忎负 YYYY-Www銆?*/
+export function weekKey(): string {
+  const now = new Date();
+  const target = new Date(now.getTime());
+  target.setHours(0, 0, 0, 0);
+  target.setDate(target.getDate() + 3 - ((target.getDay() + 6) % 7));
+  const year = target.getFullYear();
+  const week = Math.floor(
+    (target.getTime() - new Date(year, 0, 1).getTime()) / 604800000
+  ) + 1;
+  return `${year}-W${String(week).padStart(2, "0")}`;
+}
+
+export function weekEndsAt(): number {
+  const now = new Date();
+  const day = (now.getDay() + 6) % 7;
+  const nextMonday = new Date(now.getTime());
+  nextMonday.setHours(24, 0, 0, 0);
+  nextMonday.setDate(now.getDate() + (7 - day));
+  return nextMonday.getTime();
+}
+
+/** 鍛ㄥ父鎸戞垬锛氭寜鍛ㄥ害绉嶅瓙浠庢睜瀛愰噷鍙?2 椤癸紝缁欓暱鏈熻繍钀ユ彁渚涘惊鐜€?*/
+export function weeklyChallenges(save: SaveState): ChallengeState[] {
+  const week = weekKey();
+  const seed = [...week].reduce((sum, char) => sum * 31 + char.charCodeAt(0), 7);
+  const start = seed % CHALLENGE_POOL.length;
+  return CHALLENGE_POOL.slice(start)
+    .concat(CHALLENGE_POOL.slice(0, start))
+    .slice(0, 2)
+    .map((challenge) => {
+      const current = Math.min(challenge.target, challenge.progress(save));
+      return {
+        id: `${challenge.id}-${week}`,
+        title: challenge.title,
+        description: challenge.description,
+        reward: challenge.reward,
+        category: challenge.category,
+        current,
+        target: challenge.target,
+        done: current >= challenge.target
+      };
+    });
+}
+
 export function claimableChallenges(
   save: SaveState
 ): ChallengeState[] {

@@ -157,7 +157,7 @@ export const UI_STRINGS = {
     abilityUnlockTitle: "高阶能力已解锁",
     abilityUnlockText: "你看到了别人看不到的线索：本局关键决策会因为你的高阶能力获得额外判断加成。",
     trialTitle: "成长试炼",
-    trialEnergy: "精力值",
+    trialEnergy: "试炼精力",
     trialHp: "生命值",
     trialStages: "试炼关卡",
     trialItems: "战利品",

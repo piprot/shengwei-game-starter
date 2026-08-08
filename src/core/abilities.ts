@@ -216,7 +216,7 @@ export function resourceLabel(resource: keyof typeof RESOURCE_NAMES): string {
 }
 
 export const RESOURCE_NAMES = {
-  energy: "精力",
+  energy: "剧情精力",
   trust: "信任",
   influence: "影响力",
   capital: "组织资源"
