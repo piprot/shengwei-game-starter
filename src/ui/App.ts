@@ -172,7 +172,7 @@ const SETTINGS_MIGRATION_KEY = "adaptive-ascent-settings-v2";
 const GUIDE_KEY = "adaptive-ascent-guide-v1";
 const GUIDE_REWARD_KEY = "adaptive-ascent-guide-reward";
 const ACHIEVEMENT_FAVORITE_KEY = "adaptive-ascent-achievement-favorites";
-const APP_VERSION = "1.5.5";
+const APP_VERSION = "1.5.6";
 
 type View =
   | "menu"
@@ -364,6 +364,7 @@ export class AdaptiveGameApp {
 
   constructor(root: HTMLElement) {
     this.root = root;
+    document.querySelector("#app-loading")?.remove();
     document.documentElement.classList.toggle("online-off", !ONLINE_ENABLED);
     document.documentElement.lang = this.language;
     this.audio.setMuted(this.muted);
@@ -966,6 +967,12 @@ export class AdaptiveGameApp {
     this.wireTrainingLinks();
   }
 
+  /** 章节美术用页面绝对 URL，避免 CSS 自定义属性中的相对路径被解析到 assets 目录。 */
+  private chapterArtStyle(chapterId: number): string {
+    const url = new URL(`./art/chapter-${chapterId}.svg`, window.location.href).href;
+    return `--chapter-art:url('${url}')`;
+  }
+
   private renderMenu(): void {
     const summary = profileSummary(this.save);
     const started = this.save.profileCreated;
@@ -1015,6 +1022,7 @@ export class AdaptiveGameApp {
             <h1>${started ? this.t("menuContinue") : this.t("menuTitle")}</h1>
             <p>基于《权经》九章架构、Heifetz 自适应领导力与情境高尔夫方法，通过主线剧情、支线任务和 1v1 对决，训练识人、用人、驭人、谋权、掌权、固权与自我进化能力。</p>
             <div class="hero-actions">
+              ${!started ? `<button class="hero-start-hint" data-action="open-profile">${this.language === "en" ? "New here? Create a profile and make your first decision" : "新玩家从这里开始：创建档案，完成第一次选择"}</button>` : ""}
               <button class="primary" data-action="${started ? "open-map" : "open-profile"}">${started ? this.t("menuContinue") : this.t("createProfile")}</button>
               <button data-action="open-duel">${this.t("enterDuel")}</button>
             </div>
@@ -1022,7 +1030,7 @@ export class AdaptiveGameApp {
           <div class="rank-panel">
             <span class="rank-name">${summary.rank.name}</span>
             <strong>${summary.total}</strong>
-            <span class="rank-caption">${this.t("totalAbility")}</span>
+            <span class="rank-caption">${started ? this.t("totalAbility") : this.language === "en" ? "Baseline · grows with decisions" : "初始基线 · 随决策成长"}</span>
             <div class="rank-meter"><i style="width:${Math.min(100, (summary.total / 60) * 100)}%"></i></div>
             <p>${this.language === "en" ? `Completed ${summary.chapterCount} / 9 chapters` : `已通关 ${summary.chapterCount} / 9 章`}</p>
           </div>
@@ -1671,7 +1679,7 @@ export class AdaptiveGameApp {
           <span>${summary.rank.name}</span>
         </div>
       </header>
-      <main class="map-shell ${this.mapDetailOpen ? "map-detail-open" : ""}" style="--chapter-art:url('./art/chapter-${chapter.id}.svg')" aria-label="${this.language === "en" ? "Campaign map" : "主线地图"}">
+      <main class="map-shell ${this.mapDetailOpen ? "map-detail-open" : ""}" style="${this.chapterArtStyle(chapter.id)}" aria-label="${this.language === "en" ? "Campaign map" : "主线地图"}">
         ${
           this.resourceRecoveryNote
             ? `<div class="recovery-banner" role="status">${this.language === "en" ? "Daily resource recovery applied." : "今日资源恢复已生效，精力、信任、影响力和组织资源小幅回升。"}</div>`
@@ -1993,7 +2001,7 @@ export class AdaptiveGameApp {
           <span id="round-timer" class="round-timer" style="display:none"></span>
         </div>
       </header>
-      <main class="story-shell" style="--chapter-art:url('./art/chapter-${chapter.id}.svg')" aria-label="${this.language === "en" ? "Story scenario" : "剧情情境"}">
+      <main class="story-shell" style="${this.chapterArtStyle(chapter.id)}" aria-label="${this.language === "en" ? "Story scenario" : "剧情情境"}">
         ${this.routeBannerMarkup(node.chapterId)}
         ${
           node.chapterId === 4 || node.chapterId === 7
