@@ -9,6 +9,15 @@ export class GameAudio {
   private sfxVolume = 0.9;
   private muted = false;
   private musicMuted = false;
+  private userGesture = false;
+
+  /** 首次用户手势后允许恢复音频上下文，避免加载阶段无意义的 resume 警告。 */
+  unlock(): void {
+    this.userGesture = true;
+    if (this.context && this.context.state === "suspended") {
+      void this.context.resume();
+    }
+  }
 
   ensure(): void {
     if (!this.context) {
@@ -24,7 +33,7 @@ export class GameAudio {
       this.master.gain.value = this.muted ? 0 : this.sfxVolume;
       this.master.connect(this.context.destination);
     }
-    if (this.context.state === "suspended") {
+    if (this.userGesture && this.context.state === "suspended") {
       void this.context.resume();
     }
   }
@@ -130,6 +139,10 @@ export class GameAudio {
   }
 
   startAmbient(scene: "menu" | "story" | "duel" = "menu"): void {
+    // 浏览器禁止在用户手势前创建/恢复 AudioContext，加载阶段先不启动环境音。
+    if (!this.userGesture) {
+      return;
+    }
     this.ensure();
     if (!this.context || !this.master || this.ambientGain) {
       return;

@@ -172,7 +172,7 @@ const SETTINGS_MIGRATION_KEY = "adaptive-ascent-settings-v2";
 const GUIDE_KEY = "adaptive-ascent-guide-v1";
 const GUIDE_REWARD_KEY = "adaptive-ascent-guide-reward";
 const ACHIEVEMENT_FAVORITE_KEY = "adaptive-ascent-achievement-favorites";
-const APP_VERSION = "1.5.8";
+const APP_VERSION = "1.5.9";
 
 type View =
   | "menu"
@@ -1024,6 +1024,7 @@ export class AdaptiveGameApp {
             <p>基于《权经》九章架构、Heifetz 自适应领导力与情境高尔夫方法，通过主线剧情、支线任务和 1v1 对决，训练识人、用人、驭人、谋权、掌权、固权与自我进化能力。</p>
             <div class="hero-actions">
               ${!started ? `<button class="hero-start-hint" data-action="open-profile">${this.language === "en" ? "New here? Create a profile and make your first decision" : "新玩家从这里开始：创建档案，完成第一次选择"}</button>` : ""}
+              ${!started ? `<button class="trial-now" data-action="start-trial-chapter">${this.language === "en" ? "Play Chapter 1 now" : "立即试玩第一章"}</button>` : ""}
               <button class="primary" data-action="${started ? "open-map" : "open-profile"}">${started ? this.t("menuContinue") : this.t("createProfile")}</button>
               <button data-action="open-duel">${this.t("enterDuel")}</button>
             </div>
@@ -4116,6 +4117,7 @@ export class AdaptiveGameApp {
     if (!action) {
       return;
     }
+    this.audio.unlock();
     this.audio.ensure();
 
     if (!ONLINE_ENABLED && action.startsWith("cloud-")) {
@@ -4248,6 +4250,15 @@ export class AdaptiveGameApp {
       case "open-profile":
         this.audio.ui();
         this.show("profile");
+        break;
+      case "start-trial-chapter":
+        this.pendingRole = "parachute";
+        this.startWithoutAssessment();
+        this.showToast(
+          this.language === "en"
+            ? "Chapter 1 trial started as Parachute Manager."
+            : "已以空降管理者身份进入首章试玩。"
+        );
         break;
       case "open-map":
         this.audio.ui();

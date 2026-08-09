@@ -300,6 +300,15 @@ button.hero-start-hint::before {
   animation: start-hint-pulse 1.8s ease-out infinite;
 }
 
+button.trial-now {
+  border: 1px solid rgba(242, 193, 78, 0.75);
+  background:
+    linear-gradient(160deg, rgba(242, 193, 78, 0.22), rgba(242, 193, 78, 0.08)),
+    rgba(10, 16, 19, 0.65);
+  color: var(--gold);
+  font-weight: 800;
+}
+
 @keyframes start-hint-pulse {
   0% {
     box-shadow: 0 0 0 0 rgba(242, 193, 78, 0.55);
