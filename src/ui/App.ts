@@ -172,7 +172,7 @@ const SETTINGS_MIGRATION_KEY = "adaptive-ascent-settings-v2";
 const GUIDE_KEY = "adaptive-ascent-guide-v1";
 const GUIDE_REWARD_KEY = "adaptive-ascent-guide-reward";
 const ACHIEVEMENT_FAVORITE_KEY = "adaptive-ascent-achievement-favorites";
-const APP_VERSION = "1.5.6";
+const APP_VERSION = "1.5.7";
 
 type View =
   | "menu"
@@ -364,6 +364,7 @@ export class AdaptiveGameApp {
 
   constructor(root: HTMLElement) {
     this.root = root;
+    document.body.setAttribute("data-app-ready", "1");
     document.querySelector("#app-loading")?.remove();
     document.documentElement.classList.toggle("online-off", !ONLINE_ENABLED);
     document.documentElement.lang = this.language;
