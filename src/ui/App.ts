@@ -172,7 +172,7 @@ const SETTINGS_MIGRATION_KEY = "adaptive-ascent-settings-v2";
 const GUIDE_KEY = "adaptive-ascent-guide-v1";
 const GUIDE_REWARD_KEY = "adaptive-ascent-guide-reward";
 const ACHIEVEMENT_FAVORITE_KEY = "adaptive-ascent-achievement-favorites";
-const APP_VERSION = "1.5.3";
+const APP_VERSION = "1.5.4";
 
 type View =
   | "menu"
@@ -1676,6 +1676,13 @@ export class AdaptiveGameApp {
             ? `<div class="recovery-banner" role="status">${this.language === "en" ? "Daily resource recovery applied." : "今日资源恢复已生效，精力、信任、影响力和组织资源小幅回升。"}</div>`
             : ""
         }
+        ${
+          this.save.profile.resources.energy < 25 ||
+          this.save.profile.resources.trust < 40 ||
+          this.save.profile.resources.capital < 25
+            ? `<div class="resource-crisis-banner" role="alert">${this.language === "en" ? "A key resource is low. Restore energy once per chapter, or play side quests to rebuild trust and capital before continuing." : "关键资源偏低：每章可深呼吸恢复一次精力，也可先做支线补充信任与组织资源，再继续主线。"}</div>`
+            : ""
+        }
         <section class="map-head">
           <div>
             <p class="eyebrow">${this.t("mainQuest")}</p>
@@ -2043,6 +2050,7 @@ export class AdaptiveGameApp {
               }
               <div class="role-lens">
                 <strong>${this.roleDisplay(this.save.profile.role).name}${this.language === "zh" ? "视角" : " Lens"}</strong>
+                <span class="role-tag">${this.language === "en" ? "Role-specific" : "角色专属"}</span>
                 <p>${escapeHtml(this.language === "en" ? ROLE_EN[this.save.profile.role].lens : ROLES[this.save.profile.role].lens)}</p>
               </div>
               <p class="scenario-context">${escapeHtml(node.context)}</p>
@@ -2382,6 +2390,19 @@ export class AdaptiveGameApp {
             <strong>${this.roleDisplay(this.save.profile.role).shortName} · ${decision.identity}</strong>
           </div>
           <p class="adaptive-note">${this.language === "en" ? `Adaptive ${decision.counts.expert} · Technical ${decision.counts.partial} · Authority ${decision.counts.risk}. Adaptive leadership grows when you diagnose from the balcony, hold the tension, and give the work back; partial moves are technical fixes, and high-risk moves lean on authority or avoidance.` : `自适应 ${decision.counts.expert} · 技术性 ${decision.counts.partial} · 权威/回避 ${decision.counts.risk}。自适应领导力来自登台观察、稳住张力、把工作还给团队；部分有效是技术性解决，高风险回应依赖权威或回避。`}</p>
+          <p class="decision-insight" role="note">${
+            decision.counts.risk >= decision.counts.expert
+              ? this.language === "en"
+                ? "Insight: under pressure you reach for authority first. The next move is to make that pressure visible instead of absorbing it alone."
+                : "洞察：压力之下你习惯先动用权威。下一步是把这份压力摆到台面，而不是独自吸收。"
+              : decision.counts.partial >= decision.counts.expert
+                ? this.language === "en"
+                  ? "Insight: you solve the symptom fast and carry the responsibility yourself. Try handing the problem back with a check node."
+                  : "洞察：你擅长快速解决症状，但责任往往留在自己手里。试试把问题还回去，并带上检查节点。"
+                : this.language === "en"
+                  ? "Insight: you diagnose before acting. The next upgrade is turning diagnosis into a shared, verifiable agenda."
+                  : "洞察：你习惯先诊断再行动。下一步是把诊断变成大家共同可验收的议程。"
+          }</p>
           <section class="coach-prompts" aria-label="${this.language === "en" ? "Coach follow-up questions" : "教练追问"}" role="region">
             <h2>${this.language === "en" ? "Coach Follow-Ups" : "教练追问"}</h2>
             <ul>
@@ -3425,6 +3446,15 @@ export class AdaptiveGameApp {
           }
           <button class="primary" data-action="open-duel-lobby">${en ? "Back to Lobby" : "返回大厅"}</button>
           <button data-action="open-map">${this.t("menuContinue")}</button>
+        </section>
+        <section class="duel-review-discussion" aria-label="${en ? "Debrief discussion" : "复盘讨论"}">
+          <h2>${en ? "Debrief Discussion" : "复盘讨论"}</h2>
+          <p class="muted">${en ? `Opponent style: ${this.aiArchetypeLabel(engine.players[1].archetype ?? "builder")}` : `对手风格：${this.aiArchetypeLabel(engine.players[1].archetype ?? "builder")}`}</p>
+          <ul>
+            <li>${en ? `Where did ${engine.players[1].name} push you outside your usual pattern?` : `${engine.players[1].name}在哪些回合把你逼出了平时的判断习惯？`}</li>
+            <li>${en ? "Which decision would you defend in front of your team, and which would you revisit?" : "哪一次选择你敢在团队面前辩护，哪一次你会重新考虑？"}</li>
+            <li>${en ? "What would this opponent say about your leadership style after the match?" : "这局之后，对手会怎样描述你的领导风格？"}</li>
+          </ul>
         </section>
         <section class="duel-analysis">
           <h2>${this.t("duelAnalysisTitle")}</h2>

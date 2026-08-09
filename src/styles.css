@@ -4251,6 +4251,91 @@ h2 {
   font-weight: 600;
 }
 
+/* 角色专属标签 */
+.role-tag {
+  display: inline-block;
+  margin-left: 8px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: rgba(242, 193, 78, 0.14);
+  color: #f2c14e;
+  font-size: 12px;
+}
+
+/* 报告洞察时刻 */
+.decision-insight {
+  margin-top: 10px;
+  padding: 10px 12px;
+  border-left: 3px solid #f2c14e;
+  background: rgba(242, 193, 78, 0.08);
+  color: #e7eef2;
+}
+
+/* 对局复盘讨论 */
+.duel-review-discussion {
+  margin-top: 14px;
+  padding: 12px 14px;
+  border-radius: 8px;
+  border: 1px solid #3c5462;
+  background: rgba(12, 22, 28, 0.5);
+}
+.duel-review-discussion h2 {
+  margin: 0 0 6px;
+  font-size: 15px;
+  color: #4db7d6;
+}
+.duel-review-discussion ul {
+  margin: 0;
+  padding-left: 18px;
+  color: #9fb3c8;
+}
+.duel-review-discussion li {
+  margin-bottom: 4px;
+}
+
+/* 资源危机提示 */
+.resource-crisis-banner {
+  margin-bottom: 12px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  border: 1px solid #e9826c;
+  background: rgba(233, 130, 108, 0.12);
+  color: #f0b7a8;
+}
+
+/* 升级与得分反馈动效 */
+.score-pop span {
+  animation: score-pop-in 0.45s ease-out both;
+}
+.score-pop span:nth-child(2) {
+  animation-delay: 0.08s;
+}
+.score-pop span:nth-child(3) {
+  animation-delay: 0.16s;
+}
+.ability-unlock-banner {
+  animation: unlock-pulse 1.2s ease-in-out infinite;
+}
+@keyframes score-pop-in {
+  0% {
+    transform: translateY(6px) scale(0.96);
+    opacity: 0;
+  }
+  100% {
+    transform: translateY(0) scale(1);
+    opacity: 1;
+  }
+}
+@keyframes unlock-pulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 rgba(242, 193, 78, 0);
+  }
+  50% {
+    box-shadow: 0 0 14px rgba(242, 193, 78, 0.35);
+  }
+}
+
 /* 1v1 倒计时与超时提示 */
 .duel-timer {
   font-variant-numeric: tabular-nums;
