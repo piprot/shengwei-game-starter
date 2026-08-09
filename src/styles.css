@@ -4349,6 +4349,10 @@ h2 {
   color: #e9826c;
   animation: duel-timer-pulse 1s ease-in-out infinite;
 }
+.duel-prediction-bonus {
+  color: #f2c14e;
+  font-weight: 700;
+}
 .duel-timeout-note {
   margin-bottom: 12px;
   padding: 10px 12px;

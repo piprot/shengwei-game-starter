@@ -172,7 +172,7 @@ const SETTINGS_MIGRATION_KEY = "adaptive-ascent-settings-v2";
 const GUIDE_KEY = "adaptive-ascent-guide-v1";
 const GUIDE_REWARD_KEY = "adaptive-ascent-guide-reward";
 const ACHIEVEMENT_FAVORITE_KEY = "adaptive-ascent-achievement-favorites";
-const APP_VERSION = "1.5.4";
+const APP_VERSION = "1.5.5";
 
 type View =
   | "menu"
@@ -326,6 +326,7 @@ export class AdaptiveGameApp {
   private duelPredictionPhase = false;
   private duelPredictionCorrect?: boolean;
   private duelPredictionHistory: boolean[] = [];
+  private duelPredictionBonusTotal = 0;
   private duelRoundTimerId?: number;
   private duelRoundTickId?: number;
   private duelRoundDeadline = 0;
@@ -1793,7 +1794,8 @@ export class AdaptiveGameApp {
                 .join("")}
             </div>
             <div class="challenge-panel weekly-panel mobile-collapse">
-              <h3>${this.language === "en" ? "Weekly Challenges" : "每周挑战"}</h3>
+              <h3>${this.language === "en" ? "Weekly Focus" : "本周聚焦"}</h3>
+              <p class="muted">${this.language === "en" ? "One leadership theme per week, not daily chores." : "每周一个领导力主题，少而精。"}</p>
               <p class="muted">${this.language === "en" ? `Week ${weekKey()} 路 resets in ${Math.max(0, Math.ceil((weekEndsAt() - Date.now()) / 3600000))}h` : `本周 ${weekKey()} 路 ${Math.max(0, Math.ceil((weekEndsAt() - Date.now()) / 3600000))} 小时后重置`}</p>
               ${weeklyChallenges(this.save)
                 .map(
@@ -2404,7 +2406,8 @@ export class AdaptiveGameApp {
                   : "洞察：你习惯先诊断再行动。下一步是把诊断变成大家共同可验收的议程。"
           }</p>
           <section class="coach-prompts" aria-label="${this.language === "en" ? "Coach follow-up questions" : "教练追问"}" role="region">
-            <h2>${this.language === "en" ? "Coach Follow-Ups" : "教练追问"}</h2>
+            <h2>${this.language === "en" ? "Coach Follow-Ups & Group Discussion" : "教练追问 · 小组讨论引导"}</h2>
+            <p class="muted">${this.language === "en" ? "Project these questions in a workshop to invite peer reflection." : "工作坊可直接投影这些问题，引导学员互评。"}</p>
             <ul>
               ${this.coachPromptMarkup(decision)}
             </ul>
@@ -3442,6 +3445,11 @@ export class AdaptiveGameApp {
           ${
             this.duelPredictionHistory.length
               ? `<p class="duel-prediction-summary">${this.t("duelPredictionSummary")}：${this.duelPredictionHistory.filter(Boolean).length} / ${this.duelPredictionHistory.length}</p>`
+              : ""
+          }
+          ${
+            this.duelPredictionBonusTotal
+              ? `<p class="duel-prediction-bonus">${en ? "Prediction bonus" : "预判加成"} +${this.duelPredictionBonusTotal}</p>`
               : ""
           }
           <button class="primary" data-action="open-duel-lobby">${en ? "Back to Lobby" : "返回大厅"}</button>
@@ -5687,6 +5695,7 @@ export class AdaptiveGameApp {
         this.duelPredictionHistory.push(Boolean(this.duelPredictionCorrect));
         if (this.duelPredictionCorrect && engine) {
           engine.scores[0] += 10;
+          this.duelPredictionBonusTotal += 10;
         }
         this.audio.duelPick();
         this.maybeRevealDuelRound();
@@ -5962,6 +5971,7 @@ export class AdaptiveGameApp {
     this.audio.round();
     this.duelEngine = new DuelEngine(human, ai, this.duelRounds, duelSeed());
     this.duelRecorded = false;
+    this.duelPredictionBonusTotal = 0;
     this.show("duel");
   }
 
@@ -5977,6 +5987,7 @@ export class AdaptiveGameApp {
     this.audio.round();
     this.duelEngine = new DuelEngine(human, ai, 7, duelSeed());
     this.duelRecorded = false;
+    this.duelPredictionBonusTotal = 0;
     this.show("duel");
   }
 
@@ -5997,6 +6008,7 @@ export class AdaptiveGameApp {
     this.audio.round();
     this.duelEngine = new DuelEngine(human, ai, 7, duelSeed());
     this.duelRecorded = false;
+    this.duelPredictionBonusTotal = 0;
     this.show("duel");
   }
 
@@ -6019,6 +6031,7 @@ export class AdaptiveGameApp {
     this.hotSeatTurn = 0;
     this.localPassed = false;
     this.duelRecorded = false;
+    this.duelPredictionBonusTotal = 0;
     this.show("duel");
   }
 
@@ -6153,6 +6166,7 @@ export class AdaptiveGameApp {
         this.duelPrediction === message.optionIndex;
       if (this.duelPredictionCorrect) {
         this.duelEngine.scores[this.remotePlayerIndex] += 10;
+        this.duelPredictionBonusTotal += 10;
       }
       this.duelPrediction = undefined;
       this.duelPredictionPhase = false;
@@ -6729,6 +6743,7 @@ export class AdaptiveGameApp {
             this.duelPrediction === message.optionIndex;
           if (this.duelPredictionCorrect) {
             this.duelEngine.scores[this.remotePlayerIndex] += 10;
+            this.duelPredictionBonusTotal += 10;
           }
           this.duelPrediction = undefined;
           this.duelPredictionPhase = false;
