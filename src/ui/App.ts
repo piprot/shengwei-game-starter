@@ -85,6 +85,7 @@ import {
 } from "../core/story";
 import type {
   AbilityId,
+  AiArchetype,
   ChapterDef,
   ChoiceOutcome,
   OptionQuality,
@@ -171,7 +172,7 @@ const SETTINGS_MIGRATION_KEY = "adaptive-ascent-settings-v2";
 const GUIDE_KEY = "adaptive-ascent-guide-v1";
 const GUIDE_REWARD_KEY = "adaptive-ascent-guide-reward";
 const ACHIEVEMENT_FAVORITE_KEY = "adaptive-ascent-achievement-favorites";
-const APP_VERSION = "1.5.2";
+const APP_VERSION = "1.5.3";
 
 type View =
   | "menu"
@@ -2381,6 +2382,12 @@ export class AdaptiveGameApp {
             <strong>${this.roleDisplay(this.save.profile.role).shortName} · ${decision.identity}</strong>
           </div>
           <p class="adaptive-note">${this.language === "en" ? `Adaptive ${decision.counts.expert} · Technical ${decision.counts.partial} · Authority ${decision.counts.risk}. Adaptive leadership grows when you diagnose from the balcony, hold the tension, and give the work back; partial moves are technical fixes, and high-risk moves lean on authority or avoidance.` : `自适应 ${decision.counts.expert} · 技术性 ${decision.counts.partial} · 权威/回避 ${decision.counts.risk}。自适应领导力来自登台观察、稳住张力、把工作还给团队；部分有效是技术性解决，高风险回应依赖权威或回避。`}</p>
+          <section class="coach-prompts" aria-label="${this.language === "en" ? "Coach follow-up questions" : "教练追问"}" role="region">
+            <h2>${this.language === "en" ? "Coach Follow-Ups" : "教练追问"}</h2>
+            <ul>
+              ${this.coachPromptMarkup(decision)}
+            </ul>
+          </section>
           <div class="certification-badge ${cert.passed ? "passed" : ""}">
             <span>${this.language === "en" ? "Certification" : "能力认证"}</span>
             <strong>${cert.passed ? (this.language === "en" ? `Certified · ${cert.level}` : `认证通过 · ${cert.level}`) : (this.language === "en" ? `Not Certified · ${cert.next}` : `未认证 · ${cert.next}`)}</strong>
@@ -3805,6 +3812,7 @@ export class AdaptiveGameApp {
                 <div class="mode-note">
                   <h2>${this.language === "en" ? "AI Practice" : "AI 陪练"}</h2>
                   <p>${this.language === "en" ? "The system builds an opponent from each scenario's expert baseline and your ability level, then adjusts difficulty based on your expert-decision rate. Best for sustained decision training." : "系统会根据每道情境的专家基准和你的能力水平生成对手，并基于你的专家判断率动态调整难度。适合持续训练决策质量。"}</p>
+                  <p class="muted">${this.language === "en" ? `Next opponent style: ${this.aiArchetypeLabel(this.aiArchetype())}` : `下一场对手风格：${this.aiArchetypeLabel(this.aiArchetype())}`}</p>
                   <button class="primary" data-action="start-ai-duel">${this.language === "en" ? "Start Duel" : "开始对战"}</button>
                   <button data-action="start-challenge-duel">${this.language === "en" ? "7-Round Challenge" : "7 回合挑战赛"}</button>
                   <button data-action="start-endless-duel">${this.language === "en" ? "Endless Challenge" : "无尽挑战"}</button>
@@ -5881,6 +5889,27 @@ export class AdaptiveGameApp {
     return roles[counter % roles.length];
   }
 
+  private aiArchetype(): AiArchetype {
+    const counter = (this.save.duelWins ?? 0) + (this.save.duelLosses ?? 0);
+    const archetypes: AiArchetype[] = ["executor", "builder", "gambler"];
+    return archetypes[counter % archetypes.length];
+  }
+
+  private aiArchetypeLabel(archetype: AiArchetype): string {
+    if (this.language === "en") {
+      return archetype === "executor"
+        ? "Iron Executor"
+        : archetype === "builder"
+          ? "Relationship Builder"
+          : "Gambler";
+    }
+    return archetype === "executor"
+      ? "铁血执行者"
+      : archetype === "builder"
+        ? "关系构建者"
+        : "赌徒";
+  }
+
   private startAiDuel(): void {
     const human = buildDuelProfile(this.save.profile, this.save.profile.name, "#41c7c0");
     const history = this.save.decisionHistory;
@@ -5896,7 +5925,8 @@ export class AdaptiveGameApp {
     const ai = buildAiProfile(
       this.aiOpponentRole(),
       strength,
-      this.save.profile.abilities
+      this.save.profile.abilities,
+      this.aiArchetype()
     );
     this.audio.ensure();
     this.audio.round();
@@ -5910,7 +5940,8 @@ export class AdaptiveGameApp {
     const ai = buildAiProfile(
       this.aiOpponentRole(),
       4,
-      this.save.profile.abilities
+      this.save.profile.abilities,
+      this.aiArchetype()
     );
     this.audio.ensure();
     this.audio.round();
@@ -5929,7 +5960,8 @@ export class AdaptiveGameApp {
     const ai = buildAiProfile(
       this.aiOpponentRole(),
       strength,
-      this.save.profile.abilities
+      this.save.profile.abilities,
+      this.aiArchetype()
     );
     this.audio.ensure();
     this.audio.round();
@@ -6348,6 +6380,7 @@ export class AdaptiveGameApp {
       <div class="player-panel">
         <span class="player-color" style="--dot:${player.color}"></span>
         <strong>${escapeHtml(player.name)}</strong>
+        ${player.isHuman ? "" : `<small class="ai-style-tag">${this.aiArchetypeLabel(player.archetype ?? "builder")}</small>`}
         <small>${picked ? (this.language === "en" ? "Choice made" : "已作出选择") : (this.language === "en" ? "Thinking" : "正在思考")}</small>
       </div>
     `;
@@ -7282,6 +7315,59 @@ export class AdaptiveGameApp {
           </div>
         `;
       })
+      .join("");
+  }
+
+  private coachPromptMarkup(
+    decision: ReturnType<typeof decisionProfile>
+  ): string {
+    const en = this.language === "en";
+    const prompts: string[] = [];
+    if (decision.counts.risk >= 2) {
+      prompts.push(
+        en
+          ? "You leaned on authority or avoidance several times. Is your real team holding back honest information?"
+          : "你多次使用权威/回避动作。现实团队是否正在因此少说真话？"
+      );
+    }
+    if (decision.counts.partial >= 2) {
+      prompts.push(
+        en
+          ? "Several moves were technical fixes. Which problems are you still carrying alone?"
+          : "多次选择偏向技术性解决。哪些问题其实还压在你一个人身上？"
+      );
+    }
+    if (decision.counts.expert >= 3) {
+      prompts.push(
+        en
+          ? "You diagnosed before acting repeatedly. Can the next diagnosis become a verifiable meeting agenda?"
+          : "你连续先诊断再行动。下一次能否把诊断变成可验收的会议议题？"
+      );
+    }
+    if (this.save.profile.resources.trust < 45) {
+      prompts.push(
+        en
+          ? "Trust is low in your run. When did you last choose efficiency over a relationship?"
+          : "本局信任值偏低。你上一次为了效率牺牲关系是什么时候？"
+      );
+    }
+    if (this.save.profile.resources.energy < 25) {
+      prompts.push(
+        en
+          ? "Energy nearly ran out. What would a sustainable week look like for you?"
+          : "精力接近枯竭。对你来说，可持续的一周应该长什么样？"
+      );
+    }
+    if (prompts.length === 0) {
+      prompts.push(
+        en
+          ? "Your decisions are balanced. Which scenario challenged your usual style the most?"
+          : "你的决策风格比较均衡。哪个情境最挑战你平时的做法？"
+      );
+    }
+    return prompts
+      .slice(0, 3)
+      .map((prompt) => `<li>${escapeHtml(prompt)}</li>`)
       .join("");
   }
 

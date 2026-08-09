@@ -1337,7 +1337,8 @@ export function buildDuelProfile(
 export function buildAiProfile(
   role: RoleId,
   strength: number,
-  playerAbilities?: Record<AbilityId, number>
+  playerAbilities?: Record<AbilityId, number>,
+  archetype?: import("./types").AiArchetype
 ) {
   const base = createDefaultAbilities();
   let state = (strength * 1009 + role.charCodeAt(0) * 31 + 12345) >>> 0;
@@ -1367,7 +1368,8 @@ export function buildAiProfile(
     resources: { energy: 75, trust: 45, influence: 50, capital: 40 },
     color: "#e9826c",
     isHuman: false,
-    strength: Math.max(0, Math.min(5, strength))
+    strength: Math.max(0, Math.min(5, strength)),
+    archetype: archetype ?? "builder"
   };
 }
 

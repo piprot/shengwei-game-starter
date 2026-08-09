@@ -66,6 +66,16 @@ export class DuelEngine {
     const player = this.players[playerIndex];
     const node = this.node;
     const strength = player.strength ?? 2;
+    const archetype = player.archetype ?? "builder";
+    if (archetype === "gambler" && Math.random() < 0.22) {
+      const riskIndex = node.options.findIndex(
+        (option) => option.quality === "risk"
+      );
+      if (riskIndex >= 0) {
+        this.pick(playerIndex, riskIndex);
+        return riskIndex;
+      }
+    }
     const expertChance = strength <= 1 ? 0.45 : strength <= 3 ? 0.65 : 0.85;
     const expertIndexes: number[] = [];
     const fallbackIndexes: number[] = [];
@@ -95,12 +105,28 @@ export class DuelEngine {
           : option.quality === "partial"
             ? 0.55
             : 0.2;
+      const effectIds = Object.keys(option.effects) as AbilityId[];
+      const archetypeBias =
+        archetype === "executor" &&
+        effectIds.some((id) =>
+          ["authority", "execution", "stability"].includes(id)
+        )
+          ? 0.3
+          : archetype === "builder" &&
+              effectIds.some((id) =>
+                ["communication", "insight", "recovery"].includes(id)
+              )
+            ? 0.3
+            : archetype === "gambler" && option.quality === "risk"
+              ? 0.2
+              : 0;
       return {
         index,
         score:
           quality * (2 + focus) +
           resourceBonus(player) / 40 +
-          Math.random() * 0.35
+          Math.random() * 0.35 +
+          archetypeBias
       };
     });
     const bestIndex = scored.reduce((best, current) =>

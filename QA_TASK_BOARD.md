@@ -68,3 +68,20 @@ GitHub Actions/Pages recovered. CI run `31133005719` for `19edd53` completed suc
 - `npm run test:live` PASS.
 - `npm run test:rtc:public` PASS.
 - Railway support was added in commit `4ccae3d` (`railway.toml` + `RAILWAY_SETUP.md`).
+
+## 2026-08-09 外部评估对账（pasted-text-1/2，重复）
+
+外部评估基于仓库代码（未访问线上），评分 6/10。逐条对账见 `docs/REVIEW_RESPONSE_2026-08-09.md`。
+
+### 已落地（本轮）
+- AI 陪练人格原型：executor / builder / gambler，影响选项偏好并在大厅与对局中显示风格标签。
+- 复盘报告“教练追问”：按决策画像与资源状态生成 2-3 条可带进教练对话的追问。
+
+### 待办（V2）
+- 1v1 博弈深化：策略暗牌+揭示、资源下注、信息战（用影响力购买对手偏好情报）。
+- AI 心理战：思考时间模拟、虚张声势、历史战绩与风格标签前置展示。
+- 资源危机事件：某项资源跌破阈值时强制进入支线危机。
+- 程序化情境生成与真实案例投稿（UGC 飞轮）。
+- 教练端：小组对比雷达、决策盲区热力图、工作坊同步推演模式。
+- 视觉/音乐升级：关键情境与 NPC 插画、章节主题音乐、东方管理哲学配色。
+- 真机用户测试：3-5 位高管/教练体验一章主线 + 1v1，记录停顿点。

@@ -76,6 +76,9 @@ export interface PlayerProfile {
   resources: Record<ResourceKey, number>;
 }
 
+/** AI 陪练人格原型：影响选项偏好与对局风格。 */
+export type AiArchetype = "executor" | "builder" | "gambler";
+
 export interface DuelProfile {
   name: string;
   role: RoleId;
@@ -85,6 +88,7 @@ export interface DuelProfile {
   isHuman: boolean;
   /** AI 闅惧害寮哄害锛堝奖鍝嶉€夋嫨绮惧噯鐜囷級銆?*/
   strength?: number;
+  archetype?: AiArchetype;
 }
 
 export interface ChapterRecord {

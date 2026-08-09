@@ -4225,6 +4225,32 @@ h2 {
   color: #f2c14e;
 }
 
+/* 教练追问与 AI 风格标签 */
+.coach-prompts {
+  margin-top: 12px;
+  padding: 12px 14px;
+  border-radius: 8px;
+  border: 1px solid #3c5462;
+  background: rgba(12, 22, 28, 0.5);
+}
+.coach-prompts h2 {
+  margin: 0 0 6px;
+  font-size: 15px;
+  color: #f2c14e;
+}
+.coach-prompts ul {
+  margin: 0;
+  padding-left: 18px;
+  color: #9fb3c8;
+}
+.coach-prompts li {
+  margin-bottom: 4px;
+}
+.ai-style-tag {
+  color: #4db7d6;
+  font-weight: 600;
+}
+
 /* 1v1 倒计时与超时提示 */
 .duel-timer {
   font-variant-numeric: tabular-nums;
