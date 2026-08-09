@@ -23,10 +23,10 @@ if ("serviceWorker" in navigator && import.meta.env.PROD) {
       updateReloaded = true;
       window.setTimeout(() => window.location.reload(), 250);
     });
-    // 每次加载带独立版本号并绕过 HTTP 缓存，避免 GitHub Pages CDN
-    // 把旧 sw.js 缓存给老访客，导致其长期停留在旧版“空壳”菜单。
+    // 固定 sw.js 地址并绕过浏览器 HTTP 缓存：只有内容真的变化时才会更新，
+    // 避免每次加载带新时间戳导致 controllerchange -> reload 无限循环。
     void navigator.serviceWorker
-      .register(`./sw.js?v=${Date.now()}`, { updateViaCache: "none" })
+      .register("./sw.js", { updateViaCache: "none" })
       .catch(() => {
         // 隐私模式或静态部署下注册失败不阻塞游戏。
       });
