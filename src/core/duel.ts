@@ -115,12 +115,15 @@ export class DuelEngine {
     if (this.picks[playerIndex] !== null) {
       return;
     }
-    const riskIndex = this.node.options.findIndex(
-      (option) => option.quality === "risk"
-    );
+    const qualityOrder = ["expert", "partial", "risk"] as const;
+    const timeoutIndex = qualityOrder
+      .map((quality) =>
+        this.node.options.findIndex((option) => option.quality === quality)
+      )
+      .find((index) => index >= 0);
     this.pick(
       playerIndex,
-      riskIndex >= 0 ? riskIndex : this.node.options.length - 1
+      timeoutIndex ?? this.node.options.length - 1
     );
   }
 

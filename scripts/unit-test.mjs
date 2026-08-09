@@ -897,24 +897,24 @@ assert(
 );
 
 const failChapter = structuredClone(DEFAULT_SAVE);
-const failNodes = nodesForChapter(1);
+const failNodes = nodesForChapter(2);
 applyStoryChoice(failChapter, failNodes[0].id, 2);
-applyStoryChoice(failChapter, failNodes[1].id, 1);
+applyStoryChoice(failChapter, failNodes[1].id, 2);
 assert(
-  !failChapter.unlockedChapters.includes(2),
+  !failChapter.unlockedChapters.includes(3),
   "sub-star chapter must not unlock the next chapter"
 );
 assert(
-  !isChapterPassed(failChapter, 1),
+  !isChapterPassed(failChapter, 2),
   "chapter with low stars should not pass"
 );
-retryChapter(failChapter, 1);
+retryChapter(failChapter, 2);
 assert(
-  !failChapter.unlockedChapters.includes(2),
+  !failChapter.unlockedChapters.includes(3),
   "retry must not auto-unlock the next chapter"
 );
 assert(
-  !isChapterComplete(failChapter, 1),
+  !isChapterComplete(failChapter, 2),
   "retry should clear the chapter record"
 );
 assert(

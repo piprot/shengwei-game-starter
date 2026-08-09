@@ -3207,7 +3207,7 @@ export const ACHIEVEMENT_EN: Record<
   },
   random_collector: {
     name: "Event Collector",
-    description: "Complete every random event in one cycle"
+    description: "Complete all 36 random events in one cycle"
   },
   chapter_1: {
     name: "Chapter 1 Complete",

@@ -401,6 +401,31 @@ for (const role of Object.keys(ROLE_OPTION_SETS)) {
 if (ACHIEVEMENTS.length < 10) {
   problems.push("achievements must contain at least 10 entries");
 }
+const achievementIds = ACHIEVEMENTS.map((item) => item.id);
+const achievementIcons = ACHIEVEMENTS.map((item) => item.icon);
+if (new Set(achievementIds).size !== achievementIds.length) {
+  problems.push("achievement ids must be unique");
+}
+if (new Set(achievementIcons).size !== achievementIcons.length) {
+  problems.push("achievement icons must be unique and sequential");
+}
+if (
+  achievementIcons.some(
+    (icon, index) => icon !== String(index + 1).padStart(2, "0")
+  )
+) {
+  problems.push("achievement icons must be renumbered 01..N in list order");
+}
+const collector = ACHIEVEMENTS.find((item) => item.id === "random_collector");
+if (
+  collector &&
+  collector.description.includes("全部随机事件") &&
+  !collector.description.includes(String(RANDOM_EVENT_IDS.length))
+) {
+  problems.push(
+    `random_collector description should reference ${RANDOM_EVENT_IDS.length} events`
+  );
+}
 for (const npc of NPCS) {
   if (!STORY_NODES.some((node) => node.id === npc.nodeId)) {
     problems.push(`${npc.id} references missing node ${npc.nodeId}`);

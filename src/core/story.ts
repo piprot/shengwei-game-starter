@@ -4079,6 +4079,11 @@ export function randomEventEligibleCount(save: {
   }).length;
 }
 
+/** 事件池总事件数（36），用于与图鉴/成就目标保持一致。 */
+export function randomEventPoolTotal(): number {
+  return RANDOM_EVENT_IDS.length;
+}
+
 export function getChapter(id: number): ChapterDef {
   const chapter = CHAPTERS.find((item) => item.id === id);
   if (!chapter) {

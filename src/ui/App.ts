@@ -167,10 +167,11 @@ import {
 const ONLINE_ENABLED = import.meta.env.VITE_ENABLE_ONLINE === "true";
 const DUEL_SNAPSHOT_KEY = "adaptive-ascent-duel-snapshot-v1";
 const SAVE_BACKUP_HINT_KEY = "adaptive-ascent-backup-hint-dismissed";
+const SETTINGS_MIGRATION_KEY = "adaptive-ascent-settings-v2";
 const GUIDE_KEY = "adaptive-ascent-guide-v1";
 const GUIDE_REWARD_KEY = "adaptive-ascent-guide-reward";
 const ACHIEVEMENT_FAVORITE_KEY = "adaptive-ascent-achievement-favorites";
-const APP_VERSION = "1.5.0";
+const APP_VERSION = "1.5.1";
 
 type View =
   | "menu"
@@ -233,6 +234,7 @@ export class AdaptiveGameApp {
   private assessmentStep = 0;
   private assessmentAnswers: number[] = [];
   private selectedChapter = 1;
+  private mapDetailOpen = false;
   private trainingAbilityId: AbilityId = "insight";
   private trainingStage: "story" | "quiz" | "result" = "story";
   private trainingStep = 0;
@@ -269,6 +271,8 @@ export class AdaptiveGameApp {
   private storyNodeId?: string;
   private storyHintRevealed = false;
   private replayMode = false;
+  private wrongReviewQueue: string[] = [];
+  private wrongReviewIndex = 0;
   private hiddenBranchAbilityId?: AbilityId;
   private hiddenRouteStep = 0;
   private hiddenRouteLastAnswer?: number;
@@ -322,6 +326,10 @@ export class AdaptiveGameApp {
   private duelPredictionCorrect?: boolean;
   private duelPredictionHistory: boolean[] = [];
   private duelRoundTimerId?: number;
+  private duelRoundTickId?: number;
+  private duelRoundDeadline = 0;
+  private duelTimedOutThisRound = false;
+  private duelWarningPlayed = new Set<number>();
   private resourceRecoveryNote = false;
   private roomClient?: RoomClient;
   private cloudToken = localStorage.getItem("adaptive-ascent-cloud-token") || "";
@@ -355,6 +363,13 @@ export class AdaptiveGameApp {
     document.documentElement.classList.toggle("online-off", !ONLINE_ENABLED);
     document.documentElement.lang = this.language;
     this.audio.setMuted(this.muted);
+    if (localStorage.getItem(SETTINGS_MIGRATION_KEY) !== "1") {
+      if (this.musicVolume === 0) this.musicVolume = 60;
+      if (this.sfxVolume === 0) this.sfxVolume = 90;
+      localStorage.setItem("adaptive-ascent-music-volume", String(this.musicVolume));
+      localStorage.setItem("adaptive-ascent-sfx-volume", String(this.sfxVolume));
+      localStorage.setItem(SETTINGS_MIGRATION_KEY, "1");
+    }
     this.audio.setSfxVolume(this.sfxVolume);
     document.documentElement.style.fontSize = `${this.fontScale * 100}%`;
     this.save = loadSave();
@@ -391,6 +406,23 @@ export class AdaptiveGameApp {
       );
     }
     return ok;
+  }
+
+  /** 轻量全局 toast：状态变化后给出可见且读屏可感知的确认。 */
+  private showToast(message: string): void {
+    const existing = document.querySelector<HTMLElement>("#app-toast");
+    if (existing) existing.remove();
+    const toast = document.createElement("div");
+    toast.id = "app-toast";
+    toast.className = "app-toast";
+    toast.setAttribute("role", "status");
+    toast.setAttribute("aria-live", "polite");
+    toast.textContent = message;
+    document.body.appendChild(toast);
+    window.setTimeout(() => {
+      toast.classList.add("app-toast-hide");
+      window.setTimeout(() => toast.remove(), 300);
+    }, 2400);
   }
 
   private handleShortcut(event: KeyboardEvent): void {
@@ -526,6 +558,10 @@ export class AdaptiveGameApp {
     if (this.duelRoundTimerId !== undefined) {
       window.clearTimeout(this.duelRoundTimerId);
       this.duelRoundTimerId = undefined;
+    }
+    if (this.duelRoundTickId !== undefined) {
+      window.clearInterval(this.duelRoundTickId);
+      this.duelRoundTickId = undefined;
     }
   }
 
@@ -961,8 +997,8 @@ export class AdaptiveGameApp {
     this.root.innerHTML = `
       <header class="topbar">
         <div class="brand">${this.t("brand")}</div>
-        <button class="link sound-toggle" data-action="toggle-sound" aria-label="${this.language === "en" ? "Toggle sound" : "切换声音"}">${this.muted ? this.t("soundOff") : this.t("soundOn")}</button>
-        <button class="link language-toggle" data-action="toggle-language" aria-label="${this.language === "en" ? "Switch language" : "切换语言"}">${this.t("language")}</button>
+        <button class="link sound-toggle" data-action="toggle-sound" aria-label="${this.language === "en" ? "Toggle sound" : "切换声音"}" title="${this.language === "en" ? "Toggle sound" : "切换声音"}"><span aria-hidden="true">${this.muted ? "🔇" : "🔊"}</span>${this.muted ? this.t("soundOff") : this.t("soundOn")}</button>
+        <button class="link language-toggle" data-action="toggle-language" aria-label="${this.language === "en" ? "Switch language" : "切换语言"}" title="${this.language === "en" ? "Switch language" : "切换语言"}"><span aria-hidden="true">🌐</span>${this.t("language")}</button>
         <div class="topbar-meta">
           <span>${started ? this.save.profile.name : "未建档"}</span>
           <span>${summary.rank.name}</span>
@@ -988,7 +1024,8 @@ export class AdaptiveGameApp {
           </div>
         </section>
         ${
-          started && localStorage.getItem(SAVE_BACKUP_HINT_KEY) !== "1"
+          started &&
+          localStorage.getItem(`${SAVE_BACKUP_HINT_KEY}-${APP_VERSION}`) !== "1"
             ? `
               <section class="backup-hint">
                 <div>
@@ -1255,7 +1292,7 @@ export class AdaptiveGameApp {
                 ? `<button class="primary" data-action="assessment-submit">${en ? "Generate Profile" : "生成能力档案"}</button>`
                 : `<button class="primary" data-action="assessment-next">${en ? "Next" : "下一题"}</button>`
             }
-            <button class="link" data-action="assessment-skip">${en ? "Try 2 scenarios first" : this.t("assessmentTryFirst")}</button>
+            <button class="link" data-action="assessment-skip">${this.t("assessmentTryFirst")}</button>
           </div>
         </section>
       </main>
@@ -1448,15 +1485,24 @@ export class AdaptiveGameApp {
                         this.save,
                         achievement.id
                       );
+                      const displayProgress = Math.min(
+                        progress.target,
+                        Math.round(progress.current)
+                      );
                       const pct = Math.min(
                         100,
-                        Math.round((progress.current / progress.target) * 100)
+                        Math.round((displayProgress / progress.target) * 100)
                       );
                       const rarity = achievementRarity(achievement.id);
                       const lore = achievementLore(
                         achievement.id,
                         this.language
                       );
+                      const pendingAssessment =
+                        achievement.id === "assessment_done" &&
+                        !done &&
+                        this.save.assessmentScore === 0 &&
+                        this.save.playCount > 0;
                       const favorited = this.favoriteAchievements.has(
                         achievement.id
                       );
@@ -1477,13 +1523,14 @@ export class AdaptiveGameApp {
                             </div>
                             <h2>${view.name}</h2>
                             <p>${view.description}</p>
+                            ${pendingAssessment ? `<span class="ach-hint">${en ? "Assessment pending" : "可补测"}</span>` : ""}
                             <p class="ach-lore">${escapeHtml(lore)}</p>
                             <div class="achievement-card-progress" aria-label="${escapeHtml(
                               done
                                 ? en
                                   ? "Unlocked"
                                   : "已解锁"
-                                : `${progress.current} / ${progress.target}`
+                                : `${displayProgress} / ${progress.target}`
                             )}">
                               <i style="width:${done ? 100 : pct}%"></i>
                             </div>
@@ -1493,7 +1540,7 @@ export class AdaptiveGameApp {
                               ? en
                                 ? "Unlocked"
                                 : "已解锁"
-                              : `${progress.current} / ${progress.target}`
+                              : `${displayProgress} / ${progress.target}`
                           }</small>
                         </article>
                       `;
@@ -1620,7 +1667,7 @@ export class AdaptiveGameApp {
           <span>${summary.rank.name}</span>
         </div>
       </header>
-      <main class="map-shell" style="--chapter-art:url('./art/chapter-${chapter.id}.svg')" aria-label="${this.language === "en" ? "Campaign map" : "主线地图"}">
+      <main class="map-shell ${this.mapDetailOpen ? "map-detail-open" : ""}" style="--chapter-art:url('./art/chapter-${chapter.id}.svg')" aria-label="${this.language === "en" ? "Campaign map" : "主线地图"}">
         ${
           this.resourceRecoveryNote
             ? `<div class="recovery-banner" role="status">${this.language === "en" ? "Daily resource recovery applied." : "今日资源恢复已生效，精力、信任、影响力和组织资源小幅回升。"}</div>`
@@ -1677,6 +1724,17 @@ export class AdaptiveGameApp {
             </section>
           </div>
           <aside class="map-side">
+            <button
+              class="map-collapse-toggle"
+              data-action="toggle-map-detail"
+              aria-expanded="${this.mapDetailOpen ? "true" : "false"}"
+            >${this.language === "en"
+              ? this.mapDetailOpen
+                ? "Collapse extra panels"
+                : "Show more panels"
+              : this.mapDetailOpen
+                ? "收起更多面板"
+                : "展开更多面板"}</button>
             <div class="mini-panel next-step-panel">
               <h3>${this.t("nextStepTitle")}</h3>
               <p>${escapeHtml(this.nextActionAdvice().text)}</p>
@@ -1690,11 +1748,11 @@ export class AdaptiveGameApp {
               <h3>${this.t("roleObjective")}</h3>
               <p>${this.language === "en" ? ROLE_EN[this.save.profile.role].objective : ROLES[this.save.profile.role].objective}</p>
             </div>
-            <div class="mini-panel">
+            <div class="mini-panel mobile-collapse">
               <h3>${this.t("situation")}</h3>
               <p>${this.language === "en" ? `Completed ${summary.chapterCount}/9 chapters, ${this.save.completedSideQuests.length}/${SIDE_QUEST_ARCS.reduce((count, arc) => count + arc.nodes.length, 0)} side quests, ${this.save.completedRandomEvents.length} random events. Latest decision: ${this.latestDecisionText()}.` : `已完成 ${summary.chapterCount}/9 章，支线 ${this.save.completedSideQuests.length}/${SIDE_QUEST_ARCS.reduce((count, arc) => count + arc.nodes.length, 0)}，随机事件 ${this.save.completedRandomEvents.length}，最近决策 ${this.latestDecisionText()}。`}</p>
             </div>
-            ${this.difficultySelectorMarkup()}
+            <div class="mobile-collapse">${this.difficultySelectorMarkup()}</div>
             <div class="challenge-panel">
               <h3>${this.t("dailyTitle")}</h3>
               ${dailyChallenges(this.save)
@@ -1724,7 +1782,7 @@ export class AdaptiveGameApp {
                 )
                 .join("")}
             </div>
-            <div class="challenge-panel weekly-panel">
+            <div class="challenge-panel weekly-panel mobile-collapse">
               <h3>${this.language === "en" ? "Weekly Challenges" : "每周挑战"}</h3>
               <p class="muted">${this.language === "en" ? `Week ${weekKey()} 路 resets in ${Math.max(0, Math.ceil((weekEndsAt() - Date.now()) / 3600000))}h` : `本周 ${weekKey()} 路 ${Math.max(0, Math.ceil((weekEndsAt() - Date.now()) / 3600000))} 小时后重置`}</p>
               ${weeklyChallenges(this.save)
@@ -1751,7 +1809,7 @@ export class AdaptiveGameApp {
                 )
                 .join("")}
             </div>
-            <div class="random-event-panel">
+            <div class="random-event-panel mobile-collapse">
               <h3>${this.t("randomEvent")}</h3>
               ${ 
                 availableRandom
@@ -1765,7 +1823,7 @@ export class AdaptiveGameApp {
                   `
               }
             </div>
-            <div class="event-book-panel">
+            <div class="event-book-panel mobile-collapse">
               <h3>${this.language === "en" ? "Event Log" : "事件簿"}</h3>
               <p class="muted">${
                 this.language === "en"
@@ -1802,18 +1860,20 @@ export class AdaptiveGameApp {
                 }).join("")}
               </div>
             </div>
-            <div class="mini-panel">
+            <div class="mini-panel mobile-collapse">
               <h3>${this.t("currentProgress")}</h3>
               <strong>${summary.chapterCount} / 9</strong>
               <p>${this.t("totalAbility")} ${summary.total}</p>
             </div>
-            <div class="mini-panel">
+            <div class="mini-panel mobile-collapse">
               <h3>${this.t("unlockedTitle")}</h3>
               <p>${this.save.unlockedChapters.map((id) => this.chapterDisplay(getChapter(id)).title).join(this.language === "en" ? ", " : "、")}</p>
             </div>
-            <button class="primary" data-action="open-report">${this.t("viewReport")}</button>
-            <button data-action="open-duel">${this.t("enterDuel")}</button>
-            <button data-action="open-ability">${this.t("ability")}</button>
+            <div class="map-quick-actions">
+              <button class="primary" data-action="open-report">${this.t("viewReport")}</button>
+              <button data-action="open-duel">${this.t("enterDuel")}</button>
+              <button data-action="open-ability">${this.t("ability")}</button>
+            </div>
           </aside>
         </section>
       </main>
@@ -1916,6 +1976,11 @@ export class AdaptiveGameApp {
             : ""
         }
         ${this.replayMode ? `<button class="link replay-exit" data-action="open-map">${this.t("replayExit")}</button>` : ""}
+        ${
+          this.wrongReviewQueue.length
+            ? `<div class="wrong-review-header" role="status">${this.language === "en" ? `Missed-move review ${this.wrongReviewIndex + 1}/${this.wrongReviewQueue.length}` : `错题回练 ${this.wrongReviewIndex + 1}/${this.wrongReviewQueue.length}`}</div>`
+            : ""
+        }
         <button class="link back-link" data-action="open-map">${this.t("backToMap")}</button>
         <section class="story-art">
           <canvas id="story-art" aria-label="${this.language === "en" ? "Diagram of the current situation" : "当前情境的局势示意图"}"></canvas>
@@ -2080,7 +2145,7 @@ export class AdaptiveGameApp {
                       : route === "risk"
                         ? "routeRisk"
                         : "routePartial";
-                  return `<button class="${selected ? "selected" : ""}" data-action="choose-route" data-chapter="${chapter.id}" data-route="${route}">${this.t(labelKey)}</button>`;
+                  return `<button class="${selected ? "selected" : ""}" data-action="choose-route" data-chapter="${chapter.id}" data-route="${route}" aria-pressed="${selected ? "true" : "false"}">${this.t(labelKey)}${selected ? ` <span class="route-selected-tag">${this.language === "en" ? "Selected" : "已选"}</span>` : ""}</button>`;
                 })
                 .join("")}
             </div>
@@ -2290,6 +2355,19 @@ export class AdaptiveGameApp {
             <span>${this.language === "en" ? "Certification" : "能力认证"}</span>
             <strong>${cert.passed ? (this.language === "en" ? `Certified · ${cert.level}` : `认证通过 · ${cert.level}`) : (this.language === "en" ? `Not Certified · ${cert.next}` : `未认证 · ${cert.next}`)}</strong>
           </div>
+          <div class="cert-details">
+            <p>${this.language === "en" ? "Requirements: assessment score and role focus abilities." : "认证条件：测评总分与角色重点能力合计。"}</p>
+            <p><strong>${this.language === "en" ? "Assessment" : "测评总分"}</strong> ${cert.score}/42 · <strong>${this.language === "en" ? "Focus abilities" : "重点能力"}</strong> ${ROLES[this.save.profile.role].focusAbilities.reduce((sum, id) => sum + abilityLevel(this.save.profile.abilities[id]), 0)}/30</p>
+            <ul>
+              ${ROLES[this.save.profile.role].focusAbilities
+                .map(
+                  (id) =>
+                    `<li>${this.abilityDisplay(id).name} Lv.${abilityLevel(this.save.profile.abilities[id])}</li>`
+                )
+                .join("")}
+            </ul>
+            <button data-action="apply-certification">${this.language === "en" ? "Apply for Certification" : "申请认证"}</button>
+          </div>
           <button data-action="reset-profile">${this.t("resetProfile")}</button>
           <button data-action="export-save">${this.t("exportSave")}</button>
           <button data-action="export-report">${this.t("exportReport")}</button>
@@ -2302,9 +2380,9 @@ export class AdaptiveGameApp {
               ? ""
               : `<p class="static-lock-note">${this.language === "en" ? "Static build keeps this content: account, cloud save, leaderboard and auto-match are bundled but need the online build plus backend. Local alternatives stay available: export save, copy link, local duo, manual WebRTC." : "静态版已保留这部分内容：账号、云存档、排行榜、云端自动匹配代码均已内置，但需在线版与后端才可启用。本地仍可用：导出存档、复制存档链接、本地双人、手动远程对战。"}</p>`
           }
-          <button class="online-only" data-action="cloud-sync">${this.t("cloudSync")}</button>
-          <button class="online-only" data-action="cloud-load">${this.t("cloudLoad")}</button>
-          <button class="online-only" data-action="cloud-leaderboard">${this.t("cloudLeaderboard")}</button>
+          <button class="online-only" data-action="cloud-sync" ${ONLINE_ENABLED ? "" : "disabled"} title="${ONLINE_ENABLED ? "" : (this.language === "en" ? "Demo locked in static build" : "静态版演示锁定")}">${this.t("cloudSync")}${ONLINE_ENABLED ? "" : (this.language === "en" ? " (Demo)" : "（演示）")}</button>
+          <button class="online-only" data-action="cloud-load" ${ONLINE_ENABLED ? "" : "disabled"} title="${ONLINE_ENABLED ? "" : (this.language === "en" ? "Demo locked in static build" : "静态版演示锁定")}">${this.t("cloudLoad")}${ONLINE_ENABLED ? "" : (this.language === "en" ? " (Demo)" : "（演示）")}</button>
+          <button class="online-only" data-action="cloud-leaderboard" ${ONLINE_ENABLED ? "" : "disabled"} title="${ONLINE_ENABLED ? "" : (this.language === "en" ? "Demo locked in static build" : "静态版演示锁定")}">${this.t("cloudLeaderboard")}${ONLINE_ENABLED ? "" : (this.language === "en" ? " (Demo)" : "（演示）")}</button>
           <div class="account-panel online-only">
             <h2>${this.t("accountTitle")}</h2>
             ${
@@ -2312,17 +2390,17 @@ export class AdaptiveGameApp {
                 ? `<p class="account-name">${this.t("accountName")}：${escapeHtml(this.cloudAccountName)}</p>`
                 : ""
             }
-            <input data-login-token placeholder="${this.t("accountToken")}" value="${escapeAttr(this.cloudToken)}" />
-            <input data-recovery-code placeholder="${this.t("accountRecovery")}" value="${escapeAttr(this.cloudRecoveryCode)}" />
+            <input data-login-token placeholder="${this.t("accountToken")}" value="${escapeAttr(this.cloudToken)}" ${ONLINE_ENABLED ? "" : "disabled"} />
+            <input data-recovery-code placeholder="${this.t("accountRecovery")}" value="${escapeAttr(this.cloudRecoveryCode)}" ${ONLINE_ENABLED ? "" : "disabled"} />
             <small class="account-recovery-note">${this.t("accountRecoveryNote")}</small>
-            <input data-account-username placeholder="${this.t("accountUsername")}" />
-            <input data-account-password type="password" placeholder="${this.t("accountPassword")}" />
+            <input data-account-username placeholder="${this.t("accountUsername")}" ${ONLINE_ENABLED ? "" : "disabled"} />
+            <input data-account-password type="password" placeholder="${this.t("accountPassword")}" ${ONLINE_ENABLED ? "" : "disabled"} />
             <div class="account-actions">
-              <button data-action="cloud-login-password">${this.t("accountPasswordLogin")}</button>
-              <button data-action="cloud-login-token">${this.t("accountLogin")}</button>
-              <button data-action="cloud-login-recovery">${this.t("accountRecoveryLogin")}</button>
-              <button data-action="cloud-register">${this.t("cloudSync")}</button>
-              <button data-action="cloud-logout">${this.t("accountLogout")}</button>
+              <button data-action="cloud-login-password" ${ONLINE_ENABLED ? "" : "disabled"}>${this.t("accountPasswordLogin")}</button>
+              <button data-action="cloud-login-token" ${ONLINE_ENABLED ? "" : "disabled"}>${this.t("accountLogin")}</button>
+              <button data-action="cloud-login-recovery" ${ONLINE_ENABLED ? "" : "disabled"}>${this.t("accountRecoveryLogin")}</button>
+              <button data-action="cloud-register" ${ONLINE_ENABLED ? "" : "disabled"}>${this.t("cloudSync")}</button>
+              <button data-action="cloud-logout" ${ONLINE_ENABLED ? "" : "disabled"}>${this.t("accountLogout")}</button>
             </div>
           </div>
           <span class="cloud-status online-only" role="status" aria-live="polite">${this.cloudStatus}</span>
@@ -2355,14 +2433,14 @@ export class AdaptiveGameApp {
                       `<li>${escapeHtml(entry.opponentName)} 路 ${entry.playerScore}:${entry.opponentScore} 路 ${entry.won ? (this.language === "en" ? "Win" : "胜") : (this.language === "en" ? "Loss" : "负")}</li>`
                   )
                   .join("")}</ul>`
-              : `<p class="muted">${this.language === "en" ? "Finish a duel to see local records." : "完成一局对战后会显示本地记录。"}</p>`
+              : `<p class="muted">${this.language === "en" ? "Finish a duel to see local records." : "完成一局对战后会显示本地记录。"}</p><button data-action="open-duel">${this.language === "en" ? "Play a Duel" : "去打一局"}</button>`
           }
         </section>
         <section class="wrong-answer-review">
           <h3>${this.language === "en" ? "Judgment Review (Missed Expert Moves)" : "判断错题集（未选专家项）"}</h3>
           ${
             this.wrongAnswerMarkup()
-              ? `<div class="wrong-answer-list">${this.wrongAnswerMarkup()}</div>`
+              ? `<div class="wrong-answer-list">${this.wrongAnswerMarkup()}</div><button class="wrong-review-cta" data-action="open-wrong-review">${this.language === "en" ? "Review All Missed Moves" : "一键回练错题"}</button>`
               : `<p class="muted">${this.language === "en" ? "No missed expert moves yet. Keep choosing deliberately." : "暂无错选，继续保持有意识判断。"}</p>`
           }
         </section>
@@ -2911,6 +2989,7 @@ export class AdaptiveGameApp {
         </section>
         <section class="trial-practice">
           <h2>${this.t("trialPractice")}</h2>
+          <p class="muted">${en ? "Write a real reflection; rewards unlock after keyword scoring." : "请完成真实文字修炼，通过关键词评分后才会发放奖励。"}</p>
           <div class="practice-list">
             ${PRACTICE_TASKS.map((task) => {
               const done = this.save.completedPracticeTasks.includes(task.id);
@@ -3431,6 +3510,11 @@ export class AdaptiveGameApp {
             </label>
             <button data-action="preview-sfx">${en ? "Preview SFX" : "试听音效"}</button>
             <button data-action="toggle-language">${this.t("language")}</button>
+            ${
+              this.musicVolume === 0 || this.sfxVolume === 0
+                ? `<p class="muted volume-zero-note">${en ? "Volume is 0: audio stays silent while toggles are on." : "音量为 0：开关虽为开，当前仍无声。"}</p>`
+                : ""
+            }
           </div>
           <div class="settings-panel">
             <h2>${this.t("difficultyLabel")}</h2>
@@ -3761,7 +3845,7 @@ export class AdaptiveGameApp {
         <div class="remote-match online-only">
           <h2>${en ? "Cloud Auto-Match" : "云端自动匹配"}</h2>
           <p>${en ? "Connect to the room server and match automatically without exchanging invite codes. The server must be deployed or running locally first." : "连接服务端后自动匹配对手，不需要手动交换邀请码。需先部署或本地运行房间服务器。"}</p>
-          <button class="primary" data-action="cloud-match">${en ? "Start Matching" : "开始匹配"}</button>
+          <button class="primary" data-action="cloud-match" ${ONLINE_ENABLED ? "" : "disabled"} title="${ONLINE_ENABLED ? "" : (en ? "Demo locked in static build" : "静态版演示锁定")}">${en ? "Start Matching" : "开始匹配"}${ONLINE_ENABLED ? "" : (en ? " (Demo)" : "（演示）")}</button>
           ${
             this.lastRoomId
               ? `<button data-action="cloud-reconnect">${this.t("reconnectRoom")} · ${this.lastRoomId}</button>`
@@ -3870,10 +3954,16 @@ export class AdaptiveGameApp {
         <div class="duel-score">
           <span style="--dot:${engine.players[0].color}"><strong>${engine.players[0].name}</strong> ${engine.scores[0]}</span>
           <span>${this.language === "en" ? `Round ${Math.min(engine.currentRound + 1, engine.roundCount)} / ${engine.roundCount}` : `第 ${Math.min(engine.currentRound + 1, engine.roundCount)} / ${engine.roundCount} 回合`}</span>
+          <span id="duel-timer" class="duel-timer" role="timer" style="display:none"></span>
           <span style="--dot:${engine.players[1].color}"><strong>${engine.players[1].name}</strong> ${engine.scores[1]}</span>
         </div>
       </header>
       <main class="duel-shell" data-round-key="${roundKey}" aria-label="${this.language === "en" ? "Duel round" : "对决回合"}">
+        ${
+          this.duelTimedOutThisRound
+            ? `<div class="duel-timeout-note" role="status">${this.language === "en" ? "This round timed out. The system chose the safest option for you." : "本回合超时，系统已自动选择最稳妥选项。"}</div>`
+            : ""
+        }
         ${
           lastResult
             ? `
@@ -4143,6 +4233,69 @@ export class AdaptiveGameApp {
         }
         this.show("report");
         break;
+      case "apply-certification": {
+        const cert = certificationLevel(this.save);
+        if (cert.passed) {
+          this.showToast(
+            this.language === "en"
+              ? `Certification approved · ${cert.level}`
+              : `认证通过 · ${cert.level}`
+          );
+          this.audio.expert();
+        } else {
+          this.showToast(
+            this.language === "en"
+              ? `Not certified yet · ${cert.next}`
+              : `暂未达标 · ${cert.next}`
+          );
+          this.audio.partial();
+        }
+        break;
+      }
+      case "open-wrong-review": {
+        const wrongIds = [
+          ...new Set(
+            this.save.decisionHistory
+              .filter((record) => record.quality !== "expert")
+              .map((record) => record.nodeId)
+          )
+        ]
+          .slice(-8)
+          .reverse();
+        if (wrongIds.length === 0) {
+          this.showToast(
+            this.language === "en"
+              ? "No missed moves to review yet."
+              : "暂无可回练的错题。"
+          );
+          break;
+        }
+        this.wrongReviewQueue = wrongIds;
+        this.wrongReviewIndex = 0;
+        this.storyNodeId = wrongIds[0];
+        this.replayMode = true;
+        this.lastOutcome = undefined;
+        this.lastOutcomeNodeId = undefined;
+        this.audio.ui();
+        this.show("story");
+        break;
+      }
+      case "next-wrong-review":
+        this.wrongReviewIndex += 1;
+        if (this.wrongReviewIndex >= this.wrongReviewQueue.length) {
+          this.wrongReviewQueue = [];
+          this.wrongReviewIndex = 0;
+          this.replayMode = false;
+          this.audio.ui();
+          this.show("report");
+          break;
+        }
+        this.storyNodeId = this.wrongReviewQueue[this.wrongReviewIndex];
+        this.lastOutcome = undefined;
+        this.lastOutcomeNodeId = undefined;
+        this.audio.ui();
+        this.show("story");
+        break;
       case "open-ending":
         if (isChapterPassed(this.save, 9)) {
           this.audio.ui();
@@ -4385,6 +4538,11 @@ export class AdaptiveGameApp {
         break;
       case "export-save":
         this.exportSave();
+        this.showToast(
+          this.language === "en"
+            ? "Save exported."
+            : "存档已导出。"
+        );
         break;
       case "export-report":
         this.exportReport();
@@ -4456,6 +4614,11 @@ export class AdaptiveGameApp {
       }
       case "copy-save-link":
         this.copySaveLink(actionTarget);
+        this.showToast(
+          this.language === "en"
+            ? "Save link copied."
+            : "存档链接已复制。"
+        );
         break;
       case "import-save": {
         const input =
@@ -4464,8 +4627,16 @@ export class AdaptiveGameApp {
         break;
       }
       case "dismiss-backup-hint":
-        localStorage.setItem(SAVE_BACKUP_HINT_KEY, "1");
+        localStorage.setItem(
+          `${SAVE_BACKUP_HINT_KEY}-${APP_VERSION}`,
+          "1"
+        );
         this.audio.ui();
+        this.showToast(
+          this.language === "en"
+            ? "Backup reminder dismissed for this version."
+            : "本次版本的备份提醒已关闭。"
+        );
         this.renderMenu();
         break;
       case "rotate-events":
@@ -4474,6 +4645,11 @@ export class AdaptiveGameApp {
           this.audio.expert();
           this.renderMap();
         }
+        break;
+      case "toggle-map-detail":
+        this.mapDetailOpen = !this.mapDetailOpen;
+        this.audio.ui();
+        this.renderMap();
         break;
       case "cloud-sync":
         void this.cloudSync();
@@ -4582,6 +4758,15 @@ export class AdaptiveGameApp {
         this.muted = !this.muted;
         localStorage.setItem("adaptive-ascent-muted", this.muted ? "1" : "0");
         this.audio.setMuted(this.muted);
+        this.showToast(
+          this.language === "en"
+            ? this.muted
+              ? "Sound muted."
+              : "Sound on."
+            : this.muted
+              ? "声音已关闭。"
+              : "声音已开启。"
+        );
         this.render();
         break;
       case "preview-sfx":
@@ -4592,6 +4777,15 @@ export class AdaptiveGameApp {
         this.musicMuted = !this.musicMuted;
         localStorage.setItem("adaptive-ascent-music", this.musicMuted ? "1" : "0");
         this.audio.setMusicMuted(this.musicMuted);
+        this.showToast(
+          this.language === "en"
+            ? this.musicMuted
+              ? "Music muted."
+              : "Music on."
+            : this.musicMuted
+              ? "音乐已关闭。"
+              : "音乐已开启。"
+        );
         this.render();
         break;
       case "settings-font-size":
@@ -4609,6 +4803,11 @@ export class AdaptiveGameApp {
         localStorage.setItem("adaptive-ascent-lang", this.language);
         document.documentElement.lang = this.language;
         this.audio.ui();
+        this.showToast(
+          this.language === "en"
+            ? "Language switched to English."
+            : "已切换为中文。"
+        );
         this.render();
         break;
       case "reset-profile":
@@ -5156,6 +5355,11 @@ export class AdaptiveGameApp {
           this.audio.ui();
           this.save.difficulty = difficulty;
           this.persistSave();
+          this.showToast(
+            this.language === "en"
+              ? `Difficulty set to ${difficulty === "normal" ? "Normal" : difficulty === "pressure" ? "Pressure" : "Extreme"}.`
+              : `难度已切换为${difficulty === "normal" ? "标准" : difficulty === "pressure" ? "高压" : "极限"}。`
+          );
           if (this.view === "settings") {
             this.renderSettings();
           } else {
@@ -5219,6 +5423,11 @@ export class AdaptiveGameApp {
           this.save.routePath[chapterId] = route;
           this.persistSave();
           trackEvent("route_choice", { chapterId, route });
+          this.showToast(
+            this.language === "en"
+              ? `Route set to ${route === "expert" ? "Precision" : route === "risk" ? "Pressure" : "Incremental"}.`
+              : `路线已选择：${route === "expert" ? "精准路线" : route === "risk" ? "高压路线" : "渐进路线"}。`
+          );
           this.pendingForkNodeId = forkNodeForRoute(chapterId, route);
           this.renderChapterTransition();
         }
@@ -5967,6 +6176,12 @@ export class AdaptiveGameApp {
     }
     const difficultyMs = roundDurationMsForDifficulty(this.save.difficulty);
     const roundTimeout = difficultyMs > 0 ? difficultyMs : DUEL_ROUND_TIMEOUT_MS;
+    this.duelRoundDeadline = Date.now() + roundTimeout;
+    this.duelWarningPlayed.clear();
+    this.updateDuelTimerDisplay();
+    this.duelRoundTickId = window.setInterval(() => {
+      this.updateDuelTimerDisplay();
+    }, 250);
     this.duelRoundTimerId = window.setTimeout(() => {
       this.duelRoundTimerId = undefined;
       const engine = this.duelEngine;
@@ -5979,6 +6194,9 @@ export class AdaptiveGameApp {
       if (engine.picks[1] === null) {
         engine.forceTimeoutPick(1);
       }
+      this.duelTimedOutThisRound = true;
+      this.duelRoundDeadline = 0;
+      this.updateDuelTimerDisplay();
       this.duelPrediction = undefined;
       this.duelPredictionPhase = false;
       engine.resolvePendingRound();
@@ -5987,11 +6205,39 @@ export class AdaptiveGameApp {
     }, roundTimeout);
   }
 
+  /** 1v1 回合倒计时：剩余 15/10/5 秒时变色提醒并播放提示音，归零后显示超时。 */
+  private updateDuelTimerDisplay(): void {
+    const el = this.root.querySelector<HTMLElement>("#duel-timer");
+    if (!el) return;
+    if (this.duelRoundDeadline <= 0) {
+      el.style.display = "none";
+      return;
+    }
+    const seconds = Math.ceil(
+      Math.max(0, this.duelRoundDeadline - Date.now()) / 1000
+    );
+    el.style.display = "";
+    el.classList.toggle("urgent", seconds <= 10);
+    el.classList.toggle("warning", seconds <= 15);
+    if (
+      (seconds === 15 || seconds === 10 || seconds === 5) &&
+      !this.duelWarningPlayed.has(seconds)
+    ) {
+      this.duelWarningPlayed.add(seconds);
+      this.audio.round();
+    }
+    el.textContent =
+      this.language === "en"
+        ? `Time ${seconds}s`
+        : `剩余 ${seconds}s`;
+  }
+
   private duelPick(target: HTMLElement): void {
     const engine = this.duelEngine;
     if (!engine) {
       return;
     }
+    this.duelTimedOutThisRound = false;
     this.audio.duelPick();
     const optionIndex = Number(target.dataset.option);
     if (this.duelMode === "ai") {
@@ -7014,6 +7260,17 @@ export class AdaptiveGameApp {
           : this.language === "en"
             ? "Back to Map"
             : "返回地图";
+    const reviewActive = this.wrongReviewQueue.length > 0;
+    const finalAction = reviewActive ? "next-wrong-review" : action;
+    const finalLabel = reviewActive
+      ? this.wrongReviewIndex + 1 >= this.wrongReviewQueue.length
+        ? this.language === "en"
+          ? "Finish Review"
+          : "完成回练"
+        : this.language === "en"
+          ? "Next Missed Move"
+          : "下一道错题"
+      : actionLabel;
     const streak = this.expertStreak();
     const encouragement =
       option.quality === "expert"
@@ -7077,7 +7334,7 @@ export class AdaptiveGameApp {
             .join("")}
         </div>
         <canvas id="outcome-relations" class="outcome-relations" aria-label="${this.language === "en" ? "Relationship graph after this decision" : "本次决策后的人物关系图"}"></canvas>
-        <button class="primary" data-action="${action}">${actionLabel}</button>
+        <button class="primary" data-action="${finalAction}">${finalLabel}</button>
       </section>
     `;
   }

@@ -4111,3 +4111,156 @@ h2 {
     grid-template-columns: 1fr;
   }
 }
+
+/* 全局状态 toast */
+.app-toast {
+  position: fixed;
+  left: 50%;
+  bottom: 24px;
+  z-index: 9999;
+  transform: translateX(-50%);
+  max-width: min(92vw, 520px);
+  padding: 12px 18px;
+  border-radius: 8px;
+  background: #16242d;
+  border: 1px solid #3c5462;
+  color: #e7eef2;
+  font-size: 15px;
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.35);
+  opacity: 1;
+  transition: opacity 0.3s ease, transform 0.3s ease;
+}
+.app-toast.app-toast-hide {
+  opacity: 0;
+  transform: translateX(-50%) translateY(8px);
+}
+
+/* 声音/语言按钮触控目标与图标语义 */
+.sound-toggle,
+.language-toggle {
+  min-width: 44px;
+  min-height: 44px;
+  padding: 8px 12px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* 路线已选状态 */
+.route-selected-tag {
+  display: inline-block;
+  margin-left: 6px;
+  font-size: 12px;
+  color: #57c7a3;
+}
+.route-choice-actions button[aria-pressed="true"] {
+  outline: 2px solid #f2c14e;
+  outline-offset: 2px;
+}
+
+/* 成就补充态 */
+.ach-hint {
+  display: inline-block;
+  margin-top: 4px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: #2a3a44;
+  color: #f2c14e;
+  font-size: 12px;
+}
+
+/* 认证条件明细 */
+.cert-details {
+  margin-top: 10px;
+  padding: 10px 12px;
+  border: 1px solid #3c5462;
+  border-radius: 8px;
+  background: rgba(12, 22, 28, 0.5);
+  font-size: 14px;
+}
+.cert-details ul {
+  margin: 6px 0;
+  padding-left: 18px;
+  color: #9fb3c8;
+}
+.cert-details button {
+  margin-top: 6px;
+}
+
+/* 错题回练 */
+.wrong-review-cta {
+  margin-top: 12px;
+}
+.wrong-review-header {
+  margin-bottom: 10px;
+  padding: 8px 12px;
+  border-radius: 8px;
+  background: #2a3a44;
+  color: #f2c14e;
+  font-weight: 600;
+}
+
+/* 1v1 倒计时与超时提示 */
+.duel-timer {
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+  color: #9fb3c8;
+}
+.duel-timer.warning {
+  color: #f2c14e;
+}
+.duel-timer.urgent {
+  color: #e9826c;
+  animation: duel-timer-pulse 1s ease-in-out infinite;
+}
+.duel-timeout-note {
+  margin-bottom: 12px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  border: 1px solid #e9826c;
+  background: rgba(233, 130, 108, 0.12);
+  color: #f0b7a8;
+}
+@keyframes duel-timer-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.55;
+  }
+}
+
+/* 难度/音量说明 */
+.volume-zero-note {
+  margin-top: 8px;
+  color: #f2c14e;
+}
+
+/* 地图移动端折叠 */
+.map-collapse-toggle {
+  display: none;
+  width: 100%;
+  margin-bottom: 10px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  background: #1d2e38;
+  border: 1px solid #3c5462;
+  color: #e7eef2;
+}
+
+@media (max-width: 760px) {
+  .map-collapse-toggle {
+    display: block;
+  }
+  .map-side .mobile-collapse {
+    display: none;
+  }
+  .map-shell.map-detail-open .map-side .mobile-collapse {
+    display: block;
+  }
+  .map-quick-actions {
+    display: grid;
+    gap: 8px;
+  }
+}
