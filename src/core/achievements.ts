@@ -13,6 +13,123 @@ export interface AchievementDef {
   icon: string;
 }
 
+export type AchievementRarity =
+  | "common"
+  | "rare"
+  | "epic"
+  | "legendary";
+
+export type AchievementCategory =
+  | "story"
+  | "training"
+  | "trial"
+  | "duel"
+  | "event"
+  | "rank";
+
+export function achievementRarity(id: string): AchievementRarity {
+  if (id === "master" || id === "random_collector" || id === "role_ending") {
+    return "legendary";
+  }
+  if (
+    id === "training_all" ||
+    id === "trial_all" ||
+    id === "all_side" ||
+    id === "rank_leader" ||
+    id === "alternate_ending" ||
+    id === "random_rotation_2"
+  ) {
+    return "epic";
+  }
+  if (
+    id === "training_four" ||
+    id === "trial_five" ||
+    id === "duel_ten" ||
+    id === "mba_clear" ||
+    id === "hidden_route" ||
+    id === "perfect_chapter" ||
+    id === "random_rotation"
+  ) {
+    return "rare";
+  }
+  return "common";
+}
+
+export function achievementCategory(id: string): AchievementCategory {
+  if (id.startsWith("training")) return "training";
+  if (id.startsWith("trial") || id === "mba_clear") return "trial";
+  if (id.startsWith("duel")) return "duel";
+  if (id.startsWith("random")) return "event";
+  if (id === "rank_leader" || id === "master") return "rank";
+  return "story";
+}
+
+export function achievementLore(
+  id: string,
+  language: "zh" | "en"
+): string {
+  const specific: Record<
+    string,
+    { zh: string; en: string }
+  > = {
+    first_step: {
+      zh: "从第一次判断开始，你的权力地图就在改变。",
+      en: "Your power map starts changing from the very first judgment."
+    },
+    role_ending: {
+      zh: "第九章的结束不是终点，而是组织第一次可以不完全依赖你。",
+      en: "Chapter nine is not the end; it is the first time the organization can run without you."
+    },
+    alternate_ending: {
+      zh: "另一个选择没有消失，它成了你反复回来重走的理由。",
+      en: "The other choice never disappears; it becomes the reason you come back."
+    },
+    random_collector: {
+      zh: "把 36 个突发事件全部走完的人，已经学会在混乱中保持秩序。",
+      en: "Someone who walks through all 36 incidents learns to keep order inside chaos."
+    },
+    master: {
+      zh: "综合能力 48，意味着你已经能从危机里看到结构。",
+      en: "At 48 total ability, you can see structure inside a crisis."
+    }
+  };
+  if (specific[id]) {
+    return language === "en" ? specific[id].en : specific[id].zh;
+  }
+  const categoryLore: Record<
+    AchievementCategory,
+    { zh: string; en: string }
+  > = {
+    story: {
+      zh: "这条路线决定了你留下的是个人判断，还是组织规则。",
+      en: "This path decides whether you leave behind personal judgment or organizational rules."
+    },
+    training: {
+      zh: "能力不是听会的，是在一次一次选择里长出来的。",
+      en: "Ability is not learned by listening; it grows through repeated choices."
+    },
+    trial: {
+      zh: "试炼里的每一个指认，都在检验你敢不敢用证据替代直觉。",
+      en: "Every identification in a trial tests whether you replace instinct with evidence."
+    },
+    duel: {
+      zh: "对局把同一道难题交给两个人，分数背后是判断节奏。",
+      en: "A duel gives the same problem to two people; the score hides their judgment rhythm."
+    },
+    event: {
+      zh: "突发事件不会等你准备好，它只奖励先建立预案的人。",
+      en: "Sudden events never wait; they reward those who prepared first."
+    },
+    rank: {
+      zh: "段位不是标签，是你对复杂局势的长期掌控力。",
+      en: "Rank is not a label; it is long-term control over complex situations."
+    }
+  };
+  return language === "en"
+    ? categoryLore[achievementCategory(id)].en
+    : categoryLore[achievementCategory(id)].zh;
+}
+
 export const ACHIEVEMENTS: AchievementDef[] = [
   {
     id: "first_step",

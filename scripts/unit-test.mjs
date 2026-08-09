@@ -31,7 +31,13 @@ import {
 import { hiddenRouteSteps } from "../src/core/hiddenRoutes.ts";
 
 
-import { ACHIEVEMENTS, isAchievementUnlocked } from "../src/core/achievements.ts";
+import {
+  ACHIEVEMENTS,
+  achievementCategory,
+  achievementLore,
+  achievementRarity,
+  isAchievementUnlocked
+} from "../src/core/achievements.ts";
 import {
   claimableChallenges,
   dailyChallenges,
@@ -252,6 +258,14 @@ assert(
     TRIAL_STAGES[0].rewardExp,
   "insight item should not alter insight reward"
 );
+const pressureCost = structuredClone(DEFAULT_SAVE);
+pressureCost.difficulty = "pressure";
+pressureCost.trialItems.push("识人罗盘");
+assert(
+  trialCostFor(pressureCost, TRIAL_STAGES[0]) ===
+    Math.max(4, Math.round((TRIAL_STAGES[0].staminaCost - 2) * 1.15)),
+  "pressure difficulty should raise trial energy cost"
+);
 
 assert(CHAPTERS.length === 9, "chapters must be 9");
 assert(STORY_NODES.length >= 60, "story nodes should be 60+");
@@ -357,6 +371,21 @@ for (const role of Object.keys(ROLE_OPTION_SETS)) {
 }
 
 assert(ACHIEVEMENTS.length >= 18, "achievements must be 18+");
+assert(
+  achievementRarity("master") === "legendary" &&
+    achievementRarity("trial_five") === "rare",
+  "achievement rarity tiers should be stable"
+);
+assert(
+  achievementCategory("trial_five") === "trial" &&
+    achievementCategory("duel_ten") === "duel" &&
+    achievementCategory("random_rotation") === "event",
+  "achievement categories should map by id"
+);
+assert(
+  achievementLore("first_step", "zh").includes("权力地图"),
+  "achievement lore should provide a narrative hook"
+);
 
 // ---- scoreQuality 行为 ----
 const baseProfile = structuredClone(DEFAULT_SAVE.profile);

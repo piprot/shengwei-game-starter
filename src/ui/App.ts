@@ -9,8 +9,13 @@ import {
 } from "../core/abilities";
 import {
   ACHIEVEMENTS,
+  achievementCategory,
+  achievementLore,
   achievementProgress,
+  achievementRarity,
   isAchievementUnlocked,
+  type AchievementCategory,
+  type AchievementRarity,
   unlockedCount
 } from "../core/achievements";
 import {
@@ -122,7 +127,8 @@ import {
   trialCostFor,
   trialQuestionFor,
   trialRewardExpFor,
-  trialStageLabel
+  trialStageLabel,
+  type TrialStageDef
 } from "../core/trials";
 import { hiddenRouteSteps } from "../core/hiddenRoutes";
 import { ROLE_OPTION_SETS } from "../core/roleOptions";
@@ -153,14 +159,18 @@ import {
 import { renderAbilityRadar } from "./charts";
 import { renderPowerBoard } from "./art";
 import { renderTrainingBoard } from "./trainingArt";
-import { renderRelationGraph } from "./relationsArt";
+import {
+  renderPowerSandbox,
+  renderRelationGraph
+} from "./relationsArt";
 
 const ONLINE_ENABLED = import.meta.env.VITE_ENABLE_ONLINE === "true";
 const DUEL_SNAPSHOT_KEY = "adaptive-ascent-duel-snapshot-v1";
 const SAVE_BACKUP_HINT_KEY = "adaptive-ascent-backup-hint-dismissed";
 const GUIDE_KEY = "adaptive-ascent-guide-v1";
 const GUIDE_REWARD_KEY = "adaptive-ascent-guide-reward";
-const APP_VERSION = "1.4.0";
+const ACHIEVEMENT_FAVORITE_KEY = "adaptive-ascent-achievement-favorites";
+const APP_VERSION = "1.5.0";
 
 type View =
   | "menu"
@@ -200,11 +210,25 @@ export class AdaptiveGameApp {
   private fontScale = Number(
     localStorage.getItem("adaptive-ascent-font-scale") || 1
   );
+  private favoriteAchievements = new Set<string>(
+    (() => {
+      try {
+        const parsed = JSON.parse(
+          localStorage.getItem(ACHIEVEMENT_FAVORITE_KEY) || "[]"
+        ) as unknown;
+        return Array.isArray(parsed)
+          ? parsed.filter((item): item is string => typeof item === "string")
+          : [];
+      } catch {
+        return [];
+      }
+    })()
+  );
   private language: Language =
     localStorage.getItem("adaptive-ascent-lang") === "en" ? "en" : "zh";
   private save: SaveState;
   private view: View = "menu";
-  private pendingRole: RoleId = "highPotential";
+  private pendingRole: RoleId = "parachute";
   private pendingProfile?: PlayerProfile;
   private assessmentStep = 0;
   private assessmentAnswers: number[] = [];
@@ -905,6 +929,35 @@ export class AdaptiveGameApp {
   private renderMenu(): void {
     const summary = profileSummary(this.save);
     const started = this.save.profileCreated;
+    const relationRows = NPCS.map((npc) => ({
+      npc,
+      relation: npcRelation(this.save, npc)
+    }));
+    const establishedCount = relationRows.filter(
+      (row) => row.relation.status === "已建立关系"
+    ).length;
+    const knownCount = relationRows.filter(
+      (row) => row.relation.status === "存在线索"
+    ).length;
+    const unmetCount = NPCS.length - establishedCount - knownCount;
+    const lastDecision =
+      this.save.decisionHistory[this.save.decisionHistory.length - 1];
+    const sandboxChapter = this.save.unlockedChapters.at(-1) ?? 1;
+    const sandboxCaption = started
+      ? this.language === "en"
+        ? `Chapter ${sandboxChapter} · Established ${establishedCount} · Leads ${knownCount} · Unmet ${unmetCount}`
+        : `第 ${sandboxChapter} 章 · 已建立 ${establishedCount} · 线索 ${knownCount} · 未接触 ${unmetCount}`
+      : this.language === "en"
+        ? "Create a profile and make your first choice to light up this map"
+        : "创建档案并完成第一次选择后，这张地图会开始亮起来";
+    const sandboxLive =
+      lastDecision && started
+        ? this.language === "en"
+          ? `Latest judgment: ${this.latestDecisionText()}. The graph updates as relationships gain or lose trust.`
+          : `最近判断：${this.latestDecisionText()}。人物关系正随信任变化实时更新。`
+        : this.language === "en"
+          ? "No decisions yet. Every choice redraws the connection between you and key people."
+          : "还没有决策。每一次选择，都会重新绘制你与关键人物之间的连接。";
     this.root.innerHTML = `
       <header class="topbar">
         <div class="brand">${this.t("brand")}</div>
@@ -968,10 +1021,23 @@ export class AdaptiveGameApp {
             : ""
         }
         <section class="scene-art">
-          <canvas class="power-board" id="power-board" aria-label="${this.language === "en" ? "Power relationship sandbox diagram" : "权力关系沙盘示意图"}"></canvas>
+          <button
+            class="power-board-hit"
+            data-action="open-relations"
+            aria-label="${this.language === "en" ? "Open the live power relationship sandbox" : "打开实时权力关系沙盘"}"
+          >
+            <canvas class="power-board" id="power-board"></canvas>
+          </button>
           <div class="scene-caption">
             <strong>${this.language === "en" ? "Power Relationship Sandbox" : "权力关系沙盘"}</strong>
-            <span>${this.language === "en" ? "Every choice redraws your connection with key people." : "每一次选择，都在重新绘制你与关键人物之间的连接。"}</span>
+            <span>${escapeHtml(sandboxCaption)}</span>
+            <p class="scene-live">${escapeHtml(sandboxLive)}</p>
+            <div class="scene-legend">
+              <span><i class="legend-dot gold"></i>${this.language === "en" ? "Established" : "已建立关系"}</span>
+              <span><i class="legend-dot teal"></i>${this.language === "en" ? "Lead found" : "存在线索"}</span>
+              <span><i class="legend-dot gray"></i>${this.language === "en" ? "Not contacted" : "尚未接触"}</span>
+            </div>
+            <button data-action="open-relations">${this.language === "en" ? "Open Relationship Map" : "查看人物关系"}</button>
           </div>
         </section>
         <section class="menu-grid">
@@ -1026,7 +1092,13 @@ export class AdaptiveGameApp {
     `;
     const powerBoard = this.root.querySelector<HTMLCanvasElement>("#power-board");
     if (powerBoard) {
-      renderPowerBoard(powerBoard, this.save.playCount + 7);
+      renderPowerSandbox(
+        powerBoard,
+        this.save,
+        this.save.playCount + 7,
+        this.language === "en" ? "Power Relationship Sandbox" : "权力关系沙盘",
+        sandboxCaption
+      );
     }
   }
 
@@ -1117,7 +1189,11 @@ export class AdaptiveGameApp {
                 .join("")}
             </div>
             <button class="primary" data-action="create-profile">${en ? "Start Your Journey" : "开启征程"}</button>
-            <button data-action="start-without-assessment">${this.t("startTrialFirst")}</button>
+            <div class="trial-role-preview">
+              <strong>${en ? `First chapter trial starts as ${this.roleDisplay(this.pendingRole).name}` : `首章试玩将以「${this.roleDisplay(this.pendingRole).name}」开局`}</strong>
+              <p>${en ? ROLE_EN[this.pendingRole].objective : ROLES[this.pendingRole].objective}</p>
+            </div>
+            <button data-action="start-without-assessment">${en ? `Start Trial as ${this.roleDisplay(this.pendingRole).name}` : `以「${this.roleDisplay(this.pendingRole).name}」进入首章试玩`}</button>
             <small class="profile-note">${this.t("assessmentLater")}</small>
           </form>
         </section>
@@ -1293,6 +1369,29 @@ export class AdaptiveGameApp {
 
   private renderAchievements(): void {
     const unlocked = unlockedCount(this.save);
+    const en = this.language === "en";
+    const categories: Array<AchievementCategory> = [
+      "story",
+      "training",
+      "trial",
+      "duel",
+      "event",
+      "rank"
+    ];
+    const categoryName: Record<AchievementCategory, string> = {
+      story: en ? "Story" : "剧情",
+      training: en ? "Training" : "训练",
+      trial: en ? "Trial" : "试炼",
+      duel: en ? "Duel" : "对决",
+      event: en ? "Event" : "事件",
+      rank: en ? "Rank" : "段位"
+    };
+    const rarityName: Record<AchievementRarity, string> = {
+      common: en ? "Common" : "普通",
+      rare: en ? "Rare" : "稀有",
+      epic: en ? "Epic" : "史诗",
+      legendary: en ? "Legendary" : "传说"
+    };
     this.root.innerHTML = `
       <header class="topbar">
         <div class="brand">${this.t("brand")}</div>
@@ -1302,47 +1401,109 @@ export class AdaptiveGameApp {
         <section class="achievement-hero">
           <div>
             <p class="eyebrow">${this.t("achievementsTitle")}</p>
-            <h1>${unlocked} / ${ACHIEVEMENTS.length} ${this.language === "en" ? "Unlocked" : "已解锁"}</h1>
-            <p class="muted">${this.language === "en" ? "Complete chapters, side quests, assessments, duels, and rank milestones to unlock every achievement." : "完成章节、支线、测评、1v1 与能力段位，解锁全部成就。"}</p>
+            <h1>${unlocked} / ${ACHIEVEMENTS.length} ${en ? "Unlocked" : "已解锁"} · ${this.favoriteAchievements.size} ${en ? "Collected" : "已收藏"}</h1>
+            <p class="muted">${en ? "Collect rare lore cards, favorite the ones that matter, and let every unlock pull you deeper into the campaign." : "收集稀有剧情卡片，收藏对你重要的成就，让每一次解锁都把你推回主线。"}</p>
           </div>
           <div class="achievement-progress"><i style="width:${(unlocked / ACHIEVEMENTS.length) * 100}%"></i></div>
         </section>
-        <section class="achievement-grid">
-          ${ACHIEVEMENTS.map((achievement) => {
-            const done = isAchievementUnlocked(this.save, achievement.id);
-            const view = this.achievementDisplay(achievement.id);
-            const progress = achievementProgress(this.save, achievement.id);
-            const pct = Math.min(
-              100,
-              Math.round((progress.current / progress.target) * 100)
-            );
-            return `
-              <div class="achievement-card ${done ? "unlocked" : "locked"}">
-                <span class="achievement-icon">${achievement.icon}</span>
-                <div>
-                  <h2>${view.name}</h2>
-                  <p>${view.description}</p>
-                  <div class="achievement-card-progress" aria-label="${escapeHtml(
-                    done
-                      ? this.language === "en"
-                        ? "Unlocked"
-                        : "已解锁"
-                      : `${progress.current} / ${progress.target}`
-                  )}">
-                    <i style="width:${done ? 100 : pct}%"></i>
-                  </div>
+        <section class="achievement-category-stats">
+          ${categories
+            .map((category) => {
+              const items = ACHIEVEMENTS.filter(
+                (item) => achievementCategory(item.id) === category
+              );
+              const done = items.filter((item) =>
+                isAchievementUnlocked(this.save, item.id)
+              ).length;
+              return `
+                <div class="achievement-category-stat">
+                  <strong>${categoryName[category]}</strong>
+                  <span>${done} / ${items.length}</span>
                 </div>
-                <small>${
-                  done
-                    ? this.language === "en"
-                      ? "Unlocked"
-                      : "已解锁"
-                    : `${progress.current} / ${progress.target}`
-                }</small>
-              </div>
-            `;
-          }).join("")}
+              `;
+            })
+            .join("")}
         </section>
+        ${categories
+          .map((category) => {
+            const items = ACHIEVEMENTS.filter(
+              (item) => achievementCategory(item.id) === category
+            );
+            if (items.length === 0) return "";
+            return `
+              <section class="achievement-group">
+                <div class="achievement-group-head">
+                  <h2>${categoryName[category]} ${en ? "Collection" : "图鉴"}</h2>
+                  <span>${items.filter((item) => isAchievementUnlocked(this.save, item.id)).length} / ${items.length}</span>
+                </div>
+                <div class="achievement-grid">
+                  ${items
+                    .map((achievement) => {
+                      const done = isAchievementUnlocked(
+                        this.save,
+                        achievement.id
+                      );
+                      const view = this.achievementDisplay(achievement.id);
+                      const progress = achievementProgress(
+                        this.save,
+                        achievement.id
+                      );
+                      const pct = Math.min(
+                        100,
+                        Math.round((progress.current / progress.target) * 100)
+                      );
+                      const rarity = achievementRarity(achievement.id);
+                      const lore = achievementLore(
+                        achievement.id,
+                        this.language
+                      );
+                      const favorited = this.favoriteAchievements.has(
+                        achievement.id
+                      );
+                      return `
+                        <article class="achievement-card rarity-${rarity} ${done ? "unlocked" : "locked"}">
+                          <button
+                            class="ach-favorite"
+                            data-action="toggle-achievement-favorite"
+                            data-achievement="${achievement.id}"
+                            aria-pressed="${favorited ? "true" : "false"}"
+                            aria-label="${en ? (favorited ? "Remove from collection" : "Add to collection") : (favorited ? "取消收藏" : "加入收藏")}"
+                          >${favorited ? "★" : "☆"}</button>
+                          <span class="achievement-icon">${achievement.icon}</span>
+                          <div>
+                            <div class="achievement-meta">
+                              <span class="ach-rarity rarity-${rarity}">${rarityName[rarity]}</span>
+                              <span class="ach-category">${categoryName[category]}</span>
+                            </div>
+                            <h2>${view.name}</h2>
+                            <p>${view.description}</p>
+                            <p class="ach-lore">${escapeHtml(lore)}</p>
+                            <div class="achievement-card-progress" aria-label="${escapeHtml(
+                              done
+                                ? en
+                                  ? "Unlocked"
+                                  : "已解锁"
+                                : `${progress.current} / ${progress.target}`
+                            )}">
+                              <i style="width:${done ? 100 : pct}%"></i>
+                            </div>
+                          </div>
+                          <small>${
+                            done
+                              ? en
+                                ? "Unlocked"
+                                : "已解锁"
+                              : `${progress.current} / ${progress.target}`
+                          }</small>
+                        </article>
+                      `;
+                    })
+                    .join("")}
+                </div>
+              </section>
+            `;
+          })
+          .join("")}
       </main>
     `;
   }
@@ -1678,18 +1839,18 @@ export class AdaptiveGameApp {
     const note =
       this.save.difficulty === "normal"
         ? this.language === "en"
-          ? "No resource scaling, no decision timer"
-          : "资源不缩放、无决策时限"
+          ? "Active: no resource scaling, no story timer, standard trial energy, untimed duels"
+          : "已生效：资源不缩放、剧情无时限、试炼精力标准、对决不强制计时"
         : this.save.difficulty === "pressure"
           ? this.language === "en"
-            ? "Resource scaling, 22 seconds per round, occasional disruptions"
-            : "资源缩放、每回合 22 秒、偶发干扰"
+            ? "Active: 1.4x resource losses, 22s story/duel rounds, 1.15x trial energy, more disruptions"
+            : "已生效：资源损耗 1.4 倍、剧情/对决 22 秒、试炼精力 1.15 倍、干扰更多"
           : this.language === "en"
-            ? "Strong scaling, 14 seconds per round, frequent disruptions"
-            : "强缩放、每回合 14 秒、干扰频繁";
+            ? "Active: 1.8x resource losses, 14s story/duel rounds, 1.3x trial energy, frequent disruptions"
+            : "已生效：资源损耗 1.8 倍、剧情/对决 14 秒、试炼精力 1.3 倍、干扰频繁";
     return `
       <div class="mini-panel difficulty-panel">
-        <h3>${this.t("difficultyLabel")}</h3>
+        <h3>${this.t("difficultyLabel")} <span class="diff-active">${this.language === "en" ? "Active" : "已生效"}</span></h3>
         <div class="diff-row">${buttons}</div>
         <p class="muted">${escapeHtml(note)}</p>
       </div>`;
@@ -2793,6 +2954,26 @@ export class AdaptiveGameApp {
     return this.t("trialResultGood");
   }
 
+  private trialSuspectImpactMarkup(stage: TrialStageDef): string {
+    if (
+      !stage.suspects?.length ||
+      !stage.correctSuspect ||
+      !this.trialSuspectChoice
+    ) {
+      return "";
+    }
+    const chosen = this.trialSuspectChoice;
+    const correct = chosen === stage.correctSuspect;
+    const impact = correct
+      ? this.language === "en"
+        ? `Your identification of "${chosen}" closes the evidence chain, and the trust bar tilts your way.`
+        : `你的指认「${chosen}」与证据链闭合，局势条向信任倾斜。`
+      : this.language === "en"
+        ? `You identified "${chosen}", but the key suspect was "${stage.correctSuspect}". Suspicion rises and the case is not yet closed.`
+        : `你指认了「${chosen}」，但真正的关键嫌疑人是「${stage.correctSuspect}」。局势条转向怀疑，调查仍需继续。`;
+    return `<p class="trial-suspect-impact ${correct ? "good" : "bad"}">${escapeHtml(impact)}</p>`;
+  }
+
   private renderTrialBattle(): void {
     const stage = TRIAL_STAGES.find((item) => item.id === this.activeTrialId);
     if (!stage) {
@@ -2854,6 +3035,16 @@ export class AdaptiveGameApp {
             <span>${this.t("trialSuspicion")} ${this.trialFactionSuspicion}</span>
           </div>
         </section>
+        ${
+          !result && stage.scene
+            ? `
+              <section class="trial-scene-panel">
+                <p class="eyebrow">${en ? "Scene" : "试炼场景"}</p>
+                <p>${escapeHtml(stage.scene)}</p>
+              </section>
+            `
+            : ""
+        }
         ${
           result
             ? `
@@ -2924,6 +3115,17 @@ export class AdaptiveGameApp {
                   <strong>${this.t("trialExplanation")}</strong>
                   <p>${escapeHtml(explanation)}</p>
                 </div>
+                ${
+                  stage.resolution
+                    ? `
+                      <section class="trial-resolution-panel">
+                        <p class="eyebrow">${en ? "Truth Revealed" : "真相揭晓"}</p>
+                        <p>${escapeHtml(stage.resolution)}</p>
+                        ${this.trialSuspectImpactMarkup(stage)}
+                      </section>
+                    `
+                    : ""
+                }
                 <button class="primary" data-action="trial-next">${this.t("trialNext")}</button>
               </section>
             `
@@ -4962,6 +5164,26 @@ export class AdaptiveGameApp {
         }
         break;
       }
+      case "toggle-achievement-favorite": {
+        const achievementId = actionTarget.dataset.achievement;
+        if (!achievementId) break;
+        if (this.favoriteAchievements.has(achievementId)) {
+          this.favoriteAchievements.delete(achievementId);
+        } else {
+          this.favoriteAchievements.add(achievementId);
+        }
+        try {
+          localStorage.setItem(
+            ACHIEVEMENT_FAVORITE_KEY,
+            JSON.stringify([...this.favoriteAchievements])
+          );
+        } catch {
+          // ignore storage failures
+        }
+        this.audio.ui();
+        this.renderAchievements();
+        break;
+      }
       case "toggle-hint":
         this.storyHintRevealed = !this.storyHintRevealed;
         this.audio.ui();
@@ -5743,6 +5965,8 @@ export class AdaptiveGameApp {
     if (this.duelMode === "remote" || !this.duelEngine) {
       return;
     }
+    const difficultyMs = roundDurationMsForDifficulty(this.save.difficulty);
+    const roundTimeout = difficultyMs > 0 ? difficultyMs : DUEL_ROUND_TIMEOUT_MS;
     this.duelRoundTimerId = window.setTimeout(() => {
       this.duelRoundTimerId = undefined;
       const engine = this.duelEngine;
@@ -5760,7 +5984,7 @@ export class AdaptiveGameApp {
       engine.resolvePendingRound();
       this.saveDuelSnapshot();
       this.renderDuel();
-    }, DUEL_ROUND_TIMEOUT_MS);
+    }, roundTimeout);
   }
 
   private duelPick(target: HTMLElement): void {

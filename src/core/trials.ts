@@ -49,6 +49,8 @@ export interface TrialStageDef {
   minInfluence?: number;
   resourceCost?: number;
   clue?: string;
+  scene?: string;
+  resolution?: string;
   allies?: string[];
   correctAlly?: string;
   suspects?: string[];
@@ -83,9 +85,13 @@ export const TRIAL_STAGES: TrialStageDef[] = [
     name: "识人试炼",
     boss: "伪装者",
     style: "wolf",
+    scene:
+      "深夜的办公室只亮着一盏灯。三份匿名材料摆在桌上：行政主管指出财务经理改过报销单，年轻骨干提交了聊天记录，财务经理本人则递来一份年度对账表。",
     clue: "真正动机藏在他如何处理失败和功劳上，先判断谁在压力下仍愿意暴露信息。",
     suspects: ["行政主管", "财务经理", "年轻骨干"],
     correctSuspect: "财务经理",
+    resolution:
+      "真相是财务经理利用前任遗留的审批空隙，把外包费用拆进三个科目。行政主管的举报来自流程直觉，年轻骨干的证据链最完整，但只有把合同、付款和交付物拉到同一张表上，才能真正锁定动机。",
     gates: [{ abilityId: "insight", level: 1 }],
     staminaCost: 8,
     rewardExp: 2,
@@ -112,8 +118,12 @@ export const TRIAL_STAGES: TrialStageDef[] = [
     name: "驭人试炼",
     boss: "冷面同盟",
     style: "alliance",
+    scene:
+      "冷面同盟把两份合作方案推到你面前：运营负责人愿意共享交付数据，客户负责人只肯给客户名单。你必须在三分钟内决定与谁结盟。",
     allies: ["运营负责人", "客户负责人"],
     correctAlly: "运营负责人",
+    resolution:
+      "与运营负责人结盟是正确的：交付数据能证明你推进的变革真实可靠；客户名单只会让你陷入客户关系的资源竞争。交换全部情报后，双方都获得了可验证的信任。",
     intelChoices: ["交付数据", "客户名单", "反对者名单"],
     correctIntel: "交付数据",
     betrayalChoices: ["交换全部情报", "保留客户名单"],
@@ -131,8 +141,12 @@ export const TRIAL_STAGES: TrialStageDef[] = [
     name: "谋权试炼",
     boss: "势能缺口",
     style: "alliance",
+    scene:
+      "势能缺口会议上，财务负责人和产品负责人都想成为你的主盟。财务手里有现金流数据，产品手里有路线图，但会议只剩一个席位。",
     allies: ["财务负责人", "产品负责人"],
     correctAlly: "财务负责人",
+    resolution:
+      "财务负责人是正确盟友：现金流数据决定了变革的可行性边界。交换现金流数据后，你可以在资源约束内设计策略，而不是被产品愿景牵着走。",
     intelChoices: ["现金流数据", "产品路线图", "组织架构"],
     correctIntel: "现金流数据",
     betrayalChoices: ["交换现金流数据", "保留关键数据"],
@@ -202,9 +216,13 @@ export const TRIAL_STAGES: TrialStageDef[] = [
     name: "结构试炼",
     boss: "迷雾矩阵",
     style: "wolf",
+    scene:
+      "迷雾矩阵的审批中心里，80% 的单据卡在同一个节点。客服主管指责财务主管拖延，财务主管反指流程主管改规则，流程主管拿出一份三个月前的流程图。",
     clue: "主要矛盾往往藏在 80% 单据被卡住的同一个审批节点。",
     suspects: ["客服主管", "流程主管", "财务主管"],
     correctSuspect: "流程主管",
+    resolution:
+      "真正的问题在流程主管：他在三个月前悄悄调整了审批链路，让 80% 单据必须经过他的人工复核。客服与财务的争吵只是表象，主要矛盾藏在流程本身。",
     gates: [{ abilityId: "structure", level: 3 }],
     staminaCost: 12,
     rewardExp: 4,
@@ -218,8 +236,12 @@ export const TRIAL_STAGES: TrialStageDef[] = [
     name: "协同试炼",
     boss: "信息高墙",
     style: "alliance",
+    scene:
+      "信息高墙两侧，研发负责人和客户成功负责人同时递来合作书。研发想共享部门预算，客户成功想共享客户验收标准。",
     allies: ["研发负责人", "客户成功负责人"],
     correctAlly: "客户成功负责人",
+    resolution:
+      "客户成功负责人是正确盟友：客户验收标准决定了交付是否真正完成。共享验收标准后，研发、客户与你会形成同一套验收语言。",
     intelChoices: ["客户验收标准", "部门预算", "人事调整"],
     correctIntel: "客户验收标准",
     betrayalChoices: ["共享验收标准", "保留部门预算"],
@@ -237,8 +259,12 @@ export const TRIAL_STAGES: TrialStageDef[] = [
     name: "MBA 现金流危机",
     boss: "现金流悬崖",
     style: "alliance",
+    scene:
+      "现金流悬崖的沙盘室里，财务负责人带来现金贡献地图，品牌负责人带来品牌预算表。银行只给你一次汇报机会。",
     allies: ["财务负责人", "品牌负责人"],
     correctAlly: "财务负责人",
+    resolution:
+      "财务负责人和现金贡献地图是正确选择：只有知道哪个区域真正贡献现金，才能回答银行最关心的 EBITDA 转正问题。品牌预算应作为后续验证项，而不是第一决策依据。",
     intelChoices: ["现金贡献地图", "品牌预算", "银行条款"],
     correctIntel: "现金贡献地图",
     betrayalChoices: ["共享现金贡献地图", "保留银行条款"],
@@ -296,9 +322,13 @@ export const TRIAL_STAGES: TrialStageDef[] = [
     name: "MBA 供应链危机",
     boss: "断链海啸",
     style: "wolf",
+    scene:
+      "断链海啸的作战室里，采购、销售、财务各拿一份数据。采购说高价保交付，销售说客户交期不可变，财务警告现金流，但只有一个人的数据能解释断链根源。",
     clue: "采购、销售、财务都在用一个立场解释同一组数据，先找谁最接近客户真实交付。",
     suspects: ["采购负责人", "销售负责人", "财务负责人"],
     correctSuspect: "采购负责人",
+    resolution:
+      "真正掌握断链源头的是采购负责人：他的单一供应商决策和延迟预警，才是危机的起点。销售与财务的立场都是结果，不是原因。",
     gates: [
       { abilityId: "strategy", level: 4 },
       { abilityId: "authority", level: 3 }
@@ -351,8 +381,12 @@ export const TRIAL_STAGES: TrialStageDef[] = [
     name: "MBA 人才梯队",
     boss: "梯队断层",
     style: "alliance",
+    scene:
+      "梯队断层评审会上，HR 负责人带来薪酬数据，业务负责人带来岗位成果标准。你要决定谁进入陪跑计划的核心。",
     allies: ["HR 负责人", "业务负责人"],
     correctAlly: "业务负责人",
+    resolution:
+      "业务负责人和岗位成果标准是正确选择：梯队建设要按岗位成果培养，而不是按薪酬或离职风险培养。共享成果标准后，HR 与业务第一次用同一把尺子评估人才。",
     intelChoices: ["岗位成果标准", "薪酬数据", "离职名单"],
     correctIntel: "岗位成果标准",
     betrayalChoices: ["共享岗位成果标准", "保留薪酬数据"],
@@ -410,8 +444,12 @@ export const TRIAL_STAGES: TrialStageDef[] = [
     name: "营销增长实战",
     boss: "预算放大器",
     style: "alliance",
+    scene:
+      "预算放大器会议上，市场负责人带来广告预算，销售负责人带来渠道转化数据。新品只有一笔验证预算。",
     allies: ["市场负责人", "销售负责人"],
     correctAlly: "销售负责人",
+    resolution:
+      "销售负责人和渠道转化数据是正确选择：验证预算应该投给已经被转化数据证明的渠道。广告预算适合验证之后放大，而不是在验证之前烧掉。",
     intelChoices: ["渠道转化数据", "广告预算", "竞品方案"],
     correctIntel: "渠道转化数据",
     betrayalChoices: ["共享渠道转化数据", "保留广告预算"],
@@ -451,9 +489,13 @@ export const TRIAL_STAGES: TrialStageDef[] = [
     name: "财务税务实战",
     boss: "成本迷雾",
     style: "wolf",
+    scene:
+      "成本迷雾的报表室里，财务经理、采购经理、销售经理各执一词。同一批项目数据在三张报表里出现了三个口径。",
     clue: "同一批项目数据在不同报表里口径不一致，先统一科目，再判断真实利润。",
     suspects: ["财务经理", "采购经理", "销售经理"],
     correctSuspect: "采购经理",
+    resolution:
+      "真正的问题在采购经理：他的发票与库存口径不一致，导致账面利润被高估。财务与销售只是按各自口径汇报，采购的数据才是污染源头。",
     gates: [{ abilityId: "execution", level: 3 }],
     minChapter: 5,
     staminaCost: 14,
@@ -558,8 +600,12 @@ export const TRIAL_STAGES: TrialStageDef[] = [
     name: "员工激励实战",
     boss: "两极团队",
     style: "alliance",
+    scene:
+      "两极团队的复盘室里，HR 负责人带来薪酬数据，业务负责人带来绩效数据。你要决定先稳住哪一类人。",
     allies: ["HR 负责人", "业务负责人"],
     correctAlly: "业务负责人",
+    resolution:
+      "业务负责人和绩效数据是正确选择：绩优与躺平的判断必须基于真实绩效，而不是薪酬或考勤。共享绩效数据后，激励方案第一次有了共同依据。",
     intelChoices: ["绩效数据", "薪酬数据", "考勤记录"],
     correctIntel: "绩效数据",
     betrayalChoices: ["共享绩效数据", "保留考勤记录"],
@@ -599,9 +645,13 @@ export const TRIAL_STAGES: TrialStageDef[] = [
     name: "交付资源实战",
     boss: "资源争夺战",
     style: "wolf",
+    scene:
+      "资源争夺战的作战室里，项目负责人说资源被抽走，资源负责人说需求变更太多，客户负责人催交付。延期六周已经不可回避。",
     clue: "延期不是单一执行问题，先找到卡住交付的关键资源节点。",
     suspects: ["项目负责人", "资源负责人", "客户负责人"],
     correctSuspect: "资源负责人",
+    resolution:
+      "真正卡住交付的是资源负责人：他的资源分配记录显示，关键岗位的资源连续三周被更高优先级项目抽走。需求变更与客户催单都是结果。",
     gates: [{ abilityId: "execution", level: 3 }],
     minChapter: 5,
     staminaCost: 14,
@@ -884,7 +934,13 @@ export function trialCostFor(save: SaveState, stage: TrialStageDef): number {
       cost -= itemCostMap[item] ?? 0;
     }
   }
-  return Math.max(4, cost);
+  const difficultyFactor =
+    save.difficulty === "extreme"
+      ? 1.3
+      : save.difficulty === "pressure"
+        ? 1.15
+        : 1;
+  return Math.max(4, Math.round(cost * difficultyFactor));
 }
 
 export function trialRewardExpFor(

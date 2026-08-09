@@ -353,6 +353,14 @@ h2 {
   animation: board-breathe 5s ease-in-out infinite;
 }
 
+.power-board-hit {
+  display: block;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+}
+
 .scene-caption {
   display: flex;
   flex-direction: column;
@@ -373,6 +381,46 @@ h2 {
 .scene-caption span {
   color: var(--muted);
   line-height: 1.7;
+}
+
+.scene-live {
+  margin: 0;
+  color: rgba(65, 199, 192, 0.95);
+  font-size: 13px;
+  line-height: 1.7;
+}
+
+.scene-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 14px;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.scene-legend span {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.legend-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+.legend-dot.gold {
+  background: #f2c14e;
+}
+
+.legend-dot.teal {
+  background: #41c7c0;
+}
+
+.legend-dot.gray {
+  background: rgba(159, 179, 200, 0.5);
 }
 
 .menu-card {
@@ -430,6 +478,26 @@ h2 {
 
 .profile-form {
   margin-top: 22px;
+}
+
+.trial-role-preview {
+  margin: 14px 0 10px;
+  padding: 12px 14px;
+  border: 1px solid rgba(65, 199, 192, 0.35);
+  border-radius: 8px;
+  background: rgba(65, 199, 192, 0.06);
+}
+
+.trial-role-preview strong {
+  color: #41c7c0;
+  font-size: 14px;
+}
+
+.trial-role-preview p {
+  margin: 6px 0 0;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.6;
 }
 
 .assessment-shell {
@@ -648,6 +716,120 @@ h2 {
 .achievement-card small {
   color: var(--gold);
   white-space: nowrap;
+}
+
+.achievement-category-stats {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 10px;
+  margin-bottom: 22px;
+}
+
+.achievement-category-stat {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--panel-2);
+}
+
+.achievement-category-stat strong {
+  color: #e7eef2;
+  font-size: 13px;
+}
+
+.achievement-category-stat span {
+  color: var(--gold);
+  font-size: 12px;
+}
+
+.achievement-group {
+  margin-bottom: 26px;
+}
+
+.achievement-group-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+
+.achievement-group-head h2 {
+  margin: 0;
+  font-size: 20px;
+}
+
+.achievement-group-head span {
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.achievement-card {
+  position: relative;
+}
+
+.ach-favorite {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  border: 1px solid rgba(242, 193, 78, 0.4);
+  border-radius: 8px;
+  background: rgba(242, 193, 78, 0.08);
+  color: var(--gold);
+  font-size: 16px;
+}
+
+.achievement-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 6px;
+}
+
+.ach-rarity,
+.ach-category {
+  display: inline-block;
+  padding: 2px 7px;
+  border-radius: 999px;
+  font-size: 11px;
+  line-height: 1.4;
+}
+
+.ach-rarity.rarity-common {
+  border: 1px solid rgba(159, 179, 200, 0.4);
+  color: #9fb3c8;
+}
+
+.ach-rarity.rarity-rare {
+  border: 1px solid rgba(65, 199, 192, 0.55);
+  color: #41c7c0;
+}
+
+.ach-rarity.rarity-epic {
+  border: 1px solid rgba(154, 105, 232, 0.6);
+  color: #b497f0;
+}
+
+.ach-rarity.rarity-legendary {
+  border: 1px solid rgba(242, 193, 78, 0.75);
+  color: #f2c14e;
+}
+
+.ach-category {
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  color: var(--muted);
+}
+
+.ach-lore {
+  margin-top: 8px;
+  color: rgba(159, 179, 200, 0.9);
+  font-size: 12px;
+  line-height: 1.6;
 }
 
 .relation-shell {
@@ -1233,6 +1415,42 @@ h2 {
   color: var(--muted);
   line-height: 1.7;
   margin-bottom: 0;
+}
+
+.diff-active {
+  display: inline-block;
+  margin-left: 6px;
+  padding: 1px 7px;
+  border: 1px solid rgba(65, 199, 192, 0.5);
+  border-radius: 999px;
+  color: #41c7c0;
+  font-size: 11px;
+  font-weight: 700;
+  vertical-align: middle;
+}
+
+.diff-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.diff-btn {
+  flex: 1 1 88px;
+  padding: 8px 10px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--panel);
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.diff-btn.active {
+  border-color: rgba(242, 193, 78, 0.75);
+  background: rgba(242, 193, 78, 0.12);
+  color: #f2c14e;
+  font-weight: 700;
 }
 
 .next-step-panel {
@@ -3006,6 +3224,10 @@ h2 {
 
   .achievement-grid {
     grid-template-columns: 1fr;
+  }
+
+  .achievement-category-stats {
+    grid-template-columns: repeat(2, 1fr);
   }
 
   .relation-grid {
