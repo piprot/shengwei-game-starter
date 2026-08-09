@@ -364,7 +364,6 @@ export class AdaptiveGameApp {
 
   constructor(root: HTMLElement) {
     this.root = root;
-    document.body.setAttribute("data-app-ready", "1");
     document.querySelector("#app-loading")?.remove();
     document.documentElement.classList.toggle("online-off", !ONLINE_ENABLED);
     document.documentElement.lang = this.language;
@@ -399,6 +398,9 @@ export class AdaptiveGameApp {
     this.root.addEventListener("change", (event) => this.handleChange(event));
     document.addEventListener("keydown", (event) => this.handleShortcut(event));
     this.show("menu");
+    // 只有真实菜单渲染完成后才算 ready：放在构造函数开头会让初始化中途抛异常时
+    // 也被标记为就绪，index.html 里那段 5 秒 loading 兜底就会失效。
+    document.body.setAttribute("data-app-ready", "1");
   }
 
   /** 显式保存入口：写失败时立刻提醒玩家导出，避免静默丢档。 */
