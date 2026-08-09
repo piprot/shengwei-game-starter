@@ -171,7 +171,7 @@ const SETTINGS_MIGRATION_KEY = "adaptive-ascent-settings-v2";
 const GUIDE_KEY = "adaptive-ascent-guide-v1";
 const GUIDE_REWARD_KEY = "adaptive-ascent-guide-reward";
 const ACHIEVEMENT_FAVORITE_KEY = "adaptive-ascent-achievement-favorites";
-const APP_VERSION = "1.5.1";
+const APP_VERSION = "1.5.2";
 
 type View =
   | "menu"
@@ -357,6 +357,8 @@ export class AdaptiveGameApp {
   private activeDecisionNodeId?: string;
   private interferenceText?: string;
   private lastTimedOut = false;
+  private energyRestoreUsed = false;
+  private lastEnergyRestoreChapter = 0;
 
   constructor(root: HTMLElement) {
     this.root = root;
@@ -1957,6 +1959,19 @@ export class AdaptiveGameApp {
       )
     ];
     const optionOrder = this.storyOptionOrder(node);
+    const optionGates = optionOrder.map((index) =>
+      optionGateFor(this.save, node.options[index], node.chapterId)
+    );
+    const enabledOptionCount = optionGates.filter(
+      (gate) => gate.kind === "ok"
+    ).length;
+    const energyLocked = optionGates.some(
+      (gate) => gate.kind === "resource" && gate.resource === "energy"
+    );
+    if (node.chapterId !== this.lastEnergyRestoreChapter) {
+      this.lastEnergyRestoreChapter = node.chapterId;
+      this.energyRestoreUsed = false;
+    }
     const unlockAbility = relevantAbilities.find(
       (id) => abilityLevel(this.save.profile.abilities[id]) >= 3
     );
@@ -2064,6 +2079,21 @@ export class AdaptiveGameApp {
                           : ""
                       }
                     </div>
+                    ${
+                      enabledOptionCount === 0 && energyLocked
+                        ? `
+                          <div class="energy-restore-panel" role="status">
+                            <strong>${this.language === "en" ? "Energy exhausted" : "精力耗尽"}</strong>
+                            <p>${this.language === "en" ? "Every move needs more energy right now. Take a breath to recover +25 once per chapter." : "当前所有选项都需要更多精力。深呼吸恢复 +25，每章限一次。"}</p>
+                            ${
+                              this.energyRestoreUsed
+                                ? `<small>${this.language === "en" ? "Recovery already used this chapter." : "本章恢复已使用。"}</small>`
+                                : `<button data-action="energy-restore">${this.language === "en" ? "Breathe & Recover +25" : "深呼吸恢复 +25"}</button>`
+                            }
+                          </div>
+                        `
+                        : ""
+                    }
                     <div class="option-list">
                       ${optionOrder
                         .map(
@@ -2081,7 +2111,7 @@ export class AdaptiveGameApp {
                                   ? `${this.t("optionLockedAbility")} ${this.abilityDisplay(gate.ability).name} Lv.${gate.needed}`
                                   : "";
                             return `
-                              <button class="option-card ${gate.kind !== "ok" ? "locked" : ""}" data-action="choose-option" data-option="${originalIndex}" ${gate.kind !== "ok" ? "disabled" : ""}>
+                              <button class="option-card ${gate.kind !== "ok" ? "locked" : ""}" data-action="choose-option" data-option="${originalIndex}" data-quality="${option.quality}" ${gate.kind !== "ok" ? "disabled" : ""}>
                                 <span class="option-letter">${String.fromCharCode(65 + index)}</span>
                                 <span class="option-body">
                                   <strong>${escapeHtml(option.label)}</strong>
@@ -3447,6 +3477,7 @@ export class AdaptiveGameApp {
                 </div>
               </section>
               <p class="muted">${en ? "Hidden route completed and written into your ending." : "隐藏章节已完成，并已写入结局。"}</p>
+              <button class="primary" data-action="continue-hidden-exit">${en ? "Back to Outcome" : "返回本次结算"}</button>
             `
             : answered
               ? `
@@ -4418,6 +4449,15 @@ export class AdaptiveGameApp {
         this.renderHiddenBranch();
         break;
       }
+      case "continue-hidden-exit":
+        this.audio.ui();
+        if (this.lastOutcome && this.lastOutcomeNodeId) {
+          this.storyNodeId = this.lastOutcomeNodeId;
+          this.show("story");
+        } else {
+          this.show("map");
+        }
+        break;
       case "open-achievements":
         this.audio.ui();
         this.show("achievements");
@@ -5393,6 +5433,23 @@ export class AdaptiveGameApp {
         this.audio.ui();
         this.renderStory();
         break;
+      case "energy-restore":
+        if (!this.energyRestoreUsed) {
+          this.save.profile.resources.energy = Math.min(
+            100,
+            this.save.profile.resources.energy + 25
+          );
+          this.energyRestoreUsed = true;
+          this.persistSave();
+          this.audio.expert();
+          this.showToast(
+            this.language === "en"
+              ? "Energy restored +25."
+              : "精力已恢复 +25。"
+          );
+          this.renderStory();
+        }
+        break;
       case "choose-option":
         this.chooseStoryOption(actionTarget);
         break;
@@ -5508,8 +5565,6 @@ export class AdaptiveGameApp {
             this.hiddenRouteLastAnswer = undefined;
             this.hiddenRouteLastCorrect = undefined;
             this.pendingBranchNodeId = undefined;
-            this.lastOutcome = undefined;
-            this.lastOutcomeNodeId = undefined;
             this.audio.ui();
             this.show("hiddenBranch");
             break;

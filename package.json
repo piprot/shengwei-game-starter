@@ -26,6 +26,8 @@
     "test:features": "node scripts/feature-audit.mjs",
     "test:accessibility": "node --experimental-strip-types scripts/accessibility-audit.mjs",
     "test:rtc": "node --experimental-strip-types scripts/rtc-audit.mjs",
+    "test:role-campaign": "node scripts/role-campaign-audit.mjs",
+    "test:role-campaign-sim": "node --experimental-strip-types scripts/role-campaign-sim.mjs",
     "server": "node server/index.mjs",
     "test:server": "node scripts/server-smoke.mjs",
     "test:server-edge": "node scripts/server-edge.mjs",

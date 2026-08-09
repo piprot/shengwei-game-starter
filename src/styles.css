@@ -4200,6 +4200,31 @@ h2 {
   font-weight: 600;
 }
 
+/* 精力耗尽逃生通道 */
+.energy-restore-panel {
+  margin-bottom: 12px;
+  padding: 12px 14px;
+  border-radius: 8px;
+  border: 1px solid #57c7a3;
+  background: rgba(87, 199, 163, 0.1);
+}
+.energy-restore-panel strong {
+  display: block;
+  margin-bottom: 4px;
+  color: #57c7a3;
+}
+.energy-restore-panel p {
+  margin: 0 0 8px;
+  color: #9fb3c8;
+  font-size: 14px;
+}
+.energy-restore-panel button {
+  padding: 8px 14px;
+}
+.energy-restore-panel small {
+  color: #f2c14e;
+}
+
 /* 1v1 倒计时与超时提示 */
 .duel-timer {
   font-variant-numeric: tabular-nums;
