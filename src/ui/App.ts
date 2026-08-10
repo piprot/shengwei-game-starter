@@ -172,7 +172,7 @@ const SETTINGS_MIGRATION_KEY = "adaptive-ascent-settings-v2";
 const GUIDE_KEY = "adaptive-ascent-guide-v1";
 const GUIDE_REWARD_KEY = "adaptive-ascent-guide-reward";
 const ACHIEVEMENT_FAVORITE_KEY = "adaptive-ascent-achievement-favorites";
-const APP_VERSION = "1.5.9";
+const APP_VERSION = "1.5.10";
 
 type View =
   | "menu"
@@ -196,6 +196,7 @@ type View =
   | "duel";
 
 type DuelMode = "ai" | "local" | "remote";
+type DuelQuality = "expert" | "partial" | "risk";
 
 export class AdaptiveGameApp {
   private root: HTMLElement;
@@ -322,7 +323,7 @@ export class AdaptiveGameApp {
   private duelRecorded = false;
   private duelRevealing = false;
   private duelRevealTimer?: number;
-  private duelPrediction?: number;
+  private duelPrediction?: DuelQuality;
   private duelPredictionPhase = false;
   private duelPredictionCorrect?: boolean;
   private duelPredictionHistory: boolean[] = [];
@@ -4011,19 +4012,45 @@ export class AdaptiveGameApp {
       this.root.innerHTML = `
         <main class="duel-predict" aria-label="${this.t("duelPredict")}">
           <p class="eyebrow">${this.t("duelPredict")}</p>
-          <h1>${en ? "Read the opponent before the reveal" : "揭晓前，先读对手"}</h1>
-          <p class="muted">${escapeHtml(nodeView.stake)}</p>
+          <h1>${en ? "Bet on the opponent's style before the reveal" : "揭晓前，先押注对手风格"}</h1>
+          <p class="muted">${en ? "Hit the opponent's actual style this round for a +20% score bonus (minimum +2)." : "押中对方本回合的实际风格，获得本回合 20% 分数加成（至少 +2 分）。"}<br />${escapeHtml(nodeView.stake)}</p>
           <div class="duel-predict-options">
-            ${nodeView.options
-              .map(
-                (option, index) => `
-                  <button data-action="duel-predict" data-option="${index}">
-                    <strong>${String.fromCharCode(65 + index)}</strong>
-                    <span>${escapeHtml(option.label)}</span>
-                  </button>
-                `
+            ${
+              (
+                [
+                  {
+                    quality: "expert" as DuelQuality,
+                    zh: "专家式",
+                    en: "Expert",
+                    hintZh: "对方最可能选择专家级应对",
+                    hintEn: "The opponent's most likely expert move"
+                  },
+                  {
+                    quality: "partial" as DuelQuality,
+                    zh: "稳健式",
+                    en: "Balanced",
+                    hintZh: "对方可能选择稳妥推进",
+                    hintEn: "The opponent may play it safe"
+                  },
+                  {
+                    quality: "risk" as DuelQuality,
+                    zh: "冒险式",
+                    en: "Risk-taking",
+                    hintZh: "对方可能冒险破局",
+                    hintEn: "The opponent may take a risk"
+                  }
+                ] as const
               )
-              .join("")}
+                .map(
+                  (item) => `
+                    <button data-action="duel-predict" data-quality="${item.quality}">
+                      <strong>${en ? item.en : item.zh}</strong>
+                      <span>${en ? item.hintEn : item.hintZh}</span>
+                    </button>
+                  `
+                )
+                .join("")
+            }
           </div>
         </main>
       `;
@@ -5687,7 +5714,12 @@ export class AdaptiveGameApp {
         this.duelPick(actionTarget);
         break;
       case "duel-predict": {
-        const prediction = Number(actionTarget.dataset.option);
+        const prediction = actionTarget.dataset.quality as
+          | DuelQuality
+          | undefined;
+        if (!prediction) {
+          break;
+        }
         const engine = this.duelEngine;
         if (
           engine?.currentRound === 0 &&
@@ -5713,12 +5745,14 @@ export class AdaptiveGameApp {
           this.renderDuel();
           return;
         }
-        this.duelPredictionCorrect = engine?.picks[1] === prediction;
-        this.duelPredictionHistory.push(Boolean(this.duelPredictionCorrect));
-        if (this.duelPredictionCorrect && engine) {
-          engine.scores[0] += 10;
-          this.duelPredictionBonusTotal += 10;
-        }
+        const predictingIndex =
+          this.duelMode === "local" ? (this.hotSeatTurn as 0 | 1) : 0;
+        const bonus = engine
+          ? engine.predictOpponentStyle(predictingIndex, prediction)
+          : 0;
+        this.duelPredictionCorrect = bonus > 0;
+        this.duelPredictionHistory.push(bonus > 0);
+        this.duelPredictionBonusTotal += bonus;
         this.audio.duelPick();
         this.maybeRevealDuelRound();
         break;
@@ -6184,12 +6218,15 @@ export class AdaptiveGameApp {
       const opponentIndex = this.remotePlayerIndex === 0 ? 1 : 0;
       this.duelEngine.pick(opponentIndex, message.optionIndex);
       this.remoteOpponentPicked = false;
-      this.duelPredictionCorrect =
-        this.duelPrediction === message.optionIndex;
-      if (this.duelPredictionCorrect) {
-        this.duelEngine.scores[this.remotePlayerIndex] += 10;
-        this.duelPredictionBonusTotal += 10;
-      }
+      const predictedStyle = this.duelPrediction;
+      const bonus = predictedStyle
+        ? this.duelEngine.predictOpponentStyle(
+            this.remotePlayerIndex,
+            predictedStyle
+          )
+        : 0;
+      this.duelPredictionCorrect = bonus > 0;
+      this.duelPredictionBonusTotal += bonus;
       this.duelPrediction = undefined;
       this.duelPredictionPhase = false;
       this.duelEngine.resolvePendingRound();
@@ -6761,12 +6798,15 @@ export class AdaptiveGameApp {
           const opponentIndex = this.remotePlayerIndex === 0 ? 1 : 0;
           this.duelEngine.pick(opponentIndex, message.optionIndex);
           this.remoteOpponentPicked = false;
-          this.duelPredictionCorrect =
-            this.duelPrediction === message.optionIndex;
-          if (this.duelPredictionCorrect) {
-            this.duelEngine.scores[this.remotePlayerIndex] += 10;
-            this.duelPredictionBonusTotal += 10;
-          }
+          const predictedStyle = this.duelPrediction;
+          const bonus = predictedStyle
+            ? this.duelEngine.predictOpponentStyle(
+                this.remotePlayerIndex,
+                predictedStyle
+              )
+            : 0;
+          this.duelPredictionCorrect = bonus > 0;
+          this.duelPredictionBonusTotal += bonus;
           this.duelPrediction = undefined;
           this.duelPredictionPhase = false;
           this.duelEngine.resolvePendingRound();

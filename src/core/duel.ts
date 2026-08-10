@@ -62,6 +62,28 @@ export class DuelEngine {
     }
   }
 
+  /**
+   * 风格押注：玩家在揭晓前押对手会选择 expert/partial/risk 中的哪种风格。
+   * 押中后按本回合自身基础得分的 20% 加成分数（至少 +2），返回实际加成。
+   */
+  predictOpponentStyle(
+    playerIndex: 0 | 1,
+    quality: "expert" | "partial" | "risk"
+  ): number {
+    const opponentIndex = playerIndex === 0 ? 1 : 0;
+    const opponentPick = this.picks[opponentIndex];
+    const ownPick = this.picks[playerIndex];
+    if (opponentPick === null || ownPick === null) {
+      return 0;
+    }
+    if (this.node.options[opponentPick].quality !== quality) {
+      return 0;
+    }
+    const bonus = Math.max(2, Math.round(this.scorePick(playerIndex, ownPick) * 0.2));
+    this.scores[playerIndex] += bonus;
+    return bonus;
+  }
+
   aiPick(playerIndex: 0 | 1): number {
     const player = this.players[playerIndex];
     const node = this.node;

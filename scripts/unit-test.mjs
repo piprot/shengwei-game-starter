@@ -1013,6 +1013,31 @@ assert(
   "duel snapshot should restore picks, round, and round count"
 );
 
+const styleDuel = new DuelEngine(humanProfile, aiProfile, 3, 42);
+styleDuel.pick(0, 0);
+styleDuel.pick(1, 1);
+const opponentQuality = styleDuel.node.options[styleDuel.picks[1]].quality;
+const styleScoreBefore = styleDuel.scores[0];
+const styleBonus = styleDuel.predictOpponentStyle(0, opponentQuality);
+assert(
+  styleBonus >= 2,
+  "style bet hit should grant at least +2 bonus"
+);
+assert(
+  styleDuel.scores[0] === styleScoreBefore + styleBonus,
+  "style bet bonus should be added to the predicting player score"
+);
+
+const missDuel = new DuelEngine(humanProfile, aiProfile, 3, 42);
+missDuel.pick(0, 0);
+missDuel.pick(1, 1);
+const missQuality =
+  missDuel.node.options[missDuel.picks[1]].quality === "expert"
+    ? "risk"
+    : "expert";
+const missBonus = missDuel.predictOpponentStyle(0, missQuality);
+assert(missBonus === 0, "style bet miss should grant no bonus");
+
 // ---- 多角色存档槽：三角色独立存档、切换与删除 ----
 const slotParachute = structuredClone(DEFAULT_SAVE);
 slotParachute.profileCreated = true;
