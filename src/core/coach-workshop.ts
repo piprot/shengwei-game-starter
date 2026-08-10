@@ -18,6 +18,7 @@ import type {
   StoryNode,
 } from "./types.ts";
 import { ABILITY_ORDER } from "./abilities.ts";
+import { getNode } from "./story.ts";
 
 // ============================================================
 // 数据结构
@@ -469,19 +470,17 @@ export class CoachWorkshopEngine {
   }
 
   private guessNodeTitle(nodeId: string): string {
-    // 从 nodeId 推断标题（实际使用时从 story.ts 查询）
-    const titleMap: Record<string, string> = {
-      "ch1_s1": "初到任的第一把火",
-      "ch2_s1": "用人之际的两难",
-      "ch3_s1": "派系暗涌中的选择",
-      "ch4_s1": "变革深水区",
-      "ch5_s1": "信任裂缝的修复",
-    };
-    return titleMap[nodeId] ?? nodeId;
+    // 从 story.ts 动态查询节点标题
+    try {
+      return getNode(nodeId).title;
+    } catch {
+      return nodeId;
+    }
   }
 
   private guessChapterId(nodeId: string): number {
-    const match = nodeId.match(/ch(\d+)/);
+    // 支持 c1n1 / c1b-parachute / s1 / r1 等格式
+    const match = nodeId.match(/^[csr](\d+)/);
     return match ? parseInt(match[1]) : 0;
   }
 }
