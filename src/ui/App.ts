@@ -172,7 +172,7 @@ const SETTINGS_MIGRATION_KEY = "adaptive-ascent-settings-v2";
 const GUIDE_KEY = "adaptive-ascent-guide-v1";
 const GUIDE_REWARD_KEY = "adaptive-ascent-guide-reward";
 const ACHIEVEMENT_FAVORITE_KEY = "adaptive-ascent-achievement-favorites";
-const APP_VERSION = "1.5.10";
+const APP_VERSION = "1.5.11";
 
 type View =
   | "menu"
@@ -328,6 +328,8 @@ export class AdaptiveGameApp {
   private duelPredictionCorrect?: boolean;
   private duelPredictionHistory: boolean[] = [];
   private duelPredictionBonusTotal = 0;
+  private duelRoundResult?: DuelEngine["roundResults"][number];
+  private duelRoundResultTimer?: number;
   private duelRoundTimerId?: number;
   private duelRoundTickId?: number;
   private duelRoundDeadline = 0;
@@ -1037,7 +1039,7 @@ export class AdaptiveGameApp {
             <strong>${summary.total}</strong>
             <span class="rank-caption">${started ? this.t("totalAbility") : this.language === "en" ? "Baseline · grows with decisions" : "初始基线 · 随决策成长"}</span>
             <div class="rank-meter"><i style="width:${Math.min(100, (summary.total / 60) * 100)}%"></i></div>
-            <p>${this.language === "en" ? `Completed ${summary.chapterCount} / 9 chapters` : `已通关 ${summary.chapterCount} / 9 章`}</p>
+            <p title="${this.language === "en" ? "A chapter counts after both main scenarios are completed" : "完成本章全部主线情境后才会计入通关"}">${this.language === "en" ? `Completed ${summary.chapterCount} / 9 chapters` : `已通关 ${summary.chapterCount} / 9 章`}</p>
           </div>
         </section>
         ${
@@ -1668,6 +1670,9 @@ export class AdaptiveGameApp {
     const summary = profileSummary(this.save);
     const chapter = getChapter(this.selectedChapter);
     const mainNodes = chapter.nodeIds.map(getNode);
+    const mainDoneCount = mainNodes.filter((node) =>
+      isNodeComplete(this.save, node.id)
+    ).length;
     const chapterDone = isChapterComplete(this.save, chapter.id);
     const chapterPassed = isChapterPassed(this.save, chapter.id);
     const availableRandom = nextRandomEvent({
@@ -1702,6 +1707,7 @@ export class AdaptiveGameApp {
             <p class="eyebrow">${this.t("mainQuest")}</p>
             <h1>${this.t("campaignTitle")}</h1>
             <p class="muted">${this.t("mapHint")}</p>
+            <p class="muted chapter-count-hint">${this.language === "en" ? "A chapter counts as cleared only after both main scenarios are done." : "通关计数：完成本章全部主线情境（每章 2 个）后才会 +1。"}</p>
           </div>
           <div class="resource-strip">
             ${this.resourceChips(this.save.profile)}
@@ -1716,6 +1722,7 @@ export class AdaptiveGameApp {
               <span class="chapter-code">${this.language === "en" ? `Chapter ${chapter.code}` : `第 ${chapter.code} 章`}</span>
               <h2>${this.chapterDisplay(chapter).title}</h2>
               <p>${this.chapterDisplay(chapter).subtitle}</p>
+              <p class="chapter-main-progress">${this.language === "en" ? `Main scenarios ${mainDoneCount} / ${mainNodes.length}` : `主线情境 ${mainDoneCount} / ${mainNodes.length}`}</p>
             </div>
             <div class="node-list">
               ${mainNodes.map((node) => this.nodeRow(node)).join("")}
@@ -2441,6 +2448,7 @@ export class AdaptiveGameApp {
                 .join("")}
             </ul>
             <button data-action="apply-certification">${this.language === "en" ? "Apply for Certification" : "申请认证"}</button>
+            <button data-action="certification-help">${this.language === "en" ? "How Certification Points Work" : "认证点如何获得"}</button>
           </div>
           <button data-action="reset-profile">${this.t("resetProfile")}</button>
           <button data-action="export-save">${this.t("exportSave")}</button>
@@ -3388,6 +3396,37 @@ export class AdaptiveGameApp {
   }
 
 
+  private duelRoundResultMarkup(engine: DuelEngine): string {
+    const round = this.duelRoundResult;
+    const en = this.language === "en";
+    if (!round) {
+      return "";
+    }
+    return `
+      <main class="duel-round-result" aria-label="${en ? "Round result" : "本回合揭晓"}">
+        <p class="eyebrow">${en ? `Round ${engine.currentRound}` : `第 ${engine.currentRound} 回合`}</p>
+        <h1>${en ? "Round settled" : "本回合揭晓"}</h1>
+        <div class="round-result-grid">
+          ${engine.players
+            .map((player, index) => {
+              const option = round.node.options[round.picks[index]];
+              return `
+                <article>
+                  <strong>${escapeHtml(player.name)}</strong>
+                  <p>${escapeHtml(option.label)}</p>
+                  <span class="round-points">+${round.points[index]}</span>
+                </article>
+              `;
+            })
+            .join("")}
+        </div>
+        <p class="round-total">${en ? "Running total" : "当前总分"}：${escapeHtml(engine.players[0].name)} ${engine.scores[0]} · ${escapeHtml(engine.players[1].name)} ${engine.scores[1]}</p>
+        <p class="muted">${en ? "Next round starts shortly..." : "即将进入下一回合…"}</p>
+      </main>
+    `;
+  }
+
+
   private duelResultMarkup(
     engine: DuelEngine,
     result: ReturnType<DuelEngine["toResult"]>
@@ -3963,6 +4002,11 @@ export class AdaptiveGameApp {
       return;
     }
 
+    if (this.duelRoundResult) {
+      this.root.innerHTML = this.duelRoundResultMarkup(engine);
+      return;
+    }
+
     if (engine.finished) {
       if (!this.duelRecorded) {
         this.duelRecorded = true;
@@ -4378,6 +4422,14 @@ export class AdaptiveGameApp {
         }
         break;
       }
+      case "certification-help":
+        this.showToast(
+          this.language === "en"
+            ? "Certification = assessment score + role focus ability levels. Finish the 30-question assessment and train focus abilities to grow."
+            : "认证点 = 测评总分 + 角色重点能力等级合计；完成 30 题测评提升总分，训练角色重点能力提升等级。"
+        );
+        this.audio.ui();
+        break;
       case "open-wrong-review": {
         const wrongIds = [
           ...new Set(
@@ -5339,9 +5391,15 @@ export class AdaptiveGameApp {
           "textarea[data-practice-result]"
         );
         const text = textarea?.value.trim() ?? "";
+        if (!task) {
+          break;
+        }
+        const practiceScore = scoreOpenText(text, task.keywords, 20);
+        const matchedKeywords = task.keywords.filter((keyword) =>
+          text.includes(keyword)
+        );
         if (
-          task &&
-          scoreOpenText(text, task.keywords, 20) >= 60 &&
+          practiceScore >= 60 &&
           completePracticeTask(
             this.save,
             task.id,
@@ -5353,8 +5411,18 @@ export class AdaptiveGameApp {
           this.activePracticeTaskId = undefined;
           this.audio.trainingMastery();
           this.renderTrial();
+          this.showToast(
+            this.language === "en"
+              ? `Practice scored ${practiceScore}/100 · Hit keywords: ${matchedKeywords.join(", ") || "-"} · Rewards: +${task.rewardEnergy} energy, +${task.rewardExp} mastery`
+              : `修炼得分 ${practiceScore}/100 · 命中关键词：${matchedKeywords.join("、") || "无"} · 奖励：+${task.rewardEnergy} 精力、+${task.rewardExp} 修炼点`
+          );
         } else {
           this.audio.risk();
+          this.showToast(
+            this.language === "en"
+              ? `Score ${practiceScore}/100 · Hit: ${matchedKeywords.join(", ") || "none"} · Add concrete output to pass`
+              : `得分 ${practiceScore}/100 · 命中：${matchedKeywords.join("、") || "无"} · 再补充具体产出即可通过`
+          );
         }
         break;
       }
@@ -6230,7 +6298,7 @@ export class AdaptiveGameApp {
       this.duelPrediction = undefined;
       this.duelPredictionPhase = false;
       this.duelEngine.resolvePendingRound();
-      this.renderDuel();
+      this.showDuelRoundResult();
     }
   }
 
@@ -6277,10 +6345,7 @@ export class AdaptiveGameApp {
         this.duelRevealTimer = undefined;
         engine.resolvePendingRound();
         this.saveDuelSnapshot();
-        this.duelPrediction = undefined;
-        this.duelPredictionPhase = false;
-        this.duelPredictionCorrect = undefined;
-        this.renderDuel();
+        this.showDuelRoundResult();
       }, 900);
     }
   }
@@ -6297,6 +6362,26 @@ export class AdaptiveGameApp {
       this.duelPredictionPhase = true;
       this.renderDuel();
     }
+  }
+
+  private showDuelRoundResult(): void {
+    const engine = this.duelEngine;
+    const round = engine?.roundResults.at(-1);
+    if (!round) {
+      this.renderDuel();
+      return;
+    }
+    this.duelRoundResult = round;
+    this.duelPrediction = undefined;
+    this.duelPredictionPhase = false;
+    this.duelPredictionCorrect = undefined;
+    this.renderDuel();
+    window.clearTimeout(this.duelRoundResultTimer);
+    this.duelRoundResultTimer = window.setTimeout(() => {
+      this.duelRoundResult = undefined;
+      this.duelRoundResultTimer = undefined;
+      this.renderDuel();
+    }, 2200);
   }
 
   private saveDuelSnapshot(): void {
@@ -6807,12 +6892,12 @@ export class AdaptiveGameApp {
             : 0;
           this.duelPredictionCorrect = bonus > 0;
           this.duelPredictionBonusTotal += bonus;
-          this.duelPrediction = undefined;
-          this.duelPredictionPhase = false;
-          this.duelEngine.resolvePendingRound();
-          this.renderDuel();
-        }
-        break;
+      this.duelPrediction = undefined;
+      this.duelPredictionPhase = false;
+      this.duelEngine.resolvePendingRound();
+      this.showDuelRoundResult();
+    }
+    break;
       case "opponent_left":
         this.cloudStatus = "对手已离开";
         if (this.view === "duelLobby") this.renderDuelLobby();
@@ -7161,19 +7246,25 @@ export class AdaptiveGameApp {
     }
     const index = arc.nodes.indexOf(nodeId);
     if (index > 0 && !isNodeComplete(this.save, arc.nodes[index - 1])) {
+      const previousNode = getNode(arc.nodes[index - 1]);
+      const previousView = this.storyNodeDisplay(previousNode);
       return this.language === "en"
-        ? "Previous node required"
-        : "需要先完成上一节点";
+        ? `Complete "${previousView.title}" first`
+        : `需先完成「${previousView.title}」`;
     }
     const node = getNode(nodeId);
-    const chapterReady = getChapter(node.chapterId).nodeIds.some((mainId) =>
+    const mainIds = getChapter(node.chapterId).nodeIds;
+    const doneMain = mainIds.filter((id) =>
+      isNodeComplete(this.save, id)
+    ).length;
+    const chapterReady = mainIds.some((mainId) =>
       isNodeComplete(this.save, mainId)
     );
     return chapterReady
       ? (this.language === "en" ? "Available" : "可接取")
       : this.language === "en"
-        ? "Finish this chapter's main scenario first"
-        : "先完成本章主线情境";
+        ? `Finish this chapter's main scenarios first (${doneMain}/${mainIds.length})`
+        : `需先完成本章主线情境（${doneMain}/${mainIds.length}）`;
   }
 
   private nodeRow(node: StoryNode): string {
