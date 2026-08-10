@@ -1902,6 +1902,17 @@ button.trial-now {
   color: var(--teal);
 }
 
+.route-preview {
+  margin: 10px 0 0;
+  padding: 10px 12px;
+  border-left: 3px solid var(--gold);
+  border-radius: 0 8px 8px 0;
+  background: rgba(242, 193, 78, 0.08);
+  color: var(--text);
+  font-size: 13px;
+  line-height: 1.6;
+}
+
 .next-chapter {
   margin: 22px 0;
   padding: 16px;
@@ -3166,6 +3177,10 @@ button.trial-now {
   text-align: center;
 }
 
+.duel-local-note {
+  margin-top: 6px;
+}
+
 .duel-result,
 .duel-waiting {
   min-height: 100vh;
@@ -4290,6 +4305,17 @@ button.trial-now {
   background: #2a3a44;
   color: #f2c14e;
   font-size: 12px;
+}
+
+.ach-retest-button {
+  margin-left: 6px;
+  padding: 2px 8px;
+  border: 1px solid var(--teal);
+  border-radius: 6px;
+  background: transparent;
+  color: var(--teal);
+  font-size: 12px;
+  cursor: pointer;
 }
 
 /* 认证条件明细 */

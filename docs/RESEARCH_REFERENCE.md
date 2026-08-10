@@ -224,3 +224,39 @@
 对应我们的修复：修炼任务改为 textarea 多行输入，提交即 toast 展示 `得分/100 + 命中关键词 + 奖励`，失败也给出明确方向。
 
 以上仅借鉴设计思路与交互模式，不复制任何代码；各仓库版权归原作者所有。
+
+## 第七轮完整性验证参照（2026-08-10）
+
+本轮针对 20 项短板的 P0/P1 修复补充 GitHub 参照，仅借鉴交互与工程思路，不复制代码。
+
+### 20. 本地热座对战
+- `for5en/unity-bowling-3d`：https://github.com/for5en/unity-bowling-3d
+  可借鉴点：本地热座多人的回合归属、计分与设备移交状态。
+  对应修复：本地双人每回合结算后重置玩家一/玩家二状态，不再从第二回合卡在玩家二。
+- `barkev-dino/pretty_pretty_princess`：https://github.com/barkev-dino/pretty_pretty_princess
+  可借鉴点：Vite + React + TypeScript 的本地热座结构。
+  对应修复：`hotSeatTurn/localPassed` 在每轮开始时重置，并补充 3 回合双人自动化测试。
+
+### 21. 决策与领导力模拟
+- `prabapro/decision-lab`：https://github.com/prabapro/decision-lab
+  可借鉴点：决策实验的稳定情境参数与即时结果反馈。
+  对应修复：情境外壳改为整局种子按章节稳定，不再逐屏随机；章节路线选择后立即显示后果预览。
+- `PlanForwardTraining/Communication-Training-Simulator-Project-Manager`：https://github.com/PlanForwardTraining/Communication-Training-Simulator-Project-Manager
+  可借鉴点：场景化训练对产出的验收标准要可见。
+  对应修复：修炼任务失败 toast 列出缺失关键词与验收方向。
+
+### 22. 分支叙事与交互小说
+- `nikatopu/dialogue-forge`：https://github.com/nikatopu/dialogue-forge
+  可借鉴点：分支对话图与内容结构的可维护性。
+  对应修复：选项卡片去掉每项重复的「本章重点/当前考验」后缀，让分支内容更可读。
+- `markhorsell/if-player-react`：https://github.com/markhorsell/if-player-react
+  可借鉴点：React/TypeScript 交互小说播放器的文案结构。
+  对应修复：保持选项摘要简短，角色打法提示单独展示。
+
+### 23. 存档与 SPA 体验
+- `Kundana17/Wordly`：https://github.com/Kundana17/Wordly
+  可借鉴点：浏览器游戏用 localStorage 持久化进度与成就。
+  对应修复：把「第一次判断」等条件成就写入 `save.achievements`，成就墙与全局统计同源。
+- `PEZ/clojurescript-reactive-spa-scroll-restore-example`：https://github.com/PEZ/clojurescript-reactive-spa-scroll-restore-example
+  可借鉴点：SPA 路由/视图切换后的滚动位置处理。
+  对应修复：`show(view)` 切换视图时统一 `window.scrollTo(0,0)`，避免长页返回后停在中段。

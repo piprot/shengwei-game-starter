@@ -68,11 +68,13 @@ import {
   applyDailyTrialRecovery,
   applyStoryChoice,
   applyTrainingResult,
+  activateProfile,
   buildAiProfile,
   buyTrialEnergy,
   buyTrialEnergyWithInfluence,
   chapterStarCount,
   computeSaveHash,
+  decisionWindowMs,
   deleteRoleSlot,
   hireTrialAlly,
   investTrialAccelerator,
@@ -82,6 +84,7 @@ import {
   migrateSave,
   optionGateFor,
   recordDuelResult,
+  normalizeVolume,
   resourceStrainFor,
   resolveCloudConflict,
   roleSlotSummaries,
@@ -194,6 +197,31 @@ assert(
 assert(
   shellA.zh.length > 0 && shellA.en.length > 0,
   "scenario shell labels should be non-empty in both languages"
+);
+
+const seededSave = structuredClone(DEFAULT_SAVE);
+seededSave.profile.name = "QA";
+seededSave.profile.role = "highPotential";
+activateProfile(seededSave, seededSave.profile);
+assert(
+  typeof seededSave.scenarioSeed === "number" && seededSave.scenarioSeed > 0,
+  "profile activation should assign a stable scenario seed"
+);
+assert(
+  scenarioShellFor(1, seededSave.scenarioSeed).zh ===
+    scenarioShellFor(1, seededSave.scenarioSeed).zh,
+  "scenario shell should stay stable within a chapter for the same run seed"
+);
+assert(normalizeVolume(60) === 50, "volume 60 should normalize to 50");
+assert(normalizeVolume(90) === 100, "volume 90 should normalize to 100");
+assert(normalizeVolume(0) === 0, "volume 0 should stay 0");
+assert(
+  decisionWindowMs(22000, "x".repeat(300)) > 22000,
+  "long scenarios should extend the decision window"
+);
+assert(
+  decisionWindowMs(0, "x".repeat(300)) === 0,
+  "normal difficulty should stay untimed"
 );
 
 // 精力恢复：每日恢复只生效一次，组织资源可兑换精力。
@@ -387,6 +415,11 @@ for (const role of Object.keys(ROLE_OPTION_SETS)) {
 }
 
 assert(ACHIEVEMENTS.length >= 18, "achievements must be 18+");
+const allSideAchievement = ACHIEVEMENTS.find((item) => item.id === "all_side");
+assert(
+  allSideAchievement?.description.includes("9 个支线任务"),
+  "side quest collector description should match the 9 side nodes"
+);
 assert(
   achievementRarity("master") === "legendary" &&
     achievementRarity("trial_five") === "rare",
@@ -442,6 +475,10 @@ assert(
   "outcome qualityScore should match scoreQuality of that option"
 );
 assert(save.playCount === beforePlayCount + 1, "playCount should increment");
+assert(
+  save.achievements.includes("first_step"),
+  "first decision should persist first_step achievement"
+);
 // 能力结算
 for (const [abilityId, gained] of Object.entries(option.effects)) {
   assert(

@@ -216,3 +216,22 @@ GitHub Actions/Pages recovered. CI run `31133005719` for `19edd53` completed suc
 - 同一种子/同章节外壳一致；不同章节外壳不同。
 - 剧情页外壳条正常显示且不改变选项结构、评分与存档。
 - 构建与全部审计通过，线上部署后外壳条可见。
+
+### 第七轮完整性验证修复（1.5.15，2026-08-10）
+
+针对 7.9/10 评审的 20 项短板完成 P0/P1 处理，并补充 GitHub 同类项目参照（见 `docs/RESEARCH_REFERENCE.md`）。
+
+#### 已落地
+- 本地双人每回合重置轮转；新增玩家一/玩家二移交提示与 3 回合双人 smoke 测试。
+- 整局 `scenarioSeed`：建档时生成，情境外壳按章节稳定。
+- 音量旧值归一化；视图切换滚动复位；EN 首页与段位名补齐。
+- 条件成就写入存档；支线收集者文案修正为 9 节点。
+- 高压/极限计时随文本长度动态加时；修炼任务失败提示缺失关键词。
+- 章节路线即时预览；选项文案去重；移动端难度/随机事件不再折叠。
+- 事件簿锁定标注、每日恢复说明、本地双人押注说明、成就墙补测直达、1v1 再来一局。
+
+#### 验证
+- `npm run build` PASS（TypeScript + Vite + SW）。
+- `npm run test:unit` PASS（含 scenarioSeed/音量/动态时长/成就落档断言）。
+- `npm test` PASS（含新增本地双人 3 回合流程）。
+- `npm run audit` / `npm run test:features` / `npm run test:accessibility` / `npm run i18n-audit` / `npm run balance-sim` PASS。

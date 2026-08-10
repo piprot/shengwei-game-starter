@@ -156,6 +156,8 @@ export interface SaveState {
   highPressureMode: boolean;
   /** 难度档位：标准 / 高压 / 极限。驱动资源缩放、回合时限与突发干扰。 */
   difficulty: "normal" | "pressure" | "extreme";
+  /** 本局稳定的随机种子：建档时生成一次，用于章节情境外壳等跨屏稳定内容。 */
+  scenarioSeed?: number;
   /** 最近一次本地保存的时间戳（毫秒）。用于云端同步冲突判定。 */
   lastSavedAt?: number;
   lastResourceDate?: string;

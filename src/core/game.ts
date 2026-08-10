@@ -51,6 +51,35 @@ export function roundDurationMsForDifficulty(
 }
 
 export const NORMAL_DECISION_MS = 0;
+
+/** 把旧版音量值归一到设置下拉允许的档位，避免显示 0 但实际有声。 */
+export function normalizeVolume(value: number): number {
+  if (!Number.isFinite(value) || value <= 0) return 0;
+  const options = [0, 25, 50, 75, 100];
+  return options.reduce((best, option) =>
+    Math.abs(option - value) < Math.abs(best - value) ? option : best
+  );
+}
+
+/** 高压/极限档的决策时限：长文本按阅读量动态加时，短文本仍保持原有节奏。 */
+export function decisionWindowMs(baseMs: number, text: string): number {
+  if (baseMs <= 0) return 0;
+  const readableLength = Math.max(0, (text || "").length);
+  return baseMs + Math.min(60000, Math.ceil(readableLength / 30) * 1200);
+}
+
+/** 把按条件即时判定的成就补写入存档，保持成就墙与全局统计同源。 */
+function syncDerivedAchievements(save: SaveState): void {
+  const push = (id: string) => {
+    if (!save.achievements.includes(id)) save.achievements.push(id);
+  };
+  if ((save.playCount ?? 0) >= 1) push("first_step");
+  const trainingCount = (save.completedTraining ?? []).length;
+  if (trainingCount >= 1) push("training_first");
+  if (trainingCount >= 4) push("training_four");
+  if (trainingCount >= 10) push("training_all");
+  save.achievements = [...new Set(save.achievements)];
+}
 export const RESOURCE_STRAIN_SOFT = 30;
 export const RESOURCE_STRAIN_HARD = 15;
 export const MAX_HISTORY_LENGTH = 200;
@@ -220,7 +249,7 @@ function normalizeSave(save: SaveState): SaveState {
     influence: clamp(Number(profile.resources.influence) || 40, 0, 100),
     capital: clamp(Number(profile.resources.capital) || 45, 0, 100)
   };
-  return {
+  const normalized: SaveState = {
     version: DEFAULT_SAVE.version,
     profileCreated: Boolean(save.profileCreated),
     profile: {
@@ -318,8 +347,14 @@ function normalizeSave(save: SaveState): SaveState {
     difficulty:
       save.difficulty === "pressure" || save.difficulty === "extreme"
         ? save.difficulty
-        : "normal"
+        : "normal",
+    scenarioSeed:
+      typeof save.scenarioSeed === "number" && Number.isFinite(save.scenarioSeed)
+        ? Math.abs(save.scenarioSeed) || 1
+        : undefined
   };
+  syncDerivedAchievements(normalized);
+  return normalized;
 }
 
 /**
@@ -343,6 +378,7 @@ export function computeSaveHash(save: SaveState): string {
     cc: save.claimedChallenges,
     cd: save.claimedDaily,
     rec: save.randomEventCycle ?? 0,
+    ss: save.scenarioSeed ?? 0,
     as: save.assessmentScore,
     cre: save.completedRandomEvents,
     cbn: save.completedBranchNodes,
@@ -452,6 +488,9 @@ export function importSaveJson(text: string): SaveState {
 export function activateProfile(save: SaveState, profile: PlayerProfile): void {
   save.profile = profile;
   save.profileCreated = true;
+  if (save.scenarioSeed === undefined) {
+    save.scenarioSeed = Math.floor(Math.random() * 1_000_000) + 1;
+  }
   saveState(save);
 }
 
@@ -633,6 +672,7 @@ export function applyStoryChoice(
   }
 
   save.playCount += 1;
+  syncDerivedAchievements(save);
   if (node.kind === "side") {
     if (!save.completedSideQuests.includes(nodeId)) {
       save.completedSideQuests.push(nodeId);

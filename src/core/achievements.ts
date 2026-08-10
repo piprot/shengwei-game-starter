@@ -173,8 +173,8 @@ export function achievementLore(
       en: "Three stars are not perfection; they are a closed judgment loop."
     },
     all_side: {
-      zh: "六条支线全部收束，个人判断长成了组织规则。",
-      en: "All six side quests close; personal judgment becomes organizational rules."
+      zh: "九条支线全部收束，个人判断长成了组织规则。",
+      en: "All nine side quests close; personal judgment becomes organizational rules."
     },
     side_trust_rebuild: {
       zh: "信任重建完成，善意变成了可持续的关系。",
@@ -338,7 +338,7 @@ export const ACHIEVEMENTS: AchievementDef[] = [
   {
     id: "all_side",
     name: "支线收集者",
-    description: "完成全部 6 个支线任务",
+    description: "完成全部 9 个支线任务",
     icon: "25"
   },
   {

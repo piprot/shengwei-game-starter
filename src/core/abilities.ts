@@ -185,13 +185,18 @@ export function totalAbilityLevels(abilities: Record<AbilityId, number>): number
   return ABILITY_ORDER.reduce((sum, id) => sum + abilityLevel(abilities[id]), 0);
 }
 
-export function rankForTotal(total: number): { name: string; min: number; color: string } {
+export function rankForTotal(total: number): {
+  name: string;
+  nameEn: string;
+  min: number;
+  color: string;
+} {
   const ranks = [
-    { name: "初阶观察者", min: 0, color: "#9fb3c8" },
-    { name: "实干者", min: 16, color: "#57c7a3" },
-    { name: "破局者", min: 26, color: "#4db7d6" },
-    { name: "变革者", min: 38, color: "#e9826c" },
-    { name: "执权者", min: 48, color: "#f2c14e" }
+    { name: "初阶观察者", nameEn: "Observer", min: 0, color: "#9fb3c8" },
+    { name: "实干者", nameEn: "Executor", min: 16, color: "#57c7a3" },
+    { name: "破局者", nameEn: "Breaker", min: 26, color: "#4db7d6" },
+    { name: "变革者", nameEn: "Transformer", min: 38, color: "#e9826c" },
+    { name: "执权者", nameEn: "Power Holder", min: 48, color: "#f2c14e" }
   ];
   return [...ranks].reverse().find((rank) => total >= rank.min) ?? ranks[0];
 }

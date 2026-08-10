@@ -4870,7 +4870,6 @@ export function getNodeForRole(
   if (!variant) {
     return base;
   }
-  const chapter = getChapter(base.chapterId);
   const options = base.options.map((option, index) => {
     const set = ROLE_OPTION_SETS[role][option.quality];
     const variantIndex =
@@ -4879,7 +4878,7 @@ export function getNodeForRole(
     return {
       ...option,
       label: view.label,
-      summary: `${view.summary} 本章重点是「${chapter.title}」，你还需要判断：${base.stake}`,
+      summary: view.summary,
       feedback:
         base.kind === "main"
           ? `${view.feedback} 判断依据：${option.feedback}`

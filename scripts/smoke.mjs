@@ -121,6 +121,36 @@ try {
   await page.waitForSelector(".duel-result", { timeout: 20000 });
   await page.waitForSelector("text=对决结束");
 
+  // 本地双人：验证每回合玩家一先选、再传给玩家二，而不是从第二回合起卡在玩家二。
+  await page.click("text=返回大厅");
+  await page.waitForSelector("text=本地双人");
+  await page.click("text=本地双人");
+  await page.click("text=开始对战");
+  await page.waitForSelector(".duel-options");
+  for (let round = 0; round < 3; round += 1) {
+    await page.waitForSelector(".duel-options .option-card:not([disabled])", {
+      timeout: 10000
+    });
+    await page.locator(".duel-options .option-card:not([disabled])").first().click();
+    await page.waitForSelector("button.pass-button", { timeout: 5000 });
+    await page.click("button.pass-button");
+    await page.waitForSelector(".duel-options .option-card:not([disabled])", {
+      timeout: 5000
+    });
+    await page.locator(".duel-options .option-card:not([disabled])").first().click();
+    const predict = page.locator(".duel-predict-options button");
+    if ((await predict.count()) > 0) {
+      await predict.first().click();
+    }
+    await page
+      .waitForSelector(
+        ".duel-reveal, .duel-result, .duel-options .option-card:not([disabled])",
+        { timeout: 10000 }
+      )
+      .catch(() => {});
+  }
+  await page.waitForSelector(".duel-result", { timeout: 20000 });
+
   const overflow = await page.evaluate(
     () => document.documentElement.scrollWidth - document.documentElement.clientWidth
   );

@@ -3251,7 +3251,7 @@ export const ACHIEVEMENT_EN: Record<
   },
   all_side: {
     name: "Side Quest Collector",
-    description: "Complete all 6 side quests"
+    description: "Complete all 9 side quests"
   },
   side_trust_rebuild: {
     name: "Trust Rebuilder",
