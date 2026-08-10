@@ -320,6 +320,7 @@ export class GameAudioV2 {
   private sfxVolume = 0.9;
   private muted = false;
   private musicMuted = false;
+  private musicLevel = 0.6;
   private userGesture = false;
 
   // --- Memory management ---------------------------------------------------
@@ -393,7 +394,7 @@ export class GameAudioV2 {
 
       // Music master bus
       this.musicGain = this.context.createGain();
-      this.musicGain.gain.value = this.musicMuted ? 0 : 0.6;
+      this.musicGain.gain.value = this.musicMuted ? 0 : this.musicLevel;
       this.musicGain.connect(this.context.destination);
 
       this.setupSharedNodes();
@@ -462,19 +463,38 @@ export class GameAudioV2 {
     this.musicMuted = muted;
     if (this.musicGain && this.context) {
       this.musicGain.gain.setTargetAtTime(
-        muted ? 0 : 0.6,
+        muted ? 0 : this.musicLevel,
         this.context.currentTime,
         0.05,
       );
     }
+    if (!muted && this.currentLayer && this.context) {
+      const now = this.context.currentTime;
+      this.currentLayer.gain.gain.cancelScheduledValues(now);
+      this.currentLayer.gain.gain.setValueAtTime(
+        this.currentLayer.gain.gain.value,
+        now,
+      );
+      this.currentLayer.gain.gain.linearRampToValueAtTime(0.012, now + 0.5);
+    }
   }
 
   setMusicVolume(volume: number): void {
-    const v = this.musicMuted
-      ? 0
-      : Math.max(0, Math.min(1, volume / 100));
+    this.musicLevel = Math.max(0, Math.min(1, volume / 100));
+    const v = this.musicMuted ? 0 : this.musicLevel;
     if (this.musicGain && this.context) {
       this.musicGain.gain.setTargetAtTime(v, this.context.currentTime, 0.05);
+    }
+    if (!this.musicMuted && this.currentLayer && this.context) {
+      const now = this.context.currentTime;
+      if (this.currentLayer.gain.gain.value < 0.006) {
+        this.currentLayer.gain.gain.cancelScheduledValues(now);
+        this.currentLayer.gain.gain.setValueAtTime(
+          this.currentLayer.gain.gain.value,
+          now,
+        );
+        this.currentLayer.gain.gain.linearRampToValueAtTime(0.012, now + 0.5);
+      }
     }
   }
 

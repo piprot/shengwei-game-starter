@@ -25,6 +25,7 @@
     "test:i18n-browser": "node --experimental-strip-types scripts/i18n-browser-audit.mjs",
     "test:device-screenshots": "node --experimental-strip-types scripts/device-audit.mjs",
     "test:features": "node scripts/feature-audit.mjs",
+    "test:music": "node scripts/music-audit.mjs",
     "test:accessibility": "node --experimental-strip-types scripts/accessibility-audit.mjs",
     "test:rtc": "node --experimental-strip-types scripts/rtc-audit.mjs",
     "test:role-campaign": "node scripts/role-campaign-audit.mjs",

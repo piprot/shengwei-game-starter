@@ -87,6 +87,9 @@ jobs:
       - name: Feature audit
         run: npm run test:features
 
+      - name: Music resume audit
+        run: npm run test:music
+
   deploy:
     needs: [build, test]
     runs-on: ubuntu-latest
