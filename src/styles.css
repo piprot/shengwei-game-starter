@@ -1033,6 +1033,23 @@ button.trial-now {
   object-fit: cover;
 }
 
+.npc-avatar-wrap {
+  position: relative;
+  width: 46px;
+  height: 46px;
+}
+
+.npc-avatar-wrap .npc-avatar {
+  width: 46px;
+  height: 46px;
+}
+
+.npc-portrait {
+  position: absolute;
+  inset: 0;
+  margin: 0;
+}
+
 .npc-card h2 {
   margin: 0 0 4px;
   font-size: 18px;
@@ -4590,6 +4607,171 @@ button.trial-now {
   .map-quick-actions {
     display: grid;
     gap: 8px;
+  }
+}
+
+.coach-shell {
+  width: min(1080px, 100%);
+  margin: 0 auto;
+  padding: clamp(20px, 4vw, 44px) clamp(16px, 4vw, 40px) 56px;
+}
+
+.coach-hero {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  margin-bottom: 18px;
+}
+
+.coach-status {
+  min-width: 120px;
+  padding: 14px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--panel);
+  text-align: center;
+}
+
+.coach-status strong {
+  display: block;
+  color: var(--teal);
+  font-size: 28px;
+}
+
+.coach-import-panel,
+.coach-report,
+.coach-radar-wrap,
+.coach-section {
+  margin-top: 14px;
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--panel);
+}
+
+.coach-import-panel textarea {
+  width: 100%;
+  min-height: 96px;
+  padding: 10px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #101a20;
+  color: var(--ink);
+  font-family: var(--font-mono, monospace);
+  font-size: 13px;
+  resize: vertical;
+}
+
+.coach-import-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.coach-report-head {
+  margin-bottom: 4px;
+}
+
+.coach-radar-wrap canvas {
+  width: min(560px, 100%);
+  height: 360px;
+}
+
+.coach-blind-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 12px;
+}
+
+.coach-blind-card {
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--panel-2);
+}
+
+.coach-blind-card strong,
+.coach-blind-card small {
+  display: block;
+}
+
+.coach-blind-card small {
+  color: var(--gold-text);
+  margin-top: 4px;
+}
+
+.coach-discussion {
+  display: grid;
+  gap: 12px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.coach-discussion li {
+  padding: 12px;
+  border-left: 3px solid var(--teal);
+  border-radius: 0 8px 8px 0;
+  background: var(--panel-2);
+}
+
+.coach-scenario-row {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.coach-scenario-row ul,
+.coach-plan {
+  margin: 8px 0 0;
+  padding-left: 18px;
+}
+
+.coach-trajectory {
+  display: grid;
+  gap: 8px;
+}
+
+.coach-trajectory-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--panel-2);
+}
+
+.trajectory-rising {
+  color: var(--teal-text);
+}
+
+.trajectory-plateau {
+  color: var(--gold-text);
+}
+
+.trajectory-declining {
+  color: var(--coral-text);
+}
+
+.coach-plan li {
+  margin-bottom: 10px;
+}
+
+@media (max-width: 720px) {
+  .coach-hero {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .coach-status {
+    width: 100%;
+  }
+
+  .coach-scenario-row {
+    grid-template-columns: 1fr;
   }
 }
 

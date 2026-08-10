@@ -60,6 +60,7 @@ import {
   recordDuelResult,
   resetSave,
   decisionWindowMs,
+  DEFAULT_SAVE,
   normalizeVolume,
   retryChapter,
   resolveCloudConflict,
@@ -102,6 +103,10 @@ import { ManualRtcPeer, type RtcMessage } from "../net/rtc";
 import { RoomClient, type RoomServerMessage } from "../net/roomClient";
 import { GameAudioV2 } from "../audio-v2";
 import { ThemeMusic } from "../core/theme-music";
+import {
+  CoachWorkshopEngine,
+  type WorkshopReport
+} from "../core/coach-workshop";
 import {
   ASSESSMENT_QUESTIONS,
   certificationLevel
@@ -160,7 +165,7 @@ import {
   SIDE_ARC_EN,
   SIDE_NODE_EN
 } from "../core/translations";
-import { renderAbilityRadar } from "./charts";
+import { renderAbilityRadar, renderGroupRadar } from "./charts";
 import { renderPowerBoard } from "./art";
 import { renderTrainingBoard } from "./trainingArt";
 import { scenarioShellFor } from "../core/scenarioShell";
@@ -176,7 +181,7 @@ const SETTINGS_MIGRATION_KEY = "adaptive-ascent-settings-v2";
 const GUIDE_KEY = "adaptive-ascent-guide-v1";
 const GUIDE_REWARD_KEY = "adaptive-ascent-guide-reward";
 const ACHIEVEMENT_FAVORITE_KEY = "adaptive-ascent-achievement-favorites";
-const APP_VERSION = "1.5.17";
+const APP_VERSION = "1.5.19";
 
 type View =
   | "menu"
@@ -194,6 +199,7 @@ type View =
   | "ending"
   | "hiddenBranch"
   | "training"
+  | "coach"
   | "trial"
   | "trialBattle"
   | "duelLobby"
@@ -207,6 +213,8 @@ export class AdaptiveGameApp {
   private audio = new GameAudioV2();
   private themeMusic = new ThemeMusic();
   private themeMusicPlaying = false;
+  private coachEngine = new CoachWorkshopEngine();
+  private coachReport?: WorkshopReport;
   private muted = localStorage.getItem("adaptive-ascent-muted") === "1";
   private musicMuted =
     localStorage.getItem("adaptive-ascent-music") === "1";
@@ -1005,6 +1013,9 @@ export class AdaptiveGameApp {
       case "training":
         this.renderTraining();
         break;
+      case "coach":
+        this.renderCoach();
+        break;
       case "trial":
         this.renderTrial();
         break;
@@ -1191,6 +1202,11 @@ export class AdaptiveGameApp {
             <span class="card-index">09</span>
             <h2>${this.language === "en" ? "Role Archives" : "角色档案"}</h2>
             <p>${this.language === "en" ? "Keep every role's save and switch between parachute, founder, and high potential without deleting progress." : "空降、创业、高潜三套档案独立保存，随时切换，不再删档。"}</p>
+          </button>
+          <button class="menu-card" data-action="open-coach">
+            <span class="card-index">10</span>
+            <h2>${this.language === "en" ? "Coach Workshop" : "教练工作坊"}</h2>
+            <p>${this.language === "en" ? "Import team saves, compare group radar, surface decision blind spots, and plan a facilitated workshop." : "导入学员存档，对比小组雷达，找出决策盲区，生成可执行的工作坊流程。"}</p>
           </button>
         </section>
       </main>
@@ -1647,7 +1663,10 @@ export class AdaptiveGameApp {
             const view = this.npcDisplay(npc);
             return `
               <div class="npc-card ${relation.status === "已建立关系" ? "trusted" : relation.status === "存在线索" ? "known" : "hidden"}">
-                <img class="npc-portrait npc-avatar" src="./npc/${npc.id}.jpg" alt="${escapeHtml(view.name)}" loading="lazy">
+                <div class="npc-avatar-wrap">
+                  <span class="npc-avatar npc-avatar-fallback">${view.name.slice(0, 1)}</span>
+                  <img class="npc-portrait npc-avatar" src="./npc/${npc.id}.jpg" alt="${escapeHtml(view.name)}" loading="lazy">
+                </div>
                 <div>
                   <h2>${view.name}</h2>
                   <small>${view.title}</small>
@@ -1661,6 +1680,18 @@ export class AdaptiveGameApp {
         </section>
       </main>
     `;
+    this.root.querySelectorAll("img.npc-portrait").forEach((element) => {
+      const image = element as HTMLImageElement;
+      const fallback = image.previousElementSibling as HTMLElement | null;
+      if (image.complete && image.naturalWidth > 0) {
+        if (fallback) fallback.style.display = "none";
+        return;
+      }
+      image.addEventListener("load", () => {
+        if (fallback) fallback.style.display = "none";
+      });
+      image.addEventListener("error", () => image.remove());
+    });
     const relationGraph = this.root.querySelector<HTMLCanvasElement>(
       "#relation-graph"
     );
@@ -2994,6 +3025,278 @@ export class AdaptiveGameApp {
     }
   }
 
+
+  private loadCoachDemo(): void {
+    this.coachEngine.importParticipants(this.coachDemoParticipants());
+    this.coachReport = this.coachEngine.generateReport(
+      this.language === "en"
+        ? "Leadership Training Demo Group"
+        : "领导力训练演示小组"
+    );
+    this.audio.expert();
+    this.renderCoach();
+  }
+
+  private importCoachParticipants(): void {
+    const textarea = this.root.querySelector<HTMLTextAreaElement>(
+      "textarea[data-coach-import]"
+    );
+    const raw = textarea?.value.trim() ?? "";
+    if (!raw) {
+      this.showToast(
+        this.language === "en"
+          ? "Paste participant saves as JSON first."
+          : "请先粘贴学员存档 JSON。"
+      );
+      return;
+    }
+    try {
+      const parsed = JSON.parse(raw) as Array<{
+        name: string;
+        data: SaveState;
+      }>;
+      if (
+        !Array.isArray(parsed) ||
+        parsed.length === 0 ||
+        parsed.some((item) => !item?.data?.profile)
+      ) {
+        throw new Error("invalid participants payload");
+      }
+      this.coachEngine.importParticipants(parsed);
+      this.coachReport = this.coachEngine.generateReport(
+        this.language === "en" ? "Imported Group" : "导入小组"
+      );
+      this.audio.expert();
+      this.renderCoach();
+      this.showToast(
+        this.language === "en"
+          ? `Imported ${parsed.length} participants.`
+          : `已导入 ${parsed.length} 名学员。`
+      );
+    } catch {
+      this.audio.risk();
+      this.showToast(
+        this.language === "en"
+          ? "Invalid JSON. Expected [{ name, data }] with exported saves."
+          : "JSON 格式无效：请使用 [{ name, data }]，data 为导出的存档。"
+      );
+    }
+  }
+
+  private coachDemoParticipants(): Array<{ name: string; data: SaveState }> {
+    const nodeIds = ["c1n1", "c1n2", "c2n1", "c2n2", "c3n1", "c3n2"];
+    const specs: Array<{
+      name: string;
+      role: RoleId;
+      abilities: Record<AbilityId, number>;
+      qualities: OptionQuality[];
+    }> = [
+      {
+        name: "林岚",
+        role: "parachute",
+        abilities: {
+          insight: 28,
+          deploy: 16,
+          mobilize: 12,
+          strategy: 8,
+          authority: 20,
+          stability: 14,
+          recovery: 10,
+          execution: 24,
+          structure: 18,
+          communication: 22
+        },
+        qualities: ["expert", "expert", "partial", "risk", "expert", "partial"]
+      },
+      {
+        name: "周屿",
+        role: "founder",
+        abilities: {
+          insight: 12,
+          deploy: 26,
+          mobilize: 22,
+          strategy: 18,
+          authority: 24,
+          stability: 10,
+          recovery: 8,
+          execution: 30,
+          structure: 14,
+          communication: 12
+        },
+        qualities: ["risk", "partial", "expert", "risk", "partial", "expert"]
+      },
+      {
+        name: "许澄",
+        role: "highPotential",
+        abilities: {
+          insight: 20,
+          deploy: 10,
+          mobilize: 18,
+          strategy: 26,
+          authority: 8,
+          stability: 22,
+          recovery: 20,
+          execution: 14,
+          structure: 28,
+          communication: 30
+        },
+        qualities: ["partial", "risk", "partial", "expert", "partial", "risk"]
+      }
+    ];
+    return specs.map((spec) => {
+      const data = structuredClone(DEFAULT_SAVE);
+      data.profileCreated = true;
+      data.profile.name = spec.name;
+      data.profile.role = spec.role;
+      Object.assign(data.profile.abilities, spec.abilities);
+      data.playCount = nodeIds.length;
+      data.decisionHistory = nodeIds.map((nodeId, index) => {
+        const quality = spec.qualities[index];
+        return {
+          nodeId,
+          optionIndex: quality === "expert" ? 0 : quality === "partial" ? 1 : 2,
+          quality,
+          qualityScore:
+            quality === "expert" ? 105 : quality === "partial" ? 55 : 20,
+          chapterId: Number(nodeId[1])
+        };
+      });
+      return { name: spec.name, data };
+    });
+  }
+
+  private renderCoach(): void {
+    const en = this.language === "en";
+    const report = this.coachReport;
+    this.root.innerHTML = `
+      <header class="topbar">
+        <div class="brand">${this.t("brand")}</div>
+        <button class="link" data-action="open-menu">${this.t("returnHome")}</button>
+      </header>
+      <main class="coach-shell" aria-label="${en ? "Coach Workshop" : "教练工作坊"}">
+        <section class="coach-hero">
+          <div>
+            <p class="eyebrow">${en ? "Coach Workshop" : "教练工作坊"}</p>
+            <h1>${en ? "Turn team saves into a facilitated workshop" : "把学员存档变成一场可执行的工作坊"}</h1>
+            <p class="muted">${en ? "Import exported saves, compare the group radar, surface decision blind spots, and follow a ready-made facilitation plan." : "导入导出的存档，对比小组能力雷达，定位决策盲区，并按照内置流程主持工作坊。"}</p>
+          </div>
+          <div class="coach-status">
+            <strong>${this.coachEngine.participants.length}</strong>
+            <span>${en ? "Participants" : "已导入学员"}</span>
+          </div>
+        </section>
+
+        <section class="coach-import-panel">
+          <h2>${en ? "Import participants" : "导入学员"}</h2>
+          <p class="muted">${en ? "Paste a JSON array of exported saves: [{ \"name\": \"...\", \"data\": { ... } }], or load a demo group." : "粘贴导出存档的 JSON 数组：[{ \"name\": \"...\", \"data\": { ... } }]，也可以直接载入演示小组。"}</p>
+          <textarea data-coach-import rows="4" placeholder='[{"name":"学员A","data":{}}]'></textarea>
+          <div class="coach-import-actions">
+            <button class="primary" data-action="coach-load-demo">${en ? "Load Demo Group" : "载入演示小组"}</button>
+            <button data-action="coach-import">${en ? "Import & Generate" : "导入并生成"}</button>
+          </div>
+        </section>
+
+        ${
+          report
+            ? `
+              <section class="coach-report">
+                <div class="coach-report-head">
+                  <div>
+                    <h2>${escapeHtml(report.groupName)}</h2>
+                    <p class="muted">${en ? `${report.participantCount} participants · generated ${new Date(report.generatedAt).toLocaleTimeString()}` : `${report.participantCount} 名学员 · 生成于 ${new Date(report.generatedAt).toLocaleTimeString()}`}</p>
+                  </div>
+                </div>
+                <div class="coach-radar-wrap">
+                  <h3>${en ? "Group Radar" : "小组能力雷达"}</h3>
+                  <canvas class="coach-radar" id="coach-radar" aria-label="${en ? "Group ability radar chart" : "小组能力雷达图"}"></canvas>
+                  <p class="muted">${en ? "Band = min/max · line = median · gold dots = average" : "色带 = 最低/最高 · 折线 = 中位数 · 金点 = 平均"}</p>
+                </div>
+                <div class="coach-section">
+                  <h3>${en ? "Decision Blind Spots" : "决策盲区"}</h3>
+                  ${
+                    report.blindSpots.length
+                      ? `<div class="coach-blind-grid">${report.blindSpots
+                          .map(
+                            (spot) => `
+                              <article class="coach-blind-card">
+                                <strong>${escapeHtml(spot.nodeTitle)}</strong>
+                                <small>${en ? "Expert" : "专家"} ${Math.round(spot.expertRate * 100)}% · ${en ? "Risk" : "风险"} ${Math.round(spot.riskRate * 100)}% · ${spot.totalAttempts} ${en ? "attempts" : "次尝试"}</small>
+                                <p>${escapeHtml(spot.insight)}</p>
+                              </article>
+                            `
+                          )
+                          .join("")}</div>`
+                      : `<p class="muted">${en ? "No blind spots found yet. Add more decisions." : "暂未发现明显盲区，继续积累决策即可。"}</p>`
+                  }
+                </div>
+                <div class="coach-section">
+                  <h3>${en ? "Discussion Prompts" : "讨论引导"}</h3>
+                  <ul class="coach-discussion">
+                    ${report.discussionQuestions
+                      .map(
+                        (item) => `
+                          <li>
+                            <strong>${escapeHtml(item.question)}</strong>
+                            <p class="muted">${escapeHtml(item.evidence)}</p>
+                            <p>${escapeHtml(item.facilitation)}</p>
+                          </li>
+                        `
+                      )
+                      .join("")}
+                  </ul>
+                </div>
+                <div class="coach-section coach-scenario-row">
+                  <div>
+                    <h3>${en ? "Consensus" : "高度一致"}</h3>
+                    ${report.consensusScenarios.length ? `<ul>${report.consensusScenarios.map((s) => `<li>${escapeHtml(s)}</li>`).join("")}</ul>` : `<p class="muted">-</p>`}
+                  </div>
+                  <div>
+                    <h3>${en ? "Divergence" : "分歧最大"}</h3>
+                    ${report.divergenceScenarios.length ? `<ul>${report.divergenceScenarios.map((s) => `<li>${escapeHtml(s)}</li>`).join("")}</ul>` : `<p class="muted">-</p>`}
+                  </div>
+                </div>
+                <div class="coach-section">
+                  <h3>${en ? "Growth Trajectory" : "成长轨迹"}</h3>
+                  <div class="coach-trajectory">
+                    ${report.growthTrajectory
+                      .map(
+                        (item) => `
+                          <div class="coach-trajectory-row">
+                            <strong>${escapeHtml(item.name)}</strong>
+                            <span class="trajectory-${item.trajectory}">${en ? item.trajectory : item.trajectory === "rising" ? "上升" : item.trajectory === "plateau" ? "平稳" : "下滑"}</span>
+                          </div>
+                        `
+                      )
+                      .join("")}
+                  </div>
+                </div>
+                <div class="coach-section">
+                  <h3>${en ? "Workshop Plan" : "工作坊流程"}</h3>
+                  <ol class="coach-plan">
+                    ${report.workshopPlan
+                      .map(
+                        (session) => `
+                          <li>
+                            <strong>${escapeHtml(session.phase)} · ${session.duration}min</strong>
+                            <p>${escapeHtml(session.activity)}</p>
+                            <p class="muted">${escapeHtml(session.facilitationNotes)}</p>
+                          </li>
+                        `
+                      )
+                      .join("")}
+                  </ol>
+                </div>
+              </section>
+            `
+            : ""
+        }
+      </main>
+    `;
+    const radar = this.root.querySelector<HTMLCanvasElement>("#coach-radar");
+    if (radar && report) {
+      renderGroupRadar(radar, report.groupRadar);
+    }
+  }
 
   private renderTrial(): void {
     const en = this.language === "en";
@@ -4707,6 +5010,16 @@ export class AdaptiveGameApp {
         this.assessmentStep = 0;
         this.audio.ui();
         this.show("assessment");
+        break;
+      case "open-coach":
+        this.audio.ui();
+        this.show("coach");
+        break;
+      case "coach-load-demo":
+        this.loadCoachDemo();
+        break;
+      case "coach-import":
+        this.importCoachParticipants();
         break;
       case "open-training": {
         const abilityId = actionTarget.dataset.ability as AbilityId | undefined;

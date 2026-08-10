@@ -30,6 +30,7 @@ import {
 } from "../src/core/trials.ts";
 import { hiddenRouteSteps } from "../src/core/hiddenRoutes.ts";
 import { scenarioShellFor } from "../src/core/scenarioShell.ts";
+import { CoachWorkshopEngine } from "../src/core/coach-workshop.ts";
 
 
 import {
@@ -1125,6 +1126,78 @@ deleteRoleSlot("founder");
 assert(
   loadSave("founder").profileCreated === false,
   "deleteRoleSlot should clear a single role slot"
+);
+
+// ---- 教练工作坊引擎 ----
+const coachEngine = new CoachWorkshopEngine();
+function coachDemoSave(
+  name,
+  role,
+  abilities,
+  qualities
+) {
+  const data = structuredClone(DEFAULT_SAVE);
+  data.profileCreated = true;
+  data.profile.name = name;
+  data.profile.role = role;
+  Object.assign(data.profile.abilities, abilities);
+  data.decisionHistory = ["c1n1", "c1n2", "c2n1", "c2n2", "c3n1", "c3n2"].map(
+    (nodeId, index) => ({
+      nodeId,
+      optionIndex: 0,
+      quality: qualities[index],
+      qualityScore: 50,
+      chapterId: Number(nodeId[1])
+    })
+  );
+  return { name, data };
+}
+coachEngine.importParticipants([
+  coachDemoSave(
+    "A",
+    "parachute",
+    { insight: 28, deploy: 16, mobilize: 12, strategy: 8, authority: 20, stability: 14, recovery: 10, execution: 24, structure: 18, communication: 22 },
+    ["expert", "expert", "partial", "risk", "expert", "partial"]
+  ),
+  coachDemoSave(
+    "B",
+    "founder",
+    { insight: 12, deploy: 26, mobilize: 22, strategy: 18, authority: 24, stability: 10, recovery: 8, execution: 30, structure: 14, communication: 12 },
+    ["risk", "partial", "expert", "risk", "partial", "expert"]
+  ),
+  coachDemoSave(
+    "C",
+    "highPotential",
+    { insight: 20, deploy: 10, mobilize: 18, strategy: 26, authority: 8, stability: 22, recovery: 20, execution: 14, structure: 28, communication: 30 },
+    ["partial", "risk", "partial", "expert", "partial", "risk"]
+  )
+]);
+const coachReport = coachEngine.generateReport("QA Group");
+assert(
+  coachReport.participantCount === 3,
+  "coach report should count imported participants"
+);
+assert(
+  coachReport.groupRadar.length === 10,
+  "coach report should include all ten abilities"
+);
+assert(
+  coachReport.discussionQuestions.length > 0,
+  "coach report should generate discussion questions"
+);
+assert(
+  coachReport.workshopPlan.length >= 4,
+  "coach report should include a workshop plan"
+);
+assert(
+  coachReport.blindSpots.length >= 1,
+  "demo group should surface at least one decision blind spot"
+);
+assert(
+  coachReport.blindSpots.every(
+    (spot) => spot.nodeTitle && spot.nodeTitle !== spot.nodeId
+  ),
+  "coach blind spots should resolve real node titles"
 );
 
 console.log("PASS unit test");

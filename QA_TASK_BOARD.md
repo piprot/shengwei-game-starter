@@ -252,3 +252,12 @@ GitHub Actions/Pages recovered. CI run `31133005719` for `19edd53` completed suc
 - `npm run test:device-screenshots` 与 `npm run test:accessibility` 通过。
 - 主菜单/结局背景图与 NPC 位图请求 200，控制台无报错。
 - 移动端无横向溢出，动画在 `prefers-reduced-motion` 下关闭。
+
+### 1.5.18 位图回退与实验模块处置
+- NPC 位图失败自动回退首字头像，`npc-tang.jpg` / `npc-fang.jpg` 缺图不再裂图。
+- `docs/V2_MODULES.md` 记录四个未接线模块的处置结论与复验命令。
+
+### 教练工作坊正式接入（1.5.19，2026-08-10）
+- 主菜单「教练工作坊」：演示小组 / JSON 存档导入 → 小组雷达、盲区、讨论引导、共识/分歧、成长轨迹、工作坊流程。
+- 新增 `renderGroupRadar`、教练引擎单元测试与 smoke 工作坊流程。
+- 验收：build/unit/smoke/audit/device-screenshots/a11y 全绿后推送部署。

@@ -151,6 +151,17 @@ try {
   }
   await page.waitForSelector(".duel-result", { timeout: 20000 });
 
+  // 教练工作坊：载入演示小组并生成报告
+  await page.click("text=返回大厅");
+  await page.waitForSelector("text=返回主页");
+  await page.click("text=返回主页");
+  await page.waitForSelector("text=教练工作坊");
+  await page.click("text=教练工作坊");
+  await page.waitForSelector(".coach-shell");
+  await page.click("[data-action=coach-load-demo]");
+  await page.waitForSelector(".coach-report");
+  await page.waitForSelector("#coach-radar");
+
   const overflow = await page.evaluate(
     () => document.documentElement.scrollWidth - document.documentElement.clientWidth
   );
