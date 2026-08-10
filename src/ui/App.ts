@@ -196,7 +196,7 @@ const SETTINGS_MIGRATION_KEY = "adaptive-ascent-settings-v2";
 const GUIDE_KEY = "adaptive-ascent-guide-v1";
 const GUIDE_REWARD_KEY = "adaptive-ascent-guide-reward";
 const ACHIEVEMENT_FAVORITE_KEY = "adaptive-ascent-achievement-favorites";
-const APP_VERSION = "1.6.0";
+const APP_VERSION = "1.6.1";
 
 type View =
   | "menu"
@@ -627,6 +627,13 @@ export class AdaptiveGameApp {
               ? "victory"
               : "menu";
     this.audio.setAmbientScene(scene);
+    this.audio.setEnvironment(
+      scene === "duel"
+        ? "crisis"
+        : scene === "story" || scene === "training"
+          ? "latenight"
+          : "boardroom"
+    );
     if (view === "ending") {
       if (!this.themeMusicPlaying) {
         this.themeMusic.play();
@@ -2637,6 +2644,7 @@ export class AdaptiveGameApp {
     } else {
       this.audio.risk();
     }
+    this.audio.playCoins();
     this.renderFilmQuest();
   }
 
@@ -6897,7 +6905,7 @@ export class AdaptiveGameApp {
           : "完整勘察：能力+1、精力+2、修炼点+1。";
     }
     this.persistSave();
-    this.audio.unlock();
+    this.audio.playBrush();
     if (rewardText) this.showToast(rewardText);
     this.renderStory();
   }
@@ -6916,7 +6924,7 @@ export class AdaptiveGameApp {
       const pending = this.pendingIntegrityOption;
       this.integrityGateNodeId = undefined;
       this.pendingIntegrityOption = undefined;
-      this.audio.expert();
+      this.audio.playStamp();
       this.showToast(
         this.language === "en" ? "Verification passed." : "验证通过。"
       );

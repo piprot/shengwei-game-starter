@@ -20,6 +20,9 @@
  *    responses and noise buffers, automatic node cleanup via onended handlers.
  */
 
+import { EasternSfx } from "./sfx-eastern";
+import { AmbientLayers } from "./ambient-layers";
+
 // ---------------------------------------------------------------------------
 // Types
 // ---------------------------------------------------------------------------
@@ -301,6 +304,8 @@ export class GameAudioV2 {
   private delayReturn?: GainNode;
   private noiseBuffer?: AudioBuffer;
   private distortionCurve?: Float32Array<ArrayBuffer>;
+  private eastern?: EasternSfx;
+  private ambient?: AmbientLayers;
 
   // --- Ambient music state -------------------------------------------------
   private currentLayer?: AmbientLayer;
@@ -333,6 +338,41 @@ export class GameAudioV2 {
     }
   }
 
+  /** 东方主题音效：印章压纸。 */
+  playStamp(volume = 0.8): void {
+    this.ensure();
+    this.eastern?.playStamp(volume);
+  }
+
+  /** 东方主题音效：笔墨拂纸。 */
+  playBrush(volume = 0.5): void {
+    this.ensure();
+    this.eastern?.playBrush(volume);
+  }
+
+  /** 东方主题音效：展卷。 */
+  playScroll(volume = 0.4): void {
+    this.ensure();
+    this.eastern?.playScroll(volume);
+  }
+
+  /** 东方主题音效：铜钱碰撞。 */
+  playCoins(volume = 0.6): void {
+    this.ensure();
+    this.eastern?.playCoins(volume);
+  }
+
+  /** 分层环境音：会议室 / 深夜 / 危机。 */
+  setEnvironment(env: "boardroom" | "latenight" | "crisis"): void {
+    if (!this.userGesture) return;
+    this.ensure();
+    if (!this.context || !this.master) return;
+    if (!this.ambient) {
+      this.ambient = new AmbientLayers(this.context, this.master);
+    }
+    this.ambient.setEnvironment(env);
+  }
+
   /** Lazily create the AudioContext and all shared effect nodes. */
   ensure(): void {
     if (!this.context) {
@@ -357,6 +397,7 @@ export class GameAudioV2 {
       this.musicGain.connect(this.context.destination);
 
       this.setupSharedNodes();
+      this.eastern = new EasternSfx(this.context, this.master);
     }
     if (this.userGesture && this.context.state === "suspended") {
       void this.context.resume();

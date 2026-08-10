@@ -593,7 +593,7 @@
 }
 
 /* 确保纹理层在内容之下 */
-.eastern-card > *:not(::before):not(::after) {
+.eastern-card > * {
   position: relative;
   z-index: 2;
 }

@@ -8,6 +8,10 @@ import "./motion.css";
 import "./unlocks.css";
 import "./ui/eastern-theme.css";
 import "./ui/visual-upgrade-v2.css";
+import "./npc-hover.css";
+import "./dashboard-stamp.css";
+import "./transitions.css";
+import "./texture-details.css";
 import { AdaptiveGameApp } from "./ui/App";
 
 /**
