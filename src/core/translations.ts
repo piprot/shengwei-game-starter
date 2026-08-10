@@ -1767,8 +1767,8 @@ export const RANDOM_NODE_EN: Record<
   r13: {
     title: "Budget Suddenly Cut",
     context:
-      "Your project budget is cut 30% mid-quarter without warning. The team has already invested three weeks under the original plan.",
-    stake: "You must redefine delivery scope while resources shrink.",
+      "Mid-quarter, finance tells you on Wednesday evening that the project budget is cut by 30% because the group is centralizing cash, with no advance warning. The team has invested three weeks and three outsourcing contracts renew on Monday.",
+    stake: "You must redefine delivery scope in two days while showing the team that a budget cut is not a cut in value.",
     intel: [
       "The cut is related to last quarter's delivery delay.",
       "Two projects in the team can be merged at low cost."
@@ -1804,9 +1804,9 @@ export const RANDOM_NODE_EN: Record<
   r14: {
     title: "Someone Goes Over Your Head",
     context:
-      "You learn someone told the CEO that you suppressed different opinions in a meeting. You did not suppress them, but you did interrupt twice.",
+      "You hear from a well-connected executive that someone told the CEO you suppressed different opinions at last week's meeting. You did interrupt twice, but only to pull the discussion back to the agenda.",
     stake:
-      "You must handle the truth, or the truth as others experienced it.",
+      "You are handling how others experienced the truth; proving you did not suppress anything can make the feeling more real.",
     intel: [
       "The version the CEO heard came from someone who was not in the meeting.",
       "The two people you interrupted were both in front of a client."
@@ -1843,9 +1843,9 @@ export const RANDOM_NODE_EN: Record<
   r15: {
     title: "A Client Asks for Your Personal Number",
     context:
-      "A key client publicly asks for your personal mobile number, saying they will contact you directly. You do not want to bypass the team or disappoint the client.",
+      "At the quarterly review, a key client says publicly: “Give me your personal number; I will contact you directly from now on.” Some people smile and some watch your team's reaction.",
     stake:
-      "Your response defines how the client sees your organization's collaboration boundary.",
+      "Your response defines the collaboration boundary between the client and the organization: bypass the team or respect the process.",
     intel: [
       "The client is worried about response speed, not personal access.",
       "Someone on the team already handles daily support for their region."
@@ -1882,9 +1882,9 @@ export const RANDOM_NODE_EN: Record<
   r16: {
     title: "Nobody Uses the New Process",
     context:
-      "The process you spent two weeks designing has been live for two weeks, but usage is under 20% and nobody has formally objected.",
+      "The process you spent two weeks designing has been live for two weeks with usage under 20%. No one objects in meetings, no one submits improvement feedback, and everyone keeps using the old spreadsheet.",
     stake:
-      "Find the real reason behind no opposition and no execution.",
+      "Silent non-execution is harder than open opposition; find why the process never entered people's work habits.",
     intel: [
       "The new process requires three manual entries in the system.",
       "Frontline managers received no training."
@@ -1920,8 +1920,8 @@ export const RANDOM_NODE_EN: Record<
   r17: {
     title: "A Core Employee Wants to Transfer",
     context:
-      "Your most important project performer asks to transfer to another department to learn new business. You know his departure will delay the project.",
-    stake: "Do you retain the person or let him grow?",
+      "Your most important project performer applies to transfer to a new business unit, saying he wants to learn something new. You know his departure will delay delivery by at least a month.",
+    stake: "Determine whether he is drawn by the new opportunity or using the transfer to express dissatisfaction with the current situation.",
     intel: [
       "The new business he wants can be split into sub-tasks inside the project.",
       "The transfer request has reached HR, but the formal process has not started."
@@ -1956,9 +1956,9 @@ export const RANDOM_NODE_EN: Record<
   r18: {
     title: "Negative Media Coverage",
     context:
-      "A media outlet publishes a negative story about your company. Some content is inaccurate, but it is already affecting client confidence.",
+      "An industry outlet publishes negative news about your company, citing data that is three months old. The client group is already forwarding it, and the sales team has held three reassurance meetings this afternoon.",
     stake:
-      "Decide whether, how, and who should respond.",
+      "Clarification must be fast, but it cannot be only a denial; clients want to see how the organization handles information.",
     intel: [
       "One figure in the article comes from your publicly released older annual report.",
       "The client service hotline has already received more than ten related inquiries."
@@ -1994,9 +1994,9 @@ export const RANDOM_NODE_EN: Record<
   r19: {
     title: "A Supplier Demands Earlier Payment",
     context:
-      "A key supplier suddenly demands reducing payment terms from 60 to 30 days, or it will pause supply. You suspect they heard company rumors.",
+      "A supplier you have worked with for three years suddenly demands cutting payment terms from 60 to 30 days, or it will pause supply. You learn the supplier recently heard rumors about the company's cash flow.",
     stake:
-      "Judge between cash flow and supply-chain stability.",
+      "Cash flow and supply-chain stability cannot be traded one for one; first find where the rumor came from, then decide what to promise.",
     intel: [
       "The supplier heard a vague rumor about the company's cash chain.",
       "Procurement completed evaluations of two alternative suppliers last week."
@@ -2032,9 +2032,9 @@ export const RANDOM_NODE_EN: Record<
   r20: {
     title: "The CEO Asks You to Take on New Business",
     context:
-      "The CEO suddenly asks you to take over a high-risk new business without reducing your current responsibilities. You just completed an important handoff.",
+      "At the end of Friday, the CEO asks you to take over a high-risk new business next week while keeping your current responsibilities. You just completed an important handoff and the team has not settled yet.",
     stake:
-      "Choose between seizing the new opportunity and protecting existing results.",
+      "Seizing the new opportunity and protecting existing results cannot rely on verbal promises; first define your energy boundary.",
     intel: [
       "The CEO wants to see how you manage boundaries, not a simple yes.",
       "Half of the new business resources can come from existing team slack."
@@ -2071,8 +2071,8 @@ export const RANDOM_NODE_EN: Record<
   r21: {
     title: "Credit Claimed by Another Department",
     context:
-      "The project you pushed is showing results, but another department credited it in their monthly report. Your team is furious and wants a public correction.",
-    stake: "Handle the credit dispute without breaking collaboration.",
+      "The project you pushed for six months is showing results, but another department credited it in their monthly report and deleted your names. Your team demands a public correction.",
+    stake: "Clarifying wins back credit but may tear collaboration; staying silent disappoints the team. You need a third path.",
     intel: [
       "The other report cites your internal data.",
       "Their leader is competing for the same promotion slot."
@@ -2101,8 +2101,8 @@ export const RANDOM_NODE_EN: Record<
   r22: {
     title: "New Key Hire Excluded",
     context:
-      "In the team you joined, veterans are collectively freezing out the new key hire: no shared information, no meeting invites, and private gossip.",
-    stake: "Do not take sides, and do not let the team split.",
+      "The new key hire you brought in has missed meeting invites for three weeks, is absent from the information sync group, and was never added to document sharing permissions. He has not complained to you yet.",
+    stake: "Exclusion rarely happens loudly; without publicly taking sides, make the team see collaboration as a rule, not a favor.",
     intel: [
       "A veteran lost the promotion race to the new hire.",
       "The new hire has already delivered one critical result independently."
@@ -2131,8 +2131,8 @@ export const RANDOM_NODE_EN: Record<
   r23: {
     title: "Supplier Kickback Clue",
     context:
-      "The finance manager privately tells you the procurement lead may have accepted supplier kickbacks, but the only evidence is an unusual reconciliation.",
-    stake: "Protect integrity without spooking the suspect.",
+      "Late at night, the finance manager sends a reconciliation showing the same supplier paid early at the start of each month for eighteen consecutive months, with no comparison process in procurement records. She says she can only send this once.",
+    stake: "Integrity clues are most fragile before the suspect notices; protect the evidence chain first, then decide who investigates.",
     intel: [
       "The unusual amounts have risen for three straight months.",
       "Finance and procurement had one public argument earlier."
@@ -2161,8 +2161,8 @@ export const RANDOM_NODE_EN: Record<
   r24: {
     title: "Team Opposes New Performance Review",
     context:
-      "After the new performance review is announced, the team objects openly at the all-hands meeting, citing opaque criteria and shrinking rewards.",
-    stake: "Do not withdraw or impose; make the standard itself earn trust.",
+      "The new performance review is publicly opposed at the all-hands meeting: some point out there is no objective data in the criteria, others worry the bonus pool will be discounted. You planned to launch it next Monday.",
+    stake: "Withdrawing weakens the standard's authority and imposing it loses trust; let the standard be tested before it takes effect.",
     intel: [
       "The loudest opponents have not read the new algorithm.",
       "A pilot dataset exists and can be published."
