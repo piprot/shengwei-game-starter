@@ -191,6 +191,18 @@ const CHAPTER_TITLES_EN: Record<number, string> = {
   9: "Leave a Legacy"
 };
 
+const CHAPTER_FOCUS: Record<number, AbilityId[]> = {
+  1: ["insight", "structure"],
+  2: ["strategy", "communication"],
+  3: ["deploy", "insight"],
+  4: ["mobilize", "communication"],
+  5: ["execution", "authority"],
+  6: ["authority", "structure"],
+  7: ["stability", "deploy"],
+  8: ["structure", "recovery"],
+  9: ["stability", "strategy"]
+};
+
 function buildOptions(
   ability: AbilityId,
   base: ExtraSceneBase,
@@ -228,7 +240,7 @@ function buildOptions(
       summary: `先稳住眼前，再回头补齐证据。`,
       quality: "partial",
       effects: { [ability]: 1 },
-      resources: { energy: -4, trust: -1, influence: 2 },
+      resources: { influence: 1 },
       feedback: `你缓解了眼前的紧张，但${abilityName}背后的核心张力还没有真正打开。`,
       theory: ABILITIES[ability].sources[1] ?? ABILITIES[ability].sources[0]
     },
@@ -275,22 +287,10 @@ function buildExtraMainNodes(): {
   for (let chapterId = 1; chapterId <= 9; chapterId += 1) {
     const detail = CHAPTER_EXTRA_DETAILS[chapterId];
     const chapterStake = CHAPTER_EXTRA_STAKES[chapterId];
-    const focusPool = [
-      "insight",
-      "structure",
-      "strategy",
-      "communication",
-      "deploy",
-      "mobilize",
-      "authority",
-      "execution",
-      "recovery",
-      "stability"
-    ] as AbilityId[];
     EXTRA_SCENE_BASES.forEach((base, slot) => {
       const nodeNumber = slot + 3;
       const id = `c${chapterId}n${nodeNumber}`;
-      const ability = focusPool[(chapterId + slot) % focusPool.length];
+      const ability = CHAPTER_FOCUS[chapterId][slot % 2];
       nodes.push({
         id,
         chapterId,

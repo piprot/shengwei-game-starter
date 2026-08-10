@@ -147,7 +147,7 @@ const bad = results.filter(
   (result) =>
     result.issues.length > 0 ||
     result.endingReached !== true ||
-    result.completedNodes !== 18
+    result.completedNodes !== 81
 );
 if (bad.length > 0) {
   console.error("ROLE CAMPAIGN SIM FAILED");
