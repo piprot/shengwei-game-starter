@@ -52,7 +52,7 @@ export interface BlindSpotEntry {
 
 export interface DiscussionQuestion {
   question: string;
-  trigger: "pattern「 | 」blindspot「 | 」consensus「 | 」divergence「 | 」growth";
+  trigger: "pattern" | "blindspot" | "consensus" | "divergence" | "growth";
   relatedAbility?: AbilityId;
   evidence: string;        // 数据证据
   facilitation: string;    // 教练引导话术
@@ -67,7 +67,7 @@ export interface WorkshopReport {
   discussionQuestions: DiscussionQuestion[];
   consensusScenarios: string[];      // 小组高度一致的情境
   divergenceScenarios: string[];     // 小组分歧最大的情境
-  growthTrajectory: { name: string; abilities: Record<AbilityId, number>; trajectory: "rising「 | 」plateau「 | 」declining" }[];
+  growthTrajectory: { name: string; abilities: Record<AbilityId, number>; trajectory: "rising" | "plateau" | "declining" }[];
   workshopPlan: WorkshopSession[];
 }
 
