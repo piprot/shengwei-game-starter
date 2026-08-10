@@ -1229,5 +1229,16 @@ assert(
   ),
   "coach blind spots should resolve real node titles"
 );
+const personalCoach = coachEngine.generatePersonalReport(
+  structuredClone(DEFAULT_SAVE)
+);
+assert(
+  personalCoach.strengths.length === 3 && personalCoach.focus.length === 2,
+  "personal coach report should include strengths and focus abilities"
+);
+assert(
+  personalCoach.actionPlan.length === 3,
+  "personal coach report should include a three-step action plan"
+);
 
 console.log("PASS unit test");

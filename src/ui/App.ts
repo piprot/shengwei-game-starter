@@ -197,7 +197,7 @@ const SETTINGS_MIGRATION_KEY = "adaptive-ascent-settings-v2";
 const GUIDE_KEY = "adaptive-ascent-guide-v1";
 const GUIDE_REWARD_KEY = "adaptive-ascent-guide-reward";
 const ACHIEVEMENT_FAVORITE_KEY = "adaptive-ascent-achievement-favorites";
-const APP_VERSION = "1.7.0";
+const APP_VERSION = "1.7.1";
 
 type View =
   | "menu"
@@ -3682,6 +3682,9 @@ export class AdaptiveGameApp {
   private renderCoach(): void {
     const en = this.language === "en";
     const report = this.coachReport;
+    const personal = this.save.profileCreated
+      ? this.coachEngine.generatePersonalReport(this.save)
+      : undefined;
     this.root.innerHTML = `
       <header class="topbar">
         <div class="brand">${this.t("brand")}</div>
@@ -3700,9 +3703,97 @@ export class AdaptiveGameApp {
           </div>
         </section>
 
+        <section class="coach-personal-panel">
+          <div class="coach-personal-head">
+            <div>
+              <p class="eyebrow">${en ? "My Coach Card" : "我的教练卡"}</p>
+              <h2>${en ? "Based on your own save" : "基于你的真实存档生成"}</h2>
+              <p class="muted">${en ? "Your abilities, decision style, and missed moves are turned into three concrete next steps." : "你的能力、决策风格和错过的关键选择，会直接变成三个可执行的下一步。"}</p>
+            </div>
+            ${
+              personal
+                ? `<div class="coach-personal-name"><strong>${escapeHtml(personal.name)}</strong><span>${this.roleDisplay(personal.role).name}</span></div>`
+                : `<p class="muted">${en ? "Create a profile and make decisions first." : "先创建档案并完成决策，这里才会生成你的教练卡。"}</p>`
+            }
+          </div>
+          ${
+            personal
+              ? `
+                <div class="coach-personal-grid">
+                  <div class="coach-card">
+                    <h3>${en ? "Strengths" : "优势能力"}</h3>
+                    ${personal.strengths
+                      .map((id) => {
+                        const ability = this.abilityDisplay(id);
+                        const level = abilityLevel(this.save.profile.abilities[id]);
+                        return `<p><span style="--dot:${ABILITIES[id].color}"></span>${ability.name} <strong>Lv.${level}</strong></p>`;
+                      })
+                      .join("")}
+                  </div>
+                  <div class="coach-card">
+                    <h3>${en ? "Focus Next" : "下一步聚焦"}</h3>
+                    ${personal.focus
+                      .map((id) => {
+                        const ability = this.abilityDisplay(id);
+                        return `<button data-action="open-training" data-ability="${id}">${ability.name} · ${ability.tagline}</button>`;
+                      })
+                      .join("")}
+                  </div>
+                  <div class="coach-card">
+                    <h3>${en ? "Decision Style" : "决策风格"}</h3>
+                    <p>${en ? "Expert" : "专家"} ${personal.decisionProfile.expert} · ${en ? "Balanced" : "稳健"} ${personal.decisionProfile.partial} · ${en ? "Risk" : "风险"} ${personal.decisionProfile.risk}</p>
+                    <p class="muted">${en ? `Total ${personal.decisionProfile.total} decisions` : `共 ${personal.decisionProfile.total} 次决策`}</p>
+                  </div>
+                  <div class="coach-card">
+                    <h3>${en ? "Missed Moves" : "错过的好棋"}</h3>
+                    ${
+                      personal.blindSpotNodes.length
+                        ? personal.blindSpotNodes
+                            .map(
+                              (spot) =>
+                                `<p><strong>${escapeHtml(spot.nodeTitle)}</strong><small>${this.roleMove(spot.quality)}</small></p>`
+                            )
+                            .join("")
+                        : `<p class="muted">${en ? "No missed moves yet." : "暂未发现明显失误。"}</p>`
+                    }
+                  </div>
+                </div>
+                <div class="coach-action-plan">
+                  <h3>${en ? "30-Day Action Plan" : "30 天行动计划"}</h3>
+                  <ol>
+                    ${personal.actionPlan
+                      .map((action, index) => {
+                        const label =
+                          action.action === "train"
+                            ? en
+                              ? `Train ${this.abilityDisplay(action.ability ?? "insight").name}`
+                              : `训练 ${this.abilityDisplay(action.ability ?? "insight").name}`
+                            : action.action === "review"
+                              ? en
+                                ? "Review a missed scenario"
+                                : "回看错过的情境"
+                              : en
+                                ? "Practice in a 1v1 duel"
+                                : "用 1v1 对练巩固";
+                        const dataAttr =
+                          action.action === "train"
+                            ? `data-action="open-training" data-ability="${action.ability ?? "insight"}"`
+                            : action.action === "review"
+                              ? `data-action="open-report"`
+                              : `data-action="open-duel"`;
+                        return `<li><button ${dataAttr}>${index + 1}. ${escapeHtml(label)}</button></li>`;
+                      })
+                      .join("")}
+                  </ol>
+                </div>
+              `
+              : ""
+          }
+        </section>
+
         <section class="coach-import-panel">
-          <h2>${en ? "Import participants" : "导入学员"}</h2>
-          <p class="muted">${en ? "Paste a JSON array of exported saves: [{ \"name\": \"...\", \"data\": { ... } }], or load a demo group." : "粘贴导出存档的 JSON 数组：[{ \"name\": \"...\", \"data\": { ... } }]，也可以直接载入演示小组。"}</p>
+          <h2>${en ? "Group Workshop Mode" : "小组工作坊模式（教练 / 培训师用）"}</h2>
+          <p class="muted">${en ? "For trainers: import exported saves, compare group radar, and follow the facilitation plan." : "面向教练与培训师：导入学员存档，对比小组能力雷达，并按内置流程主持工作坊。"}</p>
           <textarea data-coach-import rows="4" placeholder='[{"name":"学员A","data":{}}]'></textarea>
           <div class="coach-import-actions">
             <button class="primary" data-action="coach-load-demo">${en ? "Load Demo Group" : "载入演示小组"}</button>

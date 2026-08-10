@@ -915,6 +915,139 @@ html[data-vu="off"] * {
   }
 }
 
+/* =========================================================================
+   教练工作坊 · 个人教练卡
+   ========================================================================= */
+.coach-personal-panel {
+  margin: 16px 0;
+  padding: 18px;
+  border: 1px solid color-mix(in srgb, var(--vu-teal) 42%, transparent);
+  border-radius: var(--vu-radius);
+  background:
+    radial-gradient(circle at 92% 8%, rgba(79, 210, 204, 0.14), transparent 42%),
+    var(--vu-panel);
+}
+.coach-personal-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+.coach-personal-head h2 {
+  margin: 4px 0 6px;
+  color: var(--vu-ink);
+}
+.coach-personal-head p {
+  margin: 0;
+}
+.coach-personal-name {
+  display: grid;
+  gap: 2px;
+  padding: 8px 12px;
+  border: 1px solid var(--vu-teal-line);
+  border-radius: var(--vu-radius);
+  background: rgba(7, 12, 16, 0.4);
+}
+.coach-personal-name strong {
+  color: var(--vu-ink);
+}
+.coach-personal-name span {
+  color: var(--vu-muted-soft);
+  font-size: 12px;
+}
+.coach-personal-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: 14px;
+}
+.coach-card {
+  padding: 12px;
+  border: 1px solid var(--vu-line-soft);
+  border-radius: var(--vu-radius);
+  background: rgba(7, 12, 16, 0.36);
+}
+.coach-card h3 {
+  margin: 0 0 8px;
+  color: var(--vu-ink);
+  font-size: 14px;
+}
+.coach-card p {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 4px 0;
+  color: var(--vu-muted);
+  font-size: 13px;
+}
+.coach-card p span {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--dot, var(--vu-teal));
+}
+.coach-card button {
+  display: block;
+  width: 100%;
+  margin: 4px 0;
+  padding: 7px 9px;
+  border: 1px solid var(--vu-teal-line);
+  border-radius: var(--vu-radius);
+  background: transparent;
+  color: var(--vu-teal-bright);
+  text-align: left;
+  cursor: pointer;
+  font-size: 13px;
+}
+.coach-action-plan {
+  margin-top: 14px;
+  padding: 12px;
+  border: 1px solid var(--vu-gold-line);
+  border-radius: var(--vu-radius);
+  background: color-mix(in srgb, var(--vu-gold) 7%, transparent);
+}
+.coach-action-plan h3 {
+  margin: 0 0 8px;
+  color: var(--vu-gold-bright);
+}
+.coach-action-plan ol {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.coach-action-plan li button {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid var(--vu-gold-line);
+  border-radius: var(--vu-radius);
+  background: transparent;
+  color: var(--vu-ink-soft);
+  cursor: pointer;
+  text-align: left;
+}
+.coach-action-plan li button:hover {
+  color: var(--vu-gold-bright);
+  border-color: var(--vu-gold);
+}
+
+@media (max-width: 900px) {
+  .coach-personal-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+  .coach-action-plan ol {
+    grid-template-columns: 1fr;
+  }
+}
+@media (max-width: 560px) {
+  .coach-personal-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
 @media (max-width: 900px) {
   .expedition-hero {
     grid-template-columns: 1fr;

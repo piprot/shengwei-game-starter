@@ -17,7 +17,7 @@ import type {
   OptionQuality,
   StoryNode,
 } from "./types.ts";
-import { ABILITY_ORDER } from "./abilities.ts";
+import { ABILITY_ORDER, abilityLevel } from "./abilities.ts";
 import { getNode } from "./story.ts";
 
 // ============================================================
@@ -80,6 +80,32 @@ export interface WorkshopSession {
   facilitationNotes: string;
 }
 
+export interface PersonalCoachAction {
+  action: "train" | "review" | "duel";
+  ability?: AbilityId;
+  nodeId?: string;
+}
+
+export interface PersonalCoachReport {
+  name: string;
+  role: RoleId;
+  generatedAt: number;
+  strengths: AbilityId[];
+  focus: AbilityId[];
+  decisionProfile: {
+    expert: number;
+    partial: number;
+    risk: number;
+    total: number;
+  };
+  blindSpotNodes: Array<{
+    nodeId: string;
+    nodeTitle: string;
+    quality: OptionQuality;
+  }>;
+  actionPlan: PersonalCoachAction[];
+}
+
 // ============================================================
 // 教练端工作坊引擎
 // ============================================================
@@ -114,6 +140,67 @@ export class CoachWorkshopEngine {
       divergenceScenarios: this.findDivergenceScenarios(),
       growthTrajectory: this.computeGrowthTrajectory(),
       workshopPlan: this.generateWorkshopPlan(),
+    };
+  }
+
+  /**
+   * 从玩家自己的存档生成个人教练报告。
+   */
+  generatePersonalReport(save: SaveState): PersonalCoachReport {
+    const abilities = save.profile.abilities;
+    const ranked = ABILITY_ORDER.slice().sort(
+      (a, b) =>
+        abilityLevel(abilities[b]) - abilityLevel(abilities[a]) ||
+        (abilities[b] ?? 0) - (abilities[a] ?? 0)
+    );
+    const focusPool = save.profile.role === "founder"
+      ? ["structure", "execution", "recovery", "strategy"]
+      : save.profile.role === "parachute"
+        ? ["insight", "strategy", "communication", "authority"]
+        : ["communication", "deploy", "insight", "structure"];
+    const focus = ranked
+      .slice()
+      .sort(
+        (a, b) =>
+          abilityLevel(abilities[a]) - abilityLevel(abilities[b]) ||
+          (focusPool.includes(a) ? -1 : 1) - (focusPool.includes(b) ? -1 : 1)
+      )
+      .slice(0, 2);
+    const profile = { expert: 0, partial: 0, risk: 0, total: 0 };
+    for (const decision of save.decisionHistory) {
+      profile[decision.quality] += 1;
+      profile.total += 1;
+    }
+    const seenNodes = new Set<string>();
+    const blindSpotNodes: PersonalCoachReport["blindSpotNodes"] = [];
+    for (const decision of save.decisionHistory.slice().reverse()) {
+      if (seenNodes.has(decision.nodeId)) continue;
+      if (decision.quality !== "expert") {
+        seenNodes.add(decision.nodeId);
+        blindSpotNodes.push({
+          nodeId: decision.nodeId,
+          nodeTitle: this.guessNodeTitle(decision.nodeId),
+          quality: decision.quality
+        });
+      }
+      if (blindSpotNodes.length >= 3) break;
+    }
+    const actionPlan: PersonalCoachAction[] = [
+      { action: "train", ability: focus[0] ?? "insight" },
+      ...(blindSpotNodes[0]
+        ? [{ action: "review" as const, nodeId: blindSpotNodes[0].nodeId }]
+        : [{ action: "duel" as const, ability: focus[0] ?? "insight" }]),
+      { action: "duel", ability: focus[1] ?? "structure" }
+    ];
+    return {
+      name: save.profile.name,
+      role: save.profile.role,
+      generatedAt: Date.now(),
+      strengths: ranked.slice(0, 3),
+      focus,
+      decisionProfile: profile,
+      blindSpotNodes,
+      actionPlan
     };
   }
 
