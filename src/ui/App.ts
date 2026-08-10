@@ -197,7 +197,7 @@ const SETTINGS_MIGRATION_KEY = "adaptive-ascent-settings-v2";
 const GUIDE_KEY = "adaptive-ascent-guide-v1";
 const GUIDE_REWARD_KEY = "adaptive-ascent-guide-reward";
 const ACHIEVEMENT_FAVORITE_KEY = "adaptive-ascent-achievement-favorites";
-const APP_VERSION = "1.7.5";
+const APP_VERSION = "1.7.6";
 
 type View =
   | "menu"
@@ -306,6 +306,7 @@ export class AdaptiveGameApp {
   private replayMode = false;
   private integrityGateNodeId?: string;
   private pendingIntegrityOption?: number;
+  private integrityGateMode: "cost" | "ability" = "cost";
   private filmQuest?: FilmQuest;
   private filmQuestPickedOption?: number;
   private filmQuestOrder: number[] = [];
@@ -1037,6 +1038,34 @@ export class AdaptiveGameApp {
     const option = node.options[this.pendingIntegrityOption];
     if (!option) return "";
     const en = this.language === "en";
+    if (this.integrityGateMode === "ability") {
+      const primary = this.primaryAbilityForOption(option);
+      const distractors = ABILITY_ORDER.filter((id) => id !== primary).slice(
+        0,
+        2
+      );
+      return `
+        <section class="integrity-gate" role="dialog" aria-label="${en ? "Weakness verification" : "短板验证"}">
+          <div class="integrity-gate-head">
+            <span>${en ? "Adaptive Weakness Check" : "自适应短板验证"}</span>
+            <h3>${en ? "Recent decisions missed too many expert moves." : "你近期的决策错过了太多专家方案。"}</h3>
+            <p>${en ? "Name the ability this move truly tests before it can pass." : "先说出这一手真正考验的能力，才能继续。"}</p>
+          </div>
+          <div class="integrity-gate-options">
+            ${[primary, ...distractors]
+              .map(
+                (id) => `
+                  <button data-action="integrity-answer" data-ability="${id}">
+                    ${this.abilityDisplay(id).name}
+                    <small>${this.abilityDisplay(id).tagline}</small>
+                  </button>
+                `
+              )
+              .join("")}
+          </div>
+        </section>
+      `;
+    }
     const cost = this.optionCostSummary(option);
     const wrongOne = en
       ? "No cost at all; the choice itself is the answer"
@@ -5429,8 +5458,13 @@ export class AdaptiveGameApp {
           this.lastOutcomeNodeId = undefined;
           // D3：派发随机事件时展示"突发干扰"横幅；普通节点清空。
           try {
+            const opened = getNode(nodeId);
             this.interferenceText =
-              getNode(nodeId).kind === "random" ? this.t("interferenceNote") : undefined;
+              opened.kind === "random"
+                ? this.t("interferenceNote")
+                : opened.kind === "main" && this.recentExpertRate() < 0.35
+                  ? this.adaptiveInterferenceText()
+                  : undefined;
           } catch {
             this.interferenceText = undefined;
           }
@@ -5460,7 +5494,11 @@ export class AdaptiveGameApp {
           this.lastOutcome = undefined;
           this.lastOutcomeNodeId = undefined;
           this.interferenceText =
-            node.kind === "random" ? this.t("interferenceNote") : undefined;
+            node.kind === "random"
+              ? this.t("interferenceNote")
+              : node.kind === "main" && this.recentExpertRate() < 0.35
+                ? this.adaptiveInterferenceText()
+                : undefined;
           this.show("story");
           this.startRoundTimer();
         } catch {
@@ -7250,7 +7288,15 @@ export class AdaptiveGameApp {
       return;
     }
     const cost = target.dataset.cost;
-    if (cost === "correct") {
+    const ability = target.dataset.ability as AbilityId | undefined;
+    const node = getNode(this.integrityGateNodeId);
+    const option = node.options[this.pendingIntegrityOption];
+    const primary = this.primaryAbilityForOption(option);
+    const correct =
+      this.integrityGateMode === "ability"
+        ? ability === primary
+        : cost === "correct";
+    if (correct) {
       this.save.firstPickStreak = 0;
       this.save.recentPickPositions = [];
       this.persistSave();
@@ -7285,6 +7331,26 @@ export class AdaptiveGameApp {
     const positions = this.save.recentPickPositions ?? [];
     if (positions.length < 5) return false;
     return positions.every((position) => position <= 1);
+  }
+
+  private recentExpertRate(): number {
+    const recent = this.save.decisionHistory.slice(-5);
+    if (recent.length === 0) return 1;
+    return (
+      recent.filter((decision) => decision.quality === "expert").length /
+      recent.length
+    );
+  }
+
+  private adaptiveInterferenceText(): string {
+    const focus = recommendedTraining(
+      this.save.profile.abilities,
+      this.save.profile.role
+    )[0];
+    const abilityName = focus ? this.abilityDisplay(focus).name : "沟通";
+    return this.language === "en"
+      ? `Recent expert rate is low. Before deciding, focus on ${abilityName}.`
+      : `近期专家率偏低。决策前，先聚焦「${abilityName}」。`;
   }
 
   private riskCrisisActive(): boolean {
@@ -7360,6 +7426,8 @@ export class AdaptiveGameApp {
       this.save.firstPickStreak = 0;
     }
     if ((this.save.firstPickStreak ?? 0) >= 2 || this.mechanicalPatternDetected()) {
+      this.integrityGateMode =
+        this.recentExpertRate() < 0.25 ? "ability" : "cost";
       this.integrityGateNodeId = this.storyNodeId;
       this.pendingIntegrityOption = optionIndex;
       this.persistSave();
