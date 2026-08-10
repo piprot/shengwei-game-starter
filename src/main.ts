@@ -6,6 +6,8 @@ import "./duel.css";
 import "./role.css";
 import "./motion.css";
 import "./unlocks.css";
+import "./ui/eastern-theme.css";
+import "./ui/visual-upgrade-v2.css";
 import { AdaptiveGameApp } from "./ui/App";
 
 /**

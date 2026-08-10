@@ -100,7 +100,8 @@ import type {
 } from "../core/types";
 import { ManualRtcPeer, type RtcMessage } from "../net/rtc";
 import { RoomClient, type RoomServerMessage } from "../net/roomClient";
-import { GameAudio } from "../audio";
+import { GameAudioV2 } from "../audio-v2";
+import { ThemeMusic } from "../core/theme-music";
 import {
   ASSESSMENT_QUESTIONS,
   certificationLevel
@@ -175,7 +176,7 @@ const SETTINGS_MIGRATION_KEY = "adaptive-ascent-settings-v2";
 const GUIDE_KEY = "adaptive-ascent-guide-v1";
 const GUIDE_REWARD_KEY = "adaptive-ascent-guide-reward";
 const ACHIEVEMENT_FAVORITE_KEY = "adaptive-ascent-achievement-favorites";
-const APP_VERSION = "1.5.16";
+const APP_VERSION = "1.5.17";
 
 type View =
   | "menu"
@@ -203,7 +204,9 @@ type DuelQuality = "expert" | "partial" | "risk";
 
 export class AdaptiveGameApp {
   private root: HTMLElement;
-  private audio = new GameAudio();
+  private audio = new GameAudioV2();
+  private themeMusic = new ThemeMusic();
+  private themeMusicPlaying = false;
   private muted = localStorage.getItem("adaptive-ascent-muted") === "1";
   private musicMuted =
     localStorage.getItem("adaptive-ascent-music") === "1";
@@ -584,8 +587,25 @@ export class AdaptiveGameApp {
     this.view = view;
     window.scrollTo(0, 0);
     const scene =
-      view === "story" ? "story" : view === "duel" ? "duel" : "menu";
+      view === "story"
+        ? "story"
+        : view === "duel"
+          ? "duel"
+          : view === "training" || view === "trial" || view === "trialBattle"
+            ? "training"
+            : view === "ending"
+              ? "victory"
+              : "menu";
     this.audio.setAmbientScene(scene);
+    if (view === "ending") {
+      if (!this.themeMusicPlaying) {
+        this.themeMusic.play();
+        this.themeMusicPlaying = true;
+      }
+    } else if (this.themeMusicPlaying) {
+      this.themeMusic.stop();
+      this.themeMusicPlaying = false;
+    }
     this.render();
   }
 
@@ -1050,6 +1070,7 @@ export class AdaptiveGameApp {
         </div>
       </header>
       <main class="menu-shell" aria-label="${this.language === "en" ? "Main menu" : "主菜单"}">
+        <img class="menu-bg" src="./bg/bg-main-menu.jpg" alt="" aria-hidden="true">
         <section class="hero-strip">
           <div class="hero-copy">
             <p class="eyebrow">${this.language === "en" ? "Adaptive Leadership Scenario Game" : "自适应领导力情境游戏"}</p>
@@ -1626,7 +1647,7 @@ export class AdaptiveGameApp {
             const view = this.npcDisplay(npc);
             return `
               <div class="npc-card ${relation.status === "已建立关系" ? "trusted" : relation.status === "存在线索" ? "known" : "hidden"}">
-                <span class="npc-avatar" style="--avatar:${this.npcAvatarColor(npc.id)}">${view.name.slice(0, 1)}</span>
+                <img class="npc-portrait npc-avatar" src="./npc/${npc.id}.jpg" alt="${escapeHtml(view.name)}" loading="lazy">
                 <div>
                   <h2>${view.name}</h2>
                   <small>${view.title}</small>
@@ -3747,6 +3768,7 @@ export class AdaptiveGameApp {
         <button class="link" data-action="ending-back">${this.t("endingBack")}</button>
       </header>
       <main class="ending-shell" aria-label="${this.t("endingTitle")}">
+        <img class="ending-bg" src="./bg/bg-victory.jpg" alt="" aria-hidden="true">
         <section class="ending-hero">
           <p class="eyebrow">${this.t("endingTitle")}</p>
           <h1>${this.save.profile.name} · ${this.roleDisplay(this.save.profile.role).name}</h1>

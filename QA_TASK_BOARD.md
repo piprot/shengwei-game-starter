@@ -239,3 +239,16 @@ GitHub Actions/Pages recovered. CI run `31133005719` for `19edd53` completed suc
 #### 1.5.16 平衡调优
 - 章节通过线 80 → 70；balance-sim 整局通关率 19.4% → 34.8%，中后期通过率回升到 88-89%。
 - 星级阈值保持 200/150 不变，仅放宽一星门槛。
+
+### V2 音频与位图美术正式接入（1.5.17，2026-08-10）
+
+#### 已落地
+- `GameAudioV2` 替换 `GameAudio`：五场景环境音乐、多层 SFX、动态过渡与混响/延迟/立体声生效。
+- `ThemeMusic` 四乐章主题曲接入结局页，离开结局停止。
+- `bg-main-menu.jpg`、`bg-victory.jpg`、`npc-*.jpg` 位图分别接入主菜单、结局页与人物关系卡。
+- `eastern-theme.css` + `visual-upgrade-v2.css` 在 `main.ts` 中于现有样式之后加载。
+
+#### 复验要求
+- `npm run test:device-screenshots` 与 `npm run test:accessibility` 通过。
+- 主菜单/结局背景图与 NPC 位图请求 200，控制台无报错。
+- 移动端无横向溢出，动画在 `prefers-reduced-motion` 下关闭。

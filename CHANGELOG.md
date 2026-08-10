@@ -1,5 +1,14 @@
 # 更新日志
 
+## 1.5.17（2026-08-10）
+### V2 音频与位图美术正式接入
+
+- 音频升级：`GameAudio` 替换为 `GameAudioV2`，菜单/剧情/对决/试炼/结局五场景生成式音乐、多层 SFX、混响/延迟/立体声/失真与动态过渡正式生效。
+- 主题音乐：`ThemeMusic` 四乐章主旋律接入结局页，离开结局自动停止，避免与场景氛围音乐叠加。
+- 位图美术：主菜单接入 `bg-main-menu.jpg`，结局页接入 `bg-victory.jpg`，人物关系页 NPC 卡片使用 `npc-*.jpg` 位图肖像。
+- 视觉层：`eastern-theme.css` 东方低饱和配色与 `visual-upgrade-v2.css` 玻璃拟态/动画层按设计稿加载到现有样式之上。
+- 验收：本地 build/unit/smoke/audit 全绿，`test:device-screenshots` 与 `test:accessibility` 复跑通过。
+
 ## 1.5.16（2026-08-10）
 ### 平衡调优
 

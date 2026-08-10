@@ -44,8 +44,8 @@
   --tea-brown: #6B5340;
 
   /* ---- 2. 覆盖原有高饱和度强调色 (Override high-saturation accents) ---- */
-  --teal: var(--dai-jade);        /* #3A6B5E 黛绿 */
-  --gold: var(--ochre);           /* #8B6F47 赭石 */
+  --teal: #5FAF9C;        /* #3A6B5E 黛绿 */
+  --gold: #B8935E;           /* #8B6F47 赭石 */
   --coral: var(--cinnabar);       /* #8B3A3A 朱砂 */
   --blue: var(--indigo);          /* #3D5A80 靛青 */
 
@@ -65,10 +65,10 @@
   --shadow: 0 18px 50px rgba(0, 0, 0, 0.45), 0 4px 16px rgba(30, 42, 48, 0.35);
 
   /* ---- 6. 主题语义辅助色 (用于高对比文本场景) ---- */
-  --teal-text: var(--dai-jade-soft);   /* 黛绿柔色用于文本，保证可读 */
-  --gold-text: var(--ochre-soft);      /* 赭石柔色用于文本 */
-  --coral-text: var(--cinnabar-soft);  /* 朱砂柔色用于文本 */
-  --blue-text: var(--indigo-soft);     /* 靛青柔色用于文本 */
+  --teal-text: #6FB3A1;   /* 黛绿柔色用于文本，保证可读 */
+  --gold-text: #C09A62;      /* 赭石柔色用于文本 */
+  --coral-text: #D08B77;  /* 朱砂柔色用于文本 */
+  --blue-text: #7BA3C4;     /* 靛青柔色用于文本 */
 
   /* ---- 7. 传统纹样相关变量 ---- */
   --pattern-color: rgba(200, 188, 165, 0.045); /* 纹样底色：极淡暖灰 */
