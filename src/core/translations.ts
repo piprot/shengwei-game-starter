@@ -2191,8 +2191,8 @@ export const RANDOM_NODE_EN: Record<
   r25: {
     title: "Major Customer Cuts Orders",
     context:
-      "Your largest customer suddenly cuts next quarter's orders by 40%, citing budget adjustment. The sales team wants to visit and plead together.",
-    stake: "Behind the cut is often a real cause; pleading is not the first step.",
+      "At the end of the quarter, your largest customer cuts next quarter's orders by 40%, citing budget adjustment. The sales team plans to visit tomorrow and plead together, and finance reminds you that the customer changed its procurement lead three months ago.",
+    stake: "Behind the cut is often a real cause; pleading is not the first step. First find whether it is budget, relationship, or product.",
     intel: [
       "The decision came from the customer's new finance lead.",
       "The customer is internally discussing a second supplier."
@@ -2221,8 +2221,8 @@ export const RANDOM_NODE_EN: Record<
   r26: {
     title: "Departing Leader Wants to Return",
     context:
-      "A key person who left a year ago now wants to rejoin with new experience and industry resources, but the original team already has a replacement.",
-    stake: "Returning must not rely on old affection; give both old and new talent a fair growth path.",
+      "A key person who left a year ago now wants to rejoin with new experience and industry resources. The original team already has a replacement, and the newcomer just completed a full delivery cycle.",
+    stake: "Returning must not rely on old affection; give both old and new talent a fair growth path instead of turning the return into a denial of the current person.",
     intel: [
       "The returning leader's resources do not conflict with existing clients.",
       "The replacement has completed two delivery cycles and is waiting for a promotion promise."
@@ -2251,7 +2251,7 @@ export const RANDOM_NODE_EN: Record<
   r27: {
     title: "The Plan Leaked Early",
     context:
-      "The restructuring plan you planned to announce tomorrow appeared in another department's group chat today, complete with a watermark. The source is clearly internal.",
+      "The restructuring plan you planned to announce on Thursday appears in another department's group chat on Wednesday afternoon. The version carries a watermark, so the source must be internal, but no one admits it yet.",
     stake: "Blame is not the point. The point is keeping leaks from blocking the next change.",
     intel: [
       "The watermark narrows the leak to a small circle.",
@@ -2285,7 +2285,7 @@ export const RANDOM_NODE_EN: Record<
   r28: {
     title: "The Predecessor's Favor Ledger",
     context:
-      "The predecessor left a private document listing who owes him favors and who promised to support the new leader. The admin lead hints this ledger is more accurate than the org chart.",
+      "During handover, your predecessor leaves a private document listing who owes him favors, who promised to support the new leader, and who once betrayed him at a key meeting. The admin lead hints this ledger is more accurate than the org chart.",
     stake: "Favor accounts are real resources, but using them directly makes you the continuation of old politics.",
     intel: [
       "The ledger contains names not visible in the formal structure.",
@@ -2319,8 +2319,8 @@ export const RANDOM_NODE_EN: Record<
   r29: {
     title: "The Star Employee Suddenly Quits",
     context:
-      "The employee controlling 70% of client relationships suddenly resigns for personal growth, but before leaving he scheduled private talks with three high-potential colleagues.",
-    stake: "Retaining him is not the only goal. Decide whether this is attrition or a team structure problem.",
+      "The employee controlling 70% of client relationships suddenly resigns for personal growth. You find that a week before leaving, he met privately with three high-potential colleagues, and one of them has already started updating their résumé.",
+    stake: "Retaining him is not the only goal. Decide whether this is individual attrition or a team structure problem.",
     intel: [
       "The three high-potential colleagues were invited in a specific order.",
       "His reasons include a promotion path that was never written down.",
@@ -2353,7 +2353,7 @@ export const RANDOM_NODE_EN: Record<
   r30: {
     title: "Budget Cut by 20% Overnight",
     context:
-      "The day before the quarterly kickoff, finance tells you the project budget is cut 20% because the group needs cash. The team already planned delivery around the original budget.",
+      "The day before the quarterly kickoff, finance tells you the project budget is cut 20% because the group needs cash. The team has already planned delivery around the original budget, and the sales director has begun questioning the promises.",
     stake: "Give a new battle map within two days instead of turning the cut into an emotional event.",
     intel: [
       "The cut lands on discretionary spend, not on the three committed client nodes.",
@@ -2387,7 +2387,7 @@ export const RANDOM_NODE_EN: Record<
   r31: {
     title: "Two Executives Fight Publicly",
     context:
-      "At the operating meeting, the sales VP and product VP argue in front of the CEO: one blames broken delivery, the other blames reckless promises. The CEO turns to you.",
+      "At the operating meeting, the sales VP and product VP argue in front of the CEO: one blames broken delivery, the other blames reckless promises. The CEO stays silent and turns to you.",
     stake: "Your next sentence decides whether the meeting returns to facts or becomes a faction choice.",
     intel: [
       "The customer contract contains a deadline the sales side promised without a delivery review.",
@@ -2421,7 +2421,7 @@ export const RANDOM_NODE_EN: Record<
   r32: {
     title: "A Critical Process Depends on One Person",
     context:
-      "You discover that renewal, pricing, and collection all depend on the same senior manager. When he takes annual leave, the business visibly stalls.",
+      "While mapping the workflow, you find that renewal, pricing, and collection all depend on the same senior manager. During his annual leave last week, a pricing approval took three extra days and the client complained.",
     stake: "Turn him into a teacher of the system, not the system itself.",
     intel: [
       "He already documents decisions in personal notes.",
@@ -2455,7 +2455,7 @@ export const RANDOM_NODE_EN: Record<
   r33: {
     title: "The Client Demands an Unverified Feature Immediately",
     context:
-      "Using contract renewal as leverage, the largest client demands an unverified feature go live in two weeks; engineering says it needs at least six.",
+      "Using contract renewal as leverage, the largest client demands an unverified feature go live in two weeks. Engineering estimates at least six weeks, and the product manager hints that you can ship first and test later.",
     stake: "Promising will burn out the team; refusing may lose the client. Find a third path.",
     intel: [
       "The client's key user is willing to participate in a 30-day joint acceptance.",
@@ -2489,7 +2489,7 @@ export const RANDOM_NODE_EN: Record<
   r34: {
     title: "The Successor's First Independent Decision",
     context:
-      "You are about to be promoted. The successor must handle her first crisis alone: a supplier defaults and the client is waiting. She brings two options to you.",
+      "You are about to be promoted. The successor must handle her first crisis alone: a supplier defaults and the client is waiting. She brings two options to you, one conservative and one aggressive.",
     stake: "How you answer decides whether she learns to decide or learns to wait for you.",
     intel: [
       "She already knows the client's preferred option.",
@@ -2523,7 +2523,7 @@ export const RANDOM_NODE_EN: Record<
   r35: {
     title: "The CEO Asks You to Diagnose the Organization Publicly",
     context:
-      "At the all-hands meeting, the CEO suddenly asks you to diagnose the organization publicly and says, 'You are new, so you see it most clearly.' The room goes quiet.",
+      "At the all-hands meeting, the CEO suddenly asks you to diagnose the organization publicly and says, 'You are new, so you see it most clearly.' The room goes quiet and someone starts writing down your exact words.",
     stake: "Too sharp alienates people; too smooth loses credibility. You need one honest, actionable sentence.",
     intel: [
       "The CEO wants a testable observation, not a list of complaints.",
@@ -2557,7 +2557,7 @@ export const RANDOM_NODE_EN: Record<
   r36: {
     title: "An Anonymous Letter Arrives at Midnight",
     context:
-      "At midnight you receive an anonymous letter accusing the purchasing manager of conflicts of interest with a supplier. It is signed 'a colleague who knows' and contains no evidence.",
+      "At midnight you receive an anonymous letter accusing the purchasing manager of conflicts of interest with a supplier. It is signed 'a colleague who knows' and contains no evidence, but it includes a blurry transfer screenshot.",
     stake: "The letter may be truth or faction tooling. Protect the fairness of the investigation first.",
     intel: [
       "The letter's claims match an unusual contract renewal from last quarter.",
