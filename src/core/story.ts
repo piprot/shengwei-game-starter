@@ -8,6 +8,11 @@ import type {
 import { ROLE_OPTION_SETS } from "./roleOptions.ts";
 import { branchVariantFor } from "./branchVariants.ts";
 import { DUEL_BANK, shuffleDuelOptions } from "./duelBank.ts";
+import {
+  EXTRA_MAIN_INTEL,
+  EXTRA_MAIN_NODES,
+  EXTRA_MAIN_ROLE_VARIANTS
+} from "./mainScenarios.ts";
 
 export const CHAPTERS: ChapterDef[] = [
   {
@@ -16,7 +21,7 @@ export const CHAPTERS: ChapterDef[] = [
     title: "识局",
     subtitle: "先诊断，再动手",
     focus: ["insight", "structure"],
-    nodeIds: ["c1n1", "c1n2"]
+    nodeIds: ["c1n1", "c1n2", "c1n3", "c1n4", "c1n5", "c1n6", "c1n7", "c1n8", "c1n9"]
   },
   {
     id: 2,
@@ -24,7 +29,7 @@ export const CHAPTERS: ChapterDef[] = [
     title: "谋权",
     subtitle: "在授权之前先建势",
     focus: ["strategy", "communication"],
-    nodeIds: ["c2n1", "c2n2"]
+    nodeIds: ["c2n1", "c2n2", "c2n3", "c2n4", "c2n5", "c2n6", "c2n7", "c2n8", "c2n9"]
   },
   {
     id: 3,
@@ -32,7 +37,7 @@ export const CHAPTERS: ChapterDef[] = [
     title: "用人",
     subtitle: "把对的人放进对的坑",
     focus: ["deploy", "insight"],
-    nodeIds: ["c3n1", "c3n2"]
+    nodeIds: ["c3n1", "c3n2", "c3n3", "c3n4", "c3n5", "c3n6", "c3n7", "c3n8", "c3n9"]
   },
   {
     id: 4,
@@ -40,7 +45,7 @@ export const CHAPTERS: ChapterDef[] = [
     title: "驭势",
     subtitle: "让一群人不情愿的人一起走",
     focus: ["mobilize", "communication"],
-    nodeIds: ["c4n1", "c4n2"]
+    nodeIds: ["c4n1", "c4n2", "c4n3", "c4n4", "c4n5", "c4n6", "c4n7", "c4n8", "c4n9"]
   },
   {
     id: 5,
@@ -48,7 +53,7 @@ export const CHAPTERS: ChapterDef[] = [
     title: "执权",
     subtitle: "把决策变成可验收的成果",
     focus: ["execution", "authority"],
-    nodeIds: ["c5n1", "c5n2"]
+    nodeIds: ["c5n1", "c5n2", "c5n3", "c5n4", "c5n5", "c5n6", "c5n7", "c5n8", "c5n9"]
   },
   {
     id: 6,
@@ -56,7 +61,7 @@ export const CHAPTERS: ChapterDef[] = [
     title: "掌权",
     subtitle: "用制度守住权力边界",
     focus: ["authority", "structure"],
-    nodeIds: ["c6n1", "c6n2"]
+    nodeIds: ["c6n1", "c6n2", "c6n3", "c6n4", "c6n5", "c6n6", "c6n7", "c6n8", "c6n9"]
   },
   {
     id: 7,
@@ -64,7 +69,7 @@ export const CHAPTERS: ChapterDef[] = [
     title: "固权",
     subtitle: "让组织不依赖任何个人",
     focus: ["stability", "deploy"],
-    nodeIds: ["c7n1", "c7n2"]
+    nodeIds: ["c7n1", "c7n2", "c7n3", "c7n4", "c7n5", "c7n6", "c7n7", "c7n8", "c7n9"]
   },
   {
     id: 8,
@@ -72,7 +77,7 @@ export const CHAPTERS: ChapterDef[] = [
     title: "破局",
     subtitle: "在不确定中快速调整",
     focus: ["structure", "recovery"],
-    nodeIds: ["c8n1", "c8n2"]
+    nodeIds: ["c8n1", "c8n2", "c8n3", "c8n4", "c8n5", "c8n6", "c8n7", "c8n8", "c8n9"]
   },
   {
     id: 9,
@@ -80,7 +85,7 @@ export const CHAPTERS: ChapterDef[] = [
     title: "成业",
     subtitle: "让成功可以延续",
     focus: ["stability", "strategy"],
-    nodeIds: ["c9n1", "c9n2"]
+    nodeIds: ["c9n1", "c9n2", "c9n3", "c9n4", "c9n5", "c9n6", "c9n7", "c9n8", "c9n9"]
   }
 ];
 
@@ -146,8 +151,8 @@ export const STORY_NODES: StoryNode[] = [
     title: "空降首周",
     kind: "main",
     context:
-      "你刚接手一家营收停滞的事业部。前任留下的人表面客气，但关键数据迟迟不交。CEO 只给了你 90 天，团队私下说“又来一个救火队长”。",
-    stake: "你必须在信息不足时决定：先建立关系，还是先拿到数据。",
+      "你空降到一家连续两个季度下滑的事业部。前任在交接会上只留下一句话：“团队会配合你。”但财务数据、客户清单和关键项目状态始终没有交齐。CEO 在电话里说：90 天内看不到转折，就不会有第二个 90 天。",
+    stake: "你只有两周建立信任、三周拿到关键事实；先见谁、先要什么，将决定信息缺口会打开还是关上。",
     options: [
       {
         label: "先约核心骨干喝咖啡",
@@ -192,8 +197,8 @@ export const STORY_NODES: StoryNode[] = [
     title: "午休情报",
     kind: "main",
     context:
-      "午饭时，行政主管无意间提到：上季度“突然多了一笔外包费”，但没人说得清用途。你查预算表，发现签名栏是前任和财务经理。",
-    stake: "这是一条可能影响你判断的线索，你如何处置？",
+      "午饭时，行政主管低声说了一句：“上季度的外包费，合同到现在都没有归档。”你查预算表，发现签名栏里是前任和财务经理，交付物却在系统里找不到。下午两点，财务经理刚好来约你开会。",
+    stake: "线索只够让你怀疑，还不够让你下结论；你选择先查、先问还是先存档，会直接影响第一轮信任。",
     options: [
       {
         label: "先查合同再下结论",
@@ -233,8 +238,8 @@ export const STORY_NODES: StoryNode[] = [
     title: "授权真空",
     kind: "main",
     context:
-      "公司组织架构调整，你的直属上级突然调走。你名义上负责项目，但预算审批、人员任命都悬而未决，CEO 说“先干起来，授权再谈”。",
-    stake: "没有正式授权，你的第一场变革要如何启动？",
+      "组织调整后，你的直属上级调去新业务，项目名义上由你负责，但预算、编制和供应商合同全部停在旧流程。CEO 的原话是：“先干起来，授权会跟上。”可每个人都清楚，没有授权就没有资源。",
+    stake: "在名分未定的窗口期，你是先拿一个小胜利换授权，还是先向上争名分，将决定团队愿不愿意跟着你。",
     options: [
       {
         label: "先立功再争权",
@@ -274,8 +279,8 @@ export const STORY_NODES: StoryNode[] = [
     title: "第一场会",
     kind: "main",
     context:
-      "你召集第一次全员会。有人当面说“新官上任三把火”，有人沉默，有人故意问尖锐问题。你需要用一场会建立势能。",
-    stake: "会议结果会影响团队愿不愿意跟你上第一艘船。",
+      "你上任后的第一场全员会安排在周五下午。走廊里已经有人在传“新领导要动组织了”，会上你刚讲完现状，就有老员工公开质疑：“这套打法我们三年前试过，死了。”会议室安静下来，所有人都在等你的反应。",
+    stake: "这场会的结果不是会议纪要，而是团队愿不愿意在下一周把真实信息放到你桌上。",
     options: [
       {
         label: "先讲事实，再邀请提问",
@@ -315,8 +320,8 @@ export const STORY_NODES: StoryNode[] = [
     title: "重组名单",
     kind: "main",
     context:
-      "你拿到团队盘点结果：有人能力强但忠诚度存疑，有人平庸但掌握核心客户，有人年轻但执行力出色。组织要求你提交一份 30 人精简到 22 人的名单。",
-    stake: "名单会决定团队未来一年的人才结构，也会决定谁恨你、谁谢你。",
+      "组织要求你提交一份 30 人精简到 22 人的名单。你拿到的盘点表里，有人能力突出但最近半年频繁迟到，有人掌握核心客户但交付平平，还有人年轻、执行强却没有资历。名单的截止时间是周五。",
+    stake: "裁员名单会被所有人解读为你的价值观；你按什么逻辑排位，就决定了未来一年谁会真正为你干活。",
     options: [
       {
         label: "按关键岗位重新匹配",
@@ -356,8 +361,8 @@ export const STORY_NODES: StoryNode[] = [
     title: "救火队长",
     kind: "main",
     context:
-      "项目连续三天出问题，团队习惯性把所有事都推给你。你发现一位年轻骨干能独立解决 80% 的问题，但他总在等你确认。",
-    stake: "你是继续做救火队长，还是真正“把工作还回去”？",
+      "项目连续三天出现生产事故，团队已经习惯把问题直接丢到你的桌上。你发现一位年轻骨干其实能独立解决八成问题，但他每一次都会停在“等领导确认”这一步。",
+    stake: "继续把关会让短期稳定，放手又可能出错；你要决定的是今天多花一小时教会他，还是以后每天替团队加班。",
     options: [
       {
         label: "授权边界并验收结果",
@@ -397,8 +402,8 @@ export const STORY_NODES: StoryNode[] = [
     title: "反对声浪",
     kind: "main",
     context:
-      "你推动新流程，运营负责人公开反对，理由是“会拖慢交付”。他资历深、人脉广，你的方案确实没有覆盖他的顾虑。",
-    stake: "压制反对会失去人心，让步会失去变革，你需要第三条路。",
+      "你推动的新流程在第三周遭遇公开反对。运营负责人直接在高管会上说：“这个方案会拖慢交付，出事谁负责？”他资历深、人脉广，而且他说的问题确实存在：你的方案没有覆盖一线交付的异常处理。",
+    stake: "压制反对会失去人心，让步会失去变革；你需要让反对者从裁判变成共同责任人。",
     options: [
       {
         label: "把他的顾虑变成方案前提",
@@ -438,8 +443,8 @@ export const STORY_NODES: StoryNode[] = [
     title: "跨部门僵局",
     kind: "main",
     context:
-      "产品、销售、研发三部门互相推责，一个客户项目停了 10 天。你没有直接管理销售和研发，但 CEO 让你牵头解决。",
-    stake: "跨部门协同的关键不是命令，而是让各方都觉得这件事与自己有关。",
+      "一个重点客户项目已经停滞十天。产品说需求没定，销售说客户在催，研发说环境没给。你既不直接管销售，也不直接管研发，但客户只认你。",
+    stake: "跨部门问题没有“你的团队”和“他们的团队”之分；你要让三方都觉得这件事与自己有关。",
     options: [
       {
         label: "建立联合作战室",
@@ -479,8 +484,8 @@ export const STORY_NODES: StoryNode[] = [
     title: "目标拆解",
     kind: "main",
     context:
-      "公司给你定了“收入翻倍”的目标，但没有给路径。团队听完只会点头，没人知道明天该做什么。",
-    stake: "目标必须被拆成可执行、可追踪、可问责的颗粒。",
+      "季度目标会上，公司给你签下“收入翻倍”的目标。回办公室的路上，销售总监说：“这数字是老板拍脑袋定的。”你问团队明天要做什么，没有人能回答。",
+    stake: "目标必须变成一张每天可以检查的作战图；拆错方向比没有目标更危险。",
     options: [
       {
         label: "用关键结果倒推行动",
@@ -520,8 +525,8 @@ export const STORY_NODES: StoryNode[] = [
     title: "季度冲刺",
     kind: "main",
     context:
-      "距离季度结束还有 15 天，目标缺口 30%。团队已经连续加班，士气下降，有人开始把“冲刺失败”当既定事实。",
-    stake: "你需要在真实缺口和团队承受力之间找到平衡。",
+      "距离季度结束还有 15 天，目标缺口 30%。团队已经连续加班两周，有人开始默认“这个季度完不成”，也有人悄悄准备跳槽。",
+    stake: "你既不能假装缺口不存在，也不能靠更长的工时把团队推向崩溃；取舍本身才是执行力。",
     options: [
       {
         label: "重排优先级，砍掉非关键项",
@@ -561,8 +566,8 @@ export const STORY_NODES: StoryNode[] = [
     title: "被架空",
     kind: "main",
     context:
-      "你发现 CFO 和销售副总绕过你直接决策，你的批示在系统中只是“参考”。你名义上还是负责人，实际已经被架空。",
-    stake: "你要夺回的不只是权力，而是组织对“谁该承担结果”的共识。",
+      "你发现最近三周，CFO 和销售副总绕过你直接推进了两个大项目，你的批示在系统里显示“参考”。更麻烦的是，团队已经默认“找他们比找你有用”。",
+    stake: "被架空不是一天发生的；你要用制度重新定义边界，而不是靠一次公开争吵。",
     options: [
       {
         label: "建立关键决策闭环",
@@ -602,8 +607,8 @@ export const STORY_NODES: StoryNode[] = [
     title: "越级汇报",
     kind: "main",
     context:
-      "你的一位核心下属开始频繁向 CEO 直接汇报，且引用你的决策时故意曲解。你没有直接证据，但团队都看见了。",
-    stake: "处理不当会显得你心胸狭窄，不处理会开坏先例。",
+      "一位核心下属连续两次绕过你向 CEO 汇报，并在汇报里把你的决策描述成“没有考虑成本”。你手上没有直接证据，但团队已经看在眼里。",
+    stake: "处理得不好会显得你小心眼，不处理又会开坏先例；你需要把个人冲突变成团队信息规则。",
     options: [
       {
         label: "建立团队信息公约",
@@ -643,8 +648,8 @@ export const STORY_NODES: StoryNode[] = [
     title: "接班人",
     kind: "main",
     context:
-      "公司准备让你晋升，要求你提名接班人。两个候选人：一个是能力强但和你不亲近的老将，一个是忠诚但能力有待提升的年轻人。",
-    stake: "接班人选择决定你的权力能否延续，也决定组织能否离开你运转。",
+      "你即将晋升，公司要求你提名接班人。候选人 A 是能力强但和你保持距离的老将，候选人 B 是忠诚但缺少大项目经验的年轻人。HR 提醒你：这是你对组织最后的考核。",
+    stake: "接班不是选“谁像我”，而是选“谁能守住组织下一阶段的能力”。",
     options: [
       {
         label: "用能力匹配岗位，并设计陪跑期",
@@ -684,8 +689,8 @@ export const STORY_NODES: StoryNode[] = [
     title: "制度化",
     kind: "main",
     context:
-      "你发现很多好经验只存在你脑子里：关键客户的判断、风险清单、决策复盘。你一旦出差，团队就回到老路。",
-    stake: "怎么把“你会做”变成“组织会做”？",
+      "你出差一周回来，发现团队重启了三个月前已经废弃的流程。关键客户的判断、风险清单和决策复盘都存在你脑子里，而不是在组织里。",
+    stake: "个人经验不变成制度，就等于没有经验；你要决定先固化哪个判断，让团队能在你缺席时复现。",
     options: [
       {
         label: "建立决策复盘知识库",
@@ -725,8 +730,8 @@ export const STORY_NODES: StoryNode[] = [
     title: "现金流危机",
     kind: "main",
     context:
-      "一个周末，财务告诉你：下月现金流只够发 60% 工资。原因是最大客户突然暂停付款，且没有任何书面解释。",
-    stake: "你必须在 48 小时内做出让公司活下去的关键决策。",
+      "周六晚上，财务发来消息：最大客户暂停付款，没有任何书面解释，下个月工资只够发六成。你只有 48 小时决定先做什么。",
+    stake: "恐慌会传染，行动也会；你要在隔离风险、寻找回款和争取融资之间排出优先级。",
     options: [
       {
         label: "先隔离风险，再找机会",
@@ -766,8 +771,8 @@ export const STORY_NODES: StoryNode[] = [
     title: "关键客户流失",
     kind: "main",
     context:
-      "你的明星销售突然带着核心客户跳槽到竞对。客户说“我们不是被挖走的，是被服务拖走的”。销售团队人心惶惶。",
-    stake: "你如何同时处理客户流失、团队信心和“下一个会是谁”的猜疑？",
+      "你的明星销售带着最大客户跳槽到竞对。客户临走前说：“我们不是被挖走的，是被服务拖走的。”销售团队开始互相猜疑，谁也说不准下一个是谁。",
+    stake: "流失已经发生，你要决定是追责、挽回还是复盘系统；不同选择会塑造团队接下来三周的行为。",
     options: [
       {
         label: "先复盘服务链，再谈问责",
@@ -807,8 +812,8 @@ export const STORY_NODES: StoryNode[] = [
     title: "功成身退",
     kind: "main",
     context:
-      "你的改革成功了：收入增长、团队稳定、CEO 想让你进入更高层。但你知道，继续上升意味着离开一手带起来的组织。",
-    stake: "个人成功和事业延续之间，你如何取舍？",
+      "改革成功：收入连续两个季度增长，团队稳定，CEO 邀请你进入更高层。但你知道，自己一手搭建的体系仍依赖几个关键判断，交接一旦仓促，成果可能退回原样。",
+    stake: "个人上升和事业延续之间没有绝对平衡；你选择怎么交接，就是给组织留下的最后管理课。",
     options: [
       {
         label: "完成交接再上升",
@@ -848,8 +853,8 @@ export const STORY_NODES: StoryNode[] = [
     title: "传承抉择",
     kind: "main",
     context:
-      "你离开前的最后一项决策：是否把一条高毛利但高风险的创新业务继续投入。项目已经烧钱 8 个月，团队说“再坚持半年就能赢”。",
-    stake: "你留给组织的不是结论，而是决策方法和承担责任的勇气。",
+      "离开前的最后一项决策摆在桌上：一条高毛利但高风险的创新业务已经烧钱八个月，团队说“再坚持半年就能赢”，财务建议立即止损。",
+    stake: "你留给组织的不是结论，而是判断的方法；这个决定会成为接班人学会的第一课。",
     options: [
       {
         label: "建立“继续/止损”检查点",
@@ -3876,6 +3881,8 @@ export const STORY_NODES: StoryNode[] = [
   }
 ];
 
+STORY_NODES.push(...EXTRA_MAIN_NODES);
+
 export const RANDOM_EVENT_IDS = [
   "r1", "r2", "r3", "r4", "r5", "r6", "r7", "r8", "r9", "r10",
   "r11", "r12", "r13", "r14", "r15", "r16", "r17", "r18", "r19", "r20",
@@ -4544,6 +4551,8 @@ export const NODE_INTEL: Record<string, string[]> = {
   ]
 };
 
+Object.assign(NODE_INTEL, EXTRA_MAIN_INTEL);
+
 export interface RoleNodeVariant {
   title?: string;
   context?: string;
@@ -4861,6 +4870,8 @@ export const ROLE_NODE_VARIANTS: Record<
     }
   }
 };
+
+Object.assign(ROLE_NODE_VARIANTS, EXTRA_MAIN_ROLE_VARIANTS);
 
 export function getNodeForRole(
   role: RoleId,

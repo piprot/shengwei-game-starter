@@ -197,7 +197,7 @@ const SETTINGS_MIGRATION_KEY = "adaptive-ascent-settings-v2";
 const GUIDE_KEY = "adaptive-ascent-guide-v1";
 const GUIDE_REWARD_KEY = "adaptive-ascent-guide-reward";
 const ACHIEVEMENT_FAVORITE_KEY = "adaptive-ascent-achievement-favorites";
-const APP_VERSION = "1.6.3";
+const APP_VERSION = "1.6.4";
 
 type View =
   | "menu"
@@ -2324,6 +2324,8 @@ export class AdaptiveGameApp {
     const showOnboarding = this.save.playCount === 0 && !showingOutcome;
     const civ = civilizationForChapter(node.chapterId);
     const narrative = chapterNarrative(node.chapterId);
+    const isExtraMainNode =
+      node.kind === "main" && /n[3-9]$/.test(node.id);
     const chapterFocusAbility = chapter.focus[0] ?? "insight";
     const lessonExtra =
       this.language === "en"
@@ -2428,7 +2430,7 @@ export class AdaptiveGameApp {
             <section class="scenario-panel">
               <div class="scenario-meta">
                 <span>${this.language === "en" ? `Chapter ${chapter.code} · ${chapter.title}` : `第 ${chapter.code} 章 · ${chapter.title}`}</span>
-                <span>${node.kind === "side" ? this.t("storyKindSide") : node.kind === "branch" ? this.t("storyKindBranch") : node.kind === "random" ? this.t("storyKindRandom") : this.t("storyKindMain")}</span>
+                <span>${node.kind === "side" ? this.t("storyKindSide") : node.kind === "branch" ? this.t("storyKindBranch") : node.kind === "random" ? this.t("storyKindRandom") : isExtraMainNode ? (en ? "Extended Main Scenario" : "主线扩展情境") : this.t("storyKindMain")}</span>
               </div>
               <h1>${node.title}</h1>
               ${
@@ -8336,6 +8338,7 @@ export class AdaptiveGameApp {
     const done = isNodeComplete(this.save, node.id);
     const chapter = getChapter(node.chapterId);
     const view = this.storyNodeDisplay(node);
+    const isExtraMain = node.kind === "main" && /n[3-9]$/.test(node.id);
     const kindLabel =
       node.kind === "side"
         ? this.t("storyKindSide")
@@ -8343,7 +8346,11 @@ export class AdaptiveGameApp {
           ? this.t("storyKindBranch")
           : node.kind === "random"
             ? this.t("storyKindRandom")
-            : this.t("storyKindMain");
+            : isExtraMain
+              ? this.language === "en"
+                ? "Extended Main Scenario"
+                : "主线扩展情境"
+              : this.t("storyKindMain");
     const statusLabel = done
       ? this.language === "en"
         ? "Complete"

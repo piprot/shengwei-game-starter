@@ -4,6 +4,10 @@ import type {
   ResourceKey,
   RoleId
 } from "./types";
+import {
+  EXTRA_MAIN_EN,
+  EXTRA_MAIN_THEORY_EN
+} from "./mainScenarios.ts";
 
 export const CHAPTER_EN: Record<
   number,
@@ -86,26 +90,26 @@ export const MAIN_NODE_EN: Record<
   c1n1: {
     title: "First Week",
     context:
-      "You just took over a stagnant division. The team is polite but keeps withholding key data. The CEO gives you 90 days.",
-    stake: "Decide whether to build relationships first or demand the data first."
+      "You take over a division that has declined for two quarters. Your predecessor leaves one sentence: “The team will cooperate.” Financial data, client lists, and project status never arrive. The CEO tells you there will be no second ninety days.",
+    stake: "You have two weeks to build trust and three to gather facts; who you see first decides whether the information gap opens or closes."
   },
   c1n2: {
     title: "Lunchroom Intel",
     context:
-      "During lunch, an administrator mentions an unexplained outsourcing expense. The signature line shows your predecessor and the finance manager.",
-    stake: "Decide how to investigate a clue before you have full evidence."
+      "At lunch, the administrative lead quietly mentions that last quarter's outsourcing contract was never archived. The budget table carries two signatures, but the deliverables cannot be found. At two o'clock, the finance manager asks for a meeting.",
+    stake: "The clue is enough to suspect but not enough to conclude; whether you investigate, ask, or file it first shapes the first round of trust."
   },
   c2n1: {
     title: "Authority Gap",
     context:
-      "Your direct manager was moved, leaving you with responsibility but no formal authority. The CEO says to start first and ask for power later.",
-    stake: "Decide whether to win first and claim authority, or ask for it explicitly."
+      "After the reorganization, your direct manager moves to a new business. The project is nominally yours, but budgets, headcount, and supplier contracts remain stuck in the old process. The CEO says: start first and authority will follow.",
+    stake: "In this undefined window, whether you win a small victory first or fight for the title decides whether the team follows you."
   },
   c2n2: {
     title: "First All-Hands",
     context:
-      "At your first all-hands meeting, people challenge you, others stay silent, and someone tests your authority.",
-    stake: "Decide how to turn this meeting into your first source of momentum."
+      "Your first all-hands is scheduled for Friday afternoon. Before you finish explaining the current state, a veteran challenges you: “We tried this three years ago and it died.” The room goes quiet and waits for your response.",
+    stake: "The real outcome is not the minutes; it is whether the team puts true information on your table next week."
   },
   c3n1: {
     title: "Restructuring List",
@@ -190,7 +194,8 @@ export const MAIN_NODE_EN: Record<
     context:
       "Before you leave, you must decide whether to keep funding a risky but promising innovation project that has burned cash for eight months.",
     stake: "Decide what to leave behind: a conclusion or a decision method."
-  }
+  },
+  ...EXTRA_MAIN_EN
 };
 
 export const MAIN_NODE_THEORY_EN: Record<string, string[]> = {
@@ -283,7 +288,8 @@ export const MAIN_NODE_THEORY_EN: Record<string, string[]> = {
     "On Contradiction: contradictions of different natures must be solved with methods of different natures.",
     "The Art of War: the skilled commander first makes himself invincible.",
     "Zhenguan Essentials: founding is hard, but preserving is harder; the key is sustained responsibility."
-  ]
+  ],
+  ...EXTRA_MAIN_THEORY_EN
 };
 
 export const ROLE_OPTION_EN: Record<

@@ -72,8 +72,8 @@ for (const chapter of CHAPTERS) {
     problems.push(`chapter ${chapter.id} missing English title/subtitle`);
   }
 }
-if (mainNodes.length !== 18) {
-  problems.push(`main nodes must be 18, got ${mainNodes.length}`);
+if (mainNodes.length !== 81) {
+  problems.push(`main nodes must be 81, got ${mainNodes.length}`);
 }
 if (sideNodes.length < 3) {
   problems.push(`side nodes must be at least 3, got ${sideNodes.length}`);
