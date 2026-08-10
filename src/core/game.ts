@@ -134,7 +134,10 @@ export const DEFAULT_SAVE: SaveState = {
   explorationCompleted: [],
   firstPickStreak: 0,
   duelSeenNodeIds: [],
-  completedFilmQuests: []
+  completedFilmQuests: [],
+  recentPickPositions: [],
+  organizationInvestments: 0,
+  npcLeads: []
 };
 
 export function createProfile(name: string, role: RoleId): PlayerProfile {
@@ -370,7 +373,15 @@ function normalizeSave(save: SaveState): SaveState {
       : [],
     completedFilmQuests: Array.isArray(save.completedFilmQuests)
       ? save.completedFilmQuests
-      : []
+      : [],
+    recentPickPositions: Array.isArray(save.recentPickPositions)
+      ? save.recentPickPositions.slice(-5)
+      : [],
+    organizationInvestments: Math.max(
+      0,
+      Number(save.organizationInvestments) || 0
+    ),
+    npcLeads: Array.isArray(save.npcLeads) ? save.npcLeads : []
   };
   syncDerivedAchievements(normalized);
   return normalized;

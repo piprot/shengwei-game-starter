@@ -197,7 +197,7 @@ const SETTINGS_MIGRATION_KEY = "adaptive-ascent-settings-v2";
 const GUIDE_KEY = "adaptive-ascent-guide-v1";
 const GUIDE_REWARD_KEY = "adaptive-ascent-guide-reward";
 const ACHIEVEMENT_FAVORITE_KEY = "adaptive-ascent-achievement-favorites";
-const APP_VERSION = "1.7.4";
+const APP_VERSION = "1.7.5";
 
 type View =
   | "menu"
@@ -1048,7 +1048,7 @@ export class AdaptiveGameApp {
       <section class="integrity-gate" role="dialog" aria-label="${en ? "Colleague verification" : "同事验证"}">
         <div class="integrity-gate-head">
           <span>${en ? "Decision Witness" : "决策见证人"}</span>
-          <h3>${en ? "You chose the first option twice in a row." : "你连续两次选择了第一个方案。"}</h3>
+          <h3>${en ? "Mechanical pick pattern detected." : "检测到机械选择模式。"}</h3>
           <p>${en ? "Before this move counts, name its real trade-off." : "在让这一手生效前，先说出它真正的取舍。"}</p>
         </div>
         <div class="integrity-gate-options">
@@ -2010,11 +2010,16 @@ export class AdaptiveGameApp {
 
   private renderMap(): void {
     const summary = profileSummary(this.save);
+    const en = this.language === "en";
     const chapter = getChapter(this.selectedChapter);
     const mainNodes = chapter.nodeIds.map(getNode);
     const mainDoneCount = mainNodes.filter((node) =>
       isNodeComplete(this.save, node.id)
     ).length;
+    const coreDoneCount = mainNodes
+      .slice(0, 2)
+      .filter((node) => isNodeComplete(this.save, node.id)).length;
+    const extraDoneCount = Math.max(0, mainDoneCount - coreDoneCount);
     const chapterDone = isChapterComplete(this.save, chapter.id);
     const chapterPassed = isChapterPassed(this.save, chapter.id);
     const availableRandom = nextRandomEvent({
@@ -2033,6 +2038,28 @@ export class AdaptiveGameApp {
       </header>
       <main class="map-shell ${this.mapDetailOpen ? "map-detail-open" : ""}" style="${this.chapterArtStyle(chapter.id)}" aria-label="${this.language === "en" ? "Campaign map" : "主线地图"}">
         ${this.expeditionHeroMarkup(chapter.id)}
+        ${
+          this.save.playCount === 0 && !this.guideSteps().includes("map-intro")
+            ? `
+              <section class="map-guide-overlay" role="dialog" aria-label="${en ? "First map guide" : "首次地图引导"}">
+                <div>
+                  <p class="eyebrow">${en ? "Three things to know" : "进入地图前，先记住三件事"}</p>
+                  <ol>
+                    <li><strong>${en ? "Explore first" : "先探秘"}</strong>${en ? "Complete one survey action to unlock choices." : "先完成一个探秘动作，才能解锁选择。"}</li>
+                    <li><strong>${en ? "Core + Extended" : "核心 + 扩展"}</strong>${en ? "Core 2/2 unlocks the next chapter; 7 extended scenarios add depth and rewards." : "核心 2/2 推进章节，7 个扩展情境提供深度和奖励。"}</li>
+                    <li><strong>${en ? "Guardian verification" : "守护验证"}</strong>${en ? "Repeatedly picking the first option triggers a real trade-off check." : "反复选择第一个方案会触发真实取舍验证。"}</li>
+                  </ol>
+                  <button class="primary" data-action="dismiss-map-guide">${en ? "Start Exploring" : "开始探秘"}</button>
+                </div>
+              </section>
+            `
+            : ""
+        }
+        ${
+          this.riskCrisisActive()
+            ? `<div class="trust-crisis-banner" role="alert">${this.language === "en" ? "Trust crisis: recent risk-heavy choices made the team withhold information. Play steady scenarios to rebuild trust." : "信任危机：近期风险选择让团队开始保留信息。先完成稳健情境重建信任。"}</div>`
+            : ""
+        }
         <section class="film-quest-banner" style="--dot:#b497f0">
           <img src="./art/chapter-${chapter.id}.jpg" alt="" loading="lazy" />
           <div>
@@ -2059,7 +2086,7 @@ export class AdaptiveGameApp {
             <p class="eyebrow">${this.t("mainQuest")}</p>
             <h1>${this.t("campaignTitle")}</h1>
             <p class="muted">${this.t("mapHint")}</p>
-            <p class="muted chapter-count-hint">${this.language === "en" ? "A chapter counts as cleared only after both main scenarios are done." : "通关计数：完成本章全部主线情境（每章 2 个）后才会 +1。"}</p>
+            <p class="muted chapter-count-hint">${this.language === "en" ? "Core 2/2 unlocks the next chapter; 7 extended scenarios add optional depth and rewards." : "完成每章前 2 个核心主线即可推进章节；另外 7 个主线扩展情境提供额外深度与奖励。"}</p>
           </div>
           <div class="resource-strip">
             ${this.resourceChips(this.save.profile)}
@@ -2074,7 +2101,7 @@ export class AdaptiveGameApp {
               <span class="chapter-code">${this.language === "en" ? `Chapter ${chapter.code}` : `第 ${chapter.code} 章`}</span>
               <h2>${this.chapterDisplay(chapter).title}</h2>
               <p>${this.chapterDisplay(chapter).subtitle}</p>
-              <p class="chapter-main-progress">${this.language === "en" ? `Main scenarios ${mainDoneCount} / ${mainNodes.length}` : `主线情境 ${mainDoneCount} / ${mainNodes.length}`}</p>
+              <p class="chapter-main-progress">${this.language === "en" ? `Core ${coreDoneCount} / 2 · Extended ${extraDoneCount} / 7` : `核心 ${coreDoneCount} / 2 · 扩展 ${extraDoneCount} / 7`}</p>
             </div>
             <div class="expedition-chapter-card" style="--civ:${civilizationForChapter(chapter.id).color}">
               <span>${this.language === "en" ? `Expedition · ${civilizationForChapter(chapter.id).nameEn}` : `探秘 · ${civilizationForChapter(chapter.id).nameZh}`}</span>
@@ -2144,6 +2171,12 @@ export class AdaptiveGameApp {
                 }).join("")}
               </div>
               <p class="muted">${this.language === "en" ? "Each completed chapter reveals one piece of the treasure map." : "每完成一章，藏宝图就会显出一块残片。"}</p>
+            </div>
+            <div class="mini-panel investment-panel">
+              <h3>${this.language === "en" ? "Reinvest in the Organization" : "组织再投资"}</h3>
+              <p class="muted">${this.language === "en" ? "Spend 25 organizational resources to gain trust, influence, and mastery; every third investment upgrades production capacity." : "消耗 25 点组织资源，换取信任、影响力和修炼点；每 3 次触发一次产能升级。"}</p>
+              <p class="muted">${this.language === "en" ? `Invested ${this.save.organizationInvestments ?? 0} times` : `已投资 ${this.save.organizationInvestments ?? 0} 次`}</p>
+              <button data-action="organizational-invest" ${this.save.profile.resources.capital < 25 ? "disabled" : ""}>${this.language === "en" ? "Invest 25" : "投资 25"}</button>
             </div>
             <div class="mini-panel role-objective">
               <h3>${this.t("roleObjective")}</h3>
@@ -2416,6 +2449,11 @@ export class AdaptiveGameApp {
       </header>
       <main class="story-shell" style="${this.chapterArtStyle(chapter.id)}" aria-label="${this.language === "en" ? "Story scenario" : "剧情情境"}">
         ${this.routeBannerMarkup(node.chapterId)}
+        ${
+          this.riskCrisisActive()
+            ? `<div class="trust-crisis-banner" role="alert">${this.language === "en" ? "Trust is shaking: recent risk-heavy choices made the team withhold information. Choose steady moves to rebuild trust." : "信任正在动摇：你近期的风险选择让团队开始保留信息。选择稳健动作可以重建信任。"}</div>`
+            : ""
+        }
         <div class="scenario-shell" aria-label="${en ? "Scenario shell" : "情境外壳"}">
           <span>${en ? "Scenario shell" : "情境外壳"}</span>
           <strong>${en ? scenarioShell.en : scenarioShell.zh}</strong>
@@ -2648,6 +2686,52 @@ export class AdaptiveGameApp {
     }
   }
 
+  private organizationalInvest(): void {
+    if (this.save.profile.resources.capital < 25) {
+      this.showToast(
+        this.language === "en"
+          ? "Need 25 organizational resources."
+          : "需要 25 点组织资源。"
+      );
+      return;
+    }
+    this.save.profile.resources.capital -= 25;
+    this.save.profile.resources.trust = clamp(
+      this.save.profile.resources.trust + 8,
+      0,
+      100
+    );
+    this.save.profile.resources.influence = clamp(
+      this.save.profile.resources.influence + 6,
+      0,
+      100
+    );
+    this.save.masteryPoints += 1;
+    const investments = (this.save.organizationInvestments ?? 0) + 1;
+    this.save.organizationInvestments = investments;
+    let message =
+      this.language === "en"
+        ? "Reinvested: +8 trust, +6 influence, +1 mastery."
+        : "再投资完成：信任 +8、影响力 +6、修炼点 +1。";
+    if (investments % 3 === 0) {
+      for (const key of Object.keys(this.save.profile.resources) as ResourceKey[]) {
+        this.save.profile.resources[key] = clamp(
+          this.save.profile.resources[key] + 10,
+          0,
+          100
+        );
+      }
+      message =
+        this.language === "en"
+          ? "Capacity upgrade: all resources +10."
+          : "产能升级：全部资源 +10。";
+    }
+    this.persistSave();
+    this.audio.playCoins();
+    this.showToast(message);
+    this.renderMap();
+  }
+
   private openFilmQuest(): void {
     const next =
       nextFilmQuest(this.save.completedFilmQuests ?? []) ?? FILM_QUESTS[0];
@@ -2688,13 +2772,17 @@ export class AdaptiveGameApp {
     const realIndex = this.filmQuestOrder[optionIndex] ?? optionIndex;
     const option = quest.options[realIndex]?.zh;
     if (!option) return;
+    this.recordPickPosition(optionIndex);
     const firstDisplayed = this.filmQuestOrder[0];
     if (realIndex === firstDisplayed) {
       this.save.firstPickStreak = (this.save.firstPickStreak ?? 0) + 1;
     } else {
       this.save.firstPickStreak = 0;
     }
-    if ((this.save.firstPickStreak ?? 0) >= 2) {
+    if (
+      (this.save.firstPickStreak ?? 0) >= 2 ||
+      this.mechanicalPatternDetected()
+    ) {
       this.persistSave();
       this.audio.risk();
       this.showToast(
@@ -2759,6 +2847,17 @@ export class AdaptiveGameApp {
     const regionLabel = filmQuestRegionLabel(quest, en);
     const abilityLabel = filmQuestAbilityLabel(quest, en);
     const title = en ? quest.titleEn : quest.titleZh;
+    const posterChapter = (quest.id.charCodeAt(quest.id.length - 1) % 9) + 1;
+    const rawQuote = en ? quest.quoteEn : quest.quoteZh;
+    const rawMirror = en ? quest.mirrorEn : quest.mirrorZh;
+    const quoteLabel =
+      rawQuote === rawMirror
+        ? en
+          ? "Scene Insight"
+          : "片场启示"
+        : en
+          ? "Golden Line"
+          : "金句";
 
     if (picked !== undefined) {
       const realIndex = this.filmQuestOrder[picked] ?? picked;
@@ -2788,7 +2887,7 @@ export class AdaptiveGameApp {
               <p>${escapeHtml(en ? quest.mirrorEn : quest.mirrorZh)}</p>
             </div>
             <div class="film-quote">
-              <span>${en ? "Golden Line" : "金句"}</span>
+              <span>${quoteLabel}</span>
               <blockquote>${escapeHtml((en ? quest.quoteEn : quest.quoteZh) ?? (en ? quest.mirrorEn : quest.mirrorZh))}</blockquote>
             </div>
             <div class="film-feedback">
@@ -2822,6 +2921,7 @@ export class AdaptiveGameApp {
             <span>${escapeHtml(regionLabel)}</span>
             <span>${escapeHtml(abilityLabel)}</span>
           </div>
+          <div class="film-poster" style="background-image:url('./art/chapter-${posterChapter}.jpg')"></div>
         </section>
         <section class="film-scene">
           <span>${en ? "Classic Slice" : "经典片场切片"}</span>
@@ -4735,6 +4835,19 @@ export class AdaptiveGameApp {
   private renderEnding(): void {
     const en = this.language === "en";
     const decisions = this.save.decisionHistory.slice(-10).reverse();
+    const topAbility = ABILITY_ORDER.slice().sort(
+      (a, b) =>
+        abilityLevel(this.save.profile.abilities[b]) -
+          abilityLevel(this.save.profile.abilities[a]) ||
+        (this.save.profile.abilities[b] ?? 0) -
+          (this.save.profile.abilities[a] ?? 0)
+    )[0];
+    const relationsCount = NPCS.filter(
+      (npc) => npcRelation(this.save, npc).status !== "尚未接触"
+    ).length;
+    const routeSummary = Object.entries(this.save.routePath)
+      .map(([chapter, route]) => `${chapter}:${route}`)
+      .join(" · ");
     const npcRows = NPCS.filter(
       (npc) => npcRelation(this.save, npc).status !== "尚未接触"
     )
@@ -4755,8 +4868,31 @@ export class AdaptiveGameApp {
           <h1>${this.save.profile.name} · ${this.roleDisplay(this.save.profile.role).name}</h1>
           <button data-action="ending-share">${this.t("endingShare")}</button>
           <button data-action="ending-card">${this.t("endingCard")}</button>
+          <button data-action="open-duel">${en ? "Play Again in a Duel" : "再来一轮 1v1"}</button>
           <textarea id="ending-share-target" readonly hidden></textarea>
           <canvas id="ending-card-canvas" width="900" height="520" hidden></canvas>
+        </section>
+        <section class="ending-summary">
+          <div>
+            <span>${en ? "Signature Ability" : "招牌能力"}</span>
+            <strong>${topAbility ? this.abilityDisplay(topAbility).name : "-"}</strong>
+          </div>
+          <div>
+            <span>${en ? "Relationships" : "关系网络"}</span>
+            <strong>${relationsCount} / ${NPCS.length}</strong>
+          </div>
+          <div>
+            <span>${en ? "Decisions" : "决策总数"}</span>
+            <strong>${this.save.decisionHistory.length}</strong>
+          </div>
+          <div>
+            <span>${en ? "Best Score" : "最高分"}</span>
+            <strong>${this.save.bestScore ?? 0}</strong>
+          </div>
+          <div class="ending-route-summary">
+            <span>${en ? "Route Choices" : "路线选择"}</span>
+            <strong>${routeSummary || (en ? "Not recorded" : "暂无记录")}</strong>
+          </div>
         </section>
         <section class="ending-choice-panel">
           <h2>${this.t("endingChoiceTitle")}</h2>
@@ -6703,6 +6839,14 @@ export class AdaptiveGameApp {
       case "open-film-quest":
         this.openFilmQuest();
         break;
+      case "organizational-invest":
+        this.organizationalInvest();
+        break;
+      case "dismiss-map-guide":
+        this.markGuideStep("map-intro");
+        this.audio.ui();
+        this.renderMap();
+        break;
       case "film-quest-back":
         this.filmQuestBackToMap();
         break;
@@ -7108,6 +7252,7 @@ export class AdaptiveGameApp {
     const cost = target.dataset.cost;
     if (cost === "correct") {
       this.save.firstPickStreak = 0;
+      this.save.recentPickPositions = [];
       this.persistSave();
       const pending = this.pendingIntegrityOption;
       this.integrityGateNodeId = undefined;
@@ -7126,6 +7271,40 @@ export class AdaptiveGameApp {
       );
       this.renderStory();
     }
+  }
+
+  private recordPickPosition(position: number): void {
+    const positions =
+      position > 1
+        ? [position]
+        : [...(this.save.recentPickPositions ?? []), position].slice(-5);
+    this.save.recentPickPositions = positions;
+  }
+
+  private mechanicalPatternDetected(): boolean {
+    const positions = this.save.recentPickPositions ?? [];
+    if (positions.length < 5) return false;
+    return positions.every((position) => position <= 1);
+  }
+
+  private riskCrisisActive(): boolean {
+    const recent = this.save.decisionHistory.slice(-5);
+    const riskCount = recent.filter(
+      (decision) => decision.quality === "risk"
+    ).length;
+    return riskCount >= 3 && this.save.profile.resources.trust < 40;
+  }
+
+  private randomEventNpcId(nodeId: string): string | undefined {
+    const map: Record<string, string> = {
+      r2: "npc-finance",
+      r6: "npc-young",
+      r11: "npc-young",
+      r23: "npc-finance",
+      r29: "npc-veteran",
+      r36: "npc-finance"
+    };
+    return map[nodeId];
   }
 
   /** 结算某个选项（手动点击或回合超时自动采用最稳妥选项共用此路径）。 */
@@ -7173,15 +7352,30 @@ export class AdaptiveGameApp {
       return;
     }
     const optionOrder = this.storyOptionOrder(rawNode);
+    const displayIndex = optionOrder.indexOf(optionIndex);
+    this.recordPickPosition(displayIndex);
     if (optionIndex === optionOrder[0]) {
       this.save.firstPickStreak = (this.save.firstPickStreak ?? 0) + 1;
     } else {
       this.save.firstPickStreak = 0;
     }
-    if ((this.save.firstPickStreak ?? 0) >= 2) {
+    if ((this.save.firstPickStreak ?? 0) >= 2 || this.mechanicalPatternDetected()) {
       this.integrityGateNodeId = this.storyNodeId;
       this.pendingIntegrityOption = optionIndex;
       this.persistSave();
+      this.renderStory();
+      return;
+    }
+    if (
+      this.riskCrisisActive() &&
+      rawNode.options[optionIndex].quality === "risk"
+    ) {
+      this.audio.risk();
+      this.showToast(
+        this.language === "en"
+          ? "Trust crisis: high-risk moves are blocked until you restore trust."
+          : "信任危机：在恢复信任之前，本轮不能选择高风险动作。"
+      );
       this.renderStory();
       return;
     }
@@ -7190,6 +7384,15 @@ export class AdaptiveGameApp {
       isAchievementUnlocked(this.save, achievement.id)
     ).map((achievement) => achievement.id);
     const outcome = applyStoryChoice(this.save, this.storyNodeId, optionIndex);
+    const leadNpc = this.randomEventNpcId(this.storyNodeId);
+    if (leadNpc && !(this.save.npcLeads ?? []).includes(leadNpc)) {
+      this.save.npcLeads = [...(this.save.npcLeads ?? []), leadNpc];
+      this.showToast(
+        this.language === "en"
+          ? "New character lead discovered."
+          : "发现新的人物线索。"
+      );
+    }
     trackEvent("story_choice", {
       nodeId: this.storyNodeId,
       quality: outcome.option.quality,

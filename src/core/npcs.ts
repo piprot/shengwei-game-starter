@@ -101,6 +101,12 @@ export interface NpcRelation {
 }
 
 export function npcRelation(save: SaveState, npc: NpcDef): NpcRelation {
+  if (save.npcLeads?.includes(npc.id)) {
+    return {
+      status: "存在线索",
+      note: "你在随机事件中发现了与这个人相关的线索，关系还有待继续深入。"
+    };
+  }
   if (
     npc.nodeId.startsWith("s") &&
     save.completedSideQuests.includes(npc.nodeId)

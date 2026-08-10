@@ -178,6 +178,12 @@ export interface SaveState {
   duelSeenNodeIds?: string[];
   /** 经典影视副线已完成的作品关卡。 */
   completedFilmQuests?: string[];
+  /** 最近几次选择在界面上的显示位置，用于识别 ABAB 机械通关。 */
+  recentPickPositions?: number[];
+  /** 组织再投资次数：消耗组织资源换取长期产能。 */
+  organizationInvestments?: number;
+  /** 随机事件解锁的人物线索。 */
+  npcLeads?: string[];
 }
 
 export interface ChoiceOutcome {

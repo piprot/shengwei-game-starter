@@ -1074,6 +1074,120 @@ html[data-vu="off"] * {
   color: var(--vu-coral-bright);
 }
 
+.trust-crisis-banner {
+  margin: 10px 0;
+  padding: 12px 14px;
+  border: 1px solid var(--vu-coral-line, rgba(233, 130, 108, 0.5));
+  border-radius: var(--vu-radius);
+  background: color-mix(in srgb, var(--vu-coral) 12%, transparent);
+  color: var(--vu-coral-bright);
+  font-size: 14px;
+  line-height: 1.55;
+}
+
+.investment-panel button {
+  width: 100%;
+  margin-top: 6px;
+  border: 1px solid var(--vu-teal-line);
+  border-radius: var(--vu-radius);
+  padding: 8px 10px;
+  background: transparent;
+  color: var(--vu-teal-bright);
+  cursor: pointer;
+}
+.map-guide-overlay {
+  position: relative;
+  z-index: 5;
+  margin: 12px 0;
+  padding: 18px;
+  border: 1px solid var(--vu-gold-line);
+  border-radius: var(--vu-radius);
+  background:
+    radial-gradient(circle at 90% 10%, rgba(242, 193, 78, 0.14), transparent 45%),
+    var(--vu-glass-strong);
+  box-shadow: var(--vu-shadow);
+}
+.map-guide-overlay ol {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  margin: 12px 0;
+  padding: 0;
+  list-style: none;
+}
+.map-guide-overlay li {
+  padding: 12px;
+  border: 1px solid var(--vu-line);
+  border-radius: var(--vu-radius);
+  background: rgba(7, 12, 16, 0.4);
+  color: var(--vu-muted);
+  font-size: 13px;
+  line-height: 1.55;
+}
+.map-guide-overlay li strong {
+  display: block;
+  margin-bottom: 4px;
+  color: var(--vu-gold-bright);
+}
+.ending-summary {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+  margin: 16px 0;
+}
+.ending-summary > div {
+  padding: 12px;
+  border: 1px solid var(--vu-line);
+  border-radius: var(--vu-radius);
+  background: rgba(7, 12, 16, 0.42);
+}
+.ending-summary span {
+  display: block;
+  color: var(--vu-muted-soft);
+  font-size: 12px;
+}
+.ending-summary strong {
+  display: block;
+  margin-top: 4px;
+  color: var(--vu-ink);
+  font-size: 18px;
+}
+.ending-summary .ending-route-summary {
+  grid-column: span 2;
+}
+.ending-summary .ending-route-summary strong {
+  font-size: 13px;
+  line-height: 1.5;
+}
+.film-poster {
+  width: 100%;
+  height: 150px;
+  margin-top: 12px;
+  border-radius: 6px;
+  background-size: cover;
+  background-position: center;
+  filter: saturate(0.85) brightness(0.9);
+}
+
+@media (max-width: 900px) {
+  .map-guide-overlay ol,
+  .ending-summary {
+    grid-template-columns: 1fr 1fr;
+  }
+  .ending-summary .ending-route-summary {
+    grid-column: span 2;
+  }
+}
+@media (max-width: 560px) {
+  .map-guide-overlay ol,
+  .ending-summary {
+    grid-template-columns: 1fr;
+  }
+  .ending-summary .ending-route-summary {
+    grid-column: span 1;
+  }
+}
+
 @media (max-width: 900px) {
   .expedition-hero {
     grid-template-columns: 1fr;
