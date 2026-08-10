@@ -235,3 +235,7 @@ GitHub Actions/Pages recovered. CI run `31133005719` for `19edd53` completed suc
 - `npm run test:unit` PASS（含 scenarioSeed/音量/动态时长/成就落档断言）。
 - `npm test` PASS（含新增本地双人 3 回合流程）。
 - `npm run audit` / `npm run test:features` / `npm run test:accessibility` / `npm run i18n-audit` / `npm run balance-sim` PASS。
+
+#### 1.5.16 平衡调优
+- 章节通过线 80 → 70；balance-sim 整局通关率 19.4% → 34.8%，中后期通过率回升到 88-89%。
+- 星级阈值保持 200/150 不变，仅放宽一星门槛。

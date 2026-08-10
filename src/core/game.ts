@@ -896,7 +896,7 @@ export function resourceStrainFor(
 }
 
 /** 瀵艰嚧涓嬩竴绔犺В閿佺殑鏈€浣庡垎鏁帮紙涓€鏄燂級銆?*/
-export const CHAPTER_PASS_STARS = 80;
+export const CHAPTER_PASS_STARS = 70;
 
 export function chapterStarCount(stars: number): number {
   if (stars >= 200) return 3;
