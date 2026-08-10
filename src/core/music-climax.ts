@@ -35,8 +35,8 @@ function midiToFreq(midi: number): number {
 const N = {
   C2: midiToFreq(36), D2: midiToFreq(38), Eb2: midiToFreq(39), F2: midiToFreq(41),
   G2: midiToFreq(43), Ab2: midiToFreq(44), Bb2: midiToFreq(46),
-  C3: midiToFreq(48), D3: midiToFreq(50), Eb3: midiToFreq(51), F3: midiToFreq(53),
-  G3: midiToFreq(55), Ab3: midiToFreq(56), A3: midiToFreq(57), Bb3: midiToFreq(58),
+  C3: midiToFreq(48), D3: midiToFreq(50), Eb3: midiToFreq(51), E3: midiToFreq(52), F3: midiToFreq(53),
+  G3: midiToFreq(55), Ab3: midiToFreq(56), A3: midiToFreq(57), Bb3: midiToFreq(58), B3: midiToFreq(59),
   C4: midiToFreq(60), D4: midiToFreq(62), Eb4: midiToFreq(63), E4: midiToFreq(64),
   F4: midiToFreq(65), G4: midiToFreq(67), Ab4: midiToFreq(68), A4: midiToFreq(69),
   Bb4: midiToFreq(70), C5: midiToFreq(72), D5: midiToFreq(74), Eb5: midiToFreq(75),
@@ -114,23 +114,23 @@ function writeString(view: DataView, offset: number, str: string): void {
 interface NoteDef {
   freq: number;
   time: number;
-  duration: number;
-  velocity: number;
+  dur: number;
+  vel: number;
   pan?: number;
 }
 
 interface ChordDef {
   freqs: number[];
   time: number;
-  duration: number;
-  velocity: number;
+  dur: number;
+  vel: number;
   pan?: number;
 }
 
 /** 古琴拨弦音 */
 function playGuqin(
   ctx: OfflineAudioContext, dest: AudioNode,
-  freq: number, time: number, dur: number, vel: number, pan = 0,
+  freq: number, time: number, dur: number, vel: number, pan = 0, warmth = 0,
 ): void {
   const osc1 = ctx.createOscillator();
   osc1.type = 'sine';
