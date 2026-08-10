@@ -18,7 +18,6 @@ import type {
   StoryNode,
 } from "./types.ts";
 import { ABILITY_ORDER } from "./abilities.ts";
-import { getNode } from "./story.ts";
 
 // ============================================================
 // 数据结构
@@ -470,11 +469,6 @@ export class CoachWorkshopEngine {
   }
 
   private guessNodeTitle(nodeId: string): string {
-    try {
-      return getNode(nodeId).title;
-    } catch {
-      // fall through to the compact fallback map
-    }
     // 从 nodeId 推断标题（实际使用时从 story.ts 查询）
     const titleMap: Record<string, string> = {
       "ch1_s1": "初到任的第一把火",
@@ -487,7 +481,7 @@ export class CoachWorkshopEngine {
   }
 
   private guessChapterId(nodeId: string): number {
-    const match = nodeId.match(/ch(\d+)/) ?? nodeId.match(/c(\d+)n/);
+    const match = nodeId.match(/ch(\d+)/);
     return match ? parseInt(match[1]) : 0;
   }
 }
