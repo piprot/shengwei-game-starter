@@ -78,6 +78,37 @@
         color: #9fb3c8;
         line-height: 1.8;
       }
+      #app-static .static-ctas {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        margin: 0 0 24px;
+      }
+      #app-static .static-cta {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 42px;
+        padding: 9px 18px;
+        border: 1px solid rgba(242, 193, 78, 0.5);
+        border-radius: 8px;
+        background: rgba(242, 193, 78, 0.1);
+        color: #ffd877;
+        font-weight: 800;
+        text-decoration: none;
+        transition: background 0.2s ease, color 0.2s ease;
+      }
+      #app-static .static-cta.primary {
+        background: #f2c14e;
+        border-color: #f2c14e;
+        color: #12181b;
+      }
+      #app-static .static-cta:hover {
+        background: rgba(242, 193, 78, 0.22);
+      }
+      #app-static .static-cta.primary:hover {
+        background: #ffd877;
+      }
       #app-static .static-grid {
         display: grid;
         grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
@@ -158,13 +189,17 @@
       <div id="app-static">
         <header>
           <span class="static-brand">升维</span>
-          <span class="static-tag">可玩版本 v1.5.7 · 浏览器加载后自动进入完整菜单</span>
+          <span class="static-tag">可玩版本 v1.6.2 · 浏览器加载后自动进入完整菜单</span>
         </header>
         <h1>在真实职场情境中升维领导力</h1>
         <p class="static-lead">
           基于《权经》九章架构、Heifetz 自适应领导力与情境高尔夫方法，通过主线剧情、支线任务和 1v1
           对决，训练识人、用人、驭人、谋权、掌权、固权与自我进化能力。启用 JavaScript 后点击「立即试玩第一章」可直接进入首章，或创建档案开始完整流程。
         </p>
+        <div class="static-ctas">
+          <a class="static-cta primary" data-action="start-trial-chapter" href="#play">立即试玩第一章</a>
+          <a class="static-cta" data-action="open-profile" href="#profile">创建档案开始完整流程</a>
+        </div>
         <div class="static-grid">
           <div class="static-card">
             <strong>01 主线征途</strong>

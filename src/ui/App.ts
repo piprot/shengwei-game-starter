@@ -196,7 +196,7 @@ const SETTINGS_MIGRATION_KEY = "adaptive-ascent-settings-v2";
 const GUIDE_KEY = "adaptive-ascent-guide-v1";
 const GUIDE_REWARD_KEY = "adaptive-ascent-guide-reward";
 const ACHIEVEMENT_FAVORITE_KEY = "adaptive-ascent-achievement-favorites";
-const APP_VERSION = "1.6.1";
+const APP_VERSION = "1.6.2";
 
 type View =
   | "menu"
@@ -719,7 +719,7 @@ export class AdaptiveGameApp {
 
   private storyNodeDisplay(node: StoryNode): StoryNode {
     if (node.id.startsWith("duel-")) {
-      return duelBankEn(node);
+      return this.language === "en" ? duelBankEn(node) : node;
     }
     if (node.kind === "random" && this.language === "zh") {
       const variant = randomEventVariantContext(
