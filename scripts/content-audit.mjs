@@ -129,6 +129,37 @@ for (const [key, ids] of optionGroups) {
   }
 }
 
+const titleGroups = new Map();
+for (const node of STORY_NODES) {
+  const key = node.title.trim().toLowerCase();
+  if (!titleGroups.has(key)) titleGroups.set(key, []);
+  titleGroups.get(key).push(node.id);
+}
+for (const [title, ids] of titleGroups) {
+  if (ids.length > 1) {
+    problems.push(`duplicate title "${title}" across ${ids.join(", ")}`);
+  }
+}
+
+const forbiddenTerms = ["法老", "守墓", "魔法", "怪兽", "神龙", "仙女", "咒语"];
+for (const node of STORY_NODES) {
+  const text = `${node.title} ${node.context} ${node.stake} ${node.options
+    .map((option) => `${option.label} ${option.summary} ${option.feedback}`)
+    .join(" ")}`;
+  for (const term of forbiddenTerms) {
+    if (text.includes(term)) {
+      problems.push(`${node.id} contains out-of-scope term "${term}"`);
+    }
+  }
+  const dashes = (text.match(/——/g) ?? []).length;
+  if (dashes > 3) {
+    problems.push(`${node.id} overuses long dashes (${dashes})`);
+  }
+  if (/(TODO|待定|占位|PLACEHOLDER|\?\?\?)/i.test(text)) {
+    problems.push(`${node.id} contains placeholder text`);
+  }
+}
+
 for (const node of mainNodes) {
   const variants = ROLE_NODE_VARIANTS[node.id];
   if (!variants) {
