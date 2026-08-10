@@ -731,10 +731,10 @@ export const SIDE_NODE_EN: Record<
     ]
   },
   s7: {
-    title: "Skipping the Chain",
+    title: "Challenge in the Leadership Chat",
     context:
-      "A core subordinate starts reporting directly to the CEO and misreads your decisions in the leadership meeting. The team is watching how you handle it.",
-    stake: "Do not settle this with a private warning or public humiliation; make the rules credible again.",
+      "A core subordinate publicly questions your data basis in the leadership chat and directly mentions the CEO. Your review shows that about 30% of the challenge is valid, but the error has been amplified into a decision failure.",
+    stake: "Pressing down looks defensive, staying silent makes the challenge the default conclusion; put facts and rules back on the table.",
     intel: [
       "The subordinate raised the same risk twice in weekly reports before going over your head.",
       "The CEO cares about whether information is transparent, not who reports first."
@@ -768,10 +768,10 @@ export const SIDE_NODE_EN: Record<
     ]
   },
   s8: {
-    title: "Circumventing Decisions",
+    title: "Act First, Ask Later",
     context:
-      "A senior department head starts pushing a business partnership around you. Investors and executives have seen the proposal, and you are left accountable for the result.",
-    stake: "Hold the boundary between institutions and trust without forcing everyone to pick a side.",
+      "A department head has already signed a cooperation intent with a supplier on behalf of the company. The client and finance received emails; you learned about it last. The contract is unsigned, but the other side is already moving forward.",
+    stake: "You must address the unauthorized action without denying an opportunity that may genuinely benefit the organization.",
     intel: [
       "Two of this leader's past proposals were genuinely blocked by process.",
       "The investor's attitude depends on whether someone is willing to own the risk."
@@ -807,10 +807,10 @@ export const SIDE_NODE_EN: Record<
     ]
   },
   s9: {
-    title: "Handoff Gap",
+    title: "Handoff Day",
     context:
-      "You are about to be promoted, but critical business depends on your personal network. When you take a day off, the project stalls because nobody knows who to ask.",
-    stake: "Turn personal experience into organizational capability instead of leaving handoff to luck.",
+      "In your final week before promotion, system permissions have been partially transferred. Client visit records, supplier contacts, and historical decision reasons are scattered across three places, and your successor cannot even decide which email to answer first.",
+    stake: "Handoff is not handing over accounts; it is enabling your successor to reproduce the high-frequency judgments you make every week.",
     intel: [
       "The last three key decisions only started after your personal confirmation.",
       "Your successor finished basic process training but lacks real-case practice."
