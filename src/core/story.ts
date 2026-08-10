@@ -5060,10 +5060,10 @@ export function duelNodes(
   seenIds: string[] = []
 ): StoryNode[] {
   const seen = new Set(seenIds);
+  const unseen = DUEL_BANK.filter((node) => !seen.has(node.id));
+  const alreadySeen = DUEL_BANK.filter((node) => seen.has(node.id));
   const pool =
-    seen.size >= DUEL_BANK.length
-      ? DUEL_BANK
-      : DUEL_BANK.filter((node) => !seen.has(node.id));
+    unseen.length >= count ? unseen : [...unseen, ...alreadySeen];
   const shifted = pool.map((node, index) => {
     let state = (seed * 31 + index * 17 + node.id.length * 7) >>> 0;
     state = Math.imul(state ^ (state >>> 15), state | 1);

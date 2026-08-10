@@ -722,6 +722,32 @@ const RISK_LABELS: Record<AbilityId, [string, string]> = {
   communication: ["在全员会上直接摊牌", "Lay your cards on the table in the all-hands"]
 };
 
+const ABILITY_QUOTES_ZH: Record<AbilityId, string> = {
+  insight: "看清一个人的动机，比听懂他的话更重要。",
+  deploy: "把对的人放进对的坑，比把所有人都留在身边更重要。",
+  mobilize: "让一群不情愿的人一起走，先给他们一个能赢的小目标。",
+  strategy: "真正的高手不是赢下眼前，而是让下一手更好打。",
+  authority: "权力只有被规则接住，才不会变成一个人的独角戏。",
+  stability: "你离开之后还能运转的系统，才是你真正留下的能力。",
+  recovery: "先恢复判断力，再谈结果；透支不是执行力。",
+  execution: "目标不变成可验收的结果，就只是一句漂亮的话。",
+  structure: "答案藏在问题被拆开之后。",
+  communication: "把话说清楚之前，先让听的人相信你听懂了。"
+};
+
+const ABILITY_QUOTES_EN: Record<AbilityId, string> = {
+  insight: "Seeing someone's motive matters more than hearing their words.",
+  deploy: "Putting the right person in the right role matters more than keeping everyone close.",
+  mobilize: "To move a reluctant group, give them a small winnable goal first.",
+  strategy: "A true expert does not just win the moment; they make the next move easier.",
+  authority: "Power only lasts when rules catch it, instead of becoming one person's solo.",
+  stability: "The system that still runs after you leave is the capability you truly left behind.",
+  recovery: "Restore judgment before chasing results; burnout is not execution.",
+  execution: "A goal that cannot become a verifiable result is just a beautiful sentence.",
+  structure: "The answer hides after the problem is decomposed.",
+  communication: "Before making yourself clear, let the listener believe you understood them."
+};
+
 function buildOptions(work: FilmWorkSeed): FilmQuestOption[] {
   const ability = ABILITIES[work.ability];
   const expertZhLabel = EXPERT_LABELS[work.ability][0];
@@ -798,8 +824,12 @@ export const FILM_QUESTS: FilmQuest[] = FILM_WORK_SEEDS.map((seed, index) => ({
   sceneEn: seed.sceneEn,
   mirrorZh: seed.mirrorZh,
   mirrorEn: seed.mirrorEn,
-  quoteZh: seed.quoteZh ?? seed.mirrorZh,
-  quoteEn: seed.quoteEn ?? seed.mirrorEn,
+  quoteZh:
+    seed.quoteZh ??
+    `${seed.titleZh}的经典启示：${ABILITY_QUOTES_ZH[seed.ability]}`,
+  quoteEn:
+    seed.quoteEn ??
+    `${seed.titleEn} classic lesson: ${ABILITY_QUOTES_EN[seed.ability]}`,
   options: buildOptions(seed)
 }));
 

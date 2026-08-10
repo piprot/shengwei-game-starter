@@ -50,6 +50,7 @@ import {
   RANDOM_EVENT_IDS,
   RANDOM_EVENT_META,
   STORY_NODES,
+  duelNodes,
   forkNodeForRoute,
   getNode,
   nodesForChapter,
@@ -1121,6 +1122,23 @@ const missQuality =
     : "expert";
 const missBonus = missDuel.predictOpponentStyle(0, missQuality);
 assert(missBonus === 0, "style bet miss should grant no bonus");
+
+const duelDrawIds = duelNodes(7, 42).map((node) => node.id);
+assert(
+  new Set(duelDrawIds).size === duelDrawIds.length,
+  "duel draw should never repeat questions inside one match"
+);
+const seenDuelIds = duelDrawIds.slice(0, 3);
+const nextDuelDraw = duelNodes(7, 43, seenDuelIds).map((node) => node.id);
+assert(nextDuelDraw.length === 7, "duel draw should keep requested round count");
+assert(
+  new Set(nextDuelDraw).size === nextDuelDraw.length,
+  "next duel draw should also avoid repeats"
+);
+assert(
+  seenDuelIds.every((id) => !nextDuelDraw.includes(id)),
+  "duel draw should avoid recently seen questions when possible"
+);
 
 // ---- 多角色存档槽：三角色独立存档、切换与删除 ----
 const slotParachute = structuredClone(DEFAULT_SAVE);
