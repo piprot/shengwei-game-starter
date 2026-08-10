@@ -1122,6 +1122,44 @@ html[data-vu="off"] * {
   border-radius: 999px;
   background: linear-gradient(90deg, var(--vu-teal), var(--vu-gold));
 }
+.duel-bonus-panel {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  margin: 14px 0;
+  padding: 14px 16px;
+  border: 1px solid var(--vu-gold-line);
+  border-radius: var(--vu-radius);
+  background: color-mix(in srgb, var(--vu-gold) 8%, var(--vu-panel));
+  flex-wrap: wrap;
+}
+.duel-bonus-panel h2 {
+  margin: 2px 0 4px;
+  color: var(--vu-ink);
+  font-size: 20px;
+}
+.duel-bonus-status {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.duel-bonus-status strong {
+  color: var(--vu-gold-bright);
+  font-size: 24px;
+}
+.duel-bonus-status button {
+  border: 1px solid var(--vu-gold-line);
+  border-radius: var(--vu-radius);
+  padding: 8px 14px;
+  background: transparent;
+  color: var(--vu-gold-bright);
+  cursor: pointer;
+}
+.duel-bonus-status button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
 .map-guide-overlay {
   position: relative;
   z-index: 5;

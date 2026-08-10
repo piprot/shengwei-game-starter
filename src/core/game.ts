@@ -139,7 +139,9 @@ export const DEFAULT_SAVE: SaveState = {
   organizationInvestments: 0,
   npcLeads: [],
   lastProductionDate: "",
-  productionCount: 0
+  productionCount: 0,
+  lastDuelBonusDate: "",
+  duelsToday: 0
 };
 
 export function createProfile(name: string, role: RoleId): PlayerProfile {
@@ -388,7 +390,12 @@ function normalizeSave(save: SaveState): SaveState {
       typeof save.lastProductionDate === "string"
         ? save.lastProductionDate
         : "",
-    productionCount: Math.max(0, Number(save.productionCount) || 0)
+    productionCount: Math.max(0, Number(save.productionCount) || 0),
+    lastDuelBonusDate:
+      typeof save.lastDuelBonusDate === "string"
+        ? save.lastDuelBonusDate
+        : "",
+    duelsToday: Math.max(0, Number(save.duelsToday) || 0)
   };
   syncDerivedAchievements(normalized);
   return normalized;

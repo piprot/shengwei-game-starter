@@ -187,6 +187,9 @@ export interface SaveState {
   /** 每日产能任务：最近领取日期与当日已完成决策数。 */
   lastProductionDate?: string;
   productionCount?: number;
+  /** 每日对练任务：最近领取日期与当日已完成对局数。 */
+  lastDuelBonusDate?: string;
+  duelsToday?: number;
 }
 
 export interface ChoiceOutcome {

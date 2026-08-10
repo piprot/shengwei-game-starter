@@ -198,7 +198,7 @@ const SETTINGS_MIGRATION_KEY = "adaptive-ascent-settings-v2";
 const GUIDE_KEY = "adaptive-ascent-guide-v1";
 const GUIDE_REWARD_KEY = "adaptive-ascent-guide-reward";
 const ACHIEVEMENT_FAVORITE_KEY = "adaptive-ascent-achievement-favorites";
-const APP_VERSION = "1.7.7";
+const APP_VERSION = "1.7.8";
 
 type View =
   | "menu"
@@ -5119,6 +5119,17 @@ export class AdaptiveGameApp {
               : ""
           }
         </section>
+        <section class="duel-bonus-panel">
+          <div>
+            <p class="eyebrow">${this.language === "en" ? "Daily Duel Goal" : "今日对练目标"}</p>
+            <h2>${this.language === "en" ? "Play 3 duels today" : "今天完成 3 场 1v1"}</h2>
+            <p class="muted">${this.language === "en" ? "Claim the Duel Pioneer title and rewards." : "领取「对练先锋」称号与奖励。"}</p>
+          </div>
+          <div class="duel-bonus-status">
+            <strong>${this.save.duelsToday ?? 0} / 3</strong>
+            <button data-action="claim-duel-bonus" ${this.duelBonusReady() ? "" : "disabled"}>${this.language === "en" ? "Claim" : "领取"}</button>
+          </div>
+        </section>
         <section class="lobby-panel">
           <div class="lobby-row">
             <label class="field">
@@ -5291,6 +5302,7 @@ export class AdaptiveGameApp {
             const seen = new Set(this.save.duelSeenNodeIds ?? []);
             engine.nodes.forEach((duelNode) => seen.add(duelNode.id));
             this.save.duelSeenNodeIds = [...seen].slice(-400);
+            this.recordDuelPlay();
             this.persistSave();
           }
         }
@@ -6909,6 +6921,9 @@ export class AdaptiveGameApp {
       case "claim-production":
         this.claimProduction();
         break;
+      case "claim-duel-bonus":
+        this.claimDuelBonus();
+        break;
       case "dismiss-map-guide":
         this.markGuideStep("map-intro");
         this.audio.ui();
@@ -7457,6 +7472,58 @@ export class AdaptiveGameApp {
         : "产能领取完成：精力 +10、信任 +5、影响力 +5、组织资源 +3。"
     );
     this.renderMap();
+  }
+
+  private recordDuelPlay(): void {
+    const today = new Date().toISOString().slice(0, 10);
+    if (this.save.lastDuelBonusDate !== today) {
+      this.save.lastDuelBonusDate = today;
+      this.save.duelsToday = 0;
+    }
+    this.save.duelsToday = (this.save.duelsToday ?? 0) + 1;
+  }
+
+  private duelBonusReady(): boolean {
+    const today = new Date().toISOString().slice(0, 10);
+    return (
+      this.save.lastDuelBonusDate === today &&
+      (this.save.duelsToday ?? 0) >= 3
+    );
+  }
+
+  private claimDuelBonus(): void {
+    if (!this.duelBonusReady()) {
+      this.showToast(
+        this.language === "en"
+          ? "Complete 3 duels today to claim the bonus."
+          : "今天完成 3 场对局后才能领取奖励。"
+      );
+      return;
+    }
+    this.save.masteryPoints += 10;
+    this.save.profile.resources.energy = clamp(
+      this.save.profile.resources.energy + 10,
+      0,
+      100
+    );
+    this.save.profile.resources.influence = clamp(
+      this.save.profile.resources.influence + 5,
+      0,
+      100
+    );
+    if (!this.save.achievements.includes("duel_pioneer")) {
+      this.save.achievements.push("duel_pioneer");
+    }
+    this.save.lastDuelBonusDate = new Date().toISOString().slice(0, 10);
+    this.save.duelsToday = 0;
+    this.persistSave();
+    this.audio.expert();
+    this.showToast(
+      this.language === "en"
+        ? "Duel Pioneer title unlocked: +10 mastery, +10 energy, +5 influence."
+        : "对练先锋称号解锁：修炼点 +10、精力 +10、影响力 +5。"
+    );
+    this.renderDuelLobby();
   }
 
   /** 结算某个选项（手动点击或回合超时自动采用最稳妥选项共用此路径）。 */
