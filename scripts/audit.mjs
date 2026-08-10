@@ -89,11 +89,15 @@ try {
 
     await page.click("text=空降首周");
     await page.waitForSelector("text=当前考验");
-    await page.click(".option-card");
+    await page.click("[data-action=expedition-explore]");
+    await page.waitForSelector(".option-card:not([disabled])");
+    await page.click(".option-card:not([disabled])");
     await page.waitForSelector("text=专家级应对");
     await page.click("text=进入角色分岔");
     await page.waitForSelector("text=当前考验");
-    await page.click(".option-card");
+    await page.click("[data-action=expedition-explore]");
+    await page.waitForSelector(".option-card:not([disabled])");
+    await page.click(".option-card:not([disabled])");
     await page.waitForSelector("text=返回地图");
     const storyOverflow = await overflow(page);
     await page.click("text=返回地图");

@@ -129,7 +129,12 @@ export const DEFAULT_SAVE: SaveState = {
   alternateEndings: [],
   routePath: {},
   highPressureMode: false,
-  difficulty: "normal"
+  difficulty: "normal",
+  explorationFound: {},
+  explorationCompleted: [],
+  firstPickStreak: 0,
+  duelSeenNodeIds: [],
+  completedFilmQuests: []
 };
 
 export function createProfile(name: string, role: RoleId): PlayerProfile {
@@ -351,7 +356,21 @@ function normalizeSave(save: SaveState): SaveState {
     scenarioSeed:
       typeof save.scenarioSeed === "number" && Number.isFinite(save.scenarioSeed)
         ? Math.abs(save.scenarioSeed) || 1
-        : undefined
+        : undefined,
+    explorationFound:
+      save.explorationFound && typeof save.explorationFound === "object"
+        ? save.explorationFound
+        : {},
+    explorationCompleted: Array.isArray(save.explorationCompleted)
+      ? save.explorationCompleted
+      : [],
+    firstPickStreak: Math.max(0, Number(save.firstPickStreak) || 0),
+    duelSeenNodeIds: Array.isArray(save.duelSeenNodeIds)
+      ? save.duelSeenNodeIds.slice(-400)
+      : [],
+    completedFilmQuests: Array.isArray(save.completedFilmQuests)
+      ? save.completedFilmQuests
+      : []
   };
   syncDerivedAchievements(normalized);
   return normalized;

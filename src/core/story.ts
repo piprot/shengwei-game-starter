@@ -7,6 +7,7 @@ import type {
 } from "./types";
 import { ROLE_OPTION_SETS } from "./roleOptions.ts";
 import { branchVariantFor } from "./branchVariants.ts";
+import { DUEL_BANK, shuffleDuelOptions } from "./duelBank.ts";
 
 export const CHAPTERS: ChapterDef[] = [
   {
@@ -5041,12 +5042,27 @@ function roleLens(role: RoleId): string {
 
 buildBranchNodes();
 
-export function duelNodes(count: number, seed: number): StoryNode[] {
-  const candidates = STORY_NODES.filter((node) => node.kind === "main");
-  const shifted = candidates.map((node, index) => ({
-    node,
-    score: (index * 17 + seed * 31 + node.id.length * 7) % 997
-  }));
+export function duelNodes(
+  count: number,
+  seed: number,
+  seenIds: string[] = []
+): StoryNode[] {
+  const seen = new Set(seenIds);
+  const pool =
+    seen.size >= DUEL_BANK.length
+      ? DUEL_BANK
+      : DUEL_BANK.filter((node) => !seen.has(node.id));
+  const shifted = pool.map((node, index) => {
+    let state = (seed * 31 + index * 17 + node.id.length * 7) >>> 0;
+    state = Math.imul(state ^ (state >>> 15), state | 1);
+    state ^= state + Math.imul(state ^ (state >>> 7), state | 61);
+    return {
+      node,
+      score: (state ^ (state >>> 14)) >>> 0
+    };
+  });
   shifted.sort((a, b) => a.score - b.score);
-  return shifted.slice(0, Math.min(count, shifted.length)).map((item) => item.node);
+  return shifted
+    .slice(0, Math.min(count, shifted.length))
+    .map((item, index) => shuffleDuelOptions(item.node, seed * 17 + index * 29));
 }

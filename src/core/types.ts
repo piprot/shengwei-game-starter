@@ -168,6 +168,16 @@ export interface SaveState {
   bestScore?: number;
   /** 瀹屾垚鏁翠釜涓冪珷鏉冨姏鏋舵瀯鐨勬鏁帮紝鐢ㄤ簬銆屾父鐜╂鏁般€嶈€屼笉鏄喅绛栨鏁般€?*/
   campaignCompletions?: number;
+  /** 探秘玩法：每个剧情节点已完成的勘察/访谈/破译动作。 */
+  explorationFound?: Record<string, string[]>;
+  /** 已完成全部三个探秘动作并获得奖励的节点。 */
+  explorationCompleted?: string[];
+  /** 连续选择第一个选项的次数，用于防“全选 A”通关。 */
+  firstPickStreak?: number;
+  /** 1v1 对局中已抽到过的题目，用于在题库内尽量不重复。 */
+  duelSeenNodeIds?: string[];
+  /** 经典影视副线已完成的作品关卡。 */
+  completedFilmQuests?: string[];
 }
 
 export interface ChoiceOutcome {

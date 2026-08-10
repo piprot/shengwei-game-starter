@@ -60,6 +60,8 @@ import {
 } from "../src/core/story.ts";
 import { ROLE_OPTION_SETS } from "../src/core/roleOptions.ts";
 import { DuelEngine } from "../src/core/duel.ts";
+import { DUEL_BANK, DUEL_BANK_SIZE } from "../src/core/duelBank.ts";
+import { FILM_QUESTS, FILM_QUEST_COUNT } from "../src/core/filmQuests.ts";
 import {
   CHAPTER_PASS_STARS,
   DEFAULT_SAVE,
@@ -314,6 +316,34 @@ assert(
 
 assert(CHAPTERS.length === 9, "chapters must be 9");
 assert(STORY_NODES.length >= 60, "story nodes should be 60+");
+assert(DUEL_BANK_SIZE === 200, "duel bank should contain 200 questions");
+assert(
+  new Set(DUEL_BANK.map((node) => node.id)).size === DUEL_BANK.length,
+  "duel bank ids should be unique"
+);
+for (const node of DUEL_BANK) {
+  assert(node.options.length === 3, `duel node ${node.id} should have 3 options`);
+  assert(
+    node.options.some((option) => option.quality === "expert") &&
+      node.options.some((option) => option.quality === "partial") &&
+      node.options.some((option) => option.quality === "risk"),
+    `duel node ${node.id} should cover expert/partial/risk qualities`
+  );
+}
+assert(FILM_QUEST_COUNT === 64, "classic film side quests should contain 64 works");
+assert(
+  new Set(FILM_QUESTS.map((quest) => quest.id)).size === FILM_QUESTS.length,
+  "film quest ids should be unique"
+);
+for (const quest of FILM_QUESTS) {
+  assert(quest.options.length === 3, `film quest ${quest.id} should have 3 options`);
+  assert(
+    quest.options.some((option) => option.zh.quality === "expert") &&
+      quest.options.some((option) => option.zh.quality === "partial") &&
+      quest.options.some((option) => option.zh.quality === "risk"),
+    `film quest ${quest.id} should cover expert/partial/risk qualities`
+  );
+}
 assert(RANDOM_EVENT_IDS.length >= 20, "random events must be 20+");
 assert(
   RANDOM_EVENT_IDS.every((id) => RANDOM_EVENT_META[id]),

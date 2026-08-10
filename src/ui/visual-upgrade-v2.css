@@ -119,6 +119,713 @@ html[data-vu="off"] * {
 }
 
 /* =========================================================================
+   探秘 · 四大文明藏宝图
+   ========================================================================= */
+.expedition-hero {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 18px;
+  align-items: center;
+  padding: 22px 24px;
+  margin: 0 0 14px;
+  border: 1px solid color-mix(in srgb, var(--civ, var(--vu-gold)) 42%, transparent);
+  border-radius: var(--vu-radius);
+  background:
+    radial-gradient(circle at 12% 10%, color-mix(in srgb, var(--civ, var(--vu-gold)) 22%, transparent), transparent 46%),
+    linear-gradient(140deg, rgba(15, 24, 29, 0.92), rgba(8, 13, 17, 0.9));
+  box-shadow: var(--vu-shadow-soft), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  overflow: hidden;
+}
+.expedition-hero::after {
+  content: "";
+  position: absolute;
+  inset: auto -40px -70px auto;
+  width: 240px;
+  height: 150px;
+  background: radial-gradient(circle, color-mix(in srgb, var(--civ, var(--vu-gold)) 34%, transparent), transparent 68%);
+  pointer-events: none;
+}
+.expedition-hero h1 {
+  margin: 4px 0 8px;
+  font-family: var(--vu-font-display);
+  font-size: clamp(24px, 3vw, 38px);
+  line-height: 1.15;
+  letter-spacing: 0;
+  color: var(--vu-ink);
+}
+.expedition-hero p {
+  max-width: 820px;
+  margin: 0;
+  color: var(--vu-muted);
+  line-height: 1.65;
+}
+.treasure-ring {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  place-items: center;
+  width: 118px;
+  height: 118px;
+  border-radius: 50%;
+  border: 1px dashed color-mix(in srgb, var(--civ, var(--vu-gold)) 55%, transparent);
+  background:
+    radial-gradient(circle, color-mix(in srgb, var(--civ, var(--vu-gold)) 14%, transparent), transparent 62%),
+    rgba(7, 12, 16, 0.72);
+  text-align: center;
+  flex: 0 0 auto;
+}
+.treasure-ring strong {
+  display: block;
+  font-family: var(--vu-font-display);
+  font-size: 26px;
+  color: var(--vu-gold-bright);
+}
+.treasure-ring span {
+  display: block;
+  margin-top: 2px;
+  font-size: 12px;
+  color: var(--vu-muted);
+}
+.expedition-chapter-card {
+  margin: 14px 0;
+  padding: 16px 18px;
+  border-left: 3px solid var(--civ, var(--vu-gold));
+  border-radius: var(--vu-radius);
+  background: color-mix(in srgb, var(--civ, var(--vu-gold)) 8%, var(--vu-panel));
+}
+.expedition-chapter-card span {
+  display: block;
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  color: var(--vu-muted-soft);
+  text-transform: uppercase;
+}
+.expedition-chapter-card strong {
+  display: block;
+  margin: 4px 0 6px;
+  font-family: var(--vu-font-display);
+  font-size: 20px;
+  color: var(--vu-ink);
+}
+.expedition-chapter-card p {
+  margin: 0;
+  color: var(--vu-muted);
+  line-height: 1.6;
+}
+.expedition-scene {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 12px 16px;
+  margin: 10px 0;
+  border: 1px solid color-mix(in srgb, var(--civ, var(--vu-gold)) 34%, transparent);
+  border-radius: var(--vu-radius);
+  background: linear-gradient(120deg, color-mix(in srgb, var(--civ, var(--vu-gold)) 10%, transparent), transparent 70%);
+}
+.expedition-scene > div {
+  display: grid;
+  gap: 2px;
+  flex: 0 0 auto;
+  min-width: 150px;
+}
+.expedition-scene span {
+  font-size: 12px;
+  letter-spacing: 0.06em;
+  color: var(--vu-gold);
+}
+.expedition-scene strong {
+  font-family: var(--vu-font-display);
+  color: var(--vu-ink);
+}
+.expedition-scene p {
+  margin: 0;
+  color: var(--vu-muted);
+  font-size: 13px;
+  line-height: 1.5;
+}
+.expedition-transition-line {
+  display: inline-block;
+  margin: 4px 0 10px;
+  padding: 4px 10px;
+  border: 1px solid color-mix(in srgb, var(--civ, var(--vu-gold)) 40%, transparent);
+  border-radius: var(--vu-radius-pill);
+  color: var(--vu-gold);
+  font-size: 13px;
+}
+.treasure-panel .treasure-track {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 8px 0;
+}
+.treasure-panel .treasure-track span {
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  border: 1px solid color-mix(in srgb, var(--dot, var(--vu-gold)) 55%, transparent);
+  color: var(--vu-muted);
+  font-size: 13px;
+  background: rgba(7, 12, 16, 0.5);
+}
+.treasure-panel .treasure-track span.found {
+  color: #07100d;
+  background: var(--dot, var(--vu-gold));
+  box-shadow: 0 0 12px color-mix(in srgb, var(--dot, var(--vu-gold)) 45%, transparent);
+}
+
+/* =========================================================================
+   探秘动作 · 修炼入口 · 守护者验证
+   ========================================================================= */
+.exploration-panel {
+  margin: 12px 0;
+  padding: 14px;
+  border: 1px solid var(--vu-line);
+  border-radius: var(--vu-radius);
+  background: var(--vu-glass);
+}
+.exploration-panel.complete {
+  border-color: color-mix(in srgb, var(--vu-teal) 45%, transparent);
+}
+.exploration-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+.exploration-head span {
+  font-weight: 700;
+  color: var(--vu-ink);
+}
+.exploration-head strong {
+  color: var(--vu-gold);
+  font-family: var(--vu-font-mono);
+}
+.exploration-actions {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+.exploration-action {
+  min-height: 42px;
+  padding: 8px 10px;
+  border: 1px solid color-mix(in srgb, var(--vu-gold) 38%, transparent);
+  border-radius: var(--vu-radius);
+  background: color-mix(in srgb, var(--vu-gold) 9%, transparent);
+  color: var(--vu-gold-bright);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.exploration-action.done {
+  border-color: color-mix(in srgb, var(--vu-teal) 40%, transparent);
+  background: color-mix(in srgb, var(--vu-teal) 10%, transparent);
+  color: var(--vu-teal-bright);
+  cursor: default;
+}
+.exploration-findings {
+  display: grid;
+  gap: 8px;
+  margin-top: 10px;
+}
+.exploration-findings p {
+  margin: 0;
+  padding: 10px 12px;
+  border-left: 2px solid var(--vu-gold-line);
+  border-radius: 6px;
+  background: rgba(7, 12, 16, 0.42);
+  color: var(--vu-muted);
+  font-size: 13px;
+  line-height: 1.55;
+}
+.exploration-findings strong {
+  display: block;
+  margin-bottom: 2px;
+  color: var(--vu-ink-soft);
+}
+.exploration-lock-note {
+  margin: 8px 0 10px;
+  padding: 10px 12px;
+  border-radius: var(--vu-radius);
+  background: color-mix(in srgb, var(--vu-coral) 12%, transparent);
+  color: var(--vu-coral-bright);
+  font-size: 13px;
+}
+.exploration-reward {
+  margin: 10px 0 0;
+  padding: 8px 10px;
+  border-radius: 6px;
+  background: color-mix(in srgb, var(--vu-teal) 12%, transparent);
+  color: var(--vu-teal-bright);
+  font-size: 12px;
+}
+.story-lesson {
+  margin: 14px 0 0;
+  padding: 14px 16px;
+  border: 1px solid color-mix(in srgb, var(--dot, var(--vu-teal)) 38%, transparent);
+  border-radius: var(--vu-radius);
+  background: color-mix(in srgb, var(--dot, var(--vu-teal)) 8%, var(--vu-panel));
+}
+.story-lesson span {
+  display: block;
+  font-size: 12px;
+  letter-spacing: 0.06em;
+  color: var(--vu-muted-soft);
+}
+.story-lesson code {
+  display: block;
+  margin: 6px 0 8px;
+  color: var(--vu-ink);
+  font-family: var(--vu-font-mono);
+  font-size: 14px;
+}
+.story-lesson p {
+  margin: 0 0 10px;
+  color: var(--vu-muted);
+  line-height: 1.6;
+}
+.story-lesson button {
+  border: 1px solid var(--vu-line-strong);
+  border-radius: var(--vu-radius);
+  padding: 7px 12px;
+  background: transparent;
+  color: var(--vu-ink-soft);
+  cursor: pointer;
+}
+.story-lesson button:hover {
+  color: var(--vu-gold-bright);
+  border-color: var(--vu-gold-line);
+}
+.integrity-gate {
+  margin: 10px 0;
+  padding: 18px;
+  border: 1px solid var(--vu-coral-line);
+  border-radius: var(--vu-radius);
+  background:
+    radial-gradient(circle at 12% 0%, rgba(233, 130, 108, 0.14), transparent 42%),
+    var(--vu-glass-strong);
+}
+.integrity-gate-head span {
+  font-size: 12px;
+  letter-spacing: 0.1em;
+  color: var(--vu-coral);
+  text-transform: uppercase;
+}
+.integrity-gate-head h3 {
+  margin: 6px 0 6px;
+  color: var(--vu-ink);
+}
+.integrity-gate-head p {
+  margin: 0;
+  color: var(--vu-muted);
+  line-height: 1.55;
+}
+.integrity-gate-options {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  margin-top: 14px;
+}
+.integrity-gate-options button {
+  display: grid;
+  gap: 4px;
+  min-height: 68px;
+  padding: 10px 12px;
+  border: 1px solid var(--vu-line);
+  border-radius: var(--vu-radius);
+  background: rgba(7, 12, 16, 0.5);
+  color: var(--vu-ink-soft);
+  text-align: left;
+  cursor: pointer;
+}
+.integrity-gate-options button:hover {
+  border-color: var(--vu-coral-line);
+  color: var(--vu-coral-bright);
+}
+.integrity-gate-options small {
+  color: var(--vu-muted-soft);
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+/* =========================================================================
+   章节修炼与 NPC 故事
+   ========================================================================= */
+.chapter-training-card {
+  margin: 16px 0;
+  padding: 16px 18px;
+  border: 1px solid var(--vu-line);
+  border-radius: var(--vu-radius);
+  background: var(--vu-panel);
+}
+.chapter-training-card > h3 {
+  margin: 0 0 4px;
+  color: var(--vu-ink);
+}
+.chapter-training-card > p {
+  margin: 0 0 12px;
+  color: var(--vu-muted);
+  font-size: 13px;
+}
+.chapter-training-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+.chapter-training-item {
+  display: grid;
+  gap: 6px;
+  padding: 12px;
+  border: 1px solid var(--vu-line-soft);
+  border-radius: var(--vu-radius);
+  background: rgba(7, 12, 16, 0.36);
+}
+.chapter-training-item strong {
+  color: var(--vu-ink);
+}
+.chapter-training-item code {
+  color: var(--vu-gold-soft);
+  font-family: var(--vu-font-mono);
+  font-size: 12px;
+  line-height: 1.45;
+}
+.chapter-training-item small {
+  color: var(--vu-muted-soft);
+  font-size: 12px;
+}
+.chapter-training-item button {
+  justify-self: start;
+  border: 1px solid var(--vu-gold-line);
+  border-radius: var(--vu-radius);
+  padding: 6px 10px;
+  background: transparent;
+  color: var(--vu-gold-bright);
+  cursor: pointer;
+  font-size: 13px;
+}
+.ability-practice-button {
+  width: 100%;
+  margin-top: 10px;
+  border: 1px solid var(--vu-gold-line);
+  border-radius: var(--vu-radius);
+  padding: 8px 10px;
+  background: transparent;
+  color: var(--vu-gold-bright);
+  cursor: pointer;
+}
+.npc-cameo-panel {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 10px;
+  align-items: start;
+  margin: 10px 0;
+  padding: 12px;
+  border: 1px solid var(--vu-line);
+  border-radius: var(--vu-radius);
+  background: var(--vu-glass);
+}
+.npc-cameo-dot {
+  width: 12px;
+  height: 12px;
+  margin-top: 4px;
+  border-radius: 50%;
+  background: var(--dot, var(--vu-teal));
+  box-shadow: 0 0 12px color-mix(in srgb, var(--dot, var(--vu-teal)) 55%, transparent);
+}
+.npc-cameo-panel strong {
+  display: block;
+  color: var(--vu-ink);
+}
+.npc-cameo-panel small {
+  display: block;
+  color: var(--vu-muted-soft);
+  font-size: 12px;
+}
+.npc-cameo-panel p {
+  margin: 6px 0 0;
+  color: var(--vu-muted);
+  font-size: 13px;
+  line-height: 1.55;
+}
+.npc-scene-quote {
+  margin: 12px 0 0;
+  padding: 12px 14px;
+  border-left: 3px solid var(--dot, var(--vu-teal));
+  border-radius: var(--vu-radius);
+  background: rgba(7, 12, 16, 0.42);
+}
+.npc-scene-quote span {
+  color: var(--vu-gold);
+  font-weight: 700;
+}
+.npc-scene-quote p {
+  margin: 5px 0 0;
+  color: var(--vu-muted);
+  line-height: 1.55;
+  font-size: 13px;
+}
+.npc-story {
+  margin-top: 12px;
+  border-top: 1px solid var(--vu-line-soft);
+  padding-top: 10px;
+}
+.npc-story summary {
+  color: var(--vu-gold);
+  cursor: pointer;
+  font-weight: 600;
+  list-style: none;
+}
+.npc-story summary::before {
+  content: "▸ ";
+}
+.npc-story[open] summary::before {
+  content: "▾ ";
+}
+.npc-story-copy {
+  display: grid;
+  gap: 8px;
+  margin-top: 10px;
+}
+.npc-story-copy p {
+  margin: 0;
+  color: var(--vu-muted);
+  line-height: 1.6;
+}
+.npc-dialogue {
+  display: grid;
+  gap: 8px;
+  margin-top: 10px;
+}
+.npc-dialogue-line {
+  padding: 10px 12px;
+  border-radius: var(--vu-radius);
+  background: rgba(7, 12, 16, 0.42);
+}
+.npc-dialogue-line strong {
+  display: block;
+  color: var(--vu-ink-soft);
+  font-size: 13px;
+}
+.npc-dialogue-line p {
+  margin: 4px 0 0;
+  color: var(--vu-muted);
+  font-size: 13px;
+  line-height: 1.55;
+}
+.npc-relic-note {
+  margin: 10px 0 0;
+  padding: 8px 10px;
+  border-radius: 6px;
+  background: color-mix(in srgb, var(--vu-teal) 10%, transparent);
+  color: var(--vu-teal-bright);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+/* =========================================================================
+   经典影视副线 · 片场关卡
+   ========================================================================= */
+.film-quest-panel {
+  margin: 12px 0;
+  padding: 14px;
+  border: 1px solid var(--vu-line);
+  border-radius: var(--vu-radius);
+  background:
+    radial-gradient(circle at 90% 10%, rgba(180, 151, 240, 0.14), transparent 46%),
+    var(--vu-panel);
+}
+.film-quest-panel h3 {
+  margin: 0 0 6px;
+  color: var(--vu-ink);
+}
+.film-quest-panel p {
+  margin: 0 0 8px;
+  line-height: 1.5;
+}
+.film-quest-panel button {
+  width: 100%;
+  border: 1px solid var(--vu-purple-line, rgba(180, 151, 240, 0.45));
+  border-radius: var(--vu-radius);
+  padding: 9px 12px;
+  background: transparent;
+  color: #d8c9ff;
+  cursor: pointer;
+}
+.film-quest-panel button:hover {
+  background: color-mix(in srgb, #b497f0 12%, transparent);
+}
+.film-shell {
+  max-width: 1060px;
+  margin: 0 auto;
+  padding: 18px 20px 40px;
+}
+.film-hero {
+  position: relative;
+  padding: 26px 28px;
+  border: 1px solid color-mix(in srgb, var(--dot, #b497f0) 42%, transparent);
+  border-radius: var(--vu-radius);
+  background:
+    radial-gradient(circle at 8% 12%, color-mix(in srgb, var(--dot, #b497f0) 20%, transparent), transparent 44%),
+    linear-gradient(135deg, var(--vu-panel-2), var(--vu-bg-deep));
+  box-shadow: var(--vu-shadow-soft);
+  overflow: hidden;
+}
+.film-hero h1 {
+  margin: 6px 0 12px;
+  font-family: var(--vu-font-display);
+  font-size: clamp(26px, 4vw, 44px);
+  line-height: 1.15;
+  letter-spacing: 0;
+  color: var(--vu-ink);
+}
+.film-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.film-tags span {
+  padding: 4px 10px;
+  border: 1px solid color-mix(in srgb, var(--dot, #b497f0) 40%, transparent);
+  border-radius: var(--vu-radius-pill);
+  color: var(--vu-ink-soft);
+  font-size: 12px;
+  background: rgba(7, 12, 16, 0.42);
+}
+.film-scene {
+  margin: 16px 0;
+  padding: 20px 22px;
+  border-left: 3px solid var(--dot, #b497f0);
+  border-radius: var(--vu-radius);
+  background: var(--vu-panel);
+}
+.film-scene span,
+.film-mirror span,
+.film-quote span,
+.film-feedback span {
+  display: block;
+  margin-bottom: 8px;
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  color: var(--vu-muted-soft);
+  text-transform: uppercase;
+}
+.film-scene p {
+  margin: 0;
+  color: var(--vu-ink-soft);
+  font-size: 17px;
+  line-height: 1.75;
+}
+.film-decision h2 {
+  margin: 0 0 14px;
+  color: var(--vu-ink);
+}
+.film-options {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+.film-options .option-card {
+  min-height: 150px;
+  align-items: flex-start;
+}
+.film-options .option-letter {
+  margin-top: 2px;
+}
+.film-outcome .film-hero {
+  margin-bottom: 16px;
+}
+.film-review-panel {
+  display: grid;
+  gap: 14px;
+}
+.film-mirror,
+.film-quote,
+.film-feedback,
+.film-reward-note {
+  padding: 18px 20px;
+  border: 1px solid var(--vu-line);
+  border-radius: var(--vu-radius);
+  background: var(--vu-panel);
+}
+.film-mirror p,
+.film-feedback p {
+  margin: 0;
+  color: var(--vu-ink-soft);
+  line-height: 1.7;
+}
+.film-quote blockquote {
+  margin: 0;
+  padding: 4px 0 4px 14px;
+  border-left: 2px solid var(--vu-gold-line);
+  color: var(--vu-gold-bright);
+  font-family: var(--vu-font-display);
+  font-size: 18px;
+  line-height: 1.6;
+}
+.film-reward-note {
+  color: var(--vu-teal-bright);
+  font-size: 13px;
+}
+.film-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 18px;
+}
+.film-actions button {
+  border: 1px solid var(--vu-line-strong);
+  border-radius: var(--vu-radius);
+  padding: 10px 16px;
+  background: transparent;
+  color: var(--vu-ink-soft);
+  cursor: pointer;
+}
+.film-actions button.primary {
+  border-color: var(--vu-gold-line);
+  color: var(--vu-gold-bright);
+  background: color-mix(in srgb, var(--vu-gold) 10%, transparent);
+}
+
+@media (max-width: 900px) {
+  .film-options {
+    grid-template-columns: 1fr;
+  }
+  .film-actions {
+    flex-direction: column;
+  }
+  .film-actions button {
+    width: 100%;
+  }
+}
+
+@media (max-width: 900px) {
+  .expedition-hero {
+    grid-template-columns: 1fr;
+  }
+  .treasure-ring {
+    width: 92px;
+    height: 92px;
+  }
+  .exploration-actions,
+  .integrity-gate-options {
+    grid-template-columns: 1fr;
+  }
+  .chapter-training-grid {
+    grid-template-columns: 1fr;
+  }
+  .expedition-scene {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+  .expedition-scene > div {
+    min-width: 0;
+  }
+}
+
+/* =========================================================================
    2. 增强排版系统
    ========================================================================= */
 body {

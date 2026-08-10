@@ -38,11 +38,12 @@ export class DuelEngine {
     playerOne: DuelProfile,
     playerTwo: DuelProfile,
     roundCount: number,
-    seed: number
+    seed: number,
+    seenIds: string[] = []
   ) {
     this.players = [playerOne, playerTwo];
     this.roundCount = Math.min(7, Math.max(1, roundCount));
-    this.nodes = duelNodes(this.roundCount, seed);
+    this.nodes = duelNodes(this.roundCount, seed, seenIds);
   }
 
   get node(): StoryNode {

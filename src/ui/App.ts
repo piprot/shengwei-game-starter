@@ -104,6 +104,21 @@ import { RoomClient, type RoomServerMessage } from "../net/roomClient";
 import { GameAudioV2 } from "../audio-v2";
 import { ThemeMusic } from "../core/theme-music";
 import {
+  civilizationForChapter,
+  expeditionStatus,
+  explorationMoments
+} from "../core/expedition";
+import { npcStoryFor } from "../core/npcStories";
+import { duelBankEn } from "../core/duelBank";
+import {
+  FILM_QUESTS,
+  FILM_QUEST_COUNT,
+  filmQuestAbilityLabel,
+  filmQuestRegionLabel,
+  nextFilmQuest,
+  type FilmQuest
+} from "../core/filmQuests";
+import {
   CoachWorkshopEngine,
   type WorkshopReport
 } from "../core/coach-workshop";
@@ -181,7 +196,7 @@ const SETTINGS_MIGRATION_KEY = "adaptive-ascent-settings-v2";
 const GUIDE_KEY = "adaptive-ascent-guide-v1";
 const GUIDE_REWARD_KEY = "adaptive-ascent-guide-reward";
 const ACHIEVEMENT_FAVORITE_KEY = "adaptive-ascent-achievement-favorites";
-const APP_VERSION = "1.5.19";
+const APP_VERSION = "1.6.0";
 
 type View =
   | "menu"
@@ -193,6 +208,7 @@ type View =
   | "settings"
   | "map"
   | "story"
+  | "filmQuest"
   | "chapterTransition"
   | "ability"
   | "report"
@@ -287,6 +303,10 @@ export class AdaptiveGameApp {
   private storyNodeId?: string;
   private storyHintRevealed = false;
   private replayMode = false;
+  private integrityGateNodeId?: string;
+  private pendingIntegrityOption?: number;
+  private filmQuest?: FilmQuest;
+  private filmQuestPickedOption?: number;
   private wrongReviewQueue: string[] = [];
   private wrongReviewIndex = 0;
   private hiddenBranchAbilityId?: AbilityId;
@@ -597,6 +617,8 @@ export class AdaptiveGameApp {
     const scene =
       view === "story"
         ? "story"
+        : view === "filmQuest"
+          ? "story"
         : view === "duel"
           ? "duel"
           : view === "training" || view === "trial" || view === "trialBattle"
@@ -689,6 +711,9 @@ export class AdaptiveGameApp {
   }
 
   private storyNodeDisplay(node: StoryNode): StoryNode {
+    if (node.id.startsWith("duel-")) {
+      return duelBankEn(node);
+    }
     if (node.kind === "random" && this.language === "zh") {
       const variant = randomEventVariantContext(
         this.save.profile.role,
@@ -897,6 +922,200 @@ export class AdaptiveGameApp {
     return "Complete the related main or side scenario to bring them into your relationship network.";
   }
 
+  private npcStoryMarkup(npc: (typeof NPCS)[number]): string {
+    const story = npcStoryFor(npc.id);
+    if (!story) return "";
+    const en = this.language === "en";
+    const paragraphs = en ? story.en : story.zh;
+    const dialogue = story.dialogue
+      .map(
+        (line) => `
+          <div class="npc-dialogue-line">
+            <strong>${escapeHtml(en ? line.questionEn : line.questionZh)}</strong>
+            <p>${escapeHtml(en ? line.answerEn : line.answerZh)}</p>
+          </div>
+        `
+      )
+      .join("");
+    const relic = en ? story.relicNoteEn : story.relicNoteZh;
+    return `
+      <details class="npc-story">
+        <summary>${en ? "Story & Letters" : "故事与书信"}</summary>
+        <div class="npc-story-copy">
+          ${paragraphs.map((paragraph) => `<p>${escapeHtml(paragraph)}</p>`).join("")}
+        </div>
+        <div class="npc-dialogue">${dialogue}</div>
+        <p class="npc-relic-note">${escapeHtml(relic)}</p>
+      </details>
+    `;
+  }
+
+  private chapterNpc(chapterId: number): (typeof NPCS)[number] | undefined {
+    return NPCS.find((npc) => {
+      if (!npc.nodeId.startsWith("c")) return false;
+      return Number(npc.nodeId.slice(1, 2)) === chapterId;
+    });
+  }
+
+  private npcCameoMarkup(chapterId: number): string {
+    const npc = this.chapterNpc(chapterId);
+    if (!npc) return "";
+    const relation = npcRelation(this.save, npc);
+    const view = this.npcDisplay(npc);
+    const story = npcStoryFor(npc.id);
+    const known = relation.status !== "尚未接触";
+    const en = this.language === "en";
+    const quote = known
+      ? story
+        ? en
+          ? story.en[0]
+          : story.zh[0]
+        : view.description
+      : en
+        ? "Complete the related main or side scenario to open this person's story."
+        : "完成相关主线或支线后，解锁这个人的故事。";
+    return `
+      <div class="npc-cameo-panel">
+        <span class="npc-cameo-dot" style="--dot:${this.npcAvatarColor(npc.id)}"></span>
+        <div>
+          <strong>${escapeHtml(view.name)}</strong>
+          <small>${escapeHtml(view.title)}</small>
+          <p>${escapeHtml(quote)}</p>
+        </div>
+      </div>
+    `;
+  }
+
+  private explorationPanelMarkup(node: StoryNode): string {
+    const en = this.language === "en";
+    const seed = this.save.scenarioSeed ?? 1;
+    const moments = explorationMoments(node.chapterId, node.id, seed);
+    const found = this.save.explorationFound?.[node.id] ?? [];
+    const doneAll = (this.save.explorationCompleted ?? []).includes(node.id);
+    const actions = moments
+      .map((moment) => {
+        const done = found.includes(moment.kind);
+        return `
+          <button
+            class="exploration-action ${done ? "done" : ""}"
+            data-action="expedition-explore"
+            data-kind="${moment.kind}"
+            ${done ? "disabled" : ""}
+          >${done ? "✓ " : ""}${escapeHtml(en ? moment.titleEn : moment.titleZh)}</button>
+        `;
+      })
+      .join("");
+    const findings = found
+      .map((kind) => {
+        const moment = moments.find((item) => item.kind === kind);
+        if (!moment) return "";
+        return `
+          <p>
+            <strong>${escapeHtml(en ? moment.titleEn : moment.titleZh)}</strong>
+            ${escapeHtml(en ? moment.textEn : moment.textZh)}
+          </p>
+        `;
+      })
+      .join("");
+    return `
+      <section class="exploration-panel ${doneAll ? "complete" : ""}">
+        <div class="exploration-head">
+          <span>${en ? "Explore the site" : "探秘现场"}</span>
+          <strong>${found.length} / 3</strong>
+        </div>
+        <div class="exploration-actions">${actions}</div>
+        <div class="exploration-findings">${findings}</div>
+        ${doneAll ? `<p class="exploration-reward">${en ? "Full survey complete: +1 focus ability, +2 energy, +1 mastery." : "完整勘察完成：重点能力+1、精力+2、修炼点+1。"}</p>` : ""}
+      </section>
+    `;
+  }
+
+  private integrityGateMarkup(node: StoryNode): string {
+    if (this.pendingIntegrityOption === undefined) return "";
+    const option = node.options[this.pendingIntegrityOption];
+    if (!option) return "";
+    const primary = this.primaryAbilityForOption(option);
+    const distractors = ABILITY_ORDER.filter((id) => id !== primary).slice(0, 2);
+    const en = this.language === "en";
+    return `
+      <section class="integrity-gate" role="dialog" aria-label="${en ? "Colleague verification" : "同事验证"}">
+        <div class="integrity-gate-head">
+          <span>${en ? "Decision Witness" : "决策见证人"}</span>
+          <h3>${en ? "You chose the first option three times in a row." : "你连续三次选择了第一个方案。"}</h3>
+          <p>${en ? "Name the ability this move truly tests before it can pass." : "先说出这一手真正考验的能力，才能让它生效。"}</p>
+        </div>
+        <div class="integrity-gate-options">
+          ${[primary, ...distractors]
+            .map(
+              (id) => `
+                <button data-action="integrity-answer" data-ability="${id}">
+                  ${this.abilityDisplay(id).name}
+                  <small>${this.abilityDisplay(id).tagline}</small>
+                </button>
+              `
+            )
+            .join("")}
+        </div>
+      </section>
+    `;
+  }
+
+  private primaryAbilityForOption(option: StoryOption): AbilityId {
+    const ids = Object.keys(option.effects) as AbilityId[];
+    return (
+      ids.sort(
+        (a, b) => (option.effects[b] ?? 0) - (option.effects[a] ?? 0)
+      )[0] ?? "insight"
+    );
+  }
+
+  private chapterTrainingMarkup(chapterId: number): string {
+    const chapter = getChapter(chapterId);
+    const en = this.language === "en";
+    const items = chapter.focus
+      .map((id) => {
+        const ability = this.abilityDisplay(id);
+        const extra =
+          this.language === "en" ? EXPANDED_TRAINING_EN[id] : EXPANDED_TRAINING[id];
+        const done = this.save.completedTraining.includes(id);
+        return `
+          <div class="chapter-training-item">
+            <strong>${ability.name} Lv.${abilityLevel(this.save.profile.abilities[id])}</strong>
+            <code>${escapeHtml(extra.formula.expression)}</code>
+            <small>${done ? (en ? "Practiced ✓" : "已修炼 ✓") : (en ? "Not practiced" : "未修炼")}</small>
+            <button data-action="open-training" data-ability="${id}">${en ? "Practice" : "修炼"}</button>
+          </div>
+        `;
+      })
+      .join("");
+    return `
+      <section class="chapter-training-card">
+        <h3>${en ? "Chapter Ability Practice" : "本章能力修炼"}</h3>
+        <p>${en ? "Train the chapter's focus abilities before entering harder scenarios." : "先把本章重点能力练到能用，再进入更难的情境。"}</p>
+        <div class="chapter-training-grid">${items}</div>
+      </section>
+    `;
+  }
+
+  private expeditionHeroMarkup(chapterId: number): string {
+    const civ = civilizationForChapter(chapterId);
+    const en = this.language === "en";
+    const exp = expeditionStatus(this.save);
+    return `
+      <section class="expedition-hero" style="--civ:${civ.color}">
+        <div>
+          <p class="eyebrow">${en ? "Four Ancient Civilizations · Treasure Map" : "四大文明 · 藏宝图"}</p>
+          <h1>${en ? civ.nameEn : civ.nameZh} · ${en ? civ.relicEn : civ.relicZh}</h1>
+          <p>${escapeHtml(en ? civ.clueEn : civ.clueZh)}</p>
+        </div>
+        <div class="treasure-ring">
+          <strong>${exp.foundPieces} / ${exp.totalPieces}</strong>
+          <span>${en ? "Treasure pieces" : "藏宝图残片"}</span>
+        </div>
+      </section>
+    `;
+  }
+
   private achievementDisplay(id: string) {
     const fallback = ACHIEVEMENTS.find((item) => item.id === id);
     const en = ACHIEVEMENT_EN[id];
@@ -994,6 +1213,9 @@ export class AdaptiveGameApp {
         break;
       case "story":
         this.renderStory();
+        break;
+      case "filmQuest":
+        this.renderFilmQuest();
         break;
       case "chapterTransition":
         this.renderChapterTransition();
@@ -1674,6 +1896,7 @@ export class AdaptiveGameApp {
                 </div>
                 <span class="npc-status">${this.relationStatusText(relation.status)}</span>
                 <em>${this.relationNoteText(npc)}</em>
+                ${relation.status !== "尚未接触" ? this.npcStoryMarkup(npc) : ""}
               </div>
             `;
           }).join("")}
@@ -1770,6 +1993,7 @@ export class AdaptiveGameApp {
         </div>
       </header>
       <main class="map-shell ${this.mapDetailOpen ? "map-detail-open" : ""}" style="${this.chapterArtStyle(chapter.id)}" aria-label="${this.language === "en" ? "Campaign map" : "主线地图"}">
+        ${this.expeditionHeroMarkup(chapter.id)}
         ${
           this.resourceRecoveryNote
             ? `<div class="recovery-banner" role="status">${this.language === "en" ? "Daily resource recovery applied: +10 energy, +4 trust, +3 influence, +3 capital. Refreshes once per day when entering the map." : "今日资源恢复已生效：精力+10、信任+4、影响力+3、组织资源+3；每天首次进入地图时自动恢复一次。"}</div>`
@@ -1804,6 +2028,11 @@ export class AdaptiveGameApp {
               <p>${this.chapterDisplay(chapter).subtitle}</p>
               <p class="chapter-main-progress">${this.language === "en" ? `Main scenarios ${mainDoneCount} / ${mainNodes.length}` : `主线情境 ${mainDoneCount} / ${mainNodes.length}`}</p>
             </div>
+            <div class="expedition-chapter-card" style="--civ:${civilizationForChapter(chapter.id).color}">
+              <span>${this.language === "en" ? `Expedition · ${civilizationForChapter(chapter.id).nameEn}` : `探秘 · ${civilizationForChapter(chapter.id).nameZh}`}</span>
+              <strong>${this.language === "en" ? civilizationForChapter(chapter.id).relicEn : civilizationForChapter(chapter.id).relicZh}</strong>
+              <p>${escapeHtml(this.language === "en" ? civilizationForChapter(chapter.id).clueEn : civilizationForChapter(chapter.id).clueZh)}</p>
+            </div>
             <div class="node-list">
               ${mainNodes.map((node) => this.nodeRow(node)).join("")}
             </div>
@@ -1828,6 +2057,7 @@ export class AdaptiveGameApp {
                 `
                 : ""
             }
+            ${this.chapterTrainingMarkup(chapter.id)}
             <section class="quest-board">
               <h3>${this.t("sideQuestArcsTitle")}</h3>
               <p class="muted">${this.t("sideQuestHint")}</p>
@@ -1854,6 +2084,18 @@ export class AdaptiveGameApp {
                   ? `<button data-action="${this.nextActionAdvice().action}" ${this.nextActionAdvice().ability ? `data-ability="${this.nextActionAdvice().ability}"` : ""}>${this.t("nextStepAction")}</button>`
                   : ""
               }
+            </div>
+            ${this.npcCameoMarkup(chapter.id)}
+            <div class="mini-panel treasure-panel">
+              <h3>${this.language === "en" ? "Treasure Map" : "藏宝图"}</h3>
+              <div class="treasure-track">
+                ${CHAPTERS.map((item) => {
+                  const done = isChapterComplete(this.save, item.id);
+                  const civ = civilizationForChapter(item.id);
+                  return `<span class="${done ? "found" : ""}" title="${escapeAttr(this.language === "en" ? civ.relicEn : civ.relicZh)}" style="--dot:${civ.color}">${done ? "✓" : "○"}</span>`;
+                }).join("")}
+              </div>
+              <p class="muted">${this.language === "en" ? "Each completed chapter reveals one piece of the treasure map." : "每完成一章，藏宝图就会显出一块残片。"}</p>
             </div>
             <div class="mini-panel role-objective">
               <h3>${this.t("roleObjective")}</h3>
@@ -1934,6 +2176,12 @@ export class AdaptiveGameApp {
                     <button data-action="rotate-events">${this.language === "en" ? "Rotate Event Pool" : "轮转事件池"}</button>
                   `
               }
+            </div>
+            <div class="film-quest-panel">
+              <h3>${this.language === "en" ? "Classic Film Side Quests" : "经典影视副线"}</h3>
+              <p class="muted">${this.language === "en" ? `Completed ${this.save.completedFilmQuests?.length ?? 0} / ${FILM_QUEST_COUNT} classic scenes` : `已完成 ${this.save.completedFilmQuests?.length ?? 0} / ${FILM_QUEST_COUNT} 部经典片场`}</p>
+              <p class="muted">${this.language === "en" ? "Learn leadership from classic film and TV moments, then apply the mirror insight back to work." : "从经典影视剧的经典情节里学管理，再用镜鉴回到职场。"}</p>
+              <button data-action="open-film-quest">${this.language === "en" ? "Enter Classic Studio" : "进入经典片场"}</button>
             </div>
             <div class="event-book-panel mobile-collapse">
               <h3>${this.language === "en" ? "Event Log" : "事件簿"}</h3>
@@ -2064,6 +2312,21 @@ export class AdaptiveGameApp {
     const scenarioShell = scenarioShellFor(node.chapterId, scenarioSeed);
     const showingOutcome = this.lastOutcomeNodeId === node.id && this.lastOutcome;
     const showOnboarding = this.save.playCount === 0 && !showingOutcome;
+    const civ = civilizationForChapter(node.chapterId);
+    const chapterFocusAbility = chapter.focus[0] ?? "insight";
+    const lessonExtra =
+      this.language === "en"
+        ? EXPANDED_TRAINING_EN[chapterFocusAbility]
+        : EXPANDED_TRAINING[chapterFocusAbility];
+    const sceneNpc = NPCS.find(
+      (npc) =>
+        npc.nodeId === node.id ||
+        (npc.nodeId.startsWith("c") &&
+          Number(npc.nodeId.slice(1, 2)) === node.chapterId)
+    );
+    const explorationFound = this.save.explorationFound?.[node.id] ?? [];
+    const explorationReady =
+      this.replayMode || showingOutcome || explorationFound.length > 0;
     if (!showingOutcome && !this.replayMode) {
       this.save.lastStoryNodeId = node.id;
       this.persistSave();
@@ -2106,6 +2369,13 @@ export class AdaptiveGameApp {
           <span>${en ? "Scenario shell" : "情境外壳"}</span>
           <strong>${en ? scenarioShell.en : scenarioShell.zh}</strong>
         </div>
+        <section class="expedition-scene" style="--civ:${civ.color}">
+          <div>
+            <span>${en ? `${civ.nameEn} · ${civ.relicEn}` : `${civ.nameZh} · ${civ.relicZh}`}</span>
+            <strong>${en ? "Expedition Journal" : "探秘笔记"}</strong>
+          </div>
+          <p>${escapeHtml(en ? civ.clueEn : civ.clueZh)}</p>
+        </section>
         ${
           node.chapterId === 4 || node.chapterId === 7
             ? `<div class="route-checkpoint" role="status">${this.language === "en" ? "Route checkpoint: your earlier choices are now shaping upcoming events and endings." : "路线分叉：此前的选择正在改变后续事件与结局权重。"}</div>`
@@ -2171,6 +2441,28 @@ export class AdaptiveGameApp {
                 <strong>${this.t("currentTest")}</strong>
                 <p>${escapeHtml(node.stake)}</p>
               </div>
+              ${
+                sceneNpc
+                  ? `
+                    <div class="npc-scene-quote" style="--dot:${this.npcAvatarColor(sceneNpc.id)}">
+                      <span>${escapeHtml(this.npcDisplay(sceneNpc).name)}</span>
+                      <p>${escapeHtml(
+                        this.language === "en"
+                          ? (npcStoryFor(sceneNpc.id)?.en[1] ??
+                              this.npcDisplay(sceneNpc).description)
+                          : (npcStoryFor(sceneNpc.id)?.zh[1] ??
+                              this.npcDisplay(sceneNpc).description)
+                      )}</p>
+                    </div>
+                  `
+                  : ""
+              }
+              <section class="story-lesson" style="--dot:${ABILITIES[chapterFocusAbility].color}">
+                <span>${en ? "Chapter Practice" : "本章修炼"} · ${this.abilityDisplay(chapterFocusAbility).name}</span>
+                <code>${escapeHtml(lessonExtra.formula.expression)}</code>
+                <p>${escapeHtml(lessonExtra.roleApplications[this.save.profile.role])}</p>
+                <button data-action="open-training" data-ability="${chapterFocusAbility}">${en ? "Enter Practice" : "进入修炼"}</button>
+              </section>
             </section>
           </section>
           <aside class="story-side">
@@ -2216,37 +2508,55 @@ export class AdaptiveGameApp {
                         `
                         : ""
                     }
-                    <div class="option-list">
-                      ${optionOrder
-                        .map(
-                          (originalIndex, index) => {
-                            const option = node.options[originalIndex];
-                            const gate = optionGateFor(
-                              this.save,
-                              option,
-                              node.chapterId
-                            );
-                            const gateNote =
-                              gate.kind === "resource"
-                                ? `${this.t("optionLockedResource")} ${this.resourceDisplay(gate.resource)} ${gate.needed}`
-                                : gate.kind === "ability"
-                                  ? `${this.t("optionLockedAbility")} ${this.abilityDisplay(gate.ability).name} Lv.${gate.needed}`
-                                  : "";
-                            return `
-                              <button class="option-card ${gate.kind !== "ok" ? "locked" : ""}" data-action="choose-option" data-option="${originalIndex}" data-quality="${option.quality}" ${gate.kind !== "ok" ? "disabled" : ""}>
-                                <span class="option-letter">${String.fromCharCode(65 + index)}</span>
-                                <span class="option-body">
-                                  <strong>${escapeHtml(option.label)}</strong>
-                                  <em>${escapeHtml(option.summary)}</em>
-                                  <small class="role-move">${this.roleMove(option.quality)}</small>
-                                  ${gateNote ? `<small class="option-gate-note">${escapeHtml(gateNote)}</small>` : ""}
-                                </span>
-                              </button>
-                            `;
+                    ${
+                      this.integrityGateNodeId === node.id
+                        ? this.integrityGateMarkup(node)
+                        : `
+                          ${!showingOutcome && !this.replayMode ? this.explorationPanelMarkup(node) : ""}
+                          ${
+                            !explorationReady && !showingOutcome && !this.replayMode
+                              ? `<p class="exploration-lock-note">${en ? "Complete one exploration action to unlock the choices." : "先完成一个探秘动作，才能解锁选择。"}</p>`
+                              : ""
                           }
-                        )
-                        .join("")}
-                    </div>
+                          <div class="option-list">
+                            ${optionOrder
+                              .map(
+                                (originalIndex, index) => {
+                                  const option = node.options[originalIndex];
+                                  const gate = optionGateFor(
+                                    this.save,
+                                    option,
+                                    node.chapterId
+                                  );
+                                  const blocked =
+                                    gate.kind !== "ok" || !explorationReady;
+                                  const gateNote =
+                                    gate.kind === "resource"
+                                      ? `${this.t("optionLockedResource")} ${this.resourceDisplay(gate.resource)} ${gate.needed}`
+                                      : gate.kind === "ability"
+                                        ? `${this.t("optionLockedAbility")} ${this.abilityDisplay(gate.ability).name} Lv.${gate.needed}`
+                                        : !explorationReady
+                                          ? en
+                                            ? "Complete an exploration action first"
+                                            : "先完成一个探秘动作"
+                                          : "";
+                                  return `
+                                    <button class="option-card ${blocked ? "locked" : ""}" data-action="choose-option" data-option="${originalIndex}" data-quality="${option.quality}" ${blocked ? "disabled" : ""}>
+                                      <span class="option-letter">${String.fromCharCode(65 + index)}</span>
+                                      <span class="option-body">
+                                        <strong>${escapeHtml(option.label)}</strong>
+                                        <em>${escapeHtml(option.summary)}</em>
+                                        <small class="role-move">${this.roleMove(option.quality)}</small>
+                                        ${gateNote ? `<small class="option-gate-note">${escapeHtml(gateNote)}</small>` : ""}
+                                      </span>
+                                    </button>
+                                  `;
+                                }
+                              )
+                              .join("")}
+                          </div>
+                        `
+                    }
                   `
               }
             </section>
@@ -2266,6 +2576,173 @@ export class AdaptiveGameApp {
     }
   }
 
+  private openFilmQuest(): void {
+    const next =
+      nextFilmQuest(this.save.completedFilmQuests ?? []) ?? FILM_QUESTS[0];
+    this.filmQuest = next;
+    this.filmQuestPickedOption = undefined;
+    this.audio.ui();
+    this.show("filmQuest");
+  }
+
+  private filmQuestBackToMap(): void {
+    this.filmQuest = undefined;
+    this.filmQuestPickedOption = undefined;
+    this.show("map");
+  }
+
+  private resolveFilmQuestOption(optionIndex: number): void {
+    const quest = this.filmQuest;
+    if (
+      !quest ||
+      (this.save.completedFilmQuests ?? []).includes(quest.id)
+    ) {
+      return;
+    }
+    const option = quest.options[optionIndex]?.zh;
+    if (!option) return;
+    for (const [abilityId, gained] of Object.entries(option.effects) as Array<
+      [AbilityId, number]
+    >) {
+      this.save.profile.abilities[abilityId] = clamp(
+        this.save.profile.abilities[abilityId] + gained,
+        0,
+        40
+      );
+    }
+    for (const [resource, delta] of Object.entries(option.resources) as Array<
+      [ResourceKey, number]
+    >) {
+      this.save.profile.resources[resource] = clamp(
+        this.save.profile.resources[resource] + delta,
+        0,
+        100
+      );
+    }
+    this.save.completedFilmQuests = [
+      ...(this.save.completedFilmQuests ?? []),
+      quest.id
+    ];
+    this.save.masteryPoints += 2;
+    this.filmQuestPickedOption = optionIndex;
+    this.persistSave();
+    trackEvent("film_quest", {
+      questId: quest.id,
+      quality: option.quality
+    });
+    if (option.quality === "expert") {
+      this.audio.expert();
+    } else if (option.quality === "partial") {
+      this.audio.partial();
+    } else {
+      this.audio.risk();
+    }
+    this.renderFilmQuest();
+  }
+
+  private renderFilmQuest(): void {
+    const quest = this.filmQuest;
+    const en = this.language === "en";
+    if (!quest) {
+      this.show("map");
+      return;
+    }
+    const picked = this.filmQuestPickedOption;
+    const completedCount = this.save.completedFilmQuests?.length ?? 0;
+    const total = FILM_QUEST_COUNT;
+    const ability = this.abilityDisplay(quest.ability);
+    const regionLabel = filmQuestRegionLabel(quest, en);
+    const abilityLabel = filmQuestAbilityLabel(quest, en);
+    const title = en ? quest.titleEn : quest.titleZh;
+
+    if (picked !== undefined && quest.options[picked]) {
+      const option = quest.options[picked];
+      const view = en ? option.en : option.zh;
+      const qualityLabel = this.roleMove(option.zh.quality);
+      this.root.innerHTML = `
+        <header class="topbar">
+          <div class="brand">${this.t("brand")}</div>
+          <button class="link" data-action="film-quest-back">${en ? "Map" : "返回地图"}</button>
+          <div class="topbar-meta"><span>${completedCount} / ${total}</span></div>
+        </header>
+        <main class="film-shell film-outcome" aria-label="${en ? "Classic film side quest review" : "经典影视副线复盘"}">
+          <section class="film-hero" style="--dot:${ABILITIES[quest.ability].color}">
+            <p class="eyebrow">${en ? "Classic Film Side Quest" : "经典影视副线"}</p>
+            <h1>${escapeHtml(title)}</h1>
+            <div class="film-tags">
+              <span>${escapeHtml(regionLabel)}</span>
+              <span>${escapeHtml(abilityLabel)}</span>
+              <span>${escapeHtml(qualityLabel)}</span>
+            </div>
+          </section>
+          <section class="film-review-panel">
+            <div class="film-mirror">
+              <span>${en ? "Mirror" : "镜鉴"}</span>
+              <p>${escapeHtml(en ? quest.mirrorEn : quest.mirrorZh)}</p>
+            </div>
+            <div class="film-quote">
+              <span>${en ? "Golden Line" : "金句"}</span>
+              <blockquote>${escapeHtml((en ? quest.quoteEn : quest.quoteZh) ?? (en ? quest.mirrorEn : quest.mirrorZh))}</blockquote>
+            </div>
+            <div class="film-feedback">
+              <span>${en ? "Your Move" : "你的选择"}</span>
+              <p>${escapeHtml(view.feedback)}</p>
+            </div>
+            <div class="film-reward-note">
+              ${en ? "+2 mastery points · Ability growth · Resource change" : "修炼点 +2 · 能力成长 · 资源变化"}
+            </div>
+          </section>
+          <div class="film-actions">
+            <button class="primary" data-action="open-film-quest">${en ? "Next Classic" : "下一部经典"}</button>
+            <button data-action="film-quest-back">${en ? "Back to Map" : "返回地图"}</button>
+          </div>
+        </main>
+      `;
+      return;
+    }
+
+    this.root.innerHTML = `
+      <header class="topbar">
+        <div class="brand">${this.t("brand")}</div>
+        <button class="link" data-action="film-quest-back">${en ? "Map" : "返回地图"}</button>
+        <div class="topbar-meta"><span>${completedCount} / ${total}</span></div>
+      </header>
+      <main class="film-shell" style="--dot:${ABILITIES[quest.ability].color}" aria-label="${en ? "Classic film side quest" : "经典影视副线"}">
+        <section class="film-hero" style="--dot:${ABILITIES[quest.ability].color}">
+          <p class="eyebrow">${en ? "Classic Film Side Quest" : "经典影视副线"}</p>
+          <h1>${escapeHtml(title)}</h1>
+          <div class="film-tags">
+            <span>${escapeHtml(regionLabel)}</span>
+            <span>${escapeHtml(abilityLabel)}</span>
+          </div>
+        </section>
+        <section class="film-scene">
+          <span>${en ? "Classic Slice" : "经典片场切片"}</span>
+          <p>${escapeHtml(en ? quest.sceneEn : quest.sceneZh)}</p>
+        </section>
+        <section class="film-decision">
+          <h2>${en ? "What would you do?" : "如果是你，你会怎么做？"}</h2>
+          <div class="film-options">
+            ${quest.options
+              .map((item, index) => {
+                const view = en ? item.en : item.zh;
+                return `
+                  <button class="option-card" data-action="film-quest-pick" data-option="${index}">
+                    <span class="option-letter">${String.fromCharCode(65 + index)}</span>
+                    <span class="option-body">
+                      <strong>${escapeHtml(view.label)}</strong>
+                      <em>${escapeHtml(view.summary)}</em>
+                    </span>
+                  </button>
+                `;
+              })
+              .join("")}
+          </div>
+        </section>
+      </main>
+    `;
+  }
+
   private renderChapterTransition(): void {
     if (!this.pendingChapterTransition) {
       this.show("map");
@@ -2273,6 +2750,7 @@ export class AdaptiveGameApp {
     }
     const chapter = getChapter(this.pendingChapterTransition);
     const next = chapter.id < CHAPTERS.length ? CHAPTERS[chapter.id] : undefined;
+    const civ = civilizationForChapter(chapter.id);
     this.root.innerHTML = `
       <header class="topbar">
         <div class="brand">${this.t("brand")}</div>
@@ -2283,6 +2761,7 @@ export class AdaptiveGameApp {
         <section class="transition-panel">
           <p class="eyebrow">${this.language === "en" ? `Chapter ${chapter.code} ${this.t("chapterComplete")}` : `第 ${chapter.code} 章完成`}</p>
           <h1>${this.chapterDisplay(chapter).title}</h1>
+          <p class="expedition-transition-line" style="--civ:${civ.color}">${this.language === "en" ? `${civ.nameEn} · ${civ.relicEn}` : `${civ.nameZh} · ${civ.relicZh}`}</p>
           <p class="transition-summary">${escapeHtml(this.chapterReflectionText(chapter.id))}</p>
           <div class="route-choice-panel">
             <h3>${this.t("routeTitle")}</h3>
@@ -4418,6 +4897,12 @@ export class AdaptiveGameApp {
             won: humanWon,
             rounds: engine.roundCount
           });
+          if (this.duelMode !== "remote") {
+            const seen = new Set(this.save.duelSeenNodeIds ?? []);
+            engine.nodes.forEach((duelNode) => seen.add(duelNode.id));
+            this.save.duelSeenNodeIds = [...seen].slice(-400);
+            this.persistSave();
+          }
         }
         this.clearDuelSnapshot();
       }
@@ -6016,6 +6501,21 @@ export class AdaptiveGameApp {
       case "choose-option":
         this.chooseStoryOption(actionTarget);
         break;
+      case "open-film-quest":
+        this.openFilmQuest();
+        break;
+      case "film-quest-back":
+        this.filmQuestBackToMap();
+        break;
+      case "film-quest-pick":
+        this.resolveFilmQuestOption(Number(actionTarget.dataset.option));
+        break;
+      case "expedition-explore":
+        this.exploreNodeAction(actionTarget);
+        break;
+      case "integrity-answer":
+        this.answerIntegrityGate(actionTarget);
+        break;
       case "continue-story":
         if (
           this.replayMode &&
@@ -6357,6 +6857,81 @@ export class AdaptiveGameApp {
     this.resolveStoryOption(optionIndex);
   }
 
+  private exploreNodeAction(target: HTMLElement): void {
+    if (!this.storyNodeId) return;
+    const kind = target.dataset.kind;
+    const node = getNode(this.storyNodeId);
+    const seed = this.save.scenarioSeed ?? 1;
+    const moments = explorationMoments(node.chapterId, this.storyNodeId, seed);
+    if (!kind || !moments.some((moment) => moment.kind === kind)) return;
+    const found = [...(this.save.explorationFound?.[this.storyNodeId] ?? [])];
+    if (found.includes(kind)) return;
+    found.push(kind);
+    this.save.explorationFound = {
+      ...(this.save.explorationFound ?? {}),
+      [this.storyNodeId]: found
+    };
+    let rewardText = "";
+    if (
+      found.length >= 3 &&
+      !(this.save.explorationCompleted ?? []).includes(this.storyNodeId)
+    ) {
+      const focus = getChapter(node.chapterId).focus[0] ?? "insight";
+      this.save.profile.abilities[focus] = Math.min(
+        40,
+        this.save.profile.abilities[focus] + 1
+      );
+      this.save.profile.resources.energy = clamp(
+        this.save.profile.resources.energy + 2,
+        0,
+        100
+      );
+      this.save.masteryPoints += 1;
+      this.save.explorationCompleted = [
+        ...(this.save.explorationCompleted ?? []),
+        this.storyNodeId
+      ];
+      rewardText =
+        this.language === "en"
+          ? "Full survey: +1 ability, +2 energy, +1 mastery."
+          : "完整勘察：能力+1、精力+2、修炼点+1。";
+    }
+    this.persistSave();
+    this.audio.unlock();
+    if (rewardText) this.showToast(rewardText);
+    this.renderStory();
+  }
+
+  private answerIntegrityGate(target: HTMLElement): void {
+    if (!this.integrityGateNodeId || this.pendingIntegrityOption === undefined) {
+      return;
+    }
+    const picked = target.dataset.ability as AbilityId | undefined;
+    const node = getNode(this.integrityGateNodeId);
+    const option = node.options[this.pendingIntegrityOption];
+    const primary = this.primaryAbilityForOption(option);
+    if (picked === primary) {
+      this.save.firstPickStreak = 0;
+      this.persistSave();
+      const pending = this.pendingIntegrityOption;
+      this.integrityGateNodeId = undefined;
+      this.pendingIntegrityOption = undefined;
+      this.audio.expert();
+      this.showToast(
+        this.language === "en" ? "Verification passed." : "验证通过。"
+      );
+      this.resolveStoryOption(pending);
+    } else {
+      this.audio.risk();
+      this.showToast(
+        this.language === "en"
+          ? "That is not the ability this move tests."
+          : "这不是这一手真正考验的能力。"
+      );
+      this.renderStory();
+    }
+  }
+
   /** 结算某个选项（手动点击或回合超时自动采用最稳妥选项共用此路径）。 */
   private resolveStoryOption(optionIndex: number): void {
     this.stopRoundTimer();
@@ -6399,6 +6974,19 @@ export class AdaptiveGameApp {
       optionGateFor(this.save, rawNode.options[optionIndex], rawNode.chapterId)
         .kind !== "ok"
     ) {
+      return;
+    }
+    const optionOrder = this.storyOptionOrder(rawNode);
+    if (optionIndex === optionOrder[0]) {
+      this.save.firstPickStreak = (this.save.firstPickStreak ?? 0) + 1;
+    } else {
+      this.save.firstPickStreak = 0;
+    }
+    if ((this.save.firstPickStreak ?? 0) >= 3) {
+      this.integrityGateNodeId = this.storyNodeId;
+      this.pendingIntegrityOption = optionIndex;
+      this.persistSave();
+      this.renderStory();
       return;
     }
     this.save.lastStoryNodeId = undefined;
@@ -6500,7 +7088,13 @@ export class AdaptiveGameApp {
     );
     this.audio.ensure();
     this.audio.round();
-    this.duelEngine = new DuelEngine(human, ai, this.duelRounds, duelSeed());
+    this.duelEngine = new DuelEngine(
+      human,
+      ai,
+      this.duelRounds,
+      duelSeed(),
+      this.save.duelSeenNodeIds ?? []
+    );
     this.duelRematchAction = "ai";
     this.duelRecorded = false;
     this.duelPredictionBonusTotal = 0;
@@ -6517,7 +7111,13 @@ export class AdaptiveGameApp {
     );
     this.audio.ensure();
     this.audio.round();
-    this.duelEngine = new DuelEngine(human, ai, 7, duelSeed());
+    this.duelEngine = new DuelEngine(
+      human,
+      ai,
+      7,
+      duelSeed(),
+      this.save.duelSeenNodeIds ?? []
+    );
     this.duelRematchAction = undefined;
     this.duelRecorded = false;
     this.duelPredictionBonusTotal = 0;
@@ -6539,7 +7139,13 @@ export class AdaptiveGameApp {
     );
     this.audio.ensure();
     this.audio.round();
-    this.duelEngine = new DuelEngine(human, ai, 7, duelSeed());
+    this.duelEngine = new DuelEngine(
+      human,
+      ai,
+      7,
+      duelSeed(),
+      this.save.duelSeenNodeIds ?? []
+    );
     this.duelRematchAction = undefined;
     this.duelRecorded = false;
     this.duelPredictionBonusTotal = 0;
@@ -6561,7 +7167,13 @@ export class AdaptiveGameApp {
     );
     this.audio.ensure();
     this.audio.round();
-    this.duelEngine = new DuelEngine(playerOne, playerTwo, this.duelRounds, duelSeed());
+    this.duelEngine = new DuelEngine(
+      playerOne,
+      playerTwo,
+      this.duelRounds,
+      duelSeed(),
+      this.save.duelSeenNodeIds ?? []
+    );
     this.duelRematchAction = "local";
     this.hotSeatTurn = 0;
     this.localPassed = false;
@@ -7775,6 +8387,7 @@ export class AdaptiveGameApp {
           })()
         }
         <div class="ability-sources">${detail.sources.slice(0, 2).map((source) => `<span>${escapeHtml(source)}</span>`).join("")}</div>
+        <button class="ability-practice-button" data-action="open-training" data-ability="${id}">${this.language === "en" ? "Enter Practice" : "进入修炼"}</button>
       </div>
     `;
   }
