@@ -5,6 +5,7 @@ export class GameAudio {
   private musicTimer?: number;
   private musicNodes: AudioNode[] = [];
   private musicGain?: GainNode;
+  private musicFilter?: BiquadFilterNode;
   private ambientScene: "menu" | "story" | "duel" = "menu";
   private sfxVolume = 0.9;
   private muted = false;
@@ -153,7 +154,12 @@ export class GameAudio {
     if (!this.musicGain) {
       this.musicGain = this.context.createGain();
       this.musicGain.gain.value = 0.6;
-      this.musicGain.connect(this.context.destination);
+      this.musicFilter = this.context.createBiquadFilter();
+      this.musicFilter.type = "lowpass";
+      this.musicFilter.frequency.value = 1100;
+      this.musicFilter.Q.value = 0.4;
+      this.musicGain.connect(this.musicFilter);
+      this.musicFilter.connect(this.context.destination);
     }
     const oscillator = this.context.createOscillator();
     oscillator.type = "sine";
@@ -223,12 +229,15 @@ export class GameAudio {
     let musicIndex = 0;
     const playPhrase = () => {
       if (!this.context || !this.master || this.muted) return;
+      const moodUp = Math.floor(musicIndex / 4) % 2 === 1;
+      const transpose = moodUp ? Math.pow(2, 2 / 12) : 1;
+      const gapMs = phraseGap[this.ambientScene];
       const row = chords[this.ambientScene][musicIndex % chords[this.ambientScene].length];
       // 低音根音：让每句有更明确的调性方向
-      this.musicTone(row[0] / 2, 2.8, "sine", 0.02, 0, 420);
+      this.musicTone((row[0] / 2) * transpose, 2.8, "sine", 0.02, 0, 420);
       row.forEach((freq, index) => {
         this.musicTone(
-          freq,
+          freq * transpose,
           2.6,
           index % 2 === 0 ? "sine" : "triangle",
           0.006,
@@ -239,7 +248,14 @@ export class GameAudio {
       // 琶音层：让织体流动起来
       const arp = [...row.slice(1), row[1] * 2];
       arp.forEach((freq, index) => {
-        this.musicTone(freq, 0.9, "triangle", 0.004, 0.6 + index * 0.22, 1600);
+        this.musicTone(
+          freq * transpose,
+          0.9,
+          "triangle",
+          0.004,
+          0.6 + index * 0.22,
+          1600
+        );
       });
       // 旋律层：从场景音阶种子中取音，带轻微随机，避免 4 句死循环
       const seed = melodySeeds[this.ambientScene];
@@ -248,7 +264,7 @@ export class GameAudio {
           seed[(musicIndex * 3 + i * 2 + Math.floor(Math.random() * 2)) % seed.length];
         const octave = Math.random() < 0.2 ? 0.5 : 1;
         this.musicTone(
-          note * octave,
+          note * octave * transpose,
           1.2,
           i % 2 === 0 ? "sine" : "triangle",
           0.006,
@@ -258,7 +274,24 @@ export class GameAudio {
       }
       // 每两小节一个低音脉冲，保留沉稳的“心跳”但不再喧宾夺主
       if (musicIndex % 2 === 0) {
-        this.musicTone(row[0] / 2, 0.5, "sine", 0.012, 0, 260);
+        this.musicTone((row[0] / 2) * transpose, 0.5, "sine", 0.012, 0, 260);
+      }
+      // 每 8 句一次高音 shimmer，让长听不疲劳
+      if (musicIndex % 8 === 0) {
+        this.musicTone(seed[0] * 2 * transpose, 1.6, "sine", 0.003, 0.5, 2400);
+      }
+      // 情绪段落之间的滤波器扫频：明亮/沉暗交替
+      if (this.musicFilter && this.context) {
+        const now = this.context.currentTime;
+        this.musicFilter.frequency.cancelScheduledValues(now);
+        this.musicFilter.frequency.setValueAtTime(
+          this.musicFilter.frequency.value,
+          now
+        );
+        this.musicFilter.frequency.linearRampToValueAtTime(
+          moodUp ? 2400 : 900,
+          now + gapMs / 1000
+        );
       }
       musicIndex += 1;
     };

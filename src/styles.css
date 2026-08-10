@@ -102,6 +102,10 @@ button:hover:not(:disabled) {
   background: var(--panel-3);
 }
 
+button:active:not(:disabled) {
+  transform: translateY(0) scale(0.985);
+}
+
 button:disabled {
   opacity: 0.72;
   cursor: not-allowed;
@@ -389,6 +393,7 @@ button.trial-now {
 }
 
 .scene-art {
+  position: relative;
   display: grid;
   grid-template-columns: minmax(0, 1fr) 260px;
   gap: 0;
@@ -399,11 +404,36 @@ button.trial-now {
   background: var(--panel);
 }
 
+.scene-art::before,
+.scene-art::after {
+  content: "";
+  position: absolute;
+  width: 18px;
+  height: 18px;
+  pointer-events: none;
+  border-color: rgba(242, 193, 78, 0.55);
+}
+
+.scene-art::before {
+  top: 8px;
+  left: 8px;
+  border-top: 2px solid;
+  border-left: 2px solid;
+}
+
+.scene-art::after {
+  right: 8px;
+  bottom: 8px;
+  border-right: 2px solid;
+  border-bottom: 2px solid;
+}
+
 .power-board {
   display: block;
   width: 100%;
   height: 260px;
   animation: board-breathe 5s ease-in-out infinite;
+  transition: transform 160ms ease;
 }
 
 .power-board-hit {
@@ -412,6 +442,10 @@ button.trial-now {
   border: 0;
   background: transparent;
   cursor: pointer;
+}
+
+.power-board-hit:hover .power-board {
+  transform: scale(1.004);
 }
 
 .scene-caption {
@@ -485,6 +519,18 @@ button.trial-now {
   text-align: left;
   background: var(--panel);
   animation: fade-up 420ms ease both;
+  transition:
+    transform 160ms ease,
+    border-color 160ms ease,
+    background 160ms ease,
+    box-shadow 160ms ease;
+}
+
+.menu-card:hover {
+  transform: translateY(-2px);
+  border-color: rgba(65, 199, 192, 0.45);
+  background: var(--panel-2);
+  box-shadow: 0 14px 34px rgba(0, 0, 0, 0.28);
 }
 
 .card-index {
@@ -4455,5 +4501,16 @@ button.trial-now {
   .map-quick-actions {
     display: grid;
     gap: 8px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
   }
 }
