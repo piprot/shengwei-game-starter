@@ -13,6 +13,7 @@ import {
   EXTRA_MAIN_NODES,
   EXTRA_MAIN_ROLE_VARIANTS
 } from "./mainScenarios.ts";
+import { BRANCH_ROLE_CONTEXT_ZH } from "./branchDetails.ts";
 
 export const CHAPTERS: ChapterDef[] = [
   {
@@ -4996,7 +4997,7 @@ function buildBranchNodes(): void {
         chapterId: chapter.id,
         title: `${roleName(role)} · ${template.title}`,
         kind: "branch",
-        context: `${template.context} ${roleLens(role)}`,
+        context: `${template.context} ${BRANCH_ROLE_CONTEXT_ZH[id] ?? roleLens(role)}`,
         stake: template.stake,
         options: BRANCH_QUALITIES.map((quality, index) => {
           const handwritten = branchVariantFor(chapter.id, quality, "zh");

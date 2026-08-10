@@ -8,6 +8,7 @@ import {
   EXTRA_MAIN_EN,
   EXTRA_MAIN_THEORY_EN
 } from "./mainScenarios.ts";
+import { BRANCH_ROLE_CONTEXT_EN } from "./branchDetails.ts";
 
 export const CHAPTER_EN: Record<
   number,
@@ -1303,6 +1304,12 @@ export const FORK_NODE_EN: Record<
     ]
   }
 };
+
+for (const [id, context] of Object.entries(BRANCH_ROLE_CONTEXT_EN)) {
+  if (BRANCH_NODE_EN[id]) {
+    BRANCH_NODE_EN[id].context = context;
+  }
+}
 
 export const RANDOM_NODE_EN: Record<
   string,
