@@ -6,20 +6,23 @@ import { chromium } from "playwright";
 
 const root = resolve(import.meta.dirname, "..");
 const port = 4178;
-const url = `http://127.0.0.1:${port}`;
+const externalUrl = process.env.MUSIC_AUDIT_URL;
+const url = externalUrl || `http://127.0.0.1:${port}`;
 const profileDir = mkdtempSync(join(tmpdir(), "adaptive-music-audit-"));
-const server = spawn(
-  process.execPath,
-  [
-    "node_modules/vite/bin/vite.js",
-    "--host",
-    "127.0.0.1",
-    "--port",
-    String(port),
-    "--strictPort"
-  ],
-  { cwd: root, windowsHide: true, stdio: ["ignore", "pipe", "pipe"] }
-);
+const server = externalUrl
+  ? null
+  : spawn(
+      process.execPath,
+      [
+        "node_modules/vite/bin/vite.js",
+        "--host",
+        "127.0.0.1",
+        "--port",
+        String(port),
+        "--strictPort"
+      ],
+      { cwd: root, windowsHide: true, stdio: ["ignore", "pipe", "pipe"] }
+    );
 
 async function waitForServer() {
   for (let i = 0; i < 60; i += 1) {
@@ -35,7 +38,9 @@ async function waitForServer() {
 }
 
 try {
-  await waitForServer();
+  if (!externalUrl) {
+    await waitForServer();
+  }
   const browser = await chromium.launch({ channel: "msedge", headless: true });
   const page = await browser.newPage({ viewport: { width: 1280, height: 900 } });
   const errors = [];
@@ -155,6 +160,6 @@ try {
   await browser.close();
   console.log("PASS music audit");
 } finally {
-  server.kill();
+  server?.kill();
   rmSync(profileDir, { recursive: true, force: true });
 }
