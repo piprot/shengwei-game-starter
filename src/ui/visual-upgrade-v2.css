@@ -801,6 +801,120 @@ html[data-vu="off"] * {
   }
 }
 
+/* =========================================================================
+   章节剧情影像与影视副线主入口
+   ========================================================================= */
+.chapter-narrative {
+  display: grid;
+  grid-template-columns: minmax(180px, 320px) minmax(0, 1fr);
+  gap: 16px;
+  align-items: stretch;
+  margin: 12px 0;
+  border: 1px solid color-mix(in srgb, var(--civ, var(--vu-gold)) 40%, transparent);
+  border-radius: var(--vu-radius);
+  overflow: hidden;
+  background: var(--vu-panel);
+  box-shadow: var(--vu-shadow-soft);
+}
+.chapter-narrative-art {
+  min-height: 180px;
+  background-size: cover;
+  background-position: center;
+  filter: saturate(0.9) brightness(0.92);
+}
+.chapter-narrative-copy {
+  display: grid;
+  align-content: center;
+  gap: 8px;
+  padding: 16px 18px;
+}
+.chapter-narrative-copy > span {
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  color: var(--vu-gold);
+  text-transform: uppercase;
+}
+.chapter-narrative-copy h2 {
+  margin: 0;
+  color: var(--vu-ink);
+  font-family: var(--vu-font-display);
+  font-size: 22px;
+}
+.chapter-narrative-copy p {
+  margin: 0;
+  color: var(--vu-muted);
+  line-height: 1.65;
+}
+.chapter-narrative-copy details {
+  margin-top: 4px;
+  padding-top: 8px;
+  border-top: 1px solid var(--vu-line-soft);
+}
+.chapter-narrative-copy summary {
+  color: var(--vu-teal-bright);
+  cursor: pointer;
+  font-weight: 600;
+}
+.chapter-narrative-copy details p {
+  margin-top: 8px;
+}
+.film-quest-banner {
+  display: grid;
+  grid-template-columns: minmax(160px, 300px) minmax(0, 1fr);
+  gap: 16px;
+  align-items: center;
+  margin: 0 0 14px;
+  padding: 10px;
+  border: 1px solid rgba(180, 151, 240, 0.5);
+  border-radius: var(--vu-radius);
+  background:
+    radial-gradient(circle at 90% 20%, rgba(180, 151, 240, 0.16), transparent 48%),
+    var(--vu-panel);
+  box-shadow: var(--vu-shadow-soft);
+}
+.film-quest-banner img {
+  width: 100%;
+  height: 128px;
+  object-fit: cover;
+  border-radius: 6px;
+  display: block;
+}
+.film-quest-banner h2 {
+  margin: 2px 0 6px;
+  color: var(--vu-ink);
+  font-family: var(--vu-font-display);
+  font-size: 22px;
+}
+.film-quest-banner p {
+  margin: 0 0 10px;
+  color: var(--vu-muted);
+  line-height: 1.55;
+}
+.film-quest-banner button {
+  border: 1px solid var(--vu-purple-line, rgba(180, 151, 240, 0.5));
+  border-radius: var(--vu-radius);
+  padding: 9px 14px;
+  background: transparent;
+  color: #d8c9ff;
+  cursor: pointer;
+}
+.film-quest-banner button:hover {
+  background: color-mix(in srgb, #b497f0 14%, transparent);
+}
+
+@media (max-width: 900px) {
+  .chapter-narrative,
+  .film-quest-banner {
+    grid-template-columns: 1fr;
+  }
+  .chapter-narrative-art {
+    min-height: 130px;
+  }
+  .film-quest-banner img {
+    height: 110px;
+  }
+}
+
 @media (max-width: 900px) {
   .expedition-hero {
     grid-template-columns: 1fr;

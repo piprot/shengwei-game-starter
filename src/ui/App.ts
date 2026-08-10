@@ -86,6 +86,7 @@ import {
   getNodeForRole,
   sideNodesForChapter
 } from "../core/story";
+import { chapterNarrative } from "../core/chapterNarrative";
 import type {
   AbilityId,
   AiArchetype,
@@ -196,7 +197,7 @@ const SETTINGS_MIGRATION_KEY = "adaptive-ascent-settings-v2";
 const GUIDE_KEY = "adaptive-ascent-guide-v1";
 const GUIDE_REWARD_KEY = "adaptive-ascent-guide-reward";
 const ACHIEVEMENT_FAVORITE_KEY = "adaptive-ascent-achievement-favorites";
-const APP_VERSION = "1.6.2";
+const APP_VERSION = "1.6.3";
 
 type View =
   | "menu"
@@ -627,13 +628,6 @@ export class AdaptiveGameApp {
               ? "victory"
               : "menu";
     this.audio.setAmbientScene(scene);
-    this.audio.setEnvironment(
-      scene === "duel"
-        ? "crisis"
-        : scene === "story" || scene === "training"
-          ? "latenight"
-          : "boardroom"
-    );
     if (view === "ending") {
       if (!this.themeMusicPlaying) {
         this.themeMusic.play();
@@ -1263,7 +1257,7 @@ export class AdaptiveGameApp {
 
   /** 章节美术用页面绝对 URL，避免 CSS 自定义属性中的相对路径被解析到 assets 目录。 */
   private chapterArtStyle(chapterId: number): string {
-    const url = new URL(`./art/chapter-${chapterId}.svg`, window.location.href).href;
+    const url = new URL(`./art/chapter-${chapterId}.jpg`, window.location.href).href;
     return `--chapter-art:url('${url}')`;
   }
 
@@ -2001,6 +1995,15 @@ export class AdaptiveGameApp {
       </header>
       <main class="map-shell ${this.mapDetailOpen ? "map-detail-open" : ""}" style="${this.chapterArtStyle(chapter.id)}" aria-label="${this.language === "en" ? "Campaign map" : "主线地图"}">
         ${this.expeditionHeroMarkup(chapter.id)}
+        <section class="film-quest-banner" style="--dot:#b497f0">
+          <img src="./art/chapter-${chapter.id}.jpg" alt="" loading="lazy" />
+          <div>
+            <p class="eyebrow">${this.language === "en" ? "Classic Film Side Quests" : "经典影视副线"}</p>
+            <h2>${this.language === "en" ? "Learn leadership from classic scenes" : "从经典影视剧里学管理"}</h2>
+            <p>${this.language === "en" ? `${this.save.completedFilmQuests?.length ?? 0} / ${FILM_QUEST_COUNT} classic scenes completed. Each scene ends with a mirror insight and a golden line, then returns you to the map.` : `已完成 ${this.save.completedFilmQuests?.length ?? 0} / ${FILM_QUEST_COUNT} 部经典片场。每关结束看镜鉴和金句，再回到地图。`}</p>
+            <button data-action="open-film-quest">${this.language === "en" ? "Enter Classic Studio" : "进入经典片场"}</button>
+          </div>
+        </section>
         ${
           this.resourceRecoveryNote
             ? `<div class="recovery-banner" role="status">${this.language === "en" ? "Daily resource recovery applied: +10 energy, +4 trust, +3 influence, +3 capital. Refreshes once per day when entering the map." : "今日资源恢复已生效：精力+10、信任+4、影响力+3、组织资源+3；每天首次进入地图时自动恢复一次。"}</div>`
@@ -2320,6 +2323,7 @@ export class AdaptiveGameApp {
     const showingOutcome = this.lastOutcomeNodeId === node.id && this.lastOutcome;
     const showOnboarding = this.save.playCount === 0 && !showingOutcome;
     const civ = civilizationForChapter(node.chapterId);
+    const narrative = chapterNarrative(node.chapterId);
     const chapterFocusAbility = chapter.focus[0] ?? "insight";
     const lessonExtra =
       this.language === "en"
@@ -2383,6 +2387,27 @@ export class AdaptiveGameApp {
           </div>
           <p>${escapeHtml(en ? civ.clueEn : civ.clueZh)}</p>
         </section>
+        ${
+          narrative
+            ? `
+              <section class="chapter-narrative" style="--civ:${civ.color}">
+                <div class="chapter-narrative-art" style="background-image:url('./art/chapter-${node.chapterId}.jpg')"></div>
+                <div class="chapter-narrative-copy">
+                  <span>${en ? "Chapter Story" : "本章剧情"}</span>
+                  <h2>${en ? "The story behind this chapter" : "这一章发生了什么"}</h2>
+                  <p>${escapeHtml(en ? narrative.en[0] : narrative.zh[0])}</p>
+                  <details>
+                    <summary>${en ? "Continue the story" : "继续看剧情"}</summary>
+                    ${(en ? narrative.en : narrative.zh)
+                      .slice(1)
+                      .map((paragraph) => `<p>${escapeHtml(paragraph)}</p>`)
+                      .join("")}
+                  </details>
+                </div>
+              </section>
+            `
+            : ""
+        }
         ${
           node.chapterId === 4 || node.chapterId === 7
             ? `<div class="route-checkpoint" role="status">${this.language === "en" ? "Route checkpoint: your earlier choices are now shaping upcoming events and endings." : "路线分叉：此前的选择正在改变后续事件与结局权重。"}</div>`
