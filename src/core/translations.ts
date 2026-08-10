@@ -1322,8 +1322,8 @@ export const RANDOM_NODE_EN: Record<
   r1: {
     title: "Elevator Encounter",
     context:
-      "You meet the CEO in the elevator. He gives you one sentence to share your first judgment about the new organization.",
-    stake: "One sentence can shape his first impression of you.",
+      "At eight o'clock on Friday evening, you meet the CEO in the elevator. He just finished a board meeting and asks, with tired eyes: “What is the first thing you would change after taking over?” The doors will open in twelve seconds.",
+    stake: "You have one sentence; too broad sounds empty, too specific sounds like complaining.",
     intel: [
       "The CEO is most worried about whether the organization is losing direction.",
       "His one-sentence opening is a test of whether you are already on top of the situation."
@@ -1356,8 +1356,8 @@ export const RANDOM_NODE_EN: Record<
   r2: {
     title: "Suspicious Expense Report",
     context:
-      "You happen to see an unusually large expense report signed by a core performer. The purpose field has been altered.",
-    stake: "You must decide whether to investigate without complete evidence.",
+      "While reviewing reimbursements, you find an unusually large receipt: the purpose field has been altered, it carries a core performer's signature, and the date is the day before a project delay.",
+    stake: "The document may be a correction error or evidence of bypassed approval; before you verify it, every move changes trust.",
     intel: [
       "Someone deliberately skipped the normal check in the approval chain.",
       "This reimbursement is linked to a new supplier."
@@ -1393,8 +1393,8 @@ export const RANDOM_NODE_EN: Record<
   r3: {
     title: "Late-Night Client Call",
     context:
-      "At 11 p.m., a key client calls to say they need a demo next week of a feature you have not prepared.",
-    stake: "You must decide how to respond to a last-minute client request.",
+      "At 11 p.m., a key client calls to say they need the unbuilt feature demo on Monday and have already invited two executives to watch.",
+    stake: "You must choose among commitment, overtime, and true progress instead of promising first and patching later.",
     intel: [
       "What the client really wants to confirm is whether your demo can support their internal decision.",
       "An existing feature can already serve as a replacement scenario."
@@ -1429,8 +1429,8 @@ export const RANDOM_NODE_EN: Record<
   r4: {
     title: "Office Rumor",
     context:
-      "Passing the break room, you hear people saying you plan mass layoffs. The source is unknown, but the rumor is already affecting the team.",
-    stake: "You must respond between truth and emotion.",
+      "Passing the break room, you hear three people saying the entire business group will be cut next month. The source is unknown, but résumés are already being updated.",
+    stake: "The rumor will not disappear on its own; your response must handle both facts and emotions.",
     intel: [
       "The rumor is connected to a recent executive meeting.",
       "The most anxious employees are frontline staff without a direct manager."
@@ -1467,8 +1467,8 @@ export const RANDOM_NODE_EN: Record<
   r5: {
     title: "Challenge at the Review",
     context:
-      "At the quarterly review, a senior lead asks directly: what has your change actually delivered? The room goes quiet.",
-    stake: "Your answer becomes a sample of your leadership judgment.",
+      "At the quarterly review, a senior lead turns the laptop toward the room, lists four promises you have not kept since taking office, and asks: “What has your change actually delivered?”",
+    stake: "The evidence is on the table and everyone is waiting; dodging makes the question look more real.",
     intel: [
       "The senior lead holds a set of real data that can verify your claim.",
       "The team wants to hear how you will correct course, not how you will defend yourself."
@@ -1504,8 +1504,8 @@ export const RANDOM_NODE_EN: Record<
   r6: {
     title: "Exit Interview",
     context:
-      "A core performer you invested in asks to leave. He says it is not about pay; he feels his growth has reached a ceiling.",
-    stake: "Your response may decide whether he leaves or reinvests.",
+      "A core performer you invested in asks to leave, saying growth has reached its ceiling. You know he lost two recent promotion reviews and the shortlist included two people close to you.",
+    stake: "The danger is not keeping the person; it is hearing the real reason and failing to respond to it.",
     intel: [
       "This performer recently volunteered twice for work beyond his role.",
       "What he really wants is more judgment space, not a higher title."
@@ -1540,9 +1540,9 @@ export const RANDOM_NODE_EN: Record<
   r7: {
     title: "Unexpected Question in a Meeting",
     context:
-      "At a leadership meeting, you are asked to explain data you have not fully mastered. Some people look at their phones; others whisper.",
+      "At a leadership meeting, you are asked to explain a number you have only seen in a summary. No full report is in front of you, and someone nearby starts checking their phone, waiting for you to slip.",
     stake:
-      "You must avoid lying without losing control when information is incomplete.",
+      "Admitting ignorance looks unprepared, and inventing data destroys credibility; you need an honest, traceable answer.",
     intel: [
       "The questioner also has only an outdated version of the data.",
       "Leadership wants to see how you manage information boundaries."
@@ -1578,9 +1578,9 @@ export const RANDOM_NODE_EN: Record<
   r8: {
     title: "New Hire Overpromises to a Client",
     context:
-      "In front of a client, a new hire promises a delivery date the team has not confirmed. The client has already scheduled around it.",
+      "In front of the client, a new hire promises a delivery date the team has not confirmed, and the client has already planned around it. The new hire realizes the problem but is afraid to tell you.",
     stake:
-      "You must choose between protecting the new hire and protecting the commitment.",
+      "You must protect the new hire's courage to speak while keeping external commitments consistent.",
     intel: [
       "Behind the new hire's promise is private pressure from the sales lead.",
       "What the client really cares about is whether the delivery mechanism is transparent."
@@ -1616,9 +1616,9 @@ export const RANDOM_NODE_EN: Record<
   r9: {
     title: "Silence Before a Delay",
     context:
-      "A key project is likely to be delayed, but nobody has officially reported it. You have already heard about it indirectly.",
+      "From two independent channels, you hear the key project is likely to be delayed, but the project owner has not reported it and has been avoiding one-on-one meetings.",
     stake:
-      "Do you wait for the official report or trigger a risk conversation yourself?",
+      "Waiting for the official report may cost you the intervention window, while asking directly may look like distrust.",
     intel: [
       "The project lead has revised the internal plan three times.",
       "The team is afraid that reporting risk will be seen as incapability."
@@ -1653,9 +1653,9 @@ export const RANDOM_NODE_EN: Record<
   r10: {
     title: "A Client Asks for a Private Kickback",
     context:
-      "A key client privately suggests that if you lower the price by 5%, he can give you a personal thank-you fee. There is no written record.",
+      "At dinner, a key client suggests that if you lower the price by 5%, he can personally thank you. He says it just as the server leaves, leaving no record.",
     stake:
-      "You must choose between short-term results and your personal line.",
+      "No record does not mean no consequence; your response becomes the organization's sample of its bottom line.",
     intel: [
       "This client has changed suppliers three times in the past two years.",
       "He cares more about long-term supply stability than this price."
@@ -1690,9 +1690,9 @@ export const RANDOM_NODE_EN: Record<
   r11: {
     title: "A Veteran Publicly Challenges a New Hire",
     context:
-      "At a weekly meeting, a veteran publicly calls a new high-potential employee a connection hire. The new hire looks upset and others start agreeing.",
+      "At the weekly meeting, a veteran points at a new high-potential employee and says: “Only a connection hire could write a plan like this.” Some people nod, some look down.",
     stake:
-      "Your one sentence decides whether public humiliation is allowed in the team.",
+      "You are not handling two people; you are deciding whether public humiliation becomes the team's default language.",
     intel: [
       "The veteran has had a similar conflict before.",
       "The new hire's proposal last week contained a key data error."
@@ -1729,9 +1729,9 @@ export const RANDOM_NODE_EN: Record<
   r12: {
     title: "Investor Demands Layoffs",
     context:
-      "An investor asks you to cut a department to reduce costs or delay the next round. You know three key talents are in that department.",
+      "An investor makes it clear: cut a department or the next round will be postponed. You know three key talents in that department are responsible for next year's most important project.",
     stake:
-      "You must judge between survival pressure and long-term organizational capability.",
+      "Short-term survival and long-term capability sit on the table together; your plan must show both the investor and the team the basis for the trade-off.",
     intel: [
       "The investor is actually worried about the cash-flow model, not the department.",
       "Three customer-relationship hubs sit inside the department targeted for cuts."
