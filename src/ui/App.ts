@@ -111,6 +111,7 @@ import {
 } from "../core/expedition";
 import { npcStoryFor } from "../core/npcStories";
 import { duelBankEn } from "../core/duelBank";
+import { EXTRA_MAIN_OPTIONS_EN } from "../core/mainScenarios";
 import {
   FILM_QUESTS,
   FILM_QUEST_COUNT,
@@ -197,7 +198,7 @@ const SETTINGS_MIGRATION_KEY = "adaptive-ascent-settings-v2";
 const GUIDE_KEY = "adaptive-ascent-guide-v1";
 const GUIDE_REWARD_KEY = "adaptive-ascent-guide-reward";
 const ACHIEVEMENT_FAVORITE_KEY = "adaptive-ascent-achievement-favorites";
-const APP_VERSION = "1.7.6";
+const APP_VERSION = "1.7.7";
 
 type View =
   | "menu"
@@ -716,6 +717,22 @@ export class AdaptiveGameApp {
   private storyNodeDisplay(node: StoryNode): StoryNode {
     if (node.id.startsWith("duel-")) {
       return this.language === "en" ? duelBankEn(node) : node;
+    }
+    if (
+      this.language === "en" &&
+      node.kind === "main" &&
+      /n[3-9]$/.test(node.id)
+    ) {
+      const enOptions = EXTRA_MAIN_OPTIONS_EN[node.id];
+      if (enOptions) {
+        return {
+          ...node,
+          options: node.options.map((option, index) => ({
+            ...option,
+            ...(enOptions[index] ?? {})
+          }))
+        };
+      }
     }
     if (node.kind === "random" && this.language === "zh") {
       const variant = randomEventVariantContext(
@@ -2206,6 +2223,15 @@ export class AdaptiveGameApp {
               <p class="muted">${this.language === "en" ? "Spend 25 organizational resources to gain trust, influence, and mastery; every third investment upgrades production capacity." : "消耗 25 点组织资源，换取信任、影响力和修炼点；每 3 次触发一次产能升级。"}</p>
               <p class="muted">${this.language === "en" ? `Invested ${this.save.organizationInvestments ?? 0} times` : `已投资 ${this.save.organizationInvestments ?? 0} 次`}</p>
               <button data-action="organizational-invest" ${this.save.profile.resources.capital < 25 ? "disabled" : ""}>${this.language === "en" ? "Invest 25" : "投资 25"}</button>
+            </div>
+            <div class="mini-panel production-panel">
+              <h3>${this.language === "en" ? "Daily Production" : "每日产能"}</h3>
+              <p class="muted">${this.language === "en" ? "Complete 3 decisions today, then claim resources." : "今天完成 3 次决策后领取资源奖励。"}</p>
+              <div class="production-progress">
+                <span style="width:${Math.min(100, ((this.save.productionCount ?? 0) / 3) * 100)}%"></span>
+              </div>
+              <p class="muted">${this.save.productionCount ?? 0} / 3</p>
+              <button data-action="claim-production" ${this.productionReady() ? "" : "disabled"}>${this.language === "en" ? "Claim Rewards" : "领取产能奖励"}</button>
             </div>
             <div class="mini-panel role-objective">
               <h3>${this.t("roleObjective")}</h3>
@@ -6880,6 +6906,9 @@ export class AdaptiveGameApp {
       case "organizational-invest":
         this.organizationalInvest();
         break;
+      case "claim-production":
+        this.claimProduction();
+        break;
       case "dismiss-map-guide":
         this.markGuideStep("map-intro");
         this.audio.ui();
@@ -7373,6 +7402,63 @@ export class AdaptiveGameApp {
     return map[nodeId];
   }
 
+  private recordProduction(): void {
+    const today = new Date().toISOString().slice(0, 10);
+    if (this.save.lastProductionDate !== today) {
+      this.save.lastProductionDate = today;
+      this.save.productionCount = 0;
+    }
+    this.save.productionCount = (this.save.productionCount ?? 0) + 1;
+  }
+
+  private productionReady(): boolean {
+    const today = new Date().toISOString().slice(0, 10);
+    return (
+      this.save.lastProductionDate === today &&
+      (this.save.productionCount ?? 0) >= 3
+    );
+  }
+
+  private claimProduction(): void {
+    if (!this.productionReady()) {
+      this.showToast(
+        this.language === "en"
+          ? "Complete 3 decisions today to claim production rewards."
+          : "今天完成 3 次决策后才能领取产能奖励。"
+      );
+      return;
+    }
+    this.save.profile.resources.energy = clamp(
+      this.save.profile.resources.energy + 10,
+      0,
+      100
+    );
+    this.save.profile.resources.trust = clamp(
+      this.save.profile.resources.trust + 5,
+      0,
+      100
+    );
+    this.save.profile.resources.influence = clamp(
+      this.save.profile.resources.influence + 5,
+      0,
+      100
+    );
+    this.save.profile.resources.capital = clamp(
+      this.save.profile.resources.capital + 3,
+      0,
+      100
+    );
+    this.save.productionCount = 0;
+    this.persistSave();
+    this.audio.playCoins();
+    this.showToast(
+      this.language === "en"
+        ? "Production claimed: +10 energy, +5 trust, +5 influence, +3 capital."
+        : "产能领取完成：精力 +10、信任 +5、影响力 +5、组织资源 +3。"
+    );
+    this.renderMap();
+  }
+
   /** 结算某个选项（手动点击或回合超时自动采用最稳妥选项共用此路径）。 */
   private resolveStoryOption(optionIndex: number): void {
     this.stopRoundTimer();
@@ -7461,6 +7547,7 @@ export class AdaptiveGameApp {
           : "发现新的人物线索。"
       );
     }
+    this.recordProduction();
     trackEvent("story_choice", {
       nodeId: this.storyNodeId,
       quality: outcome.option.quality,

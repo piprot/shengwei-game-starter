@@ -1095,6 +1095,33 @@ html[data-vu="off"] * {
   color: var(--vu-teal-bright);
   cursor: pointer;
 }
+.production-panel button {
+  width: 100%;
+  margin-top: 6px;
+  border: 1px solid var(--vu-gold-line);
+  border-radius: var(--vu-radius);
+  padding: 8px 10px;
+  background: transparent;
+  color: var(--vu-gold-bright);
+  cursor: pointer;
+}
+.production-panel button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+.production-progress {
+  height: 8px;
+  margin: 8px 0 4px;
+  border-radius: 999px;
+  background: rgba(7, 12, 16, 0.5);
+  overflow: hidden;
+}
+.production-progress span {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--vu-teal), var(--vu-gold));
+}
 .map-guide-overlay {
   position: relative;
   z-index: 5;

@@ -184,6 +184,9 @@ export interface SaveState {
   organizationInvestments?: number;
   /** 随机事件解锁的人物线索。 */
   npcLeads?: string[];
+  /** 每日产能任务：最近领取日期与当日已完成决策数。 */
+  lastProductionDate?: string;
+  productionCount?: number;
 }
 
 export interface ChoiceOutcome {

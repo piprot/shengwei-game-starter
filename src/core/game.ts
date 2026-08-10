@@ -137,7 +137,9 @@ export const DEFAULT_SAVE: SaveState = {
   completedFilmQuests: [],
   recentPickPositions: [],
   organizationInvestments: 0,
-  npcLeads: []
+  npcLeads: [],
+  lastProductionDate: "",
+  productionCount: 0
 };
 
 export function createProfile(name: string, role: RoleId): PlayerProfile {
@@ -381,7 +383,12 @@ function normalizeSave(save: SaveState): SaveState {
       0,
       Number(save.organizationInvestments) || 0
     ),
-    npcLeads: Array.isArray(save.npcLeads) ? save.npcLeads : []
+    npcLeads: Array.isArray(save.npcLeads) ? save.npcLeads : [],
+    lastProductionDate:
+      typeof save.lastProductionDate === "string"
+        ? save.lastProductionDate
+        : "",
+    productionCount: Math.max(0, Number(save.productionCount) || 0)
   };
   syncDerivedAchievements(normalized);
   return normalized;

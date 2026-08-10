@@ -266,11 +266,65 @@ function buildOptions(
   });
 }
 
+const ABILITY_NAME_EN: Record<AbilityId, string> = {
+  insight: "Insight",
+  deploy: "Deployment",
+  mobilize: "Mobilization",
+  strategy: "Strategy",
+  authority: "Authority",
+  stability: "Stability",
+  recovery: "Recovery",
+  execution: "Execution",
+  structure: "Structure",
+  communication: "Communication"
+};
+
+function buildEnOptionViews(
+  ability: AbilityId,
+  base: ExtraSceneBase,
+  slot: number,
+  chapterId: number
+): Array<{ label: string; summary: string; feedback: string }> {
+  const abilityNameEn = ABILITY_NAME_EN[ability];
+  const variant = slot % 2;
+  const chapterTag = `Chapter ${chapterId} · ${base.titleEn}`;
+  const expertLabels = [
+    `Align the facts and process ${abilityNameEn} needs (${chapterTag})`,
+    `Validate your ${abilityNameEn} judgment in a small pilot (${chapterTag})`
+  ];
+  const partialLabels = [
+    `Proceed with the current pace while observing (${chapterTag})`,
+    `Fix the most visible issue first (${chapterTag})`
+  ];
+  const riskLabels = [
+    `Lay your cards on the table and force the situation to turn (${chapterTag})`,
+    `Mobilize resources around the process and move before your rivals (${chapterTag})`
+  ];
+  return [
+    {
+      label: expertLabels[variant],
+      summary: `Turn "${base.titleEn}" into a verifiable ${abilityNameEn} practice.`,
+      feedback: `You used ${abilityNameEn} to turn the fuzzy situation into executable process, and the team started trusting that judgment can be reproduced.`
+    },
+    {
+      label: partialLabels[variant],
+      summary: "Stabilize the visible problem first, then gather evidence.",
+      feedback: `You eased the immediate tension, but the core tension behind ${abilityNameEn} remains open.`
+    },
+    {
+      label: riskLabels[variant],
+      summary: "Trade a strong signal for a breakthrough.",
+      feedback: "Your strong signal moved the situation but cost trust and resources."
+    }
+  ];
+}
+
 function buildExtraMainNodes(): {
   nodes: StoryNode[];
   en: Record<string, { title: string; context: string; stake: string }>;
   theoryEn: Record<string, string[]>;
   intel: Record<string, string[]>;
+  optionsEn: Record<string, Array<{ label: string; summary: string; feedback: string }>>;
   roleVariants: Record<
     string,
     Partial<Record<RoleId, { context: string; stake: string }>>
@@ -280,6 +334,10 @@ function buildExtraMainNodes(): {
   const en: Record<string, { title: string; context: string; stake: string }> = {};
   const theoryEn: Record<string, string[]> = {};
   const intel: Record<string, string[]> = {};
+  const optionsEn: Record<
+    string,
+    Array<{ label: string; summary: string; feedback: string }>
+  > = {};
   const roleVariants: Record<
     string,
     Partial<Record<RoleId, { context: string; stake: string }>>
@@ -310,6 +368,7 @@ function buildExtraMainNodes(): {
         "Process protects decisions better than personal force.",
         "Shared ownership turns resistance into momentum."
       ];
+      optionsEn[id] = buildEnOptionViews(ability, base, slot, chapterId);
       intel[id] = [
         `「${base.titleZh}」涉及的记录需要交叉核对`,
         `当前章节背景：${detail.zh}`,
@@ -331,7 +390,7 @@ function buildExtraMainNodes(): {
       };
     });
   }
-  return { nodes, en, theoryEn, intel, roleVariants };
+  return { nodes, en, theoryEn, intel, optionsEn, roleVariants };
 }
 
 const built = buildExtraMainNodes();
@@ -340,4 +399,5 @@ export const EXTRA_MAIN_NODES = built.nodes;
 export const EXTRA_MAIN_EN = built.en;
 export const EXTRA_MAIN_THEORY_EN = built.theoryEn;
 export const EXTRA_MAIN_INTEL = built.intel;
+export const EXTRA_MAIN_OPTIONS_EN = built.optionsEn;
 export const EXTRA_MAIN_ROLE_VARIANTS = built.roleVariants;
