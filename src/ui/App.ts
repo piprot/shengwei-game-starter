@@ -197,7 +197,7 @@ const SETTINGS_MIGRATION_KEY = "adaptive-ascent-settings-v2";
 const GUIDE_KEY = "adaptive-ascent-guide-v1";
 const GUIDE_REWARD_KEY = "adaptive-ascent-guide-reward";
 const ACHIEVEMENT_FAVORITE_KEY = "adaptive-ascent-achievement-favorites";
-const APP_VERSION = "1.7.1";
+const APP_VERSION = "1.7.2";
 
 type View =
   | "menu"
@@ -308,6 +308,7 @@ export class AdaptiveGameApp {
   private pendingIntegrityOption?: number;
   private filmQuest?: FilmQuest;
   private filmQuestPickedOption?: number;
+  private filmQuestOrder: number[] = [];
   private wrongReviewQueue: string[] = [];
   private wrongReviewIndex = 0;
   private hiddenBranchAbilityId?: AbilityId;
@@ -1035,30 +1036,67 @@ export class AdaptiveGameApp {
     if (this.pendingIntegrityOption === undefined) return "";
     const option = node.options[this.pendingIntegrityOption];
     if (!option) return "";
-    const primary = this.primaryAbilityForOption(option);
-    const distractors = ABILITY_ORDER.filter((id) => id !== primary).slice(0, 2);
     const en = this.language === "en";
+    const cost = this.optionCostSummary(option);
+    const wrongOne = en
+      ? "No cost at all; the choice itself is the answer"
+      : "没有代价，选择本身就是答案";
+    const wrongTwo = en
+      ? "It only affects other people, not you"
+      : "只影响别人，不影响你";
     return `
       <section class="integrity-gate" role="dialog" aria-label="${en ? "Colleague verification" : "同事验证"}">
         <div class="integrity-gate-head">
           <span>${en ? "Decision Witness" : "决策见证人"}</span>
-          <h3>${en ? "You chose the first option three times in a row." : "你连续三次选择了第一个方案。"}</h3>
-          <p>${en ? "Name the ability this move truly tests before it can pass." : "先说出这一手真正考验的能力，才能让它生效。"}</p>
+          <h3>${en ? "You chose the first option twice in a row." : "你连续两次选择了第一个方案。"}</h3>
+          <p>${en ? "Before this move counts, name its real trade-off." : "在让这一手生效前，先说出它真正的取舍。"}</p>
         </div>
         <div class="integrity-gate-options">
-          ${[primary, ...distractors]
-            .map(
-              (id) => `
-                <button data-action="integrity-answer" data-ability="${id}">
-                  ${this.abilityDisplay(id).name}
-                  <small>${this.abilityDisplay(id).tagline}</small>
-                </button>
-              `
-            )
-            .join("")}
+          <button data-action="integrity-answer" data-cost="correct">
+            ${escapeHtml(cost)}
+            <small>${en ? "This is the actual trade-off" : "这才是真实的取舍"}</small>
+          </button>
+          <button data-action="integrity-answer" data-cost="wrong-one">
+            ${escapeHtml(wrongOne)}
+            <small>${en ? "Too convenient to be true" : "太顺理成章，反而不真实"}</small>
+          </button>
+          <button data-action="integrity-answer" data-cost="wrong-two">
+            ${escapeHtml(wrongTwo)}
+            <small>${en ? "Ignoring who carries the cost" : "忽略了代价由谁承担"}</small>
+          </button>
         </div>
       </section>
     `;
+  }
+
+  private optionCostSummary(option: StoryOption): string {
+    const en = this.language === "en";
+    const negative = (Object.entries(option.resources) as Array<
+      [ResourceKey, number]
+    >).filter(([, value]) => value < 0);
+    const positive = (Object.entries(option.resources) as Array<
+      [ResourceKey, number]
+    >).filter(([, value]) => value > 0);
+    if (negative.length && positive.length) {
+      const lose = negative
+        .map(([key, value]) => `${this.resourceDisplay(key)} ${Math.abs(value)}`)
+        .join("、");
+      const gain = positive
+        .map(([key, value]) => `${this.resourceDisplay(key)} +${value}`)
+        .join("、");
+      return en
+        ? `Spend ${lose} to gain ${gain}`
+        : `消耗 ${lose}，换取 ${gain}`;
+    }
+    if (negative.length) {
+      const lose = negative
+        .map(([key, value]) => `${this.resourceDisplay(key)} ${Math.abs(value)}`)
+        .join("、");
+      return en ? `It costs ${lose}` : `它需要付出 ${lose}`;
+    }
+    return en
+      ? "It takes on the uncertainty of a strong signal"
+      : "它承担了一次强信号带来的不确定性";
   }
 
   private primaryAbilityForOption(option: StoryOption): AbilityId {
@@ -2615,8 +2653,22 @@ export class AdaptiveGameApp {
       nextFilmQuest(this.save.completedFilmQuests ?? []) ?? FILM_QUESTS[0];
     this.filmQuest = next;
     this.filmQuestPickedOption = undefined;
+    this.filmQuestOrder = this.shuffleFilmOptions(next);
     this.audio.ui();
     this.show("filmQuest");
+  }
+
+  private shuffleFilmOptions(quest: FilmQuest): number[] {
+    const order = [0, 1, 2];
+    let seed = 0;
+    for (let i = 0; i < quest.id.length; i += 1) {
+      seed = (seed * 31 + quest.id.charCodeAt(i)) >>> 0;
+    }
+    for (let i = order.length - 1; i > 0; i -= 1) {
+      const j = (seed + i * 17) % (i + 1);
+      [order[i], order[j]] = [order[j], order[i]];
+    }
+    return order;
   }
 
   private filmQuestBackToMap(): void {
@@ -2633,8 +2685,26 @@ export class AdaptiveGameApp {
     ) {
       return;
     }
-    const option = quest.options[optionIndex]?.zh;
+    const realIndex = this.filmQuestOrder[optionIndex] ?? optionIndex;
+    const option = quest.options[realIndex]?.zh;
     if (!option) return;
+    const firstDisplayed = this.filmQuestOrder[0];
+    if (realIndex === firstDisplayed) {
+      this.save.firstPickStreak = (this.save.firstPickStreak ?? 0) + 1;
+    } else {
+      this.save.firstPickStreak = 0;
+    }
+    if ((this.save.firstPickStreak ?? 0) >= 2) {
+      this.persistSave();
+      this.audio.risk();
+      this.showToast(
+        this.language === "en"
+          ? "You picked the first option twice in a row. Choose a different approach to continue."
+          : "连续两次选择第一个方案。换一种思路，才能继续推进。"
+      );
+      this.renderFilmQuest();
+      return;
+    }
     for (const [abilityId, gained] of Object.entries(option.effects) as Array<
       [AbilityId, number]
     >) {
@@ -2690,8 +2760,10 @@ export class AdaptiveGameApp {
     const abilityLabel = filmQuestAbilityLabel(quest, en);
     const title = en ? quest.titleEn : quest.titleZh;
 
-    if (picked !== undefined && quest.options[picked]) {
-      const option = quest.options[picked];
+    if (picked !== undefined) {
+      const realIndex = this.filmQuestOrder[picked] ?? picked;
+      const option = quest.options[realIndex];
+      if (!option) return;
       const view = en ? option.en : option.zh;
       const qualityLabel = this.roleMove(option.zh.quality);
       this.root.innerHTML = `
@@ -2758,8 +2830,9 @@ export class AdaptiveGameApp {
         <section class="film-decision">
           <h2>${en ? "What would you do?" : "如果是你，你会怎么做？"}</h2>
           <div class="film-options">
-            ${quest.options
-              .map((item, index) => {
+            ${this.filmQuestOrder
+              .map((realIndex, index) => {
+                const item = quest.options[realIndex];
                 const view = en ? item.en : item.zh;
                 return `
                   <button class="option-card" data-action="film-quest-pick" data-option="${index}">
@@ -7032,11 +7105,8 @@ export class AdaptiveGameApp {
     if (!this.integrityGateNodeId || this.pendingIntegrityOption === undefined) {
       return;
     }
-    const picked = target.dataset.ability as AbilityId | undefined;
-    const node = getNode(this.integrityGateNodeId);
-    const option = node.options[this.pendingIntegrityOption];
-    const primary = this.primaryAbilityForOption(option);
-    if (picked === primary) {
+    const cost = target.dataset.cost;
+    if (cost === "correct") {
       this.save.firstPickStreak = 0;
       this.persistSave();
       const pending = this.pendingIntegrityOption;
@@ -7051,8 +7121,8 @@ export class AdaptiveGameApp {
       this.audio.risk();
       this.showToast(
         this.language === "en"
-          ? "That is not the ability this move tests."
-          : "这不是这一手真正考验的能力。"
+          ? "That is not the real trade-off of this move."
+          : "这不是这一手真正的取舍。"
       );
       this.renderStory();
     }
@@ -7108,7 +7178,7 @@ export class AdaptiveGameApp {
     } else {
       this.save.firstPickStreak = 0;
     }
-    if ((this.save.firstPickStreak ?? 0) >= 3) {
+    if ((this.save.firstPickStreak ?? 0) >= 2) {
       this.integrityGateNodeId = this.storyNodeId;
       this.pendingIntegrityOption = optionIndex;
       this.persistSave();
@@ -8795,6 +8865,7 @@ export class AdaptiveGameApp {
       <section class="outcome-panel" role="status" aria-live="polite">
         <span class="quality ${option.quality}">${this.qualityLabel(option.quality)}</span>
         <div class="positive-feedback">${encouragement}</div>
+        <div class="story-advancement ${option.quality}">${this.storyAdvancementText(outcome)}</div>
         ${
           this.lastUnlockedAchievement
             ? `<div class="achievement-unlock">${this.language === "en" ? "Achievement Unlocked: " : "新成就解锁："}${escapeHtml(this.lastUnlockedAchievement)}</div>`
@@ -8840,6 +8911,41 @@ export class AdaptiveGameApp {
         <button class="primary" data-action="${finalAction}">${finalLabel}</button>
       </section>
     `;
+  }
+
+  private storyAdvancementText(outcome: ChoiceOutcome): string {
+    const en = this.language === "en";
+    let kind = "main";
+    try {
+      if (this.storyNodeId) {
+        kind = getNode(this.storyNodeId).kind;
+      }
+    } catch {
+      // keep main
+    }
+    if (kind === "side") {
+      return en
+        ? "Side story advances: this relationship moved one step forward."
+        : "支线剧情推进：你与这个人的关系向前走了一步。";
+    }
+    if (kind === "branch" || this.pendingBranchNodeId) {
+      return en
+        ? "The story is branching: your choice is opening a new route."
+        : "剧情分叉：你的选择正在打开一条新路线。";
+    }
+    if (outcome.option.quality === "expert") {
+      return en
+        ? "The story advances: key people begin trusting you, and new information opens."
+        : "剧情推进：关键人物开始信任你，新的信息向你开放。";
+    }
+    if (outcome.option.quality === "partial") {
+      return en
+        ? "The story holds steady, but the real tension is still unresolved."
+        : "剧情暂时稳住，但真正的悬念还没有解开。";
+    }
+    return en
+      ? "The story shifts: your strong signal changed the situation, and the cost begins to show."
+      : "剧情转向：你用强信号改变了局面，代价也开始显现。";
   }
 
   private expertStreak(): number {

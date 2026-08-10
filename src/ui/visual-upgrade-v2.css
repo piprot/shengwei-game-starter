@@ -1048,6 +1048,32 @@ html[data-vu="off"] * {
   }
 }
 
+.story-advancement {
+  margin: 10px 0;
+  padding: 10px 12px;
+  border-left: 3px solid var(--vu-muted-soft);
+  border-radius: 6px;
+  background: rgba(7, 12, 16, 0.4);
+  color: var(--vu-ink-soft);
+  font-size: 14px;
+  line-height: 1.55;
+}
+.story-advancement.expert {
+  border-left-color: var(--vu-teal);
+  background: color-mix(in srgb, var(--vu-teal) 10%, transparent);
+  color: var(--vu-teal-bright);
+}
+.story-advancement.partial {
+  border-left-color: var(--vu-gold);
+  background: color-mix(in srgb, var(--vu-gold) 9%, transparent);
+  color: var(--vu-gold-bright);
+}
+.story-advancement.risk {
+  border-left-color: var(--vu-coral);
+  background: color-mix(in srgb, var(--vu-coral) 10%, transparent);
+  color: var(--vu-coral-bright);
+}
+
 @media (max-width: 900px) {
   .expedition-hero {
     grid-template-columns: 1fr;

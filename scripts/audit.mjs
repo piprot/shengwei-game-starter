@@ -98,6 +98,10 @@ try {
     await page.click("[data-action=expedition-explore]");
     await page.waitForSelector(".option-card:not([disabled])");
     await page.click(".option-card:not([disabled])");
+    await page.waitForSelector(".integrity-gate, .outcome-panel");
+    if ((await page.locator(".integrity-gate").count()) > 0) {
+      await page.click("[data-cost=correct]");
+    }
     await page.waitForSelector("text=返回地图");
     const storyOverflow = await overflow(page);
     await page.click("text=返回地图");
