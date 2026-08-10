@@ -29,6 +29,7 @@ import {
   trialRewardExpFor
 } from "../src/core/trials.ts";
 import { hiddenRouteSteps } from "../src/core/hiddenRoutes.ts";
+import { scenarioShellFor } from "../src/core/scenarioShell.ts";
 
 
 import {
@@ -178,6 +179,21 @@ assert(
     20
   ) >= 70,
   "structured open text should score high"
+);
+const shellA = scenarioShellFor(1, 100);
+const shellB = scenarioShellFor(1, 100);
+assert(
+  shellA.zh === shellB.zh && shellA.en === shellB.en,
+  "scenario shell should be deterministic for the same seed"
+);
+const shellC = scenarioShellFor(2, 100);
+assert(
+  shellA.zh !== shellC.zh || shellA.en !== shellC.en,
+  "scenario shell should vary by chapter"
+);
+assert(
+  shellA.zh.length > 0 && shellA.en.length > 0,
+  "scenario shell labels should be non-empty in both languages"
 );
 
 // 精力恢复：每日恢复只生效一次，组织资源可兑换精力。

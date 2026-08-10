@@ -160,6 +160,7 @@ import {
 import { renderAbilityRadar } from "./charts";
 import { renderPowerBoard } from "./art";
 import { renderTrainingBoard } from "./trainingArt";
+import { scenarioShellFor } from "../core/scenarioShell";
 import {
   renderPowerSandbox,
   renderRelationGraph
@@ -172,7 +173,7 @@ const SETTINGS_MIGRATION_KEY = "adaptive-ascent-settings-v2";
 const GUIDE_KEY = "adaptive-ascent-guide-v1";
 const GUIDE_REWARD_KEY = "adaptive-ascent-guide-reward";
 const ACHIEVEMENT_FAVORITE_KEY = "adaptive-ascent-achievement-favorites";
-const APP_VERSION = "1.5.13";
+const APP_VERSION = "1.5.14";
 
 type View =
   | "menu"
@@ -1975,6 +1976,13 @@ export class AdaptiveGameApp {
       getNodeForRole(this.save.profile.role, this.storyNodeId)
     );
     const chapter = this.chapterDisplay(getChapter(node.chapterId));
+    const en = this.language === "en";
+    const scenarioShell = scenarioShellFor(
+      node.chapterId,
+      node.chapterId * 7919 +
+        (this.save.playCount || 0) * 131 +
+        this.save.completedRandomEvents.length * 17
+    );
     const showingOutcome = this.lastOutcomeNodeId === node.id && this.lastOutcome;
     const showOnboarding = this.save.playCount === 0 && !showingOutcome;
     if (!showingOutcome && !this.replayMode) {
@@ -2015,6 +2023,10 @@ export class AdaptiveGameApp {
       </header>
       <main class="story-shell" style="${this.chapterArtStyle(chapter.id)}" aria-label="${this.language === "en" ? "Story scenario" : "剧情情境"}">
         ${this.routeBannerMarkup(node.chapterId)}
+        <div class="scenario-shell" aria-label="${en ? "Scenario shell" : "情境外壳"}">
+          <span>${en ? "Scenario shell" : "情境外壳"}</span>
+          <strong>${en ? scenarioShell.en : scenarioShell.zh}</strong>
+        </div>
         ${
           node.chapterId === 4 || node.chapterId === 7
             ? `<div class="route-checkpoint" role="status">${this.language === "en" ? "Route checkpoint: your earlier choices are now shaping upcoming events and endings." : "路线分叉：此前的选择正在改变后续事件与结局权重。"}</div>`
