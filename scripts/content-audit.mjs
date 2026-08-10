@@ -103,6 +103,32 @@ for (const node of STORY_NODES) {
   }
 }
 
+const stakeGroups = new Map();
+for (const node of STORY_NODES) {
+  const key = node.stake.trim();
+  if (!stakeGroups.has(key)) stakeGroups.set(key, []);
+  stakeGroups.get(key).push(node.id);
+}
+for (const [stake, ids] of stakeGroups) {
+  if (ids.length > 1) {
+    problems.push(`duplicate stake "${stake}" across ${ids.join(", ")}`);
+  }
+}
+
+const optionGroups = new Map();
+for (const node of STORY_NODES) {
+  for (const option of node.options) {
+    const key = `${option.label} | ${option.summary}`;
+    if (!optionGroups.has(key)) optionGroups.set(key, []);
+    optionGroups.get(key).push(node.id);
+  }
+}
+for (const [key, ids] of optionGroups) {
+  if (ids.length > 1) {
+    problems.push(`duplicate option "${key}" across ${ids.join(", ")}`);
+  }
+}
+
 for (const node of mainNodes) {
   const variants = ROLE_NODE_VARIANTS[node.id];
   if (!variants) {

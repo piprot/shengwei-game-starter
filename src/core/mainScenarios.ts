@@ -125,6 +125,48 @@ const CHAPTER_EXTRA_DETAILS: Record<
   }
 };
 
+const CHAPTER_EXTRA_STAKES: Record<
+  number,
+  { zh: string; en: string }
+> = {
+  1: {
+    zh: "第一轮信任还经不起一次草率动作。",
+    en: "The first round of trust cannot survive a careless move."
+  },
+  2: {
+    zh: "在授权真空里，每一个动作都会被解读为你要不要权力。",
+    en: "In the authority vacuum, every action is read as a bid for power."
+  },
+  3: {
+    zh: "名单已经交上去，任何新判断都会改变人心排序。",
+    en: "The list is submitted; any new judgment reshuffles people's loyalties."
+  },
+  4: {
+    zh: "反对者还在观望，你的处理方式会决定他们下一步站哪边。",
+    en: "Opponents are still watching; how you respond decides their next move."
+  },
+  5: {
+    zh: "季度数字面前，过程正确和结果达标同样会被审视。",
+    en: "With quarterly numbers at stake, both process quality and results are under review."
+  },
+  6: {
+    zh: "边界一旦被划错，修复成本远高于第一次划对。",
+    en: "A wrongly drawn boundary costs far more to fix than drawing it right the first time."
+  },
+  7: {
+    zh: "交接期里的每一次破例，都会被继任者当成默认规则。",
+    en: "Every exception during handover becomes a default rule for your successor."
+  },
+  8: {
+    zh: "应激状态下的团队，会把你的慌乱放大成组织的慌乱。",
+    en: "In survival mode, the team amplifies your panic into organizational panic."
+  },
+  9: {
+    zh: "离开之后，这串判断会被反复拿出来检验你留下的系统。",
+    en: "After you leave, this sequence of judgments will repeatedly test the system you left behind."
+  }
+};
+
 const CHAPTER_TITLES_ZH: Record<number, string> = {
   1: "识局",
   2: "谋权",
@@ -152,21 +194,23 @@ const CHAPTER_TITLES_EN: Record<number, string> = {
 function buildOptions(
   ability: AbilityId,
   base: ExtraSceneBase,
-  slot: number
+  slot: number,
+  chapterId: number
 ): StoryOption[] {
   const abilityName = ABILITIES[ability].name;
   const variant = slot % 2;
+  const chapterTag = `第${chapterId}章 · ${base.titleZh}`;
   const expertLabelsZh = [
-    `先把${abilityName}所需的事实和流程对齐，再让决策公开可验收`,
-    `先用一个小范围试点验证${abilityName}的判断，再决定是否全面推开`
+    `先把${abilityName}所需的事实和流程对齐，再让决策公开可验收（${chapterTag}）`,
+    `先用一个小范围试点验证${abilityName}的判断，再决定是否全面推开（${chapterTag}）`
   ];
   const partialLabelsZh = [
-    "先按现状推进，边做边观察",
-    "先处理最显眼的问题，把深层原因留到下一轮"
+    `先按现状推进，边做边观察（${chapterTag}）`,
+    `先处理最显眼的问题，把深层原因留到下一轮（${chapterTag}）`
   ];
   const riskLabelsZh = [
-    "当众摊牌，用一次强信号逼局面转向",
-    "绕过流程直接调动资源，抢在对手之前完成动作"
+    `当众摊牌，用一次强信号逼局面转向（${chapterTag}）`,
+    `绕过流程直接调动资源，抢在对手之前完成动作（${chapterTag}）`
   ];
   const secondary: AbilityId = ability === "structure" ? "insight" : "structure";
   const options: StoryOption[] = [
@@ -230,6 +274,7 @@ function buildExtraMainNodes(): {
   > = {};
   for (let chapterId = 1; chapterId <= 9; chapterId += 1) {
     const detail = CHAPTER_EXTRA_DETAILS[chapterId];
+    const chapterStake = CHAPTER_EXTRA_STAKES[chapterId];
     const focusPool = [
       "insight",
       "structure",
@@ -252,13 +297,13 @@ function buildExtraMainNodes(): {
         title: `${CHAPTER_TITLES_ZH[chapterId]} · ${base.titleZh}`,
         kind: "main",
         context: `${base.contextZh} ${detail.zh}`,
-        stake: base.stakeZh,
-        options: buildOptions(ability, base, slot)
+        stake: `${base.stakeZh}；${chapterStake.zh}`,
+        options: buildOptions(ability, base, slot, chapterId)
       });
       en[id] = {
         title: `${CHAPTER_TITLES_EN[chapterId]} · ${base.titleEn}`,
         context: `${base.contextEn} ${detail.en}`,
-        stake: base.stakeEn
+        stake: `${base.stakeEn} ${chapterStake.en}`
       };
       theoryEn[id] = [
         "Evidence before judgment, and judgment before commitment.",
@@ -273,15 +318,15 @@ function buildExtraMainNodes(): {
       roleVariants[id] = {
         parachute: {
           context: `空降视角：${base.contextZh} ${detail.zh}`,
-          stake: base.stakeZh
+          stake: `${base.stakeZh}；${chapterStake.zh}`
         },
         founder: {
           context: `创业视角：${base.contextZh} ${detail.zh}`,
-          stake: base.stakeZh
+          stake: `${base.stakeZh}；${chapterStake.zh}`
         },
         highPotential: {
           context: `高潜视角：${base.contextZh} ${detail.zh}`,
-          stake: base.stakeZh
+          stake: `${base.stakeZh}；${chapterStake.zh}`
         }
       };
     });
