@@ -1,45 +1,58 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 900" preserveAspectRatio="xMidYMid slice">
   <defs>
-    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0" stop-color="#101a26"/>
-      <stop offset="1" stop-color="#0a1218"/>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#0a1320"/>
+      <stop offset="0.55" stop-color="#15283c"/>
+      <stop offset="1" stop-color="#081014"/>
     </linearGradient>
-    <radialGradient id="glow" cx="0.3" cy="0.35" r="0.45">
-      <stop offset="0" stop-color="#41c7c0" stop-opacity="0.24"/>
-      <stop offset="1" stop-color="#41c7c0" stop-opacity="0"/>
+    <linearGradient id="horizon" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#e9826c" stop-opacity="0.16"/>
+      <stop offset="1" stop-color="#e9826c" stop-opacity="0"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="0.72" cy="0.32" r="0.55">
+      <stop offset="0" stop-color="#4db7d6" stop-opacity="0.3"/>
+      <stop offset="1" stop-color="#4db7d6" stop-opacity="0"/>
     </radialGradient>
   </defs>
   <rect width="1600" height="900" fill="url(#bg)"/>
   <rect width="1600" height="900" fill="url(#glow)"/>
-  <g fill="none" stroke="#4db7d6" stroke-opacity="0.35">
-    <path d="M120 720h1360"/>
-    <path d="M240 720v-320h1120v320"/>
-    <path d="M360 720v-230h880v230"/>
-    <path d="M480 720v-150h640v150"/>
+  <rect y="560" width="1600" height="340" fill="url(#horizon)"/>
+  <g fill="#0a131c">
+    <path d="M0 720 L180 560 L360 700 L560 520 L760 690 L980 540 L1180 710 L1380 570 L1600 700 L1600 900 L0 900 Z"/>
+    <path d="M0 790 L240 660 L460 800 L680 640 L920 790 L1160 650 L1380 800 L1600 700 L1600 900 L0 900 Z" fill-opacity="0.85"/>
   </g>
-  <g fill="#41c7c0" fill-opacity="0.8">
-    <rect x="360" y="400" width="130" height="320"/>
-    <rect x="560" y="490" width="130" height="230"/>
-    <rect x="780" y="330" width="130" height="390"/>
-    <rect x="1000" y="570" width="130" height="150"/>
+  <g stroke="#9fb3c8" stroke-opacity="0.07" stroke-width="1">
+    <path d="M0 180h1600M0 360h1600M0 540h1600M0 720h1600M200 0v900M400 0v900M600 0v900M800 0v900M1000 0v900M1200 0v900M1400 0v900"/>
   </g>
-  <g fill="#e9826c" fill-opacity="0.75">
-    <rect x="980" y="430" width="56" height="290"/>
-    <rect x="1100" y="610" width="56" height="110"/>
+  <g fill="none" stroke="#e9826c" stroke-opacity="0.5">
+    <circle cx="820" cy="330" r="182" stroke-width="2"/>
+    <circle cx="820" cy="330" r="131.04" stroke-width="1.2"/>
+    <circle cx="820" cy="330" r="76.44" stroke-width="1.2"/>
+    <path d="M638 330h364M820 148v364" stroke-opacity="0.22"/>
   </g>
-  <g fill="#f2c14e">
-    <circle cx="1120" cy="360" r="7"/>
-    <circle cx="1180" cy="300" r="5"/>
-    <circle cx="1040" cy="280" r="4"/>
+  <g stroke="#4db7d6" stroke-opacity="0.35" stroke-width="1.4">
+    <path d="M820 330L656.2 229.89999999999998"/>
+    <path d="M820 330L992.9 266.3"/>
+    <path d="M820 330L719.9 466.5"/>
+    <path d="M820 330L929.2 475.6"/>
+    <path d="M820 330L847.3 157.1"/>
+    <path d="M820 330L783.6 393.7"/>
   </g>
-  <g stroke="#f2c14e" stroke-opacity="0.5" stroke-width="1.5">
-    <path d="M1120 360L560 490L780 330"/>
-    <path d="M1120 360L1000 570L1200 620"/>
+  <g>
+    <circle cx="656.2" cy="229.89999999999998" r="6" fill="#4db7d6" fill-opacity="0.75"/>
+    <circle cx="992.9" cy="266.3" r="5" fill="#e9826c" fill-opacity="0.83"/>
+    <circle cx="719.9" cy="466.5" r="6" fill="#4db7d6" fill-opacity="0.91"/>
+    <circle cx="929.2" cy="475.6" r="5" fill="#e9826c" fill-opacity="0.75"/>
+    <circle cx="847.3" cy="157.1" r="6" fill="#4db7d6" fill-opacity="0.83"/>
+    <circle cx="783.6" cy="393.7" r="5" fill="#e9826c" fill-opacity="0.91"/>
+    <circle cx="820" cy="330" r="10" fill="#4db7d6"/>
   </g>
   <g opacity="0.9">
-    <rect x="80" y="120" width="120" height="6" rx="3" fill="#16283a"/>
-    <rect x="80" y="134" width="88" height="6" rx="3" fill="#41c7c0" fill-opacity="0.7"/>
+    <rect x="120" y="700" width="260" height="8" rx="4" fill="#15283c"/>
+    <rect x="120" y="716" width="200" height="8" rx="4" fill="#e9826c" fill-opacity="0.7"/>
+    <rect x="1240" y="700" width="240" height="8" rx="4" fill="#15283c"/>
+    <rect x="1240" y="716" width="148" height="8" rx="4" fill="#4db7d6" fill-opacity="0.7"/>
   </g>
   <text x="80" y="110" fill="#e7eef2" font-size="46" font-family="Georgia, serif" font-weight="700" opacity="0.9">II</text>
-  <text x="80" y="164" fill="#9fb3c8" font-size="18" font-family="Verdana, sans-serif" letter-spacing="4">SHAPE</text>
+  <text x="80" y="150" fill="#e9826c" font-size="18" font-family="Verdana, sans-serif" letter-spacing="4">BUILD MOMENTUM</text>
 </svg>

@@ -20,6 +20,7 @@
     "balance-sim": "node --experimental-strip-types scripts/balance-sim.mjs",
     "coach:export": "node --experimental-strip-types scripts/coach-export.mjs",
     "deploy:check": "node scripts/deploy-check.mjs",
+    "generate:art": "node scripts/generate-chapter-art.mjs",
     "i18n-audit": "node --experimental-strip-types scripts/i18n-audit.mjs",
     "test:i18n-browser": "node --experimental-strip-types scripts/i18n-browser-audit.mjs",
     "test:device-screenshots": "node --experimental-strip-types scripts/device-audit.mjs",

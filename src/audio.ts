@@ -180,60 +180,90 @@ export class GameAudio {
 
     const chords: Record<"menu" | "story" | "duel", number[][]> = {
       menu: [
-        [220, 261.63, 329.63],
-        [174.61, 220, 261.63],
-        [196, 246.94, 293.66],
-        [146.83, 220, 293.66]
+        [110, 130.81, 164.81, 220],
+        [87.31, 110, 130.81, 174.61],
+        [98, 123.47, 146.83, 196],
+        [73.42, 110, 146.83, 196],
+        [98, 130.81, 164.81, 220],
+        [87.31, 116.54, 146.83, 196]
       ],
       story: [
-        [196, 246.94, 293.66],
-        [220, 261.63, 329.63],
-        [174.61, 220, 261.63],
-        [164.81, 207.65, 246.94]
+        [98, 116.54, 146.83, 196],
+        [110, 130.81, 164.81, 220],
+        [87.31, 110, 130.81, 174.61],
+        [82.41, 98, 123.47, 164.81],
+        [92.5, 110, 138.59, 185],
+        [98, 123.47, 146.83, 196]
       ],
       duel: [
-        [174.61, 220, 261.63],
-        [130.81, 174.61, 220],
-        [146.83, 196, 246.94],
-        [155.56, 207.65, 261.63]
+        [82.41, 98, 123.47, 164.81],
+        [65.41, 82.41, 98, 130.81],
+        [73.42, 92.5, 110, 146.83],
+        [77.78, 98, 123.47, 155.56],
+        [65.41, 87.31, 110, 146.83],
+        [69.3, 82.41, 103.83, 138.59]
       ]
     };
-    const melodies: Record<"menu" | "story" | "duel", number[][]> = {
+    const melodySeeds: Record<"menu" | "story" | "duel", number[]> = {
       menu: [
-        [329.63, 392, 440, 392],
-        [293.66, 349.23, 392, 349.23],
-        [329.63, 392, 440, 493.88],
-        [261.63, 329.63, 392, 329.63]
+        329.63, 293.66, 261.63, 349.23, 392, 440
       ],
       story: [
-        [392, 440, 493.88, 440],
-        [349.23, 392, 440, 392],
-        [329.63, 392, 440, 523.25],
-        [293.66, 349.23, 415.3, 349.23]
+        392, 349.23, 329.63, 293.66, 440, 493.88
       ],
       duel: [
-        [440, 523.25, 587.33, 523.25],
-        [392, 493.88, 587.33, 493.88],
-        [415.3, 523.25, 659.25, 523.25],
-        [349.23, 440, 523.25, 440]
+        440, 392, 349.23, 493.88, 523.25, 587.33
       ]
+    };
+    const phraseGap: Record<"menu" | "story" | "duel", number> = {
+      menu: 4200,
+      story: 3800,
+      duel: 3100
     };
     let musicIndex = 0;
     const playPhrase = () => {
       if (!this.context || !this.master || this.muted) return;
-      const chord = chords[this.ambientScene][musicIndex % chords[this.ambientScene].length];
-      chord.forEach((freq, index) => {
-        this.tone(freq, 2.4, index === 1 ? "triangle" : "sine", 0.006, index * 0.06);
+      const row = chords[this.ambientScene][musicIndex % chords[this.ambientScene].length];
+      // 低音根音：让每句有更明确的调性方向
+      this.musicTone(row[0] / 2, 2.8, "sine", 0.02, 0, 420);
+      row.forEach((freq, index) => {
+        this.musicTone(
+          freq,
+          2.6,
+          index % 2 === 0 ? "sine" : "triangle",
+          0.006,
+          index * 0.08,
+          900
+        );
       });
-      const melody =
-        melodies[this.ambientScene][musicIndex % melodies[this.ambientScene].length];
-      melody.forEach((freq, index) => {
-        this.tone(freq, 1.5, index % 2 === 0 ? "sine" : "triangle", 0.007, 0.2 + index * 0.45);
+      // 琶音层：让织体流动起来
+      const arp = [...row.slice(1), row[1] * 2];
+      arp.forEach((freq, index) => {
+        this.musicTone(freq, 0.9, "triangle", 0.004, 0.6 + index * 0.22, 1600);
       });
+      // 旋律层：从场景音阶种子中取音，带轻微随机，避免 4 句死循环
+      const seed = melodySeeds[this.ambientScene];
+      for (let i = 0; i < 3; i += 1) {
+        const note =
+          seed[(musicIndex * 3 + i * 2 + Math.floor(Math.random() * 2)) % seed.length];
+        const octave = Math.random() < 0.2 ? 0.5 : 1;
+        this.musicTone(
+          note * octave,
+          1.2,
+          i % 2 === 0 ? "sine" : "triangle",
+          0.006,
+          0.4 + i * 0.5,
+          1400
+        );
+      }
+      // 每两小节一个低音脉冲，保留沉稳的“心跳”但不再喧宾夺主
+      if (musicIndex % 2 === 0) {
+        this.musicTone(row[0] / 2, 0.5, "sine", 0.012, 0, 260);
+      }
       musicIndex += 1;
     };
     playPhrase();
-    this.musicTimer = window.setInterval(playPhrase, 3600);
+    this.musicTimer = window.setInterval(playPhrase, phraseGap[this.ambientScene]);
   }
 
   setAmbientScene(scene: "menu" | "story" | "duel"): void {
@@ -257,6 +287,34 @@ export class GameAudio {
         fading.disconnect();
       }, 500);
     }
+  }
+
+  private musicTone(
+    frequency: number,
+    duration: number,
+    type: OscillatorType,
+    volume: number,
+    delay = 0,
+    cutoff = 1200
+  ): void {
+    if (!this.context || !this.musicGain || this.muted) {
+      return;
+    }
+    const start = this.context.currentTime + delay;
+    const oscillator = this.context.createOscillator();
+    const gain = this.context.createGain();
+    const filter = this.context.createBiquadFilter();
+    filter.type = "lowpass";
+    filter.frequency.value = cutoff;
+    oscillator.type = type;
+    oscillator.frequency.value = frequency;
+    gain.gain.setValueAtTime(volume, start);
+    gain.gain.exponentialRampToValueAtTime(0.0001, start + duration);
+    oscillator.connect(filter);
+    filter.connect(gain);
+    gain.connect(this.musicGain);
+    oscillator.start(start);
+    oscillator.stop(start + duration);
   }
 
   private tone(

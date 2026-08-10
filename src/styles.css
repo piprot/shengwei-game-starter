@@ -48,9 +48,17 @@ body,
 
 body {
   background:
+    linear-gradient(rgba(159, 179, 200, 0.035) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(159, 179, 200, 0.035) 1px, transparent 1px),
     radial-gradient(circle at 16% 8%, rgba(65, 199, 192, 0.12), transparent 34%),
     radial-gradient(circle at 84% 12%, rgba(242, 193, 78, 0.09), transparent 30%),
     linear-gradient(145deg, var(--bg), var(--bg-soft) 58%, #0b1519);
+  background-size:
+    48px 48px,
+    48px 48px,
+    auto,
+    auto,
+    auto;
   color: var(--ink);
   font-family: "Microsoft YaHei", "PingFang SC", "Noto Sans SC", sans-serif;
   letter-spacing: 0;
@@ -325,6 +333,7 @@ button.trial-now {
   position: relative;
   padding: 26px;
   border: 1px solid var(--line);
+  border-top: 2px solid rgba(242, 193, 78, 0.45);
   border-radius: 8px;
   background:
     linear-gradient(160deg, rgba(65, 199, 192, 0.12), transparent 60%),
