@@ -1,4 +1,4 @@
-/**
+﻿/**
  * 升维 V2 · 程序化情境外壳生成器
  * 
  * 核心思路：
@@ -13,7 +13,7 @@
  * - 利益相关方矩阵
  */
 
-import type { AbilityId, RoleId, StoryNode, StoryOption, OptionQuality } from "./types.ts";
+import type { AbilityId, OptionQuality, ResourceKey, RoleId, StoryNode, StoryOption } from "./types.ts";
 
 // ============================================================
 // 外壳参数定义
@@ -136,7 +136,7 @@ interface CoreOption {
   quality: OptionQuality;
   approach: string;          // 决策方法（不随外壳变化）
   effects: Partial<Record<AbilityId, number>>;
-  resources: Partial<Record<"energy" | "trust" | "influence" | "capital">, number>;
+  resources: Partial<Record<ResourceKey, number>>;
   feedback: string;          // 反馈（部分参数化）
   theory: string;
 }
@@ -168,7 +168,7 @@ const CORE_SCENARIOS: CoreScenario[] = [
       {
         quality: "risk",
         approach: "直接处理一个绩效最差的人，杀鸡儆猴",
-        effects: { authority: 4, stability: -3, trust: -5 },
+        effects: { authority: 4, stability: -3 },
         resources: { energy: -15, trust: -8, influence: 5 },
         feedback: "震慑效果明显，但团队氛围骤冷，私下开始有人更新简历",
         theory: "Machiavelli：恐惧比爱更安全，但恐惧的保质期很短",
@@ -267,7 +267,7 @@ const CORE_SCENARIOS: CoreScenario[] = [
       {
         quality: "risk",
         approach: "强行推进，用权力碾压反对",
-        effects: { authority: 4, mobilize: 2, stability: -5, trust: -8 },
+        effects: { authority: 4, mobilize: 2, stability: -5 },
         resources: { energy: -25, trust: -10, influence: -5 },
         feedback: "短期内变革落地，但地下反抗在酝酿，随时可能爆发",
         theory: "强制权力模型：合法性权威 vs 强制性权威的代价差异",
@@ -284,7 +284,7 @@ const CORE_SCENARIOS: CoreScenario[] = [
       {
         quality: "expert",
         approach: "主动承认错误，公开复盘，用透明度重建信任",
-        effects: { recovery: 3, communication: 3, trust: 5 },
+        effects: { recovery: 3, communication: 3 },
         resources: { energy: -12, trust: 8, influence: -2 },
         feedback: "你主动认错反而赢得了更多尊重，团队信任度不降反升",
         theory: "Brené Brown 脆弱性力量：示弱是建立深层信任的前提",
@@ -300,7 +300,7 @@ const CORE_SCENARIOS: CoreScenario[] = [
       {
         quality: "risk",
         approach: "找一个替罪羊，转移注意力",
-        effects: { authority: 2, recovery: -3, trust: -8, stability: -3 },
+        effects: { authority: 2, recovery: -3, stability: -3 },
         resources: { energy: -5, trust: -15, influence: 3 },
         feedback: "短期内转移了焦点，但知情者的信任彻底崩塌",
         theory: "归因偏差：外归因短期内保护自我，但长期损害领导力信誉",
