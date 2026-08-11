@@ -135,6 +135,8 @@ export const DEFAULT_SAVE: SaveState = {
   firstPickStreak: 0,
   duelSeenNodeIds: [],
   completedFilmQuests: [],
+  junqiWins: 0,
+  junqiLosses: 0,
   recentPickPositions: [],
   organizationInvestments: 0,
   npcLeads: [],
@@ -378,6 +380,8 @@ function normalizeSave(save: SaveState): SaveState {
     completedFilmQuests: Array.isArray(save.completedFilmQuests)
       ? save.completedFilmQuests
       : [],
+    junqiWins: Math.max(0, Number(save.junqiWins) || 0),
+    junqiLosses: Math.max(0, Number(save.junqiLosses) || 0),
     recentPickPositions: Array.isArray(save.recentPickPositions)
       ? save.recentPickPositions.slice(-5)
       : [],
@@ -415,6 +419,8 @@ export function computeSaveHash(save: SaveState): string {
     ach: save.achievements,
     dw: save.duelWins,
     dl: save.duelLosses,
+    jw: save.junqiWins,
+    jl: save.junqiLosses,
     pc: save.playCount,
     mp: save.masteryPoints,
     dh: (save.decisionHistory ?? []).map((d) => [d.nodeId, d.optionIndex, d.qualityScore]),

@@ -113,13 +113,18 @@ import { npcStoryFor } from "../core/npcStories";
 import { duelBankEn } from "../core/duelBank";
 import { EXTRA_MAIN_OPTIONS_EN } from "../core/mainScenarios";
 import {
-  FILM_QUESTS,
-  FILM_QUEST_COUNT,
-  filmQuestAbilityLabel,
-  filmQuestRegionLabel,
-  nextFilmQuest,
-  type FilmQuest
-} from "../core/filmQuests";
+  JUNQI_COMMAND_COSTS,
+  JUNQI_PIECE_LABELS,
+  applyAiMove,
+  applyMove,
+  createJunqiGame,
+  legalMoves,
+  useJunqiCommand,
+  type JunqiCommand,
+  type JunqiGame,
+  type JunqiMove,
+  type JunqiPiece
+} from "../core/junqi";
 import {
   CoachWorkshopEngine,
   type WorkshopReport
@@ -199,7 +204,7 @@ const SETTINGS_MIGRATION_KEY = "adaptive-ascent-settings-v2";
 const GUIDE_KEY = "adaptive-ascent-guide-v1";
 const GUIDE_REWARD_KEY = "adaptive-ascent-guide-reward";
 const ACHIEVEMENT_FAVORITE_KEY = "adaptive-ascent-achievement-favorites";
-const APP_VERSION = "1.7.11";
+const APP_VERSION = "1.7.12";
 
 type View =
   | "menu"
@@ -211,7 +216,7 @@ type View =
   | "settings"
   | "map"
   | "story"
-  | "filmQuest"
+  | "junqi"
   | "chapterTransition"
   | "ability"
   | "report"
@@ -309,9 +314,10 @@ export class AdaptiveGameApp {
   private integrityGateNodeId?: string;
   private pendingIntegrityOption?: number;
   private integrityGateMode: "cost" | "ability" = "cost";
-  private filmQuest?: FilmQuest;
-  private filmQuestPickedOption?: number;
-  private filmQuestOrder: number[] = [];
+  private junqiGame?: JunqiGame;
+  private junqiSelectedPieceId?: string;
+  private junqiPendingCommand?: JunqiCommand;
+  private junqiResult?: "win" | "lose";
   private wrongReviewQueue: string[] = [];
   private wrongReviewIndex = 0;
   private hiddenBranchAbilityId?: AbilityId;
@@ -622,8 +628,8 @@ export class AdaptiveGameApp {
     const scene =
       view === "story"
         ? "story"
-        : view === "filmQuest"
-          ? "story"
+        : view === "junqi"
+          ? "duel"
         : view === "duel"
           ? "duel"
           : view === "training" || view === "trial" || view === "trialBattle"
@@ -1300,8 +1306,8 @@ export class AdaptiveGameApp {
       case "story":
         this.renderStory();
         break;
-      case "filmQuest":
-        this.renderFilmQuest();
+      case "junqi":
+        this.renderJunqi();
         break;
       case "chapterTransition":
         this.renderChapterTransition();
@@ -2168,13 +2174,13 @@ export class AdaptiveGameApp {
             ? `<div class="trust-crisis-banner" role="alert">${this.language === "en" ? "Trust crisis: recent risk-heavy choices made the team withhold information. Play steady scenarios to rebuild trust." : "信任危机：近期风险选择让团队开始保留信息。先完成稳健情境重建信任。"}</div>`
             : ""
         }
-        <section class="film-quest-banner" style="--dot:#b497f0">
+        <section class="junqi-quest-banner" style="--dot:#41c7c0">
           <img src="./art/chapter-${chapter.id}.jpg" alt="" loading="lazy" />
           <div>
-            <p class="eyebrow">${this.language === "en" ? "Classic Film Side Quests" : "经典影视副线"}</p>
-            <h2>${this.language === "en" ? "Learn leadership from classic scenes" : "从经典影视剧里学管理"}</h2>
-            <p>${this.language === "en" ? `${this.save.completedFilmQuests?.length ?? 0} / ${FILM_QUEST_COUNT} classic scenes completed. Each scene ends with a mirror insight and a golden line, then returns you to the map.` : `已完成 ${this.save.completedFilmQuests?.length ?? 0} / ${FILM_QUEST_COUNT} 部经典片场。每关结束看镜鉴和金句，再回到地图。`}</p>
-            <button data-action="open-film-quest">${this.language === "en" ? "Enter Classic Studio" : "进入经典片场"}</button>
+            <p class="eyebrow">${this.language === "en" ? "Junqi War Room" : "军棋推演"}</p>
+            <h2>${this.language === "en" ? "Deploy, motivate, and command under uncertainty" : "排兵布阵，激励团队，在迷雾中调度资源"}</h2>
+            <p>${this.language === "en" ? `Wins ${this.save.junqiWins} · Losses ${this.save.junqiLosses}. Every rank is a leadership capability; every capture is a resource decision.` : `胜 ${this.save.junqiWins} · 负 ${this.save.junqiLosses}。每个棋子都对应一种管理能力，每次吃子都是一次资源调度。`}</p>
+            <button data-action="open-junqi">${this.language === "en" ? "Enter War Room" : "进入军棋推演"}</button>
           </div>
         </section>
         ${
@@ -2379,11 +2385,11 @@ export class AdaptiveGameApp {
                   `
               }
             </div>
-            <div class="film-quest-panel">
-              <h3>${this.language === "en" ? "Classic Film Side Quests" : "经典影视副线"}</h3>
-              <p class="muted">${this.language === "en" ? `Completed ${this.save.completedFilmQuests?.length ?? 0} / ${FILM_QUEST_COUNT} classic scenes` : `已完成 ${this.save.completedFilmQuests?.length ?? 0} / ${FILM_QUEST_COUNT} 部经典片场`}</p>
-              <p class="muted">${this.language === "en" ? "Learn leadership from classic film and TV moments, then apply the mirror insight back to work." : "从经典影视剧的经典情节里学管理，再用镜鉴回到职场。"}</p>
-              <button data-action="open-film-quest">${this.language === "en" ? "Enter Classic Studio" : "进入经典片场"}</button>
+            <div class="junqi-quest-panel">
+              <h3>${this.language === "en" ? "Junqi War Room" : "军棋推演"}</h3>
+              <p class="muted">${this.language === "en" ? `Wins ${this.save.junqiWins} · Losses ${this.save.junqiLosses}` : `胜 ${this.save.junqiWins} · 负 ${this.save.junqiLosses}`}</p>
+              <p class="muted">${this.language === "en" ? "Deployment, motivation, team coordination, and resource scheduling decide the board." : "排兵布阵、激励员工、团队管理与资源调度，会共同决定棋盘胜负。"}</p>
+              <button data-action="open-junqi">${this.language === "en" ? "Enter War Room" : "进入军棋推演"}</button>
             </div>
             <div class="event-book-panel mobile-collapse">
               <h3>${this.language === "en" ? "Event Log" : "事件簿"}</h3>
@@ -2853,220 +2859,356 @@ export class AdaptiveGameApp {
     this.renderMap();
   }
 
-  private openFilmQuest(): void {
-    const next =
-      nextFilmQuest(this.save.completedFilmQuests ?? []) ?? FILM_QUESTS[0];
-    this.filmQuest = next;
-    this.filmQuestPickedOption = undefined;
-    this.filmQuestOrder = this.shuffleFilmOptions(next);
+    private openJunqi(): void {
+    this.junqiResult = undefined;
+    this.junqiSelectedPieceId = undefined;
+    this.junqiPendingCommand = undefined;
+    this.junqiGame = createJunqiGame(this.junqiCommandPoints());
     this.audio.ui();
-    this.show("filmQuest");
+    this.show("junqi");
   }
 
-  private shuffleFilmOptions(quest: FilmQuest): number[] {
-    const order = [0, 1, 2];
-    let seed = 0;
-    for (let i = 0; i < quest.id.length; i += 1) {
-      seed = (seed * 31 + quest.id.charCodeAt(i)) >>> 0;
-    }
-    for (let i = order.length - 1; i > 0; i -= 1) {
-      const j = (seed + i * 17) % (i + 1);
-      [order[i], order[j]] = [order[j], order[i]];
-    }
-    return order;
+  private junqiCommandPoints(): number {
+    const abilities = this.save.profile.abilities;
+    const level = (id: AbilityId): number => abilityLevel(abilities[id] ?? 0);
+    let points = 5;
+    points += Math.min(2, Math.floor((level("deploy") + level("strategy")) / 4));
+    points += Math.min(
+      2,
+      Math.floor(
+        (this.save.profile.resources.influence +
+          this.save.profile.resources.trust) /
+          120
+      )
+    );
+    return Math.max(4, Math.min(9, points));
   }
 
-  private filmQuestBackToMap(): void {
-    this.filmQuest = undefined;
-    this.filmQuestPickedOption = undefined;
+  private junqiBackToMap(): void {
+    this.junqiGame = undefined;
+    this.junqiSelectedPieceId = undefined;
+    this.junqiPendingCommand = undefined;
     this.show("map");
   }
 
-  private resolveFilmQuestOption(optionIndex: number): void {
-    const quest = this.filmQuest;
-    if (
-      !quest ||
-      (this.save.completedFilmQuests ?? []).includes(quest.id)
-    ) {
+  private findJunqiPiece(id: string): JunqiPiece | undefined {
+    return (
+      this.junqiGame?.board.flat().find((piece) => piece?.id === id) ??
+      undefined
+    );
+  }
+
+  private handleJunqiCell(row: number, col: number): void {
+    const game = this.junqiGame;
+    if (!game || game.winner || game.turn !== "player") return;
+    const piece = game.board[row][col];
+    if (this.junqiPendingCommand) {
+      this.applyJunqiCommandTarget(row, col);
       return;
     }
-    const realIndex = this.filmQuestOrder[optionIndex] ?? optionIndex;
-    const option = quest.options[realIndex]?.zh;
-    if (!option) return;
-    this.recordPickPosition(optionIndex);
-    const firstDisplayed = this.filmQuestOrder[0];
-    if (realIndex === firstDisplayed) {
-      this.save.firstPickStreak = (this.save.firstPickStreak ?? 0) + 1;
+    if (this.junqiSelectedPieceId) {
+      const selected = this.findJunqiPiece(this.junqiSelectedPieceId);
+      if (selected && selected.row === row && selected.col === col) {
+        this.junqiSelectedPieceId = undefined;
+        this.renderJunqi();
+        return;
+      }
+      const move = legalMoves(game, "player").find(
+        (item) =>
+          item.pieceId === this.junqiSelectedPieceId &&
+          item.to[0] === row &&
+          item.to[1] === col
+      );
+      if (move) {
+        this.performPlayerMove(move);
+        return;
+      }
+    }
+    if (piece && piece.side === "player") {
+      const hasMove = legalMoves(game, "player").some(
+        (item) => item.pieceId === piece.id
+      );
+      if (hasMove) {
+        this.junqiSelectedPieceId = piece.id;
+        this.renderJunqi();
+      }
+    }
+  }
+
+  private performPlayerMove(move: JunqiMove): void {
+    const game = this.junqiGame;
+    if (!game) return;
+    let next = applyMove(game, move);
+    if (next !== game && !next.winner && next.turn === "ai") {
+      next = applyAiMove(next);
+    }
+    this.junqiGame = next;
+    this.junqiSelectedPieceId = undefined;
+    this.junqiPendingCommand = undefined;
+    if (next.winner) {
+      this.finishJunqi(next.winner);
     } else {
-      this.save.firstPickStreak = 0;
+      this.audio.choose();
     }
-    if (
-      (this.save.firstPickStreak ?? 0) >= 2 ||
-      this.mechanicalPatternDetected()
-    ) {
-      this.persistSave();
-      this.audio.risk();
-      this.showToast(
-        this.language === "en"
-          ? "You picked the first option twice in a row. Choose a different approach to continue."
-          : "连续两次选择第一个方案。换一种思路，才能继续推进。"
-      );
-      this.renderFilmQuest();
-      return;
-    }
-    for (const [abilityId, gained] of Object.entries(option.effects) as Array<
-      [AbilityId, number]
-    >) {
-      this.save.profile.abilities[abilityId] = clamp(
-        this.save.profile.abilities[abilityId] + gained,
-        0,
-        40
-      );
-    }
-    for (const [resource, delta] of Object.entries(option.resources) as Array<
-      [ResourceKey, number]
-    >) {
-      this.save.profile.resources[resource] = clamp(
-        this.save.profile.resources[resource] + delta,
+    this.renderJunqi();
+  }
+
+  private finishJunqi(winner: "player" | "ai"): void {
+    if (winner === "player") {
+      this.save.junqiWins += 1;
+      this.save.masteryPoints += 2;
+      this.save.profile.resources.influence = clamp(
+        this.save.profile.resources.influence + 6,
         0,
         100
       );
-    }
-    this.save.completedFilmQuests = [
-      ...(this.save.completedFilmQuests ?? []),
-      quest.id
-    ];
-    this.save.masteryPoints += 2;
-    this.filmQuestPickedOption = optionIndex;
-    this.persistSave();
-    trackEvent("film_quest", {
-      questId: quest.id,
-      quality: option.quality
-    });
-    if (option.quality === "expert") {
-      this.audio.expert();
-    } else if (option.quality === "partial") {
-      this.audio.partial();
+      this.save.profile.resources.trust = clamp(
+        this.save.profile.resources.trust + 4,
+        0,
+        100
+      );
+      this.junqiResult = "win";
+      this.audio.win();
     } else {
-      this.audio.risk();
+      this.save.junqiLosses += 1;
+      this.save.profile.resources.energy = clamp(
+        this.save.profile.resources.energy - 5,
+        0,
+        100
+      );
+      this.junqiResult = "lose";
+      this.audio.lose();
     }
-    this.audio.playCoins();
-    this.renderFilmQuest();
+    this.persistSave();
+    trackEvent("junqi_result", { winner });
   }
 
-  private renderFilmQuest(): void {
-    const quest = this.filmQuest;
+  private applyJunqiCommand(command: JunqiCommand): void {
+    const game = this.junqiGame;
+    if (!game || game.winner || game.turn !== "player") return;
+    if (game.commandPoints < JUNQI_COMMAND_COSTS[command]) return;
+    if (
+      command === "deploy" ||
+      command === "motivate" ||
+      command === "reinforce"
+    ) {
+      this.junqiPendingCommand = command;
+      this.junqiSelectedPieceId = undefined;
+      this.renderJunqi();
+      return;
+    }
+    const next = useJunqiCommand(game, command);
+    if (next !== game) {
+      this.junqiGame = next;
+      this.audio.ui();
+    }
+    this.renderJunqi();
+  }
+
+  private applyJunqiCommandTarget(row: number, col: number): void {
+    const game = this.junqiGame;
+    const command = this.junqiPendingCommand;
+    if (!game || !command) return;
+    let next = game;
+    if (command === "deploy") {
+      const piece = game.board[row][col];
+      if (!piece || piece.side !== "player") {
+        this.junqiPendingCommand = undefined;
+        this.junqiSelectedPieceId = undefined;
+        this.renderJunqi();
+        return;
+      }
+      if (!this.junqiSelectedPieceId) {
+        this.junqiSelectedPieceId = piece.id;
+        this.renderJunqi();
+        return;
+      }
+      const selected = this.findJunqiPiece(this.junqiSelectedPieceId);
+      if (
+        selected &&
+        selected.side === "player" &&
+        row >= 3 &&
+        !game.board[row][col]
+      ) {
+        next = useJunqiCommand(game, "deploy", {
+          pieceId: selected.id,
+          to: [row, col]
+        });
+      }
+      this.junqiSelectedPieceId = undefined;
+      this.junqiPendingCommand = undefined;
+    } else if (command === "motivate") {
+      const piece = game.board[row][col];
+      if (piece && piece.side === "player") {
+        next = useJunqiCommand(game, "motivate", { pieceId: piece.id });
+      }
+      this.junqiPendingCommand = undefined;
+    } else if (command === "reinforce") {
+      if (row >= 3 && !game.board[row][col]) {
+        next = useJunqiCommand(game, "reinforce", { to: [row, col] });
+      }
+      this.junqiPendingCommand = undefined;
+    }
+    if (next !== game) {
+      this.junqiGame = next;
+      this.audio.ui();
+    }
+    this.renderJunqi();
+  }
+
+  private renderJunqi(): void {
+    if (!this.junqiGame) {
+      this.openJunqi();
+      return;
+    }
+    const game = this.junqiGame;
     const en = this.language === "en";
-    if (!quest) {
-      this.show("map");
-      return;
-    }
-    const picked = this.filmQuestPickedOption;
-    const completedCount = this.save.completedFilmQuests?.length ?? 0;
-    const total = FILM_QUEST_COUNT;
-    const ability = this.abilityDisplay(quest.ability);
-    const regionLabel = filmQuestRegionLabel(quest, en);
-    const abilityLabel = filmQuestAbilityLabel(quest, en);
-    const title = en ? quest.titleEn : quest.titleZh;
-    const posterChapter = (quest.id.charCodeAt(quest.id.length - 1) % 9) + 1;
-    const rawQuote = en ? quest.quoteEn : quest.quoteZh;
-    const rawMirror = en ? quest.mirrorEn : quest.mirrorZh;
-    const quoteLabel =
-      rawQuote === rawMirror
-        ? en
-          ? "Scene Insight"
-          : "片场启示"
-        : en
-          ? "Golden Line"
-          : "金句";
-
-    if (picked !== undefined) {
-      const realIndex = this.filmQuestOrder[picked] ?? picked;
-      const option = quest.options[realIndex];
-      if (!option) return;
-      const view = en ? option.en : option.zh;
-      const qualityLabel = this.roleMove(option.zh.quality);
-      this.root.innerHTML = `
-        <header class="topbar">
-          <div class="brand">${this.t("brand")}</div>
-          <button class="link" data-action="film-quest-back">${en ? "Map" : "返回地图"}</button>
-          <div class="topbar-meta"><span>${completedCount} / ${total}</span></div>
-        </header>
-        <main class="film-shell film-outcome" aria-label="${en ? "Classic film side quest review" : "经典影视副线复盘"}">
-          <section class="film-hero" style="--dot:${ABILITIES[quest.ability].color}">
-            <p class="eyebrow">${en ? "Classic Film Side Quest" : "经典影视副线"}</p>
-            <h1>${escapeHtml(title)}</h1>
-            <div class="film-tags">
-              <span>${escapeHtml(regionLabel)}</span>
-              <span>${escapeHtml(abilityLabel)}</span>
-              <span>${escapeHtml(qualityLabel)}</span>
-            </div>
-          </section>
-          <section class="film-review-panel">
-            <div class="film-mirror">
-              <span>${en ? "Mirror" : "镜鉴"}</span>
-              <p>${escapeHtml(en ? quest.mirrorEn : quest.mirrorZh)}</p>
-            </div>
-            <div class="film-quote">
-              <span>${quoteLabel}</span>
-              <blockquote>${escapeHtml((en ? quest.quoteEn : quest.quoteZh) ?? (en ? quest.mirrorEn : quest.mirrorZh))}</blockquote>
-            </div>
-            <div class="film-feedback">
-              <span>${en ? "Your Move" : "你的选择"}</span>
-              <p>${escapeHtml(view.feedback)}</p>
-            </div>
-            <div class="film-reward-note">
-              ${en ? "+2 mastery points · Ability growth · Resource change" : "修炼点 +2 · 能力成长 · 资源变化"}
-            </div>
-          </section>
-          <div class="film-actions">
-            <button class="primary" data-action="open-film-quest">${en ? "Next Classic" : "下一部经典"}</button>
-            <button data-action="film-quest-back">${en ? "Back to Map" : "返回地图"}</button>
+    const legal =
+      !game.winner && game.turn === "player" ? legalMoves(game, "player") : [];
+    const legalSet = new Set(
+      legal.map((move) => `${move.to[0]},${move.to[1]}`)
+    );
+    const selectedId = this.junqiSelectedPieceId;
+    const pending = this.junqiPendingCommand;
+    const cells = game.board
+      .map((row, r) =>
+        row
+          .map((piece, c) => {
+            const isSelected = piece?.id === selectedId;
+            const isLegal = legalSet.has(`${r},${c}`);
+            const isOwn = piece?.side === "player";
+            const isMotivated = piece?.id === game.commandState.motivatePieceId;
+            const deploySlot =
+              pending === "deploy" && selectedId && r >= 3 && !piece;
+            const reinforceSlot =
+              pending === "reinforce" && r >= 3 && !piece;
+            const clickable =
+              isLegal ||
+              (isOwn && !game.winner && game.turn === "player") ||
+              deploySlot ||
+              reinforceSlot;
+            let label = "";
+            let cls = "junqi-cell empty";
+            if (piece) {
+              label =
+                piece.side === "player" || piece.revealed
+                  ? JUNQI_PIECE_LABELS[piece.type][en ? "en" : "zh"]
+                  : "?";
+              cls = `junqi-cell ${piece.side === "player" ? "player" : "ai"}`;
+              if (piece.type === "flag") cls += " flag";
+              if (piece.type === "mine") cls += " mine";
+              if (piece.type === "bomb") cls += " bomb";
+            }
+            if (isSelected) cls += " selected";
+            if (isLegal) cls += " legal";
+            if (isMotivated) cls += " motivated";
+            const marker = piece
+              ? escapeHtml(label)
+              : isLegal
+                ? "●"
+                : deploySlot || reinforceSlot
+                  ? "○"
+                  : "";
+            return `
+              <button class="${cls}" data-action="junqi-cell" data-row="${r}" data-col="${c}" ${clickable ? "" : "disabled aria-disabled=\"true\""}>
+                <span class="junqi-cell-label">${marker}</span>
+                ${isMotivated ? `<span class="junqi-motivate-badge">${en ? "Boost" : "激励"}</span>` : ""}
+              </button>
+            `;
+          })
+          .join("")
+      )
+      .join("");
+    const commands: Array<{
+      key: JunqiCommand;
+      zh: string;
+      en: string;
+      cost: number;
+    }> = [
+      { key: "deploy", zh: "排兵布阵", en: "Deploy", cost: JUNQI_COMMAND_COSTS.deploy },
+      { key: "motivate", zh: "激励员工", en: "Motivate", cost: JUNQI_COMMAND_COSTS.motivate },
+      { key: "coordinate", zh: "团队协同", en: "Coordinate", cost: JUNQI_COMMAND_COSTS.coordinate },
+      { key: "reinforce", zh: "资源调度", en: "Reinforce", cost: JUNQI_COMMAND_COSTS.reinforce }
+    ];
+    const commandButtons = commands
+      .map((item) => {
+        const used =
+          item.key === "deploy"
+            ? game.commandState.deployUsed
+            : item.key === "motivate"
+              ? game.commandState.motivateUsed
+              : item.key === "coordinate"
+                ? game.commandState.coordinateUsed
+                : game.commandState.reinforceUsed;
+        const affordable = game.commandPoints >= item.cost;
+        const disabled =
+          used ||
+          !affordable ||
+          Boolean(game.winner) ||
+          game.turn !== "player";
+        return `
+          <button class="junqi-command ${used ? "used" : ""}" data-action="junqi-command" data-command="${item.key}" ${disabled ? "disabled aria-disabled=\"true\"" : ""}>
+            <span>${en ? item.en : item.zh}</span>
+            <small>${item.cost} ${en ? "CP" : "指挥点"}</small>
+          </button>
+        `;
+      })
+      .join("");
+    const resultMarkup = game.winner
+      ? `
+        <section class="junqi-result ${game.winner === "player" ? "win" : "lose"}">
+          <h2>${en ? (game.winner === "player" ? "Victory" : "Defeat") : game.winner === "player" ? "推演胜利" : "推演失利"}</h2>
+          <p>${en ? (game.winner === "player" ? "You won the war room. +6 influence, +4 trust, +2 mastery." : "The AI held the line. -5 energy.") : game.winner === "player" ? "你赢得军棋推演：影响力 +6、信任 +4、修炼点 +2。" : "AI 守住了战线：精力 -5。"}</p>
+          <div class="junqi-actions">
+            <button class="primary" data-action="junqi-new">${en ? "New Game" : "新一局"}</button>
+            <button data-action="junqi-back">${en ? "Back to Map" : "返回地图"}</button>
           </div>
-        </main>
-      `;
-      return;
-    }
-
+        </section>
+      `
+      : "";
+    const pendingHint = pending
+      ? `<p class="junqi-pending">${
+          en
+            ? pending === "deploy"
+              ? "Select a player piece, then choose a back-row destination."
+              : pending === "motivate"
+                ? "Choose one player piece to boost for its next attack."
+                : "Choose an empty back-row cell for the reinforcement."
+            : pending === "deploy"
+              ? "先选一个己方棋子，再选后两排空位完成部署。"
+              : pending === "motivate"
+                ? "选择一个己方棋子，下一次进攻时获得 +1 军衔。"
+                : "选择一个后两排空位，调度一名排长增援。"
+        }</p>`
+      : "";
     this.root.innerHTML = `
       <header class="topbar">
         <div class="brand">${this.t("brand")}</div>
-        <button class="link" data-action="film-quest-back">${en ? "Map" : "返回地图"}</button>
-        <div class="topbar-meta"><span>${completedCount} / ${total}</span></div>
+        <button class="link" data-action="junqi-back">${en ? "Map" : "返回地图"}</button>
+        <div class="topbar-meta"><span>${en ? `W ${this.save.junqiWins} / L ${this.save.junqiLosses}` : `胜 ${this.save.junqiWins} / 负 ${this.save.junqiLosses}`}</span></div>
       </header>
-      <main class="film-shell" style="--dot:${ABILITIES[quest.ability].color}" aria-label="${en ? "Classic film side quest" : "经典影视副线"}">
-        <section class="film-hero" style="--dot:${ABILITIES[quest.ability].color}">
-          <p class="eyebrow">${en ? "Classic Film Side Quest" : "经典影视副线"}</p>
-          <h1>${escapeHtml(title)}</h1>
-          <div class="film-tags">
-            <span>${escapeHtml(regionLabel)}</span>
-            <span>${escapeHtml(abilityLabel)}</span>
-          </div>
-          <div class="film-poster" style="background-image:url('./art/chapter-${posterChapter}.jpg')"></div>
+      <main class="junqi-shell" aria-label="${en ? "Junqi War Room" : "军棋推演"}">
+        <section class="junqi-hero">
+          <p class="eyebrow">${en ? "Junqi War Room" : "军棋推演"}</p>
+          <h1>${en ? "Command the board like a leadership team" : "像管理一支团队一样指挥棋盘"}</h1>
+          <p class="muted">${en ? `Command Points: ${game.commandPoints}. Deploy pieces, motivate key members, coordinate two moves, and schedule reinforcements.` : `指挥点：${game.commandPoints}。排兵布阵、激励关键成员、团队协同两步走、调度增援。`}</p>
+          <div class="junqi-turn">${game.winner ? (en ? "Finished" : "已结束") : game.turn === "player" ? (en ? "Your turn" : "你的回合") : (en ? "AI thinking" : "AI 思考中")}</div>
         </section>
-        <section class="film-scene">
-          <span>${en ? "Classic Slice" : "经典片场切片"}</span>
-          <p>${escapeHtml(en ? quest.sceneEn : quest.sceneZh)}</p>
-        </section>
-        <section class="film-decision">
-          <h2>${en ? "What would you do?" : "如果是你，你会怎么做？"}</h2>
-          <div class="film-options">
-            ${this.filmQuestOrder
-              .map((realIndex, index) => {
-                const item = quest.options[realIndex];
-                const view = en ? item.en : item.zh;
-                return `
-                  <button class="option-card" data-action="film-quest-pick" data-option="${index}">
-                    <span class="option-letter">${String.fromCharCode(65 + index)}</span>
-                    <span class="option-body">
-                      <strong>${escapeHtml(view.label)}</strong>
-                      <em>${escapeHtml(view.summary)}</em>
-                    </span>
-                  </button>
-                `;
-              })
-              .join("")}
-          </div>
+        ${pendingHint}
+        ${resultMarkup}
+        <section class="junqi-board-wrap">
+          <div class="junqi-board">${cells}</div>
+          <aside class="junqi-sidebar">
+            <div class="junqi-legend">
+              <h3>${en ? "Rank Ladder" : "军衔高低"}</h3>
+              <p>${en ? "Commander > Marshal > Division > Brigade > Regiment > Battalion > Company > Platoon > Engineer" : "司令 > 军长 > 师长 > 旅长 > 团长 > 营长 > 连长 > 排长 > 工兵"}</p>
+              <p class="muted">${en ? "Bomb removes both. Mine stops all except Engineer. Flag must be captured." : "炸弹同归于尽；地雷只有工兵能排；夺取军旗即胜。"}</p>
+            </div>
+            <div class="junqi-commands">
+              <h3>${en ? "Leadership Commands" : "领导力指令"}</h3>
+              ${commandButtons}
+            </div>
+          </aside>
         </section>
       </main>
     `;
@@ -6983,8 +7125,25 @@ export class AdaptiveGameApp {
       case "choose-option":
         this.chooseStoryOption(actionTarget);
         break;
-      case "open-film-quest":
-        this.openFilmQuest();
+      case "open-junqi":
+        this.openJunqi();
+        break;
+      case "junqi-cell":
+        this.handleJunqiCell(
+          Number(actionTarget.dataset.row),
+          Number(actionTarget.dataset.col)
+        );
+        break;
+      case "junqi-command":
+        this.applyJunqiCommand(
+          actionTarget.dataset.command as JunqiCommand
+        );
+        break;
+      case "junqi-new":
+        this.openJunqi();
+        break;
+      case "junqi-back":
+        this.junqiBackToMap();
         break;
       case "organizational-invest":
         this.organizationalInvest();
@@ -6999,12 +7158,6 @@ export class AdaptiveGameApp {
         this.markGuideStep("map-intro");
         this.audio.ui();
         this.renderMap();
-        break;
-      case "film-quest-back":
-        this.filmQuestBackToMap();
-        break;
-      case "film-quest-pick":
-        this.resolveFilmQuestOption(Number(actionTarget.dataset.option));
         break;
       case "expedition-explore":
         this.exploreNodeAction(actionTarget);

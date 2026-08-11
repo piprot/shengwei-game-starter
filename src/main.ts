@@ -12,6 +12,7 @@ import "./npc-hover.css";
 import "./dashboard-stamp.css";
 import "./transitions.css";
 import "./texture-details.css";
+import "./ui/junqi.css";
 import { AdaptiveGameApp } from "./ui/App";
 
 /**

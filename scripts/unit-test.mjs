@@ -62,7 +62,15 @@ import {
 import { ROLE_OPTION_SETS } from "../src/core/roleOptions.ts";
 import { DuelEngine } from "../src/core/duel.ts";
 import { DUEL_BANK, DUEL_BANK_SIZE } from "../src/core/duelBank.ts";
-import { FILM_QUESTS, FILM_QUEST_COUNT } from "../src/core/filmQuests.ts";
+import {
+  aiMove,
+  applyAiMove,
+  applyMove,
+  createJunqiGame,
+  legalMoves,
+  resolveCapture,
+  useJunqiCommand
+} from "../src/core/junqi.ts";
 import {
   CHAPTER_PASS_STARS,
   DEFAULT_SAVE,
@@ -331,20 +339,72 @@ for (const node of DUEL_BANK) {
     `duel node ${node.id} should cover expert/partial/risk qualities`
   );
 }
-assert(FILM_QUEST_COUNT === 64, "classic film side quests should contain 64 works");
+const junqi = createJunqiGame(6);
 assert(
-  new Set(FILM_QUESTS.map((quest) => quest.id)).size === FILM_QUESTS.length,
-  "film quest ids should be unique"
+  junqi.board.flat().filter(Boolean).length === 26,
+  "junqi should start with 26 pieces"
 );
-for (const quest of FILM_QUESTS) {
-  assert(quest.options.length === 3, `film quest ${quest.id} should have 3 options`);
-  assert(
-    quest.options.some((option) => option.zh.quality === "expert") &&
-      quest.options.some((option) => option.zh.quality === "partial") &&
-      quest.options.some((option) => option.zh.quality === "risk"),
-    `film quest ${quest.id} should cover expert/partial/risk qualities`
-  );
-}
+assert(junqi.board[0][3]?.type === "flag", "AI flag should sit at row 0 col 3");
+assert(junqi.board[5][3]?.type === "flag", "player flag should sit at row 5 col 3");
+assert(
+  legalMoves(junqi, "player").length > 0,
+  "player should have legal moves at start"
+);
+assert(
+  legalMoves(junqi, "player").every((move) =>
+    move.pieceId.startsWith("player")
+  ),
+  "legal moves should only belong to the current side"
+);
+assert(resolveCapture("engineer", "mine") === "attacker", "engineer beats mine");
+assert(resolveCapture("platoon", "mine") === "defender", "mine stops platoon");
+assert(resolveCapture("platoon", "bomb") === "both", "bomb removes both");
+assert(
+  resolveCapture("division", "marshal") === "defender",
+  "marshal beats division"
+);
+assert(
+  resolveCapture("commander", "division") === "attacker",
+  "commander beats division"
+);
+const motivated = useJunqiCommand(junqi, "motivate", {
+  pieceId: junqi.board[4][5]?.id
+});
+assert(
+  motivated.commandState.motivateUsed &&
+    motivated.commandState.motivatePieceId,
+  "motivate command should mark a boosted piece"
+);
+const deployed = useJunqiCommand(junqi, "deploy", {
+  pieceId: junqi.board[5][5]?.id,
+  to: [3, 0]
+});
+assert(
+  deployed.board[3][0]?.id === junqi.board[5][5]?.id,
+  "deploy command should move a piece to a back-row slot"
+);
+const coordinated = useJunqiCommand(junqi, "coordinate");
+assert(
+  coordinated.extraMovesRemaining === 1,
+  "coordinate command should grant one extra move"
+);
+const reinforced = useJunqiCommand(junqi, "reinforce", { to: [3, 1] });
+assert(
+  reinforced.board[3][1]?.type === "platoon",
+  "reinforce command should place a platoon"
+);
+const aiOnly = createJunqiGame(6);
+aiOnly.turn = "ai";
+const aiNext = applyAiMove(aiOnly);
+assert(
+  aiNext.turn === "player" || aiNext.winner !== null,
+  "AI should either move or end the game"
+);
+const aiMoveResult = aiMove(createJunqiGame(6));
+assert(
+  aiMoveResult === null || aiMoveResult.pieceId.startsWith("ai"),
+  "AI move should belong to AI"
+);
 assert(RANDOM_EVENT_IDS.length >= 20, "random events must be 20+");
 assert(
   RANDOM_EVENT_IDS.every((id) => RANDOM_EVENT_META[id]),

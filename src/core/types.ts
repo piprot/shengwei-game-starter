@@ -190,6 +190,10 @@ export interface SaveState {
   /** 每日对练任务：最近领取日期与当日已完成对局数。 */
   lastDuelBonusDate?: string;
   duelsToday?: number;
+  /** Junqi war-room wins. */
+  junqiWins: number;
+  /** Junqi war-room losses. */
+  junqiLosses: number;
 }
 
 export interface ChoiceOutcome {
