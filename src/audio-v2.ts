@@ -23,6 +23,12 @@
 import { EasternSfx } from "./sfx-eastern";
 import { AmbientLayers } from "./ambient-layers";
 
+/**
+ * Scene master level for ambient music. The layer sits between every phrase
+ * note and the music bus, so it must stay high enough to be audible.
+ */
+const MUSIC_LAYER_GAIN = 0.8;
+
 // ---------------------------------------------------------------------------
 // Types
 // ---------------------------------------------------------------------------
@@ -475,7 +481,10 @@ export class GameAudioV2 {
         this.currentLayer.gain.gain.value,
         now,
       );
-      this.currentLayer.gain.gain.linearRampToValueAtTime(0.012, now + 0.5);
+      this.currentLayer.gain.gain.linearRampToValueAtTime(
+        MUSIC_LAYER_GAIN,
+        now + 0.5,
+      );
     }
   }
 
@@ -487,13 +496,16 @@ export class GameAudioV2 {
     }
     if (!this.musicMuted && this.currentLayer && this.context) {
       const now = this.context.currentTime;
-      if (this.currentLayer.gain.gain.value < 0.006) {
+      if (this.currentLayer.gain.gain.value < MUSIC_LAYER_GAIN * 0.5) {
         this.currentLayer.gain.gain.cancelScheduledValues(now);
         this.currentLayer.gain.gain.setValueAtTime(
           this.currentLayer.gain.gain.value,
           now,
         );
-        this.currentLayer.gain.gain.linearRampToValueAtTime(0.012, now + 0.5);
+        this.currentLayer.gain.gain.linearRampToValueAtTime(
+          MUSIC_LAYER_GAIN,
+          now + 0.5,
+        );
       }
     }
   }
@@ -997,6 +1009,17 @@ export class GameAudioV2 {
     }
     // Already running — original behaviour was to bail out.
     if (this.currentLayer) {
+      return;
+    }
+    this.startNewLayer(scene, 1.0);
+  }
+
+  /**
+   * Start ambient music on the first user gesture if no scene layer is running.
+   * Lets any first click bring the BGM back even when it does not navigate.
+   */
+  startAmbientIfIdle(scene: MusicScene = this.ambientScene): void {
+    if (!this.userGesture || this.currentLayer || !this.context || !this.musicGain) {
       return;
     }
     this.startNewLayer(scene, 1.0);
@@ -1590,7 +1613,7 @@ export class GameAudioV2 {
     const now = this.context.currentTime;
     this.currentLayer.gain.gain.setValueAtTime(0, now);
     this.currentLayer.gain.gain.linearRampToValueAtTime(
-      this.musicMuted ? 0 : 0.012,
+      this.musicMuted ? 0 : MUSIC_LAYER_GAIN,
       now + fadeInDuration,
     );
 

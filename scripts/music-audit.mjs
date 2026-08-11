@@ -150,8 +150,11 @@ try {
   if (state.musicGainValues.length === 0 || Math.max(...state.musicGainValues) <= 0.3) {
     throw new Error("music bus gain did not recover after unmute");
   }
-  if (state.layerGainValues.length === 0 || Math.max(...state.layerGainValues) <= 0.005) {
-    throw new Error("ambient layer gain stayed at zero after unmute");
+  if (
+    state.layerGainValues.length === 0 ||
+    Math.max(...state.layerGainValues) <= 0.1
+  ) {
+    throw new Error("ambient layer gain stayed inaudible after unmute");
   }
   if (errors.length > 0) {
     throw new Error(`Page errors: ${errors.join(" | ")}`);

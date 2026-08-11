@@ -209,7 +209,7 @@ const SETTINGS_MIGRATION_KEY = "adaptive-ascent-settings-v2";
 const GUIDE_KEY = "adaptive-ascent-guide-v1";
 const GUIDE_REWARD_KEY = "adaptive-ascent-guide-reward";
 const ACHIEVEMENT_FAVORITE_KEY = "adaptive-ascent-achievement-favorites";
-const APP_VERSION = "1.7.20";
+const APP_VERSION = "1.7.21";
 
 type View =
   | "menu"
@@ -513,6 +513,9 @@ export class AdaptiveGameApp {
     if (!view) return;
     if (view === "map" && !this.save.profileCreated) return;
     event.preventDefault();
+    this.audio.unlock();
+    this.audio.ensure();
+    this.audio.startAmbientIfIdle();
     this.audio.ui();
     this.show(view);
   }
@@ -5555,6 +5558,7 @@ export class AdaptiveGameApp {
     }
     this.audio.unlock();
     this.audio.ensure();
+    this.audio.startAmbientIfIdle();
 
     if (this.view === "leadershipGames" && action.startsWith("lg-")) {
       this.leadershipGames?.handleAction(action, actionTarget);
