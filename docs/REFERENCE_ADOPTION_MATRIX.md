@@ -32,6 +32,7 @@
 | Dungeon-clicker-9000 | 成就、难度解锁、成长反馈 | 领导力游戏中心成就/难度 1-3 | `test:features` |
 | adaptive-mastery-learning-system | 按错误类型自适应、学习路径 | `src/core/coach-plan.ts`、个人教练卡 | `test:system` |
 | 六维质量审计参照 | schema 校验、状态机、内容去重 | `scripts/content-audit.mjs`、`scripts/leadership-audit.mjs` | `content-audit`、`leadership-audit` |
+| 外部评估 V2 建议（UGC） | 玩家/教练自定义情境、本地保存与试玩 | `src/core/custom-scenarios.ts`、主菜单「情境工坊」 | `test:unit`、Playwright 情境工坊流程 |
 
 ## 使用原则
 

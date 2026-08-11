@@ -209,6 +209,14 @@ import {
   type DualAxisOutcome
 } from "../core/review-schedule";
 import {
+  createCustomScenario,
+  customScenarioToNode,
+  loadCustomScenarios,
+  saveCustomScenarios,
+  validateCustomScenario,
+  type CustomScenario
+} from "../core/custom-scenarios";
+import {
   renderPowerSandbox,
   renderRelationGraph
 } from "./relationsArt";
@@ -220,7 +228,7 @@ const SETTINGS_MIGRATION_KEY = "adaptive-ascent-settings-v2";
 const GUIDE_KEY = "adaptive-ascent-guide-v1";
 const GUIDE_REWARD_KEY = "adaptive-ascent-guide-reward";
 const ACHIEVEMENT_FAVORITE_KEY = "adaptive-ascent-achievement-favorites";
-const APP_VERSION = "1.7.25";
+const APP_VERSION = "1.7.26";
 
 type View =
   | "menu"
@@ -234,6 +242,8 @@ type View =
   | "story"
   | "leadershipGames"
   | "dualReview"
+  | "customScenarios"
+  | "customScenarioPlay"
   | "chapterTransition"
   | "ability"
   | "report"
@@ -345,6 +355,9 @@ export class AdaptiveGameApp {
   private dualWorstIndex?: number;
   private dualSubmitted = false;
   private dualLastOutcome?: DualAxisOutcome;
+  private customScenarios: CustomScenario[] = [];
+  private customPlayId?: string;
+  private customPlayResult?: number;
   private hiddenBranchAbilityId?: AbilityId;
   private hiddenRouteStep = 0;
   private hiddenRouteLastAnswer?: number;
@@ -471,6 +484,7 @@ export class AdaptiveGameApp {
     this.root.addEventListener("submit", (event) => this.handleSubmit(event));
     this.root.addEventListener("change", (event) => this.handleChange(event));
     document.addEventListener("keydown", (event) => this.handleShortcut(event));
+    this.customScenarios = loadCustomScenarios();
     this.show("menu");
     // 只有真实菜单渲染完成后才算 ready：放在构造函数开头会让初始化中途抛异常时
     // 也被标记为就绪，index.html 里那段 5 秒 loading 兜底就会失效。
@@ -659,6 +673,8 @@ export class AdaptiveGameApp {
         : view === "leadershipGames"
           ? "menu"
         : view === "dualReview"
+          ? "menu"
+        : view === "customScenarios" || view === "customScenarioPlay"
           ? "menu"
         : view === "duel"
           ? "duel"
@@ -1359,6 +1375,12 @@ export class AdaptiveGameApp {
       case "dualReview":
         this.renderDualReview();
         break;
+      case "customScenarios":
+        this.renderCustomScenarios();
+        break;
+      case "customScenarioPlay":
+        this.renderCustomScenarioPlay();
+        break;
       case "chapterTransition":
         this.renderChapterTransition();
         break;
@@ -1632,6 +1654,13 @@ export class AdaptiveGameApp {
             <span class="card-index">11</span>
             <h2>${this.language === "en" ? "Leadership Games" : "领导力游戏"}</h2>
             <p>${this.language === "en" ? "Five polished mini-games with teaching, training, battle, review, achievements, and increasing difficulty." : "五个精品小游戏：教学、训练、对战、复盘、成就与逐级难度。"}</p>
+          </button>
+          <button class="menu-card has-art" data-action="open-custom-scenarios">
+            <img class="menu-card-cover" src="${this.artAsset("menu-card-10")}" alt="" loading="lazy" onerror="this.style.display='none'" />
+            <span class="menu-card-mask"></span>
+            <span class="card-index">12</span>
+            <h2>${this.language === "en" ? "Scenario Workshop" : "情境工坊"}</h2>
+            <p>${this.language === "en" ? "Write a real workplace dilemma, validate the expert/partial/risk structure, and play it with your team." : "写下真实职场两难，校验专家/部分/风险结构，再与团队一起试玩复盘。"}</p>
           </button>
         </section>
       </main>
@@ -3037,6 +3066,128 @@ export class AdaptiveGameApp {
           <button class="primary" data-action="dual-submit" ${this.dualSubmitted ? "disabled aria-disabled=\"true\"" : ""}>${en ? "Submit Judgment" : "提交判断"}</button>
           ${this.dualSubmitted ? `<button class="primary" data-action="dual-next">${en ? "Next Review" : "下一题"}</button>` : ""}
         </div>
+      </main>
+    `;
+  }
+
+  private renderCustomScenarios(): void {
+    const en = this.language === "en";
+    const list = this.customScenarios
+      .map(
+        (scenario) => `
+          <article class="custom-scenario-card">
+            <strong>${escapeHtml(scenario.title)}</strong>
+            <p>${escapeHtml(scenario.context)}</p>
+            <div class="custom-scenario-actions">
+              <button data-action="custom-play" data-id="${escapeAttr(scenario.id)}">${en ? "Play" : "试玩"}</button>
+              <button data-action="custom-delete" data-id="${escapeAttr(scenario.id)}">${en ? "Delete" : "删除"}</button>
+            </div>
+          </article>
+        `
+      )
+      .join("");
+    const optionFields = [0, 1, 2]
+      .map((index) => {
+        const qualityName =
+          index === 0 ? "expert" : index === 1 ? "partial" : "risk";
+        return `
+          <fieldset class="custom-option-field">
+            <legend>${en ? `Option ${index + 1} · ${qualityName}` : `选项 ${index + 1} · ${qualityName}`}</legend>
+            <label><span>${en ? "Label" : "标题"}</span><input name="custom-option-${index}-label" maxlength="60" /></label>
+            <label><span>${en ? "Summary" : "摘要"}</span><input name="custom-option-${index}-summary" maxlength="120" /></label>
+            <label><span>${en ? "Feedback" : "反馈"}</span><textarea name="custom-option-${index}-feedback" rows="2" maxlength="300"></textarea></label>
+            <label><span>${en ? "Quality" : "质量"}</span>
+              <select name="custom-option-${index}-quality">
+                <option value="expert" ${index === 0 ? "selected" : ""}>${en ? "Expert" : "专家"}</option>
+                <option value="partial" ${index === 1 ? "selected" : ""}>${en ? "Partial" : "部分有效"}</option>
+                <option value="risk" ${index === 2 ? "selected" : ""}>${en ? "Risk" : "高风险"}</option>
+              </select>
+            </label>
+          </fieldset>
+        `;
+      })
+      .join("");
+    this.root.innerHTML = `
+      <header class="topbar">
+        <div class="brand">${this.t("brand")}</div>
+        <button class="link" data-action="open-menu">${en ? "Menu" : "返回主菜单"}</button>
+        <div class="topbar-meta"><span>${en ? "Scenario Workshop" : "情境工坊"}</span></div>
+      </header>
+      <main class="custom-workshop-shell" aria-label="${en ? "Scenario Workshop" : "情境工坊"}">
+        <section class="custom-workshop-hero">
+          <p class="eyebrow">${en ? "UGC Scenarios" : "自定义情境"}</p>
+          <h1>${en ? "Write a real dilemma, then play it" : "写下一个真实两难，再把它玩出来"}</h1>
+          <p class="muted">${en ? "Keep the expert / partial / risk structure, and your team can use the same baseline the campaign uses." : "保持专家 / 部分 / 高风险结构，团队就能复用主线同样的基准反馈。"}</p>
+        </section>
+        <section class="custom-scenario-list">
+          <h2>${en ? `Saved Scenarios (${this.customScenarios.length})` : `已保存情境（${this.customScenarios.length}）`}</h2>
+          ${list || `<p class="muted">${en ? "No scenarios yet. Create the first one below." : "还没有自定义情境，先在下方面创建第一个。"}</p>`}
+        </section>
+        <section class="custom-scenario-form">
+          <h2>${en ? "Create Scenario" : "创建情境"}</h2>
+          <label><span>${en ? "Title" : "标题"}</span><input name="custom-title" maxlength="40" /></label>
+          <label><span>${en ? "Situation" : "现场描述"}</span><textarea name="custom-context" rows="3" maxlength="500"></textarea></label>
+          <label><span>${en ? "Stake" : "利害关系"}</span><textarea name="custom-stake" rows="2" maxlength="300"></textarea></label>
+          <div class="custom-option-grid">${optionFields}</div>
+          <button class="primary" data-action="custom-submit">${en ? "Save Scenario" : "保存情境"}</button>
+        </section>
+      </main>
+    `;
+  }
+
+  private renderCustomScenarioPlay(): void {
+    const scenario = this.customScenarios.find(
+      (item) => item.id === this.customPlayId
+    );
+    if (!scenario) {
+      this.show("customScenarios");
+      return;
+    }
+    const en = this.language === "en";
+    const node = customScenarioToNode(scenario);
+    const options =
+      this.customPlayResult === undefined
+        ? scenario.options
+            .map(
+              (option, index) => `
+                <button class="custom-play-option ${option.quality}" data-action="custom-option" data-option="${index}">
+                  <strong>${escapeHtml(option.label)}</strong>
+                  <small>${escapeHtml(option.summary)}</small>
+                </button>
+              `
+            )
+            .join("")
+        : "";
+    const result =
+      this.customPlayResult !== undefined &&
+      scenario.options[this.customPlayResult]
+        ? (() => {
+            const option = scenario.options[this.customPlayResult];
+            return `
+              <section class="custom-play-result ${option.quality}">
+                <span class="quality ${option.quality}">${this.qualityLabel(option.quality)}</span>
+                <h2>${escapeHtml(option.label)}</h2>
+                <p>${escapeHtml(option.feedback)}</p>
+                <blockquote>${escapeHtml(node.options[this.customPlayResult].theory)}</blockquote>
+              </section>
+            `;
+          })()
+        : "";
+    this.root.innerHTML = `
+      <header class="topbar">
+        <div class="brand">${this.t("brand")}</div>
+        <button class="link" data-action="custom-back">${en ? "Workshop" : "返回工坊"}</button>
+        <div class="topbar-meta"><span>${escapeHtml(scenario.title)}</span></div>
+      </header>
+      <main class="custom-play-shell" aria-label="${en ? "Custom scenario" : "自定义情境"}">
+        <section class="custom-play-hero">
+          <p class="eyebrow">${en ? "Custom Scenario" : "自定义情境"}</p>
+          <h1>${escapeHtml(scenario.title)}</h1>
+          <p>${escapeHtml(scenario.context)}</p>
+          <blockquote>${escapeHtml(scenario.stake)}</blockquote>
+        </section>
+        ${result}
+        ${options ? `<section class="custom-play-options">${options}</section>` : `<div class="custom-play-actions"><button class="primary" data-action="custom-back">${en ? "Back to Workshop" : "返回工坊"}</button></div>`}
       </main>
     `;
   }
@@ -6047,6 +6198,81 @@ export class AdaptiveGameApp {
         this.resetDualSelection();
         this.audio.ui();
         this.show("report");
+        break;
+      case "open-custom-scenarios":
+        this.customPlayId = undefined;
+        this.customPlayResult = undefined;
+        this.audio.ui();
+        this.show("customScenarios");
+        break;
+      case "custom-submit": {
+        const value = (name: string): string =>
+          this.root.querySelector<HTMLInputElement>(`[name="${name}"]`)?.value ??
+          "";
+        const title = value("custom-title");
+        const context = value("custom-context");
+        const stake = value("custom-stake");
+        const options = [0, 1, 2].map((index) => ({
+          label: value(`custom-option-${index}-label`),
+          summary: value(`custom-option-${index}-summary`),
+          feedback: value(`custom-option-${index}-feedback`),
+          quality: this.root.querySelector<HTMLSelectElement>(
+            `[name="custom-option-${index}-quality"]`
+          )?.value as "expert" | "partial" | "risk"
+        }));
+        const errors = validateCustomScenario({ title, context, stake, options });
+        if (errors.length > 0) {
+          this.showToast(errors[0]);
+          this.audio.risk();
+          break;
+        }
+        this.customScenarios = [
+          ...this.customScenarios,
+          createCustomScenario({ title, context, stake, options })
+        ];
+        saveCustomScenarios(this.customScenarios);
+        this.audio.expert();
+        this.renderCustomScenarios();
+        break;
+      }
+      case "custom-delete": {
+        const id = actionTarget.dataset.id;
+        this.customScenarios = this.customScenarios.filter(
+          (scenario) => scenario.id !== id
+        );
+        saveCustomScenarios(this.customScenarios);
+        this.audio.ui();
+        this.renderCustomScenarios();
+        break;
+      }
+      case "custom-play": {
+        const id = actionTarget.dataset.id;
+        if (this.customScenarios.some((scenario) => scenario.id === id)) {
+          this.customPlayId = id;
+          this.customPlayResult = undefined;
+          this.audio.ui();
+          this.show("customScenarioPlay");
+        }
+        break;
+      }
+      case "custom-option": {
+        const index = Number(actionTarget.dataset.option);
+        this.customPlayResult = index;
+        const scenario = this.customScenarios.find(
+          (item) => item.id === this.customPlayId
+        );
+        const quality = scenario?.options[index]?.quality;
+        if (quality === "expert") this.audio.expert();
+        else if (quality === "partial") this.audio.partial();
+        else this.audio.risk();
+        this.renderCustomScenarioPlay();
+        break;
+      }
+      case "custom-back":
+        this.customPlayId = undefined;
+        this.customPlayResult = undefined;
+        this.audio.ui();
+        this.show("customScenarios");
         break;
       case "open-wrong-review": {
         const wrongIds = [

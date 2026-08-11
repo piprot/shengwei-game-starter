@@ -87,6 +87,11 @@ import {
   worstOptionIndex
 } from "../src/core/review-schedule.ts";
 import {
+  createCustomScenario,
+  customScenarioToNode,
+  validateCustomScenario
+} from "../src/core/custom-scenarios.ts";
+import {
   DIMENSION_ORDER,
   LEADERSHIP_DIMENSIONS,
   addDimensionExp,
@@ -555,6 +560,32 @@ assert(
     }
   ]) === 0,
   "worst option should prefer risk, then lowest net resource value"
+);
+const validScenarioInput = {
+  title: "客户投诉",
+  context: "大客户当众质疑交付能力。",
+  stake: "保住客户与团队尊严。",
+  options: [
+    { label: "先承接并给验证时间", summary: "给确定性", feedback: "团队被保护。", quality: "expert" },
+    { label: "当场反驳", summary: "赢面子", feedback: "关系受损。", quality: "partial" },
+    { label: "承诺不可能时间", summary: "安抚客户", feedback: "失信。", quality: "risk" }
+  ]
+};
+assert(
+  validateCustomScenario(validScenarioInput).length === 0,
+  "valid custom scenario should pass validation"
+);
+const scenario = createCustomScenario(validScenarioInput, 1234);
+const customNode = customScenarioToNode(scenario);
+assert(
+  scenario.id.startsWith("custom-") &&
+    customNode.options.length === 3 &&
+    customNode.options.every((option) => option.theory.length > 0),
+  "custom scenario should become a playable story node"
+);
+assert(
+  validateCustomScenario({ ...validScenarioInput, options: [] }).length > 0,
+  "invalid custom scenario should fail validation"
 );
 
 assert(RANDOM_EVENT_IDS.length >= 20, "random events must be 20+");
