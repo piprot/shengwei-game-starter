@@ -3099,3 +3099,29 @@ button:focus-visible,
 .coach-plan-actions button:hover {
   background: rgba(65, 199, 192, 0.2);
 }
+
+/* =========================================================================
+   NPC 关系深化剧情
+   ========================================================================= */
+.npc-arc {
+  margin-top: 12px;
+  padding: 12px 14px;
+  border: 1px solid rgba(65, 199, 192, 0.35);
+  border-radius: 8px;
+  background: rgba(65, 199, 192, 0.08);
+}
+.npc-arc h4 {
+  margin: 0 0 8px;
+  color: #aef1ec;
+}
+.npc-arc p {
+  margin: 6px 0;
+  line-height: 1.6;
+}
+.npc-quest {
+  margin: 8px 0 0;
+  padding: 8px 10px;
+  border-left: 3px solid #f2c14e;
+  background: rgba(242, 193, 78, 0.1);
+  color: #f8e2ae;
+}

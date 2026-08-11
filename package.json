@@ -28,6 +28,7 @@
     "test:features": "node scripts/feature-audit.mjs",
     "test:music": "node scripts/music-audit.mjs",
     "test:coach-hints": "node --experimental-strip-types scripts/coach-hint-audit.mjs",
+    "test:system": "node --experimental-strip-types scripts/system-audit.mjs",
     "test:accessibility": "node --experimental-strip-types scripts/accessibility-audit.mjs",
     "test:rtc": "node --experimental-strip-types scripts/rtc-audit.mjs",
     "test:role-campaign": "node scripts/role-campaign-audit.mjs",

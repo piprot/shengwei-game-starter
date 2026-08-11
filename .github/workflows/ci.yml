@@ -93,6 +93,9 @@ jobs:
       - name: Coach hint audit
         run: npm run test:coach-hints
 
+      - name: System audit
+        run: npm run test:system
+
   deploy:
     needs: [build, test]
     runs-on: ubuntu-latest

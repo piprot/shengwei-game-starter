@@ -83,6 +83,9 @@ import {
   dimensionLevel
 } from "../src/core/leadership-model.ts";
 import { generateCoachPlan } from "../src/core/coach-plan.ts";
+import { NPCS } from "../src/core/npcs.ts";
+import { NPC_STORIES } from "../src/core/npcStories.ts";
+import { NPC_ARCS } from "../src/core/npcArcs.ts";
 import {
   CHAPTER_PASS_STARS,
   DEFAULT_SAVE,
@@ -391,6 +394,20 @@ assert(
   founderPlan.roleZh !== planA.roleZh,
   "coach plan should differentiate roles"
 );
+assert(
+  NPCS.length === 11 && Object.keys(NPC_STORIES).length === 11,
+  "all 11 NPCs should have base stories"
+);
+assert(
+  Object.keys(NPC_ARCS).length === 11,
+  "all 11 NPCs should have deeper story arcs"
+);
+for (const npc of NPCS) {
+  assert(
+    NPC_STORIES[npc.id] && NPC_ARCS[npc.id],
+    `${npc.id} should have both story and arc`
+  );
+}
 const decisionChess = createDecisionChess("battle");
 assert(
   decisionChess.board.length === 5 && decisionChess.board[0].length === 5,

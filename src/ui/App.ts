@@ -110,6 +110,7 @@ import {
   explorationMoments
 } from "../core/expedition";
 import { npcStoryFor } from "../core/npcStories";
+import { npcArcFor } from "../core/npcArcs";
 import { duelBankEn } from "../core/duelBank";
 import { EXTRA_MAIN_OPTIONS_EN } from "../core/mainScenarios";
 import {
@@ -208,7 +209,7 @@ const SETTINGS_MIGRATION_KEY = "adaptive-ascent-settings-v2";
 const GUIDE_KEY = "adaptive-ascent-guide-v1";
 const GUIDE_REWARD_KEY = "adaptive-ascent-guide-reward";
 const ACHIEVEMENT_FAVORITE_KEY = "adaptive-ascent-achievement-favorites";
-const APP_VERSION = "1.7.19";
+const APP_VERSION = "1.7.20";
 
 type View =
   | "menu"
@@ -971,6 +972,22 @@ export class AdaptiveGameApp {
       )
       .join("");
     const relic = en ? story.relicNoteEn : story.relicNoteZh;
+    const arc = npcArcFor(npc.id);
+    const arcMarkup = arc
+      ? `
+        <div class="npc-arc">
+          <h4>${en ? "Deeper Story" : "关系深化"}</h4>
+          ${(en ? arc.en : arc.zh)
+            .map((paragraph) => `<p>${escapeHtml(paragraph)}</p>`)
+            .join("")}
+          <div class="npc-dialogue-line">
+            <strong>${escapeHtml(en ? arc.dialogue.questionEn : arc.dialogue.questionZh)}</strong>
+            <p>${escapeHtml(en ? arc.dialogue.answerEn : arc.dialogue.answerZh)}</p>
+          </div>
+          <p class="npc-quest">${en ? "Next step" : "下一步"}：${escapeHtml(en ? arc.questEn : arc.questZh)}</p>
+        </div>
+      `
+      : "";
     return `
       <details class="npc-story">
         <summary>${en ? "Story & Letters" : "故事与书信"}</summary>
@@ -979,6 +996,7 @@ export class AdaptiveGameApp {
         </div>
         <div class="npc-dialogue">${dialogue}</div>
         <p class="npc-relic-note">${escapeHtml(relic)}</p>
+        ${arcMarkup}
       </details>
     `;
   }
