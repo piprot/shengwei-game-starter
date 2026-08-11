@@ -2950,3 +2950,33 @@ button:focus-visible,
 .trial-morale-panel small {
   color: #bdece8;
 }
+
+/* =========================================================================
+   主页模块三排排序：第一排核心玩法，第二排成长档案，第三排设置与辅助
+   ========================================================================= */
+.menu-grid {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-auto-flow: row dense;
+}
+.menu-card[data-action="open-map"] { order: 1; }
+.menu-card[data-action="open-trial"] { order: 2; }
+.menu-card[data-action="open-leadership-games"] { order: 3; }
+.menu-card[data-action="open-duel"] { order: 4; }
+.menu-card[data-action="open-ability"] { order: 5; }
+.menu-card[data-action="open-relations"] { order: 6; }
+.menu-card[data-action="open-report"] { order: 7; }
+.menu-card[data-action="open-achievements"] { order: 8; }
+.menu-card[data-action="open-settings"] { order: 9; }
+.menu-card[data-action="open-profile"] { order: 10; }
+.menu-card[data-action="open-coach"] { order: 11; }
+.menu-card.resume-card { order: 12; }
+@media (max-width: 980px) {
+  .menu-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+@media (max-width: 560px) {
+  .menu-grid {
+    grid-template-columns: 1fr;
+  }
+}
