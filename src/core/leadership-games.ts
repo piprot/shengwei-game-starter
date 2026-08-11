@@ -181,6 +181,7 @@ export interface DecisionChessState {
   mode: LeadershipGameMode;
   seed: number;
   level: number;
+  totalRounds: number;
   board: number[][];
   player: [number, number];
   ai: [number, number];
@@ -224,6 +225,7 @@ export function createDecisionChess(
     mode,
     seed,
     level,
+    totalRounds: mode === "battle" ? 6 + level * 2 : 3,
     board: decisionBoardForSeed(seed),
     player: [4, 1],
     ai: [0, 3],
@@ -324,8 +326,7 @@ export function applyDecisionChessMove(
     ];
     return next;
   }
-  const maxRounds =
-    next.mode === "battle" ? 6 + next.level * 2 : 2;
+  const maxRounds = next.totalRounds;
   if (next.round >= maxRounds) {
     next.finished = true;
     next.winner =
@@ -376,6 +377,7 @@ export interface GameTheoryState {
   mode: LeadershipGameMode;
   seed: number;
   level: number;
+  totalRounds: number;
   round: number;
   playerScore: number;
   aiScore: number;
@@ -403,6 +405,7 @@ export function createGameTheory(
     mode,
     seed,
     level,
+    totalRounds: mode === "battle" ? 5 + (level - 1) * 2 : 3,
     round: 1,
     playerScore: 0,
     aiScore: 0,
@@ -462,8 +465,7 @@ export function applyGameTheoryChoice(
       }
     ]
   };
-  const maxRounds =
-    next.mode === "battle" ? 5 + (next.level - 1) * 2 : 1;
+  const maxRounds = next.totalRounds;
   if (next.round >= maxRounds) {
     next.finished = true;
     next.winner =
@@ -509,6 +511,7 @@ export interface ResourceAllocationState {
   mode: LeadershipGameMode;
   seed: number;
   level: number;
+  totalRounds: number;
   round: number;
   totalScore: number;
   finished: boolean;
@@ -576,6 +579,7 @@ export function createResourceAllocation(
     mode,
     seed,
     level,
+    totalRounds: mode === "battle" ? 2 + level : 3,
     round: 1,
     totalScore: 0,
     finished: false,
@@ -616,7 +620,7 @@ export function applyResourceAllocation(
       }
     ]
   };
-  const maxRounds = next.mode === "battle" ? 2 + next.level : 1;
+  const maxRounds = next.totalRounds;
   if (next.round >= maxRounds) {
     next.finished = true;
   } else {
@@ -657,6 +661,7 @@ export interface TeamManagementState {
   mode: LeadershipGameMode;
   seed: number;
   level: number;
+  totalRounds: number;
   round: number;
   score: number;
   finished: boolean;
@@ -711,6 +716,7 @@ export function createTeamManagement(
     mode,
     seed,
     level,
+    totalRounds: mode === "battle" ? 3 + level : 3,
     round: 1,
     score: 0,
     finished: false,
@@ -749,7 +755,7 @@ export function applyTeamAssignment(
       }
     ]
   };
-  const maxRounds = next.mode === "battle" ? 3 + next.level : 1;
+  const maxRounds = next.totalRounds;
   if (next.round >= maxRounds) {
     next.finished = true;
   } else {
@@ -789,6 +795,7 @@ export interface CrisisCommandState {
   seed: number;
   level: number;
   offset: number;
+  totalRounds: number;
   round: number;
   score: number;
   trust: number;
@@ -1027,6 +1034,8 @@ export function createCrisisCommand(
     seed,
     level,
     offset: seed % CRISIS_EVENTS.length,
+    totalRounds:
+      mode === "battle" ? Math.min(CRISIS_EVENTS.length, 3 + level) : 3,
     round: 1,
     score: 0,
     trust: 50,
@@ -1073,10 +1082,7 @@ export function applyCrisisChoice(
       }
     ]
   };
-  const maxRounds =
-    next.mode === "battle"
-      ? Math.min(CRISIS_EVENTS.length, 3 + next.level)
-      : 1;
+  const maxRounds = next.totalRounds;
   if (next.round >= maxRounds) {
     next.finished = true;
   } else {

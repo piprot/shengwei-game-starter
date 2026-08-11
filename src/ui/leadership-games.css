@@ -415,3 +415,16 @@
   color: #bdece8;
   font-weight: 700;
 }
+
+.lg-rounds {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 16px;
+  padding: 8px 12px;
+  border: 1px solid rgba(65, 199, 192, 0.45);
+  border-radius: 999px;
+  background: rgba(65, 199, 192, 0.1);
+  color: #bdece8;
+  font-weight: 700;
+}

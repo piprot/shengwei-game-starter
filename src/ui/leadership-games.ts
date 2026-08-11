@@ -552,6 +552,12 @@ export class LeadershipGamesApp {
     `;
   }
 
+  private roundSummary(state: AnyGameState): string {
+    const en = this.language === "en";
+    if (!("totalRounds" in state)) return "";
+    return `<p class="lg-rounds">${en ? `Total ${state.totalRounds} rounds · Round ${state.round} · Score settles after the final round` : `共 ${state.totalRounds} 局 · 当前第 ${state.round} 局 · 终局后结算积分`}</p>`;
+  }
+
   private reviewMarkup(state: AnyGameState): string {
     if (!("history" in state) || state.history.length === 0) return "";
     const en = this.language === "en";
@@ -669,6 +675,7 @@ export class LeadershipGamesApp {
         `${en ? "Score" : "得分"} ${state.playerScore}`
       )}
       <p class="lg-hint">${en ? "Move toward the goal at the top middle. Collect trust, influence, and resources on the way." : "向棋盘顶部中间的目标前进，沿途收集信任、影响力与组织资源。"}</p>
+      ${this.roundSummary(state)}
       ${result}
       <section class="lg-board">${cells}</section>
       ${this.reviewMarkup(state)}
@@ -695,6 +702,7 @@ export class LeadershipGamesApp {
         `${en ? "Score" : "得分"} ${state.playerScore}`
       )}
       <p class="lg-hint">${en ? "Cooperate builds trust; competing can win once but invites retaliation." : "合作积累信任；竞争能赢一次，但会招来报复。"}</p>
+      ${this.roundSummary(state)}
       ${last}
       ${result}
       <section class="lg-choices">
@@ -749,6 +757,7 @@ export class LeadershipGamesApp {
         `${en ? "Score" : "得分"} ${state.totalScore}`
       )}
       <p class="lg-hint">${en ? "Allocate exactly 100 points. Every area adds value; balanced coverage earns a bonus." : "四项合计必须等于 100。每项都有价值，均衡覆盖会获得加成。"}</p>
+      ${this.roundSummary(state)}
       <p class="lg-feedback" data-alloc-total aria-live="polite">${en ? "Total 100 / 100" : "合计 100 / 100"}</p>
       ${last}
       ${result}
@@ -790,6 +799,7 @@ export class LeadershipGamesApp {
         `${en ? "Score" : "得分"} ${state.score}`
       )}
       <p class="lg-hint">${en ? "Assign the best member to the current task. Matching skill earns more." : "为当前任务选择最合适的成员。能力匹配会获得更高得分。"}</p>
+      ${this.roundSummary(state)}
       ${taskMarkup}
       ${last}
       ${result}
@@ -828,6 +838,7 @@ export class LeadershipGamesApp {
         `${en ? "Event" : "事件"} ${state.round}`,
         `${en ? "Score" : "得分"} ${state.score}`
       )}
+      ${this.roundSummary(state)}
       <section class="lg-crisis-scene">
         <h2>${esc(en ? event.titleEn : event.titleZh)}</h2>
         <p>${esc(en ? event.sceneEn : event.sceneZh)}</p>
