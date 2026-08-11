@@ -7089,6 +7089,10 @@ export class AdaptiveGameApp {
 
   private handleChange(event: Event): void {
     const target = event.target as HTMLSelectElement;
+    if (this.view === "leadershipGames" && target.dataset.alloc) {
+      this.leadershipGames?.handleAllocationChange();
+      return;
+    }
     if (target.dataset.select === "rounds") {
       this.duelRounds = Number(target.value) || 3;
     }

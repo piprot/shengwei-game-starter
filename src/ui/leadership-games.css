@@ -224,7 +224,8 @@
 }
 
 .lg-member:disabled,
-.lg-option:disabled {
+.lg-option:disabled,
+.lg-form button:disabled {
   opacity: 0.45;
   cursor: not-allowed;
 }

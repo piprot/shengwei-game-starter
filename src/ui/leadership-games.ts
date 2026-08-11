@@ -21,6 +21,7 @@ import {
   type GameTheoryState,
   type LeadershipGameId,
   type LeadershipGameMode,
+  type ResourceArea,
   type ResourceAllocationState,
   type TeamManagementState
 } from "../core/leadership-games";
@@ -162,6 +163,28 @@ export class LeadershipGamesApp {
       this.finishIfDone();
       this.callbacks.onAudio("choose");
       this.render(this.root);
+    }
+  }
+
+  handleAllocationChange(): void {
+    const selects = Array.from(
+      this.root.querySelectorAll<HTMLSelectElement>("[data-alloc]")
+    );
+    const total = selects.reduce(
+      (sum, select) => sum + (Number(select.value) || 0),
+      0
+    );
+    const totalElement = this.root.querySelector<HTMLElement>(
+      "[data-alloc-total]"
+    );
+    if (totalElement) {
+      totalElement.textContent = `${total} / 100`;
+    }
+    const button = this.root.querySelector<HTMLButtonElement>(
+      "[data-action=lg-allocate]"
+    );
+    if (button) {
+      button.disabled = total !== 100;
     }
   }
 
@@ -369,20 +392,29 @@ export class LeadershipGamesApp {
 
   private renderResourceAllocation(state: ResourceAllocationState): string {
     const en = this.language === "en";
+    const defaults: Record<ResourceArea, number> = {
+      cashflow: 30,
+      customer: 30,
+      team: 20,
+      innovation: 20
+    };
     const selects = RESOURCE_AREAS.map(
-      (area) => `
+      (area) => {
+        const selectedValue = defaults[area];
+        return `
         <label class="lg-field">
           <span>${esc(en ? RESOURCE_AREA_LABELS[area].en : RESOURCE_AREA_LABELS[area].zh)}</span>
           <select data-alloc="${area}">
             ${[0, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100]
               .map(
                 (value) =>
-                  `<option value="${value}">${value}</option>`
+                  `<option value="${value}"${value === selectedValue ? " selected" : ""}>${value}</option>`
               )
               .join("")}
           </select>
         </label>
-      `
+      `;
+      }
     ).join("");
     const last = state.lastRound
       ? `<p class="lg-feedback">${en ? "Last round:" : "上一轮："} ${en ? "Score" : "得分"} ${state.lastRound.score}${state.lastRound.bonus ? ` · ${en ? "Balance bonus +15" : "均衡加成 +15"}` : ""}</p>`
@@ -401,6 +433,7 @@ export class LeadershipGamesApp {
         `${en ? "Score" : "得分"} ${state.totalScore}`
       )}
       <p class="lg-hint">${en ? "Allocate exactly 100 points. Every area adds value; balanced coverage earns a bonus." : "四项合计必须等于 100。每项都有价值，均衡覆盖会获得加成。"}</p>
+      <p class="lg-feedback" data-alloc-total aria-live="polite">${en ? "Total 100 / 100" : "合计 100 / 100"}</p>
       ${last}
       ${result}
       <section class="lg-form">${selects}<button data-action="lg-allocate">${en ? "Commit Allocation" : "确认分配"}</button></section>
