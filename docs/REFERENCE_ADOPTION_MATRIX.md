@@ -35,6 +35,7 @@
 | 外部评估 V2 建议（UGC） | 玩家/教练自定义情境、本地保存与试玩 | `src/core/custom-scenarios.ts`、主菜单「情境工坊」 | `test:unit`、Playwright 情境工坊流程 |
 | UGC 回传 / 备份 | 自定义情境批量导出与导入 | `src/core/custom-scenarios.ts` 的 `export/importCustomScenarios`、情境工坊导出/导入按钮 | `test:unit`、Playwright 导出后重新导入 |
 | coach-platform / decision-lab | 教练工作坊实时推演、小组同步决策与分布对比 | `src/core/coach-workshop.ts` 的 `LiveScenarioRunner`、教练工作坊「实时情境推演」 | Playwright 实时推演流程 |
+| 上线前验收 | 12 视图导航、情境工坊创建、实时推演揭示 | `scripts/system-audit.mjs` | `test:system` |
 
 ## 使用原则
 
