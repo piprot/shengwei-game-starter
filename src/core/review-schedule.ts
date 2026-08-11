@@ -140,6 +140,62 @@ export interface ReviewBoardEntry {
   mastered: number;
 }
 
+export type DualAxisOutcome = "perfect" | "partial" | "missed";
+
+export function scoreDualAxis(
+  bestIndex: number,
+  worstIndex: number,
+  expertIndex: number,
+  riskIndex: number
+): DualAxisOutcome {
+  if (bestIndex === expertIndex && worstIndex === riskIndex) {
+    return "perfect";
+  }
+  if (bestIndex === expertIndex) {
+    return "partial";
+  }
+  return "missed";
+}
+
+export function dualAxisQuality(
+  outcome: DualAxisOutcome
+): ReviewQuality {
+  return outcome === "perfect"
+    ? "expert"
+    : outcome === "partial"
+      ? "partial"
+      : "risk";
+}
+
+export function worstOptionIndex(
+  options: Array<{
+    quality: string;
+    resources?: Record<string, number>;
+  }>
+): number {
+  let worst = -1;
+  let worstRank = Number.POSITIVE_INFINITY;
+  let worstNet = Number.POSITIVE_INFINITY;
+  options.forEach((option, index) => {
+    const rank =
+      option.quality === "risk"
+        ? 0
+        : option.quality === "partial"
+          ? 1
+          : 2;
+    const net = Object.values(option.resources ?? {}).reduce(
+      (sum, value) => sum + value,
+      0
+    );
+    if (rank < worstRank || (rank === worstRank && net < worstNet)) {
+      worst = index;
+      worstRank = rank;
+      worstNet = net;
+    }
+  });
+  return worst;
+}
+
 export function reviewBoard(
   cards: ReviewCard[],
   abilityFor: (nodeId: string) => string,

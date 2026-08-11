@@ -78,10 +78,13 @@ import {
 } from "../src/core/leadership-games.ts";
 import {
   dueReviewCards,
+  dualAxisQuality,
   recordReviewResult,
   reviewBoard,
   reviewStats,
-  scheduleMissedDecision
+  scoreDualAxis,
+  scheduleMissedDecision,
+  worstOptionIndex
 } from "../src/core/review-schedule.ts";
 import {
   DIMENSION_ORDER,
@@ -527,6 +530,31 @@ assert(
     board[0].total === 1 &&
     board[0].mastered === 1,
   "review board should group cards by ability"
+);
+assert(
+  scoreDualAxis(0, 2, 0, 2) === "perfect" &&
+    scoreDualAxis(0, 1, 0, 2) === "partial" &&
+    scoreDualAxis(1, 2, 0, 2) === "missed",
+  "dual-axis scoring should distinguish best/worst accuracy"
+);
+assert(
+  dualAxisQuality("perfect") === "expert" &&
+    dualAxisQuality("partial") === "partial" &&
+    dualAxisQuality("missed") === "risk",
+  "dual-axis outcome should map back to review quality"
+);
+assert(
+  worstOptionIndex([
+    {
+      quality: "partial",
+      resources: { energy: -5, trust: -8, influence: 5 }
+    },
+    {
+      quality: "partial",
+      resources: { energy: -6, trust: 2, influence: 7 }
+    }
+  ]) === 0,
+  "worst option should prefer risk, then lowest net resource value"
 );
 
 assert(RANDOM_EVENT_IDS.length >= 20, "random events must be 20+");

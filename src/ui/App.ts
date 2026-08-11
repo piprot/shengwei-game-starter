@@ -199,10 +199,14 @@ import { renderTrainingBoard } from "./trainingArt";
 import { scenarioShellFor } from "../core/scenarioShell";
 import {
   dueReviewCards,
+  dualAxisQuality,
   recordReviewResult,
   reviewBoard,
   reviewStats,
-  scheduleMissedDecision
+  scheduleMissedDecision,
+  scoreDualAxis,
+  worstOptionIndex,
+  type DualAxisOutcome
 } from "../core/review-schedule";
 import {
   renderPowerSandbox,
@@ -216,7 +220,7 @@ const SETTINGS_MIGRATION_KEY = "adaptive-ascent-settings-v2";
 const GUIDE_KEY = "adaptive-ascent-guide-v1";
 const GUIDE_REWARD_KEY = "adaptive-ascent-guide-reward";
 const ACHIEVEMENT_FAVORITE_KEY = "adaptive-ascent-achievement-favorites";
-const APP_VERSION = "1.7.23";
+const APP_VERSION = "1.7.24";
 
 type View =
   | "menu"
@@ -229,6 +233,7 @@ type View =
   | "map"
   | "story"
   | "leadershipGames"
+  | "dualReview"
   | "chapterTransition"
   | "ability"
   | "report"
@@ -334,6 +339,12 @@ export class AdaptiveGameApp {
   private leadershipGames?: LeadershipGamesApp;
   private wrongReviewQueue: string[] = [];
   private wrongReviewIndex = 0;
+  private dualReviewQueue: string[] = [];
+  private dualReviewIndex = 0;
+  private dualBestIndex?: number;
+  private dualWorstIndex?: number;
+  private dualSubmitted = false;
+  private dualLastOutcome?: DualAxisOutcome;
   private hiddenBranchAbilityId?: AbilityId;
   private hiddenRouteStep = 0;
   private hiddenRouteLastAnswer?: number;
@@ -646,6 +657,8 @@ export class AdaptiveGameApp {
       view === "story"
         ? "story"
         : view === "leadershipGames"
+          ? "menu"
+        : view === "dualReview"
           ? "menu"
         : view === "duel"
           ? "duel"
@@ -1342,6 +1355,9 @@ export class AdaptiveGameApp {
         break;
       case "leadershipGames":
         this.renderLeadershipGames();
+        break;
+      case "dualReview":
+        this.renderDualReview();
         break;
       case "chapterTransition":
         this.renderChapterTransition();
@@ -2936,6 +2952,93 @@ export class AdaptiveGameApp {
       return;
     }
     this.leadershipGames.render(this.root);
+  }
+
+  private resetDualSelection(): void {
+    this.dualBestIndex = undefined;
+    this.dualWorstIndex = undefined;
+    this.dualSubmitted = false;
+    this.dualLastOutcome = undefined;
+  }
+
+  private renderDualReview(): void {
+    const nodeId = this.dualReviewQueue[this.dualReviewIndex];
+    if (!nodeId) {
+      this.show("report");
+      return;
+    }
+    const roleNode = getNodeForRole(this.save.profile.role, nodeId);
+    const nodeView = this.storyNodeDisplay(roleNode);
+    const options = nodeView.options;
+    const en = this.language === "en";
+    const expertIndex = options.findIndex(
+      (option) => option.quality === "expert"
+    );
+    const worstIndex = worstOptionIndex(options);
+    const expertOption = options[expertIndex];
+    const worstOption = options[worstIndex];
+    const optionCards = options
+      .map((option, index) => {
+        const isBest = this.dualBestIndex === index;
+        const isWorst = this.dualWorstIndex === index;
+        const cls = `dual-option ${isBest ? "best" : ""} ${
+          isWorst ? "worst" : ""
+        }`;
+        return `
+          <article class="${cls}">
+            <strong>${escapeHtml(option.label)}</strong>
+            <small>${escapeHtml(option.summary)}</small>
+            <div class="dual-axes">
+              <button class="${isBest ? "active" : ""}" data-action="dual-toggle" data-axis="best" data-option="${index}" aria-pressed="${isBest}">${en ? "Best" : "最佳"}</button>
+              <button class="${isWorst ? "active" : ""}" data-action="dual-toggle" data-axis="worst" data-option="${index}" aria-pressed="${isWorst}">${en ? "Worst" : "最差"}</button>
+            </div>
+          </article>
+        `;
+      })
+      .join("");
+    const feedback =
+      this.dualSubmitted && this.dualLastOutcome && expertOption && worstOption
+        ? `
+          <section class="dual-result ${this.dualLastOutcome}">
+            <h2>${
+              this.dualLastOutcome === "perfect"
+                ? en
+                  ? "Best and worst both precise"
+                  : "最佳与最差判断都准确"
+                : this.dualLastOutcome === "partial"
+                  ? en
+                    ? "Best precise, worst needs calibration"
+                    : "最佳准确，最差判断需要校准"
+                  : en
+                    ? "Best judgment needs another pass"
+                    : "最佳判断需要再次回练"
+            }</h2>
+            <p>${en ? "Expert baseline" : "专家基准"}：${escapeHtml(expertOption.label)}</p>
+            <p>${en ? "Worst baseline" : "最差基准"}：${escapeHtml(worstOption.label)}</p>
+          </section>
+        `
+        : "";
+    this.root.innerHTML = `
+      <header class="topbar">
+        <div class="brand">${this.t("brand")}</div>
+        <button class="link" data-action="dual-close">${en ? "Report" : "返回报告"}</button>
+        <div class="topbar-meta"><span>${en ? `Dual-axis review ${this.dualReviewIndex + 1}/${this.dualReviewQueue.length}` : `双轴回练 ${this.dualReviewIndex + 1}/${this.dualReviewQueue.length}`}</span></div>
+      </header>
+      <main class="dual-review-shell" aria-label="${en ? "Best and worst judgment review" : "最佳与最差判断回练"}">
+        <section class="dual-review-hero">
+          <p class="eyebrow">${escapeHtml(nodeView.title)}</p>
+          <h1>${en ? "Pick the best and the worst move" : "同时选出最佳与最差选项"}</h1>
+          <p>${escapeHtml(nodeView.context)}</p>
+        </section>
+        <p class="dual-hint">${en ? "Best and worst are mutually exclusive. Choose one option for each." : "最佳与最差互斥，同一个选项不能同时兼任。"}</p>
+        ${feedback}
+        <section class="dual-option-list">${optionCards}</section>
+        <div class="dual-footer">
+          <button class="primary" data-action="dual-submit" ${this.dualSubmitted ? "disabled aria-disabled=\"true\"" : ""}>${en ? "Submit Judgment" : "提交判断"}</button>
+          ${this.dualSubmitted ? `<button class="primary" data-action="dual-next">${en ? "Next Review" : "下一题"}</button>` : ""}
+        </div>
+      </main>
+    `;
   }
 
   private completeLeadershipGame(
@@ -5847,6 +5950,104 @@ export class AdaptiveGameApp {
         this.show("story");
         break;
       }
+      case "open-dual-review": {
+        const ability = actionTarget.dataset.ability;
+        const dueIds = dueReviewCards(this.save.reviewCards ?? [])
+          .filter(
+            (card) =>
+              !ability || this.reviewAbilityFor(card.nodeId) === ability
+          )
+          .map((card) => card.nodeId);
+        if (dueIds.length === 0) {
+          this.showToast(
+            this.language === "en"
+              ? "No review cards are due right now."
+              : "当前没有到期的复习卡。"
+          );
+          break;
+        }
+        this.dualReviewQueue = dueIds;
+        this.dualReviewIndex = 0;
+        this.resetDualSelection();
+        this.audio.ui();
+        this.show("dualReview");
+        break;
+      }
+      case "dual-toggle": {
+        const axis = actionTarget.dataset.axis as "best" | "worst";
+        const option = Number(actionTarget.dataset.option);
+        if (axis === "best") {
+          this.dualBestIndex = option;
+          if (this.dualWorstIndex === option) this.dualWorstIndex = undefined;
+        } else {
+          this.dualWorstIndex = option;
+          if (this.dualBestIndex === option) this.dualBestIndex = undefined;
+        }
+        this.audio.ui();
+        this.renderDualReview();
+        break;
+      }
+      case "dual-submit": {
+        if (
+          this.dualBestIndex === undefined ||
+          this.dualWorstIndex === undefined
+        ) {
+          this.showToast(
+            this.language === "en"
+              ? "Choose both the best and worst move first."
+              : "请先同时选择最佳和最差选项。"
+          );
+          break;
+        }
+        const nodeId = this.dualReviewQueue[this.dualReviewIndex];
+        if (!nodeId) break;
+        const roleNode = getNodeForRole(this.save.profile.role, nodeId);
+        const options = this.storyNodeDisplay(roleNode).options;
+        const expertIndex = options.findIndex(
+          (option) => option.quality === "expert"
+        );
+        const worstIndex = worstOptionIndex(options);
+        const outcome = scoreDualAxis(
+          this.dualBestIndex,
+          this.dualWorstIndex,
+          expertIndex,
+          worstIndex
+        );
+        this.dualLastOutcome = outcome;
+        this.dualSubmitted = true;
+        this.save.reviewCards = recordReviewResult(
+          this.save.reviewCards ?? [],
+          nodeId,
+          dualAxisQuality(outcome)
+        );
+        this.persistSave();
+        if (outcome === "perfect") this.audio.expert();
+        else if (outcome === "partial") this.audio.partial();
+        else this.audio.risk();
+        this.renderDualReview();
+        break;
+      }
+      case "dual-next":
+        this.dualReviewIndex += 1;
+        if (this.dualReviewIndex >= this.dualReviewQueue.length) {
+          this.dualReviewQueue = [];
+          this.dualReviewIndex = 0;
+          this.resetDualSelection();
+          this.audio.ui();
+          this.show("report");
+          break;
+        }
+        this.resetDualSelection();
+        this.audio.ui();
+        this.renderDualReview();
+        break;
+      case "dual-close":
+        this.dualReviewQueue = [];
+        this.dualReviewIndex = 0;
+        this.resetDualSelection();
+        this.audio.ui();
+        this.show("report");
+        break;
       case "open-wrong-review": {
         const wrongIds = [
           ...new Set(
@@ -9362,7 +9563,10 @@ export class AdaptiveGameApp {
                   <span>${escapeHtml(display.tagline)}</span>
                   <div class="review-board-bar"><i></i></div>
                   <p>${en ? `${entry.due} due · ${entry.mastered} mastered / ${entry.total}` : `到期 ${entry.due} · 已掌握 ${entry.mastered} / ${entry.total}`}</p>
-                  <button data-action="open-due-review" data-ability="${escapeAttr(entry.ability)}" ${entry.due ? "" : "disabled aria-disabled=\"true\""}>${en ? "Review" : "回练"}</button>
+                  <div class="review-board-actions">
+                    <button data-action="open-due-review" data-ability="${escapeAttr(entry.ability)}" ${entry.due ? "" : "disabled aria-disabled=\"true\""}>${en ? "Review" : "回练"}</button>
+                    <button data-action="open-dual-review" data-ability="${escapeAttr(entry.ability)}" ${entry.due ? "" : "disabled aria-disabled=\"true\""}>${en ? "Best/Worst" : "双轴"}</button>
+                  </div>
                 </article>
               `;
             })
@@ -9406,7 +9610,7 @@ export class AdaptiveGameApp {
           : `当前到期 ${stats.due} 题 · 累计 ${stats.total} 题 · 已掌握 ${stats.mastered} 题。未选专家项会按 1 / 6 / 15+ 天间隔安排回练。`}</p>
         ${
           due.length
-            ? `<button class="wrong-review-cta" data-action="open-due-review">${en ? `Start Due Review (${due.length})` : `开始到期回练（${due.length}）`}</button>`
+            ? `<div class="due-review-actions"><button class="wrong-review-cta" data-action="open-due-review">${en ? `Start Due Review (${due.length})` : `开始到期回练（${due.length}）`}</button><button class="wrong-review-cta" data-action="open-dual-review">${en ? `Best/Worst Review (${due.length})` : `双轴回练（${due.length}）`}</button></div>`
             : `<p class="muted">${en ? "No cards due right now." : "当前没有到期的复习卡。"}</p>`
         }
       </section>
