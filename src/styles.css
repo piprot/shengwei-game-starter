@@ -4480,8 +4480,131 @@ button.trial-now {
   margin-top: 16px;
 }
 
+.coach-live-panel {
+  margin: 16px 0;
+  padding: 14px 16px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--panel);
+}
+
+.coach-live-panel h2 {
+  margin: 0 0 8px;
+  font-size: 17px;
+}
+
+.coach-live-panel label {
+  display: grid;
+  gap: 6px;
+  margin: 10px 0;
+  color: #9fb3c8;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.coach-live-panel select,
+.coach-live-panel input {
+  width: 100%;
+  padding: 9px 10px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 8px;
+  background: rgba(8, 16, 21, 0.9);
+  color: #e7eef2;
+}
+
+.live-session {
+  margin-top: 14px;
+  padding: 14px;
+  border: 1px solid rgba(65, 199, 192, 0.35);
+  border-radius: 8px;
+  background: rgba(65, 199, 192, 0.06);
+}
+
+.live-session h3 {
+  margin: 0 0 8px;
+}
+
+.live-session > p {
+  margin: 0 0 12px;
+  color: #c6d2dc;
+  line-height: 1.6;
+}
+
+.live-pick-row {
+  display: grid;
+  grid-template-columns: minmax(160px, 240px) 1fr;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.live-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.live-options button {
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 8px;
+  padding: 8px 10px;
+  background: rgba(255, 255, 255, 0.06);
+  color: #c6d2dc;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.live-options button.active {
+  border-color: #41c7c0;
+  background: rgba(65, 199, 192, 0.18);
+  color: #aef1ec;
+}
+
+.live-participants {
+  display: grid;
+  gap: 4px;
+  margin: 10px 0;
+  padding-left: 18px;
+  color: #c6d2dc;
+}
+
+.live-distribution {
+  display: grid;
+  gap: 8px;
+  margin: 12px 0;
+  padding: 12px;
+  border: 1px solid rgba(242, 193, 78, 0.35);
+  border-radius: 8px;
+  background: rgba(242, 193, 78, 0.06);
+}
+
+.live-bar-row {
+  display: grid;
+  grid-template-columns: minmax(140px, 1fr) 1fr 90px;
+  gap: 8px;
+  align-items: center;
+  font-size: 13px;
+}
+
+.live-bar {
+  height: 8px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.live-bar i {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: #41c7c0;
+}
+
 @media (max-width: 720px) {
   .custom-option-grid {
+    grid-template-columns: 1fr;
+  }
+  .live-pick-row,
+  .live-bar-row {
     grid-template-columns: 1fr;
   }
 }

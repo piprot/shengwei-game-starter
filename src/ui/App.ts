@@ -124,6 +124,7 @@ import {
 } from "../core/leadership-model";
 import {
   CoachWorkshopEngine,
+  LiveScenarioRunner,
   type WorkshopReport
 } from "../core/coach-workshop";
 import {
@@ -228,7 +229,7 @@ const SETTINGS_MIGRATION_KEY = "adaptive-ascent-settings-v2";
 const GUIDE_KEY = "adaptive-ascent-guide-v1";
 const GUIDE_REWARD_KEY = "adaptive-ascent-guide-reward";
 const ACHIEVEMENT_FAVORITE_KEY = "adaptive-ascent-achievement-favorites";
-const APP_VERSION = "1.7.26";
+const APP_VERSION = "1.7.27";
 
 type View =
   | "menu"
@@ -358,6 +359,13 @@ export class AdaptiveGameApp {
   private customScenarios: CustomScenario[] = [];
   private customPlayId?: string;
   private customPlayResult?: number;
+  private liveRunner = new LiveScenarioRunner();
+  private liveSessionId?: string;
+  private liveNode?: StoryNode;
+  private livePendingOption = 0;
+  private liveName = "";
+  private liveRevealed = false;
+  private liveDistribution?: Map<number, number>;
   private hiddenBranchAbilityId?: AbilityId;
   private hiddenRouteStep = 0;
   private hiddenRouteLastAnswer?: number;
@@ -4246,6 +4254,84 @@ export class AdaptiveGameApp {
     `;
   }
 
+  private liveMarkup(): string {
+    const en = this.language === "en";
+    const scenarioOptions = [
+      `<option value="c1n1">${escapeHtml(this.storyNodeDisplay(getNode("c1n1")).title)}</option>`,
+      `<option value="c1n2">${escapeHtml(this.storyNodeDisplay(getNode("c1n2")).title)}</option>`,
+      ...this.customScenarios.map(
+        (scenario) =>
+          `<option value="${escapeAttr(scenario.id)}">${escapeHtml(scenario.title)}</option>`
+      )
+    ].join("");
+    let sessionMarkup = "";
+    const node = this.liveNode;
+    if (node && this.liveSessionId) {
+      const session = this.liveRunner.getSession(this.liveSessionId);
+      const picks = session ? [...session.participantPicks.entries()] : [];
+      const expertIndex = node.options.findIndex(
+        (option) => option.quality === "expert"
+      );
+      const expert = node.options[expertIndex];
+      const participantList = picks
+        .map(
+          ([name, optionIndex]) =>
+            `<li>${escapeHtml(name)} · ${escapeHtml(node.options[optionIndex]?.label ?? "")}</li>`
+        )
+        .join("");
+      const optionButtons = node.options
+        .map(
+          (option, index) =>
+            `<button class="${index === this.livePendingOption ? "active" : ""}" data-action="live-pick" data-option="${index}">${escapeHtml(option.label)}</button>`
+        )
+        .join("");
+      const distributionMarkup =
+        this.liveRevealed && this.liveDistribution
+          ? `<div class="live-distribution">
+              ${node.options
+                .map((option, index) => {
+                  const count = this.liveDistribution?.get(index) ?? 0;
+                  const total = picks.length || 1;
+                  const pct = Math.round((count / total) * 100);
+                  return `
+                    <div class="live-bar-row">
+                      <span>${escapeHtml(option.label)}</span>
+                      <div class="live-bar"><i style="width:${pct}%"></i></div>
+                      <small>${count}/${picks.length} · ${pct}%</small>
+                    </div>
+                  `;
+                })
+                .join("")}
+              ${expert ? `<p class="expert-ref">${en ? "Expert baseline" : "专家基准"}：${escapeHtml(expert.label)}</p>` : ""}
+            </div>`
+          : "";
+      sessionMarkup = `
+        <div class="live-session">
+          <h3>${escapeHtml(node.title)}</h3>
+          <p>${escapeHtml(node.context)}</p>
+          <div class="live-pick-row">
+            <input name="live-name" value="${escapeAttr(this.liveName)}" placeholder="${en ? "Participant name" : "学员姓名"}" />
+            <div class="live-options">${optionButtons}</div>
+          </div>
+          <button data-action="live-add">${en ? "Add Participant" : "添加学员"}</button>
+          <ul class="live-participants">${participantList || `<li class="muted">${en ? "No picks yet." : "还没有学员提交。"}</li>`}</ul>
+          <button class="primary" data-action="live-reveal" ${picks.length ? "" : "disabled aria-disabled=\"true\""}>${en ? "Reveal & Compare" : "揭示并对比"}</button>
+          ${distributionMarkup}
+          <button data-action="live-reset">${en ? "End Session" : "结束推演"}</button>
+        </div>
+      `;
+    }
+    return `
+      <section class="coach-live-panel">
+        <h2>${en ? "Live Scenario Exercise" : "实时情境推演"}</h2>
+        <p class="muted">${en ? "Choose a scenario, collect participant picks on one screen, then reveal the group distribution and compare it with the expert baseline." : "选择一个情境，在同一屏幕收集学员选择，再揭示小组分布并与专家基准对比。"}</p>
+        <label>${en ? "Scenario" : "情境"}<select data-live-scenario>${scenarioOptions}</select></label>
+        <button data-action="live-create">${en ? "Create Session" : "创建推演"}</button>
+        ${sessionMarkup}
+      </section>
+    `;
+  }
+
   private renderCoach(): void {
     const en = this.language === "en";
     const report = this.coachReport;
@@ -4373,6 +4459,7 @@ export class AdaptiveGameApp {
             <button data-action="coach-import">${en ? "Import & Generate" : "导入并生成"}</button>
           </div>
         </section>
+        ${this.liveMarkup()}
 
         ${
           report
@@ -6273,6 +6360,90 @@ export class AdaptiveGameApp {
         this.customPlayResult = undefined;
         this.audio.ui();
         this.show("customScenarios");
+        break;
+      case "live-create": {
+        const select = this.root.querySelector<HTMLSelectElement>(
+          "[data-live-scenario]"
+        );
+        const id = select?.value;
+        let node: StoryNode | undefined;
+        if (id?.startsWith("custom-")) {
+          const scenario = this.customScenarios.find(
+            (item) => item.id === id
+          );
+          if (scenario) node = customScenarioToNode(scenario);
+        } else if (id) {
+          try {
+            node = getNode(id);
+          } catch {
+            node = undefined;
+          }
+        }
+        if (!node) {
+          this.showToast(
+            this.language === "en"
+              ? "Choose a scenario first."
+              : "请先选择一个情境。"
+          );
+          break;
+        }
+        this.liveNode = node;
+        this.liveSessionId = this.liveRunner.createSession("coach", node).sessionId;
+        this.livePendingOption = 0;
+        this.liveName = "";
+        this.liveRevealed = false;
+        this.liveDistribution = undefined;
+        this.audio.ui();
+        this.renderCoach();
+        break;
+      }
+      case "live-pick":
+        this.liveName =
+          this.root.querySelector<HTMLInputElement>('input[name="live-name"]')
+            ?.value.trim() ?? "";
+        this.livePendingOption = Number(actionTarget.dataset.option) || 0;
+        this.audio.ui();
+        this.renderCoach();
+        break;
+      case "live-add": {
+        const name = this.liveName;
+        if (!name || !this.liveSessionId || !this.liveNode) {
+          this.showToast(
+            this.language === "en"
+              ? "Enter a participant name first."
+              : "请先输入学员姓名。"
+          );
+          break;
+        }
+        this.liveRunner.submitPick(
+          this.liveSessionId,
+          name,
+          this.livePendingOption
+        );
+        this.liveName = "";
+        this.audio.ui();
+        this.renderCoach();
+        break;
+      }
+      case "live-reveal": {
+        if (!this.liveSessionId) break;
+        this.liveDistribution = this.liveRunner.reveal(
+          this.liveSessionId
+        ).distribution;
+        this.liveRevealed = true;
+        this.audio.expert();
+        this.renderCoach();
+        break;
+      }
+      case "live-reset":
+        this.liveSessionId = undefined;
+        this.liveNode = undefined;
+        this.liveRevealed = false;
+        this.liveDistribution = undefined;
+        this.livePendingOption = 0;
+        this.liveName = "";
+        this.audio.ui();
+        this.renderCoach();
         break;
       case "open-wrong-review": {
         const wrongIds = [
