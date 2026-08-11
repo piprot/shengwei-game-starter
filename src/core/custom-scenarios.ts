@@ -111,3 +111,44 @@ export function saveCustomScenarios(
     return false;
   }
 }
+
+export function exportCustomScenarios(
+  scenarios: CustomScenario[]
+): string {
+  return JSON.stringify(
+    {
+      app: "shengwei-game-starter",
+      kind: "custom-scenarios",
+      version: 1,
+      scenarios
+    },
+    null,
+    2
+  );
+}
+
+export function importCustomScenarios(
+  text: string,
+  now = Date.now()
+): CustomScenario[] {
+  try {
+    const parsed = JSON.parse(text) as unknown;
+    const list = Array.isArray(parsed)
+      ? parsed
+      : Array.isArray(
+          (parsed as { scenarios?: unknown }).scenarios
+        )
+        ? (parsed as { scenarios: CustomScenarioInput[] }).scenarios
+        : [];
+    return list
+      .filter(
+        (item): item is CustomScenarioInput =>
+          Boolean(item) &&
+          typeof item === "object" &&
+          validateCustomScenario(item).length === 0
+      )
+      .map((item) => createCustomScenario(item, now));
+  } catch {
+    return [];
+  }
+}

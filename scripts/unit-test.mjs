@@ -89,6 +89,8 @@ import {
 import {
   createCustomScenario,
   customScenarioToNode,
+  exportCustomScenarios,
+  importCustomScenarios,
   validateCustomScenario
 } from "../src/core/custom-scenarios.ts";
 import {
@@ -586,6 +588,18 @@ assert(
 assert(
   validateCustomScenario({ ...validScenarioInput, options: [] }).length > 0,
   "invalid custom scenario should fail validation"
+);
+const exported = exportCustomScenarios([scenario]);
+const imported = importCustomScenarios(exported, 5678);
+assert(
+  imported.length === 1 &&
+    imported[0].title === "客户投诉" &&
+    imported[0].createdAt === 5678,
+  "custom scenario export should round-trip through import"
+);
+assert(
+  importCustomScenarios("{broken json", 1).length === 0,
+  "broken custom scenario import should return an empty list"
 );
 
 assert(RANDOM_EVENT_IDS.length >= 20, "random events must be 20+");

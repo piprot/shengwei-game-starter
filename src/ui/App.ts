@@ -212,6 +212,8 @@ import {
 import {
   createCustomScenario,
   customScenarioToNode,
+  exportCustomScenarios,
+  importCustomScenarios,
   loadCustomScenarios,
   saveCustomScenarios,
   validateCustomScenario,
@@ -229,7 +231,7 @@ const SETTINGS_MIGRATION_KEY = "adaptive-ascent-settings-v2";
 const GUIDE_KEY = "adaptive-ascent-guide-v1";
 const GUIDE_REWARD_KEY = "adaptive-ascent-guide-reward";
 const ACHIEVEMENT_FAVORITE_KEY = "adaptive-ascent-achievement-favorites";
-const APP_VERSION = "1.7.27";
+const APP_VERSION = "1.7.28";
 
 type View =
   | "menu"
@@ -3130,6 +3132,10 @@ export class AdaptiveGameApp {
         <section class="custom-scenario-list">
           <h2>${en ? `Saved Scenarios (${this.customScenarios.length})` : `已保存情境（${this.customScenarios.length}）`}</h2>
           ${list || `<p class="muted">${en ? "No scenarios yet. Create the first one below." : "还没有自定义情境，先在下方面创建第一个。"}</p>`}
+          <div class="custom-transfer-actions">
+            <button data-action="custom-export" ${list ? "" : "disabled aria-disabled=\"true\""}>${en ? "Export Scenarios" : "导出情境包"}</button>
+            <label class="file-button">${en ? "Import Scenarios" : "导入情境包"}<input type="file" data-custom-import="1" accept="application/json" hidden /></label>
+          </div>
         </section>
         <section class="custom-scenario-form">
           <h2>${en ? "Create Scenario" : "创建情境"}</h2>
@@ -6322,6 +6328,18 @@ export class AdaptiveGameApp {
         this.renderCustomScenarios();
         break;
       }
+      case "custom-export": {
+        const text = exportCustomScenarios(this.customScenarios);
+        const blob = new Blob([text], { type: "application/json" });
+        const url = URL.createObjectURL(blob);
+        const anchor = document.createElement("a");
+        anchor.href = url;
+        anchor.download = "ascend-custom-scenarios.json";
+        anchor.click();
+        URL.revokeObjectURL(url);
+        this.audio.ui();
+        break;
+      }
       case "custom-delete": {
         const id = actionTarget.dataset.id;
         this.customScenarios = this.customScenarios.filter(
@@ -7951,7 +7969,30 @@ export class AdaptiveGameApp {
   }
 
   private handleChange(event: Event): void {
-    const target = event.target as HTMLSelectElement;
+    const target = event.target as HTMLSelectElement & HTMLInputElement;
+    if (target.dataset.customImport && target instanceof HTMLInputElement) {
+      const file = target.files?.[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = () => {
+        const imported = importCustomScenarios(String(reader.result ?? ""));
+        if (imported.length === 0) {
+          this.showToast(
+            this.language === "en"
+              ? "Import failed: no valid scenarios found."
+              : "导入失败：未找到有效情境。"
+          );
+          return;
+        }
+        this.customScenarios = [...this.customScenarios, ...imported];
+        saveCustomScenarios(this.customScenarios);
+        this.audio.expert();
+        this.renderCustomScenarios();
+      };
+      reader.readAsText(file);
+      target.value = "";
+      return;
+    }
     if (this.view === "leadershipGames" && target.dataset.alloc) {
       this.leadershipGames?.handleAllocationChange();
       return;
