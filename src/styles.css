@@ -4023,6 +4023,79 @@ button.trial-now {
   cursor: pointer;
 }
 
+.review-board {
+  margin: 16px 0;
+}
+
+.review-board h3 {
+  margin: 0 0 10px;
+  color: #41c7c0;
+  font-size: 15px;
+}
+
+.review-board-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 10px;
+}
+
+.review-board-card {
+  display: grid;
+  gap: 8px;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--panel);
+}
+
+.review-board-card strong {
+  color: #e7eef2;
+  font-size: 14px;
+}
+
+.review-board-card span {
+  color: #9fb3c8;
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.review-board-bar {
+  height: 6px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.review-board-bar i {
+  display: block;
+  width: var(--bar, 0%);
+  height: 100%;
+  border-radius: inherit;
+  background: #41c7c0;
+}
+
+.review-board-card p {
+  margin: 0;
+  color: #c6d2dc;
+  font-size: 12px;
+}
+
+.review-board-card button {
+  justify-self: start;
+  border: 1px solid rgba(65, 199, 192, 0.45);
+  border-radius: 8px;
+  padding: 7px 10px;
+  background: rgba(65, 199, 192, 0.1);
+  color: #aef1ec;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.review-board-card button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
 .wrong-answer-review h3 {
   margin: 0 0 10px;
   color: #e9826c;

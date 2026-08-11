@@ -200,6 +200,7 @@ import { scenarioShellFor } from "../core/scenarioShell";
 import {
   dueReviewCards,
   recordReviewResult,
+  reviewBoard,
   reviewStats,
   scheduleMissedDecision
 } from "../core/review-schedule";
@@ -215,7 +216,7 @@ const SETTINGS_MIGRATION_KEY = "adaptive-ascent-settings-v2";
 const GUIDE_KEY = "adaptive-ascent-guide-v1";
 const GUIDE_REWARD_KEY = "adaptive-ascent-guide-reward";
 const ACHIEVEMENT_FAVORITE_KEY = "adaptive-ascent-achievement-favorites";
-const APP_VERSION = "1.7.22";
+const APP_VERSION = "1.7.23";
 
 type View =
   | "menu"
@@ -3342,6 +3343,7 @@ export class AdaptiveGameApp {
           }
         </section>
         ${this.dueReviewMarkup()}
+        ${this.reviewBoardMarkup()}
         <section class="wrong-answer-review">
           <h3>${this.language === "en" ? "Judgment Review (Missed Expert Moves)" : "判断错题集（未选专家项）"}</h3>
           ${
@@ -5820,9 +5822,13 @@ export class AdaptiveGameApp {
         this.audio.ui();
         break;
       case "open-due-review": {
-        const dueIds = dueReviewCards(this.save.reviewCards ?? []).map(
-          (card) => card.nodeId
-        );
+        const ability = actionTarget.dataset.ability;
+        const dueIds = dueReviewCards(this.save.reviewCards ?? [])
+          .filter(
+            (card) =>
+              !ability || this.reviewAbilityFor(card.nodeId) === ability
+          )
+          .map((card) => card.nodeId);
         if (dueIds.length === 0) {
           this.showToast(
             this.language === "en"
@@ -9332,6 +9338,46 @@ export class AdaptiveGameApp {
       return "技术性解决：快速处理了症状，但责任仍在你手里。下一步要把工作还回去，并补一个验证节点。";
     }
     return "权威或回避动作：只适合紧急的技术问题。用得太多，会压住不同意见，团队不再带真实信息上来。";
+  }
+
+  private reviewBoardMarkup(): string {
+    const entries = reviewBoard(this.save.reviewCards ?? [], (nodeId) =>
+      this.reviewAbilityFor(nodeId)
+    );
+    if (entries.length === 0) return "";
+    const en = this.language === "en";
+    return `
+      <section class="review-board">
+        <h3>${en ? "Review by Ability" : "按能力复习看板"}</h3>
+        <div class="review-board-grid">
+          ${entries
+            .map((entry) => {
+              const display = this.abilityDisplay(entry.ability as AbilityId);
+              const pct = entry.total
+                ? Math.round((entry.mastered / entry.total) * 100)
+                : 0;
+              return `
+                <article class="review-board-card" style="--bar:${pct}%">
+                  <strong>${escapeHtml(display.name)}</strong>
+                  <span>${escapeHtml(display.tagline)}</span>
+                  <div class="review-board-bar"><i></i></div>
+                  <p>${en ? `${entry.due} due · ${entry.mastered} mastered / ${entry.total}` : `到期 ${entry.due} · 已掌握 ${entry.mastered} / ${entry.total}`}</p>
+                  <button data-action="open-due-review" data-ability="${escapeAttr(entry.ability)}" ${entry.due ? "" : "disabled aria-disabled=\"true\""}>${en ? "Review" : "回练"}</button>
+                </article>
+              `;
+            })
+            .join("")}
+        </div>
+      </section>
+    `;
+  }
+
+  private reviewAbilityFor(nodeId: string): string {
+    try {
+      return getChapter(getNode(nodeId).chapterId).focus[0];
+    } catch {
+      return "insight";
+    }
   }
 
   private dueReviewBanner(): string {

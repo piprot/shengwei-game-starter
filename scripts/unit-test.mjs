@@ -79,6 +79,7 @@ import {
 import {
   dueReviewCards,
   recordReviewResult,
+  reviewBoard,
   reviewStats,
   scheduleMissedDecision
 } from "../src/core/review-schedule.ts";
@@ -516,6 +517,16 @@ assert(
 assert(
   reviewStats(reviewedThrice).mastered === 1,
   "mastered count should reflect 15+ day interval"
+);
+const board = reviewBoard(reviewedThrice, (nodeId) =>
+  nodeId === "c1n1" ? "insight" : "other"
+);
+assert(
+  board.length === 1 &&
+    board[0].ability === "insight" &&
+    board[0].total === 1 &&
+    board[0].mastered === 1,
+  "review board should group cards by ability"
 );
 
 assert(RANDOM_EVENT_IDS.length >= 20, "random events must be 20+");

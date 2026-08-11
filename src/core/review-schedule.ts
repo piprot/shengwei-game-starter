@@ -133,6 +133,35 @@ export function reviewStats(cards: ReviewCard[], now = Date.now()): {
   };
 }
 
+export interface ReviewBoardEntry {
+  ability: string;
+  due: number;
+  total: number;
+  mastered: number;
+}
+
+export function reviewBoard(
+  cards: ReviewCard[],
+  abilityFor: (nodeId: string) => string,
+  now = Date.now()
+): ReviewBoardEntry[] {
+  const groups = new Map<string, ReviewBoardEntry>();
+  for (const card of cards) {
+    const ability = abilityFor(card.nodeId) || "insight";
+    const entry = groups.get(ability) ?? {
+      ability,
+      due: 0,
+      total: 0,
+      mastered: 0
+    };
+    entry.total += 1;
+    if (Number(card.dueAt) <= now) entry.due += 1;
+    if (Number(card.intervalDays) >= 15) entry.mastered += 1;
+    groups.set(ability, entry);
+  }
+  return [...groups.values()].sort((a, b) => b.due - a.due || b.total - a.total);
+}
+
 export function normalizeReviewCards(raw: unknown): ReviewCard[] {
   if (!Array.isArray(raw)) return [];
   const seen = new Set<string>();
