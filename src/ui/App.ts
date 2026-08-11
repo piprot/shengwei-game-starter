@@ -234,7 +234,7 @@ const SETTINGS_MIGRATION_KEY = "adaptive-ascent-settings-v2";
 const GUIDE_KEY = "adaptive-ascent-guide-v1";
 const GUIDE_REWARD_KEY = "adaptive-ascent-guide-reward";
 const ACHIEVEMENT_FAVORITE_KEY = "adaptive-ascent-achievement-favorites";
-const APP_VERSION = "1.7.30";
+const APP_VERSION = "1.7.31";
 
 type View =
   | "menu"
@@ -5352,6 +5352,12 @@ export class AdaptiveGameApp {
             <p class="muted">${this.language === "en" ? "v1.1 路 standard mode has no decision timer; failed chapters can be retried; duels can be resumed after refresh." : "v1.1 路 标准档不计时；未达一星的章节可重打；对局刷新后可续战。"}</p>
             <p class="muted">${this.language === "en" ? "Static content includes the full campaign, role branches, 9 side quests, training formulas, trials, local duels, save export/import and manual WebRTC. Account, cloud save, leaderboard and auto-match are bundled and become active in the online build." : "静态版包含完整主线、角色分岔、9 个支线、训练公式、试炼、本地对战、存档导出/导入与手动远程对战；账号、云存档、排行榜与自动匹配已内置，在线版构建后启用。"}</p>
           </div>
+          <div class="settings-panel">
+            <h2>${this.language === "en" ? "Feedback for Coaches" : "体验反馈"}</h2>
+            <label>${this.language === "en" ? "Rating" : "评分"}<select data-feedback-rating>${[1, 2, 3, 4, 5].map((value) => `<option value="${value}">${value} / 5</option>`).join("")}</select></label>
+            <label>${this.language === "en" ? "Feedback" : "反馈内容"}<textarea data-feedback-text rows="3" maxlength="800" placeholder="${this.language === "en" ? "What worked, what confused you, and what you would change." : "哪些有效、哪里困惑、最想改什么。"}"></textarea></label>
+            <button data-action="generate-feedback">${this.language === "en" ? "Copy Feedback Package" : "生成并复制反馈"}</button>
+          </div>
         </section>
       </main>
     `;
@@ -6843,6 +6849,31 @@ export class AdaptiveGameApp {
       case "export-return-package":
         this.exportReturnPackage();
         break;
+      case "generate-feedback": {
+        const rating =
+          this.root.querySelector<HTMLSelectElement>(
+            "[data-feedback-rating]"
+          )?.value ?? "5";
+        const feedback =
+          this.root.querySelector<HTMLTextAreaElement>(
+            "[data-feedback-text]"
+          )?.value.trim() ?? "";
+        const summary = profileSummary(this.save);
+        const text =
+          `升维 · Ascend · v${APP_VERSION}\n` +
+          `角色：${this.save.profile.role}\n` +
+          `评分：${rating}/5\n` +
+          `综合能力：${summary.total} · 通关章节：${summary.chapterCount}/9\n` +
+          `反馈：${feedback || "-"}`;
+        void navigator.clipboard?.writeText(text);
+        this.showToast(
+          this.language === "en"
+            ? "Feedback copied. Paste it into the coach's collection form."
+            : "反馈已复制，可粘贴给教练或回传表单。"
+        );
+        this.audio.ui();
+        break;
+      }
       case "export-report-card": {
         const canvas = this.root.querySelector<HTMLCanvasElement>(
           "#report-card-canvas"
