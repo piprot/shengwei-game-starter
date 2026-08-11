@@ -65,12 +65,122 @@ export const LEADERSHIP_GAMES: LeadershipGameMeta[] = [
   }
 ];
 
+export interface LeadershipGameTutorial {
+  winZh: string;
+  winEn: string;
+  stepsZh: string[];
+  stepsEn: string[];
+}
+
+export const GAME_TUTORIALS: Record<
+  LeadershipGameId,
+  LeadershipGameTutorial
+> = {
+  "decision-chess": {
+    winZh:
+      "谁先到达棋盘顶部中间的目标格，或 6~10 回合结束时得分更高，谁就获胜。",
+    winEn:
+      "Reach the goal at the top middle first, or have a higher score when the round limit ends.",
+    stepsZh: [
+      "第 1 步：你从棋盘下方出发，每次移动一格（上下左右）。",
+      "第 2 步：踩到「信/影/资」格子会获得对应分数；空地为 0 分。",
+      "第 3 步：AI 也会移动并收集资源，目标是抢先到达顶部中间或积累更高分。",
+      "第 4 步：每回合先选一个可移动格子，点击高亮格完成移动。"
+    ],
+    stepsEn: [
+      "Step 1: You start at the bottom and move one cell per turn (up, down, left, right).",
+      "Step 2: Landing on T/I/R cells earns score; empty cells earn 0.",
+      "Step 3: The AI also moves and collects resources, racing to the top-middle goal or a higher score.",
+      "Step 4: Click a highlighted cell to move."
+    ]
+  },
+  "game-theory": {
+    winZh:
+      "5~9 个回合结束后，你的累计收益高于 AI 即获胜。",
+    winEn:
+      "Win by having more total payoff than the AI after 5-9 rounds.",
+    stepsZh: [
+      "第 1 步：每回合在「合作」和「竞争」中二选一。",
+      "第 2 步：双方都合作各 +3；你竞争对方合作你 +5；都竞争各 +1。",
+      "第 3 步：AI 会记住你上一轮的选择并可能报复。",
+      "第 4 步：看累计得分判断长期策略是否有效。"
+    ],
+    stepsEn: [
+      "Step 1: Choose Cooperate or Compete each round.",
+      "Step 2: Both cooperate +3 each; you compete vs cooperate +5; both compete +1 each.",
+      "Step 3: The AI remembers your last move and may retaliate.",
+      "Step 4: Watch cumulative score to judge your long-term strategy."
+    ]
+  },
+  "resource-allocation": {
+    winZh:
+      "完成 3~5 轮分配后总分越高越好；每轮四项必须合计 100。",
+    winEn:
+      "Finish 3-5 rounds with the highest total score; each round must allocate exactly 100.",
+    stepsZh: [
+      "第 1 步：把 100 点预算分配到现金流、客户、团队、创新四项。",
+      "第 2 步：每轮四项的收益倍率不同，重点倾斜会带来高收益。",
+      "第 3 步：四项都不为 0 会获得均衡加成。",
+      "第 4 步：提交后立即看到本轮得分与倍率，再进入下一轮。"
+    ],
+    stepsEn: [
+      "Step 1: Split 100 budget across Cash Flow, Customers, Team, and Innovation.",
+      "Step 2: Each round has different multipliers; focusing can pay off.",
+      "Step 3: Keeping all four above 0 earns a balance bonus.",
+      "Step 4: Submit to see the round score and next multipliers."
+    ]
+  },
+  "team-management": {
+    winZh:
+      "完成 3~5 个任务后得分越高越好；能力匹配的任务得分更高。",
+    winEn:
+      "Finish 3-5 tasks with the highest score; matching skills score higher.",
+    stepsZh: [
+      "第 1 步：每个任务都要求一种能力。",
+      "第 2 步：选择拥有对应能力的成员，匹配度越高得分越高。",
+      "第 3 步：成员精力有限，用完后不能再被派出。",
+      "第 4 步：尽量让每个人都有贡献，并保住关键任务。"
+    ],
+    stepsEn: [
+      "Step 1: Each task requires a skill.",
+      "Step 2: Pick the member with the matching skill for a higher score.",
+      "Step 3: Members have limited energy and cannot work once exhausted.",
+      "Step 4: Keep everyone contributing while protecting critical tasks."
+    ]
+  },
+  "crisis-command": {
+    winZh:
+      "完成 3~5 个危机事件后，累计得分与信任、精力、影响力共同构成你的复盘。",
+    winEn:
+      "Finish 3-5 crisis events; cumulative score, trust, energy, and influence form your review.",
+    stepsZh: [
+      "第 1 步：每个事件有三个选项：专家级、稳妥、冒险。",
+      "第 2 步：选项会改变信任、精力与影响力。",
+      "第 3 步：先稳住局面和关键人，再处理结果。",
+      "第 4 步：看反馈学习每个选择背后的领导力逻辑。"
+    ],
+    stepsEn: [
+      "Step 1: Each event offers expert, steady, and risky options.",
+      "Step 2: Options change trust, energy, and influence.",
+      "Step 3: Stabilize the situation and key people before chasing results.",
+      "Step 4: Read the feedback to learn the leadership logic behind each choice."
+    ]
+  }
+};
+
+export interface LeadershipGameOptions {
+  seed?: number;
+  level?: number;
+}
+
 // ---------------------------------------------------------------------------
 // 1. Decision Chess
 // ---------------------------------------------------------------------------
 
 export interface DecisionChessState {
   mode: LeadershipGameMode;
+  seed: number;
+  level: number;
   board: number[][];
   player: [number, number];
   ai: [number, number];
@@ -81,6 +191,12 @@ export interface DecisionChessState {
   winner?: "player" | "ai" | "draw";
   lastPlayerMove?: [number, number];
   lastAiMove?: [number, number];
+  history: Array<{
+    round: number;
+    label: string;
+    detail: string;
+    score: number;
+  }>;
 }
 
 const DECISION_BOARD: number[][] = [
@@ -91,18 +207,31 @@ const DECISION_BOARD: number[][] = [
   [3, 0, 1, 0, 2]
 ];
 
+function decisionBoardForSeed(seed: number): number[][] {
+  const shift = Math.abs(seed || 1) % 5;
+  return DECISION_BOARD.map((row) =>
+    row.map((_, i) => row[(i + shift) % 5])
+  );
+}
+
 export function createDecisionChess(
-  mode: LeadershipGameMode
+  mode: LeadershipGameMode,
+  options: LeadershipGameOptions = {}
 ): DecisionChessState {
+  const seed = Math.abs(options.seed || 1);
+  const level = Math.min(3, Math.max(1, options.level || 1));
   return {
     mode,
-    board: DECISION_BOARD.map((row) => [...row]),
+    seed,
+    level,
+    board: decisionBoardForSeed(seed),
     player: [4, 1],
     ai: [0, 3],
     round: 1,
     playerScore: 0,
     aiScore: 0,
-    finished: false
+    finished: false,
+    history: []
   };
 }
 
@@ -180,13 +309,23 @@ export function applyDecisionChessMove(
 ): DecisionChessState {
   if (state.finished) return state;
   let next = decisionChessAdvance(state, "player", to);
-  if (next.player[0] === 0 && next.player[1] === 2) {
+  if (next.player[0] === 0 && next.player[1] === 3) {
     next.playerScore += 20;
     next.finished = true;
     next.winner = "player";
+    next.history = [
+      ...next.history,
+      {
+        round: next.round,
+        label: `R${next.round}`,
+        detail: `${next.player[0]},${next.player[1]} +${next.playerScore}`,
+        score: next.playerScore
+      }
+    ];
     return next;
   }
-  const maxRounds = next.mode === "battle" ? 8 : 2;
+  const maxRounds =
+    next.mode === "battle" ? 6 + next.level * 2 : 2;
   if (next.round >= maxRounds) {
     next.finished = true;
     next.winner =
@@ -197,14 +336,23 @@ export function applyDecisionChessMove(
           : "draw";
     return next;
   }
-  const aiMove = decisionChessBestMove(next, next.ai, [4, 2]);
+  const aiMove = decisionChessBestMove(next, next.ai, [4, 1]);
   next = decisionChessAdvance(next, "ai", aiMove);
-  if (next.ai[0] === 4 && next.ai[1] === 2) {
+  if (next.ai[0] === 4 && next.ai[1] === 1) {
     next.aiScore += 20;
     next.finished = true;
     next.winner = "ai";
     return next;
   }
+  next.history = [
+    ...next.history,
+    {
+      round: next.round,
+      label: `R${next.round}`,
+      detail: `${next.player[0]},${next.player[1]} vs ${next.ai[0]},${next.ai[1]}`,
+      score: next.playerScore
+    }
+  ];
   next.round += 1;
   if (next.round > maxRounds) {
     next.finished = true;
@@ -226,6 +374,8 @@ export type GameTheoryChoice = "cooperate" | "compete";
 
 export interface GameTheoryState {
   mode: LeadershipGameMode;
+  seed: number;
+  level: number;
   round: number;
   playerScore: number;
   aiScore: number;
@@ -235,19 +385,31 @@ export interface GameTheoryState {
   winner?: "player" | "ai" | "draw";
   lastPlayerChoice?: GameTheoryChoice;
   lastAiChoice?: GameTheoryChoice;
+  history: Array<{
+    round: number;
+    label: string;
+    detail: string;
+    score: number;
+  }>;
 }
 
 export function createGameTheory(
-  mode: LeadershipGameMode
+  mode: LeadershipGameMode,
+  options: LeadershipGameOptions = {}
 ): GameTheoryState {
+  const seed = Math.abs(options.seed || 1);
+  const level = Math.min(3, Math.max(1, options.level || 1));
   return {
     mode,
+    seed,
+    level,
     round: 1,
     playerScore: 0,
     aiScore: 0,
     playerHistory: [],
     aiHistory: [],
-    finished: false
+    finished: false,
+    history: []
   };
 }
 
@@ -255,8 +417,13 @@ export function gameTheoryAiChoice(
   state: GameTheoryState
 ): GameTheoryChoice {
   const last = state.playerHistory[state.playerHistory.length - 1];
-  if (last === "compete") return "compete";
-  return "cooperate";
+  const retaliateRate = state.level >= 3 ? 0.9 : state.level === 2 ? 0.65 : 0.35;
+  if (last === "compete") {
+    return (state.round * 7 + state.seed) % 10 < retaliateRate * 10
+      ? "compete"
+      : "cooperate";
+  }
+  return (state.round * 3 + state.seed) % 5 === 0 ? "compete" : "cooperate";
 }
 
 export function gameTheoryPayoff(
@@ -276,16 +443,27 @@ export function applyGameTheoryChoice(
   if (state.finished) return state;
   const ai = gameTheoryAiChoice(state);
   const [playerDelta, aiDelta] = gameTheoryPayoff(choice, ai);
+  const playerScore = state.playerScore + playerDelta;
   const next: GameTheoryState = {
     ...state,
-    playerScore: state.playerScore + playerDelta,
+    playerScore,
     aiScore: state.aiScore + aiDelta,
     playerHistory: [...state.playerHistory, choice],
     aiHistory: [...state.aiHistory, ai],
     lastPlayerChoice: choice,
-    lastAiChoice: ai
+    lastAiChoice: ai,
+    history: [
+      ...state.history,
+      {
+        round: state.round,
+        label: choice,
+        detail: `${choice} vs ${ai}: +${playerDelta}`,
+        score: playerScore
+      }
+    ]
   };
-  const maxRounds = next.mode === "battle" ? 5 : 1;
+  const maxRounds =
+    next.mode === "battle" ? 5 + (next.level - 1) * 2 : 1;
   if (next.round >= maxRounds) {
     next.finished = true;
     next.winner =
@@ -329,6 +507,8 @@ export const RESOURCE_AREA_LABELS: Record<
 
 export interface ResourceAllocationState {
   mode: LeadershipGameMode;
+  seed: number;
+  level: number;
   round: number;
   totalScore: number;
   finished: boolean;
@@ -338,6 +518,12 @@ export interface ResourceAllocationState {
     score: number;
     bonus: boolean;
   };
+  history: Array<{
+    round: number;
+    label: string;
+    detail: string;
+    score: number;
+  }>;
 }
 
 const ALLOCATION_TABLES: Record<
@@ -357,16 +543,44 @@ const ALLOCATION_TABLES: Record<
   ]
 };
 
+function allocationMultipliers(
+  mode: LeadershipGameMode,
+  level: number,
+  round: number,
+  seed: number
+): Record<ResourceArea, number> {
+  if (mode !== "battle") {
+    return { ...ALLOCATION_TABLES[mode][0] };
+  }
+  const safeSeed = Math.abs(seed || 1);
+  const base =
+    ALLOCATION_TABLES.battle[
+      (round - 1 + safeSeed) % ALLOCATION_TABLES.battle.length
+    ];
+  const shift = safeSeed % 4;
+  const result = {} as Record<ResourceArea, number>;
+  RESOURCE_AREAS.forEach((area, i) => {
+    const bonus = (i + shift) % 4 === 0 ? 0.15 : 0;
+    result[area] = Math.round((base[area] + bonus) * 100) / 100;
+  });
+  return result;
+}
+
 export function createResourceAllocation(
-  mode: LeadershipGameMode
+  mode: LeadershipGameMode,
+  options: LeadershipGameOptions = {}
 ): ResourceAllocationState {
-  const multipliers = ALLOCATION_TABLES[mode][0];
+  const seed = Math.abs(options.seed || 1);
+  const level = Math.min(3, Math.max(1, options.level || 1));
   return {
     mode,
+    seed,
+    level,
     round: 1,
     totalScore: 0,
     finished: false,
-    multipliers
+    multipliers: allocationMultipliers(mode, level, 1, seed),
+    history: []
   };
 }
 
@@ -386,19 +600,33 @@ export function applyResourceAllocation(
   );
   const bonus = RESOURCE_AREAS.every((area) => (allocation[area] ?? 0) > 0);
   const score = Math.round(raw + (bonus ? 15 : 0));
+  const totalScore = state.totalScore + score;
   const next: ResourceAllocationState = {
     ...state,
-    totalScore: state.totalScore + score,
+    totalScore,
     lastRound: { allocation: { ...allocation }, score, bonus },
-    multipliers: { ...state.multipliers }
+    multipliers: { ...state.multipliers },
+    history: [
+      ...state.history,
+      {
+        round: state.round,
+        label: `R${state.round}`,
+        detail: `${allocation.cashflow}/${allocation.customer}/${allocation.team}/${allocation.innovation} +${score}`,
+        score: totalScore
+      }
+    ]
   };
-  const maxRounds =
-    next.mode === "battle" ? ALLOCATION_TABLES.battle.length : 1;
+  const maxRounds = next.mode === "battle" ? 2 + next.level : 1;
   if (next.round >= maxRounds) {
     next.finished = true;
   } else {
     next.round += 1;
-    next.multipliers = ALLOCATION_TABLES[next.mode][next.round - 1];
+    next.multipliers = allocationMultipliers(
+      next.mode,
+      next.level,
+      next.round,
+      next.seed
+    );
   }
   return next;
 }
@@ -427,6 +655,8 @@ export interface TeamTask {
 
 export interface TeamManagementState {
   mode: LeadershipGameMode;
+  seed: number;
+  level: number;
   round: number;
   score: number;
   finished: boolean;
@@ -438,6 +668,12 @@ export interface TeamManagementState {
     quality: number;
     gained: number;
   };
+  history: Array<{
+    round: number;
+    label: string;
+    detail: string;
+    score: number;
+  }>;
 }
 
 export const TEAM_MEMBERS: TeamMember[] = [
@@ -451,19 +687,36 @@ const TEAM_TASKS: TeamTask[] = [
   { id: "t1", zh: "预算异常分析", en: "Budget Anomaly Review", skill: "analysis", required: 2 },
   { id: "t2", zh: "跨部门对齐会", en: "Cross-team Alignment", skill: "communication", required: 2 },
   { id: "t3", zh: "客户交付冲刺", en: "Customer Delivery Sprint", skill: "execution", required: 2 },
-  { id: "t4", zh: "新方案原型", en: "New Proposal Prototype", skill: "innovation", required: 2 }
+  { id: "t4", zh: "新方案原型", en: "New Proposal Prototype", skill: "innovation", required: 2 },
+  { id: "t5", zh: "季度复盘会", en: "Quarterly Review", skill: "analysis", required: 3 },
+  { id: "t6", zh: "跨部门方案路演", en: "Cross-team Roadshow", skill: "communication", required: 3 }
 ];
 
 export function createTeamManagement(
-  mode: LeadershipGameMode
+  mode: LeadershipGameMode,
+  options: LeadershipGameOptions = {}
 ): TeamManagementState {
+  const seed = Math.abs(options.seed || 1);
+  const level = Math.min(3, Math.max(1, options.level || 1));
+  const shift = seed % 4;
+  const members = [
+    ...TEAM_MEMBERS.slice(shift),
+    ...TEAM_MEMBERS.slice(0, shift)
+  ].map((member) => ({ ...member }));
+  const tasks = TEAM_TASKS.map((task) => ({ ...task })).slice(
+    0,
+    3 + level
+  );
   return {
     mode,
+    seed,
+    level,
     round: 1,
     score: 0,
     finished: false,
-    members: TEAM_MEMBERS.map((member) => ({ ...member })),
-    tasks: TEAM_TASKS.map((task) => ({ ...task }))
+    members,
+    tasks,
+    history: []
   };
 }
 
@@ -478,15 +731,25 @@ export function applyTeamAssignment(
   if (!member || !task || member.energy <= 0) return state;
   const quality = member.skill === task.skill ? 3 : 1;
   const gained = 10 + quality * 2;
+  const score = state.score + gained;
   const next: TeamManagementState = {
     ...state,
-    score: state.score + gained,
+    score,
     members: state.members.map((item) =>
       item.id === memberId ? { ...item, energy: item.energy - 1 } : item
     ),
-    lastRound: { memberId, taskId, quality, gained }
+    lastRound: { memberId, taskId, quality, gained },
+    history: [
+      ...state.history,
+      {
+        round: state.round,
+        label: taskId,
+        detail: `${memberId} -> ${taskId} x${quality}`,
+        score
+      }
+    ]
   };
-  const maxRounds = next.mode === "battle" ? 4 : 1;
+  const maxRounds = next.mode === "battle" ? 3 + next.level : 1;
   if (next.round >= maxRounds) {
     next.finished = true;
   } else {
@@ -523,6 +786,9 @@ export interface CrisisEvent {
 
 export interface CrisisCommandState {
   mode: LeadershipGameMode;
+  seed: number;
+  level: number;
+  offset: number;
   round: number;
   score: number;
   trust: number;
@@ -534,6 +800,12 @@ export interface CrisisCommandState {
     optionIndex: number;
     gained: number;
   };
+  history: Array<{
+    round: number;
+    label: string;
+    detail: string;
+    score: number;
+  }>;
 }
 
 export const CRISIS_EVENTS: CrisisEvent[] = [
@@ -745,16 +1017,23 @@ export const CRISIS_EVENTS: CrisisEvent[] = [
 ];
 
 export function createCrisisCommand(
-  mode: LeadershipGameMode
+  mode: LeadershipGameMode,
+  options: LeadershipGameOptions = {}
 ): CrisisCommandState {
+  const seed = Math.abs(options.seed || 1);
+  const level = Math.min(3, Math.max(1, options.level || 1));
   return {
     mode,
+    seed,
+    level,
+    offset: seed % CRISIS_EVENTS.length,
     round: 1,
     score: 0,
     trust: 50,
     energy: 60,
     influence: 40,
-    finished: false
+    finished: false,
+    history: []
   };
 }
 
@@ -763,12 +1042,16 @@ export function applyCrisisChoice(
   optionIndex: number
 ): CrisisCommandState {
   if (state.finished) return state;
-  const event = CRISIS_EVENTS[state.round - 1];
+  const event =
+    CRISIS_EVENTS[
+      (state.round - 1 + state.offset) % CRISIS_EVENTS.length
+    ];
   const option = event?.options[optionIndex];
   if (!event || !option) return state;
+  const score = state.score + option.score;
   const next: CrisisCommandState = {
     ...state,
-    score: state.score + option.score,
+    score,
     trust: Math.max(0, Math.min(100, state.trust + option.effects.trust)),
     energy: Math.max(0, Math.min(100, state.energy + option.effects.energy)),
     influence: Math.max(
@@ -779,9 +1062,21 @@ export function applyCrisisChoice(
       eventId: event.id,
       optionIndex,
       gained: option.score
-    }
+    },
+    history: [
+      ...state.history,
+      {
+        round: state.round,
+        label: event.id,
+        detail: `${event.titleZh} #${optionIndex + 1} +${option.score}`,
+        score
+      }
+    ]
   };
-  const maxRounds = next.mode === "battle" ? CRISIS_EVENTS.length : 1;
+  const maxRounds =
+    next.mode === "battle"
+      ? Math.min(CRISIS_EVENTS.length, 3 + next.level)
+      : 1;
   if (next.round >= maxRounds) {
     next.finished = true;
   } else {

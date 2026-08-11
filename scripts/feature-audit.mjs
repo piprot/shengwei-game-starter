@@ -88,6 +88,9 @@ try {
     .locator('[data-action="lg-start"][data-game="decision-chess"][data-mode="teach"]')
     .first()
     .click();
+  await page.waitForSelector(".lg-tutorial");
+  await page.locator('[data-action="lg-teach-next"]').first().click();
+  await page.locator('[data-action="lg-teach-start"]').first().click();
   await page.waitForSelector(".lg-board");
   await page.locator(".lg-cell.move").first().click();
   await page.waitForTimeout(300);
@@ -104,7 +107,7 @@ try {
       .locator(`[data-action="lg-start"][data-game="${gameId}"][data-mode="teach"]`)
       .first()
       .click();
-    await page.waitForSelector(".lg-shell");
+    await page.waitForSelector(".lg-tutorial");
     await page.locator('[data-action="lg-back"]').first().click();
     await page.waitForSelector(".lg-grid");
   }

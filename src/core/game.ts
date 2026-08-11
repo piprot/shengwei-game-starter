@@ -139,6 +139,9 @@ export const DEFAULT_SAVE: SaveState = {
   junqiLosses: 0,
   leadershipGameWins: 0,
   leadershipGameLosses: 0,
+  leadershipAchievements: {},
+  leadershipBranches: {},
+  leadershipBestLevel: {},
   recentPickPositions: [],
   organizationInvestments: 0,
   npcLeads: [],
@@ -389,6 +392,19 @@ function normalizeSave(save: SaveState): SaveState {
       0,
       Number(save.leadershipGameLosses) || 0
     ),
+    leadershipAchievements:
+      save.leadershipAchievements &&
+      typeof save.leadershipAchievements === "object"
+        ? save.leadershipAchievements
+        : {},
+    leadershipBranches:
+      save.leadershipBranches && typeof save.leadershipBranches === "object"
+        ? save.leadershipBranches
+        : {},
+    leadershipBestLevel:
+      save.leadershipBestLevel && typeof save.leadershipBestLevel === "object"
+        ? save.leadershipBestLevel
+        : {},
     recentPickPositions: Array.isArray(save.recentPickPositions)
       ? save.recentPickPositions.slice(-5)
       : [],
@@ -430,6 +446,9 @@ export function computeSaveHash(save: SaveState): string {
     jl: save.junqiLosses,
     lgw: save.leadershipGameWins,
     lgl: save.leadershipGameLosses,
+    lgach: save.leadershipAchievements,
+    lgbranch: save.leadershipBranches,
+    lgbest: save.leadershipBestLevel,
     pc: save.playCount,
     mp: save.masteryPoints,
     dh: (save.decisionHistory ?? []).map((d) => [d.nodeId, d.optionIndex, d.qualityScore]),

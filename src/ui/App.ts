@@ -195,7 +195,7 @@ const SETTINGS_MIGRATION_KEY = "adaptive-ascent-settings-v2";
 const GUIDE_KEY = "adaptive-ascent-guide-v1";
 const GUIDE_REWARD_KEY = "adaptive-ascent-guide-reward";
 const ACHIEVEMENT_FAVORITE_KEY = "adaptive-ascent-achievement-favorites";
-const APP_VERSION = "1.7.13";
+const APP_VERSION = "1.7.14";
 
 type View =
   | "menu"
@@ -1563,6 +1563,13 @@ export class AdaptiveGameApp {
             <h2>${this.language === "en" ? "Coach Workshop" : "教练工作坊"}</h2>
             <p>${this.language === "en" ? "Import team saves, compare group radar, surface decision blind spots, and plan a facilitated workshop." : "导入学员存档，对比小组雷达，找出决策盲区，生成可执行的工作坊流程。"}</p>
           </button>
+          <button class="menu-card has-art" data-action="open-leadership-games">
+            <img class="menu-card-cover" src="${this.artAsset("menu-card-10")}" alt="" loading="lazy" onerror="this.style.display='none'" />
+            <span class="menu-card-mask"></span>
+            <span class="card-index">11</span>
+            <h2>${this.language === "en" ? "Leadership Games" : "领导力游戏"}</h2>
+            <p>${this.language === "en" ? "Five polished mini-games with teaching, training, battle, review, achievements, and increasing difficulty." : "五个精品小游戏：教学、训练、对战、复盘、成就与逐级难度。"}</p>
+          </button>
         </section>
       </main>
     `;
@@ -2847,17 +2854,30 @@ export class AdaptiveGameApp {
     this.renderMap();
   }
 
-      private openLeadershipGames(): void {
+  private openLeadershipGames(): void {
     this.leadershipGames = new LeadershipGamesApp(this.language, {
       onBack: () => this.show("map"),
-      onReward: (gameId, won, score) =>
-        this.completeLeadershipGame(gameId, won, score),
+      onReward: (gameId, won, score, achievements, branch) =>
+        this.completeLeadershipGame(
+          gameId,
+          won,
+          score,
+          achievements,
+          branch
+        ),
       onAudio: (kind) => {
         if (kind === "ui") this.audio.ui();
         else if (kind === "win") this.audio.win();
         else if (kind === "lose") this.audio.lose();
         else this.audio.choose();
-      }
+      },
+      getProgress: (gameId) => ({
+        maxLevel: Math.min(
+          3,
+          this.save.leadershipBestLevel?.[gameId] ?? 1
+        ),
+        achievements: this.save.leadershipAchievements?.[gameId] ?? []
+      })
     });
     this.audio.ui();
     this.show("leadershipGames");
@@ -2874,11 +2894,18 @@ export class AdaptiveGameApp {
   private completeLeadershipGame(
     gameId: LeadershipGameId,
     won: boolean,
-    score: number
+    score: number,
+    achievements: string[],
+    branch: string
   ): void {
     if (won) {
       this.save.leadershipGameWins += 1;
       this.save.masteryPoints += 2;
+      const currentLevel =
+        this.save.leadershipBestLevel?.[gameId] ?? 1;
+      if (currentLevel < 3) {
+        this.save.leadershipBestLevel[gameId] = currentLevel + 1;
+      }
       this.save.profile.resources.influence = clamp(
         this.save.profile.resources.influence + 5,
         0,
@@ -2897,8 +2924,27 @@ export class AdaptiveGameApp {
         100
       );
     }
+    const earned = this.save.leadershipAchievements[gameId] ?? [];
+    const merged = [...new Set([...earned, ...achievements])];
+    this.save.leadershipAchievements[gameId] = merged;
+    if (branch) {
+      this.save.leadershipBranches[gameId] = branch;
+    }
+    if (achievements.length > 0) {
+      this.showToast(
+        this.language === "en"
+          ? `Leadership game achievement unlocked: +${achievements.length}`
+          : `领导力游戏解锁新成就：+${achievements.length}`
+      );
+    }
     this.persistSave();
-    trackEvent("leadership_game", { gameId, won, score });
+    trackEvent("leadership_game", {
+      gameId,
+      won,
+      score,
+      achievements: achievements.join(","),
+      branch
+    });
   }
 
   private renderChapterTransition(): void {

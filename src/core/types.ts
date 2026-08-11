@@ -198,6 +198,12 @@ export interface SaveState {
   leadershipGameWins: number;
   /** Leadership game center losses. */
   leadershipGameLosses: number;
+  /** Per-game earned achievement ids. */
+  leadershipAchievements: Record<string, string[]>;
+  /** Per-game last branch/route label. */
+  leadershipBranches: Record<string, string>;
+  /** Per-game highest unlocked difficulty (1-3). */
+  leadershipBestLevel: Record<string, number>;
 }
 
 export interface ChoiceOutcome {

@@ -1,5 +1,6 @@
 import {
   CRISIS_EVENTS,
+  GAME_TUTORIALS,
   LEADERSHIP_GAMES,
   RESOURCE_AREAS,
   RESOURCE_AREA_LABELS,
@@ -30,8 +31,18 @@ export type { LeadershipGameId } from "../core/leadership-games";
 
 export interface LeadershipGamesCallbacks {
   onBack(): void;
-  onReward(gameId: LeadershipGameId, won: boolean, score: number): void;
+  onReward(
+    gameId: LeadershipGameId,
+    won: boolean,
+    score: number,
+    achievements: string[],
+    branch: string
+  ): void;
   onAudio(kind: "ui" | "win" | "lose" | "choose"): void;
+  getProgress(gameId: LeadershipGameId): {
+    maxLevel: number;
+    achievements: string[];
+  };
 }
 
 type AnyGameState =
@@ -49,6 +60,99 @@ function esc(value: string): string {
     .replace(/"/g, "&quot;");
 }
 
+interface AchievementDef {
+  id: string;
+  zh: string;
+  en: string;
+  check: (state: AnyGameState) => boolean;
+}
+
+const ACHIEVEMENTS: Record<LeadershipGameId, AchievementDef[]> = {
+  "decision-chess": [
+    {
+      id: "dc-win",
+      zh: "旗开得胜",
+      en: "First Win",
+      check: (state) =>
+        "winner" in state && state.winner === "player"
+    },
+    {
+      id: "dc-resource",
+      zh: "资源猎人",
+      en: "Resource Hunter",
+      check: (state) => "playerScore" in state && state.playerScore >= 10
+    }
+  ],
+  "game-theory": [
+    {
+      id: "gt-win",
+      zh: "博弈胜者",
+      en: "Game Theory Winner",
+      check: (state) =>
+        "winner" in state && state.winner === "player"
+    },
+    {
+      id: "gt-cooperate",
+      zh: "合作大师",
+      en: "Cooperation Master",
+      check: (state) =>
+        "playerHistory" in state &&
+        state.playerHistory.filter((item) => item === "cooperate").length >= 3
+    }
+  ],
+  "resource-allocation": [
+    {
+      id: "ra-balance",
+      zh: "均衡大师",
+      en: "Balance Master",
+      check: (state) =>
+        "history" in state &&
+        state.history.length > 0 &&
+        state.history.every((item) => item.detail.includes("+15"))
+    },
+    {
+      id: "ra-score",
+      zh: "高分调度",
+      en: "High-Score Allocator",
+      check: (state) => "totalScore" in state && state.totalScore >= 250
+    }
+  ],
+  "team-management": [
+    {
+      id: "tm-perfect",
+      zh: "人尽其才",
+      en: "Perfect Fit",
+      check: (state) =>
+        "history" in state &&
+        state.history.length > 0 &&
+        state.history.every((item) => item.detail.includes("x3"))
+    },
+    {
+      id: "tm-score",
+      zh: "高效指挥",
+      en: "Efficient Commander",
+      check: (state) => "score" in state && state.score >= 60
+    }
+  ],
+  "crisis-command": [
+    {
+      id: "cc-expert",
+      zh: "冷静指挥",
+      en: "Calm Commander",
+      check: (state) =>
+        "history" in state &&
+        state.history.length > 0 &&
+        state.history.every((item) => item.detail.includes("+10"))
+    },
+    {
+      id: "cc-trust",
+      zh: "信任修复者",
+      en: "Trust Rebuilder",
+      check: (state) => "trust" in state && state.trust >= 70
+    }
+  ]
+};
+
 export class LeadershipGamesApp {
   private root: HTMLElement;
   private language: "zh" | "en";
@@ -57,6 +161,11 @@ export class LeadershipGamesApp {
   private currentMode?: LeadershipGameMode;
   private state?: AnyGameState;
   private rewarded = false;
+  private level = 1;
+  private teachStep = 0;
+  private teachStarted = false;
+  private lastAchievements: string[] = [];
+  private lastBranch = "";
 
   constructor(
     language: "zh" | "en",
@@ -94,6 +203,9 @@ export class LeadershipGamesApp {
     if (action === "lg-start") {
       const gameId = target.dataset.game as LeadershipGameId;
       const mode = target.dataset.mode as LeadershipGameMode;
+      if (target.dataset.level) {
+        this.level = Number(target.dataset.level) || 1;
+      }
       this.start(gameId, mode);
       return;
     }
@@ -101,6 +213,21 @@ export class LeadershipGamesApp {
       if (this.currentGameId && this.currentMode) {
         this.start(this.currentGameId, this.currentMode);
       }
+      return;
+    }
+    if (action === "lg-level") {
+      this.level = Number(target.dataset.level) || 1;
+      this.render(this.root);
+      return;
+    }
+    if (action === "lg-teach-next") {
+      this.teachStep += 1;
+      this.render(this.root);
+      return;
+    }
+    if (action === "lg-teach-start") {
+      this.teachStarted = true;
+      this.render(this.root);
       return;
     }
     if (!this.state) return;
@@ -192,16 +319,21 @@ export class LeadershipGamesApp {
     this.currentGameId = gameId;
     this.currentMode = mode;
     this.rewarded = false;
+    this.teachStep = 0;
+    this.teachStarted = mode !== "teach";
+    const seed =
+      mode === "teach" ? 1 : Math.floor(Math.random() * 100000) + 1;
+    const options = { seed, level: this.level };
     if (gameId === "decision-chess") {
-      this.state = createDecisionChess(mode);
+      this.state = createDecisionChess(mode, options);
     } else if (gameId === "game-theory") {
-      this.state = createGameTheory(mode);
+      this.state = createGameTheory(mode, options);
     } else if (gameId === "resource-allocation") {
-      this.state = createResourceAllocation(mode);
+      this.state = createResourceAllocation(mode, options);
     } else if (gameId === "team-management") {
-      this.state = createTeamManagement(mode);
+      this.state = createTeamManagement(mode, options);
     } else {
-      this.state = createCrisisCommand(mode);
+      this.state = createCrisisCommand(mode, options);
     }
     this.callbacks.onAudio("ui");
     this.render(this.root);
@@ -215,9 +347,64 @@ export class LeadershipGamesApp {
     const score = this.scoreOf(this.state);
     if (this.currentMode === "battle") {
       this.rewarded = true;
-      this.callbacks.onReward(this.currentGameId, won, score);
+      const achievements = this.earnedAchievements(this.state);
+      const branch = this.branchOf(this.state);
+      this.lastAchievements = achievements;
+      this.lastBranch = branch;
+      this.callbacks.onReward(
+        this.currentGameId,
+        won,
+        score,
+        achievements,
+        branch
+      );
       this.callbacks.onAudio(won ? "win" : "lose");
     }
+  }
+
+  private earnedAchievements(state: AnyGameState): string[] {
+    const earned: string[] = [];
+    const definitions = ACHIEVEMENTS[this.currentGameId ?? "decision-chess"];
+    for (const def of definitions) {
+      if (def.check(state)) earned.push(def.id);
+    }
+    return earned;
+  }
+
+  private branchOf(state: AnyGameState): string {
+    if ("playerHistory" in state) {
+      const cooperate = state.playerHistory.filter(
+        (item) => item === "cooperate"
+      ).length;
+      const compete = state.playerHistory.length - cooperate;
+      return cooperate >= compete ? "cooperate" : "compete";
+    }
+    if ("history" in state && "totalScore" in state) {
+      const allBalanced =
+        state.history.length > 0 &&
+        state.history.every((item) => item.detail.includes("+15"));
+      return allBalanced ? "balanced" : "focused";
+    }
+    if ("members" in state && "history" in state) {
+      const perfect = state.history.filter((item) =>
+        item.detail.includes("x3")
+      ).length;
+      return perfect >= Math.ceil(state.history.length / 2)
+        ? "fit"
+        : "reactive";
+    }
+    if ("trust" in state && "history" in state) {
+      const expert = state.history.filter((item) =>
+        item.detail.includes("+10")
+      ).length;
+      return expert >= Math.ceil(state.history.length / 2)
+        ? "decisive"
+        : "steady";
+    }
+    if ("playerScore" in state) {
+      return state.playerScore >= state.aiScore ? "offensive" : "steady";
+    }
+    return "steady";
   }
 
   private isWon(state: AnyGameState): boolean {
@@ -246,23 +433,42 @@ export class LeadershipGamesApp {
           <p class="eyebrow">${en ? "Leadership Game Center" : "领导力游戏中心"}</p>
           <h1>${en ? "Five games, five leadership muscles" : "五个游戏，练五块领导力肌肉"}</h1>
           <p class="muted">${en ? "Each game has Teaching, Training, and Battle modes. Play to learn the logic behind leadership decisions." : "每个游戏都有教学、训练、对战三种模式。边玩边理解领导决策背后的逻辑。"}</p>
+          <div class="lg-levels">
+            <span>${en ? "Difficulty" : "难度"}</span>
+            ${[1, 2, 3]
+              .map(
+                (level) =>
+                  `<button class="${this.level === level ? "active" : ""}" data-action="lg-level" data-level="${level}">${en ? (level === 1 ? "Easy" : level === 2 ? "Medium" : "Hard") : level === 1 ? "简单" : level === 2 ? "中等" : "困难"}</button>`
+              )
+              .join("")}
+          </div>
         </section>
         <section class="lg-grid">
-          ${LEADERSHIP_GAMES.map(
-            (game) => `
+          ${LEADERSHIP_GAMES.map((game) => {
+            const progress = this.callbacks.getProgress(game.id);
+            const achievements = ACHIEVEMENTS[game.id]
+              .map(
+                (def) =>
+                  `${progress.achievements.includes(def.id) ? "✔" : "○"} ${esc(en ? def.en : def.zh)}`
+              )
+              .join(" · ");
+            return `
               <article class="lg-card">
                 <p class="eyebrow">${esc(en ? game.en : game.zh)}</p>
                 <h2>${esc(en ? game.en : game.zh)}</h2>
                 <p>${esc(en ? game.enDesc : game.zhDesc)}</p>
                 <blockquote>${esc(en ? game.insightEn : game.insightZh)}</blockquote>
+                <p class="lg-win">${en ? "Win" : "胜利条件"}：${esc(en ? GAME_TUTORIALS[game.id].winEn : GAME_TUTORIALS[game.id].winZh)}</p>
+                <p class="lg-ach">${achievements}</p>
+                <p class="muted">${en ? "Unlocked level" : "已解锁难度"}：${progress.maxLevel} / 3</p>
                 <div class="lg-modes">
                   <button data-action="lg-start" data-game="${game.id}" data-mode="teach">${en ? "Teach" : "教学"}</button>
                   <button data-action="lg-start" data-game="${game.id}" data-mode="train">${en ? "Train" : "训练"}</button>
-                  <button class="primary" data-action="lg-start" data-game="${game.id}" data-mode="battle">${en ? "Battle" : "对战"}</button>
+                  <button class="primary" data-action="lg-start" data-game="${game.id}" data-mode="battle" data-level="${this.level}" ${this.level > progress.maxLevel ? "disabled aria-disabled=\"true\"" : ""}>${en ? "Battle" : "对战"}</button>
                 </div>
               </article>
-            `
-          ).join("")}
+            `;
+          }).join("")}
         </section>
       </main>
     `;
@@ -270,6 +476,9 @@ export class LeadershipGamesApp {
 
   private renderGame(): string {
     if (!this.state) return this.renderIndex();
+    if (this.currentMode === "teach" && !this.teachStarted) {
+      return this.renderTeach();
+    }
     if (this.currentGameId === "decision-chess") {
       return this.renderDecisionChess(this.state as DecisionChessState);
     }
@@ -305,6 +514,111 @@ export class LeadershipGamesApp {
           <h1>${esc(title)}</h1>
         </section>
     `;
+  }
+
+  private renderTeach(): string {
+    const en = this.language === "en";
+    const gameId = this.currentGameId ?? "decision-chess";
+    const meta = LEADERSHIP_GAMES.find((game) => game.id === gameId);
+    const tutorial = GAME_TUTORIALS[gameId];
+    const steps = en ? tutorial.stepsEn : tutorial.stepsZh;
+    return `
+      <header class="topbar">
+        <div class="brand">${en ? "Ascend" : "升维"}</div>
+        <button class="link" data-action="lg-back">${en ? "Games" : "游戏列表"}</button>
+      </header>
+      <main class="lg-shell">
+        <section class="lg-tutorial">
+          <p class="eyebrow">${en ? "Teaching" : "教学"}</p>
+          <h1>${esc(en ? meta?.en ?? gameId : meta?.zh ?? gameId)}</h1>
+          <div class="lg-win-box">
+            <strong>${en ? "Win condition" : "胜利条件"}</strong>
+            <p>${esc(en ? tutorial.winEn : tutorial.winZh)}</p>
+          </div>
+          <ol class="lg-steps">
+            ${steps
+              .map(
+                (step, index) =>
+                  `<li class="${index <= this.teachStep ? "active" : ""}">${esc(step)}</li>`
+              )
+              .join("")}
+          </ol>
+          <div class="lg-actions">
+            <button data-action="lg-teach-next">${en ? "Next" : "下一步"}</button>
+            <button class="primary" data-action="lg-teach-start">${en ? "Start Playing" : "开始试玩"}</button>
+          </div>
+        </section>
+      </main>
+    `;
+  }
+
+  private reviewMarkup(state: AnyGameState): string {
+    if (!("history" in state) || state.history.length === 0) return "";
+    const en = this.language === "en";
+    return `
+      <section class="lg-review">
+        <h3>${en ? "Review" : "复盘"}</h3>
+        <ul>
+          ${state.history
+            .map(
+              (item) =>
+                `<li><strong>${esc(item.label)}</strong><span>${esc(item.detail)}</span><em>${item.score}</em></li>`
+            )
+            .join("")}
+        </ul>
+        ${
+          this.lastAchievements.length > 0
+            ? `<p class="lg-ach-earned">${en ? "Achievements" : "新成就"}：${this.lastAchievements
+                .map((id) => {
+                  const def = ACHIEVEMENTS[
+                    this.currentGameId ?? "decision-chess"
+                  ].find((item) => item.id === id);
+                  return def ? esc(en ? def.en : def.zh) : id;
+                })
+                .join(" · ")}</p>`
+            : ""
+        }
+        ${
+          this.lastBranch
+            ? `<p class="lg-branch">${en ? "Branch" : "路线"}：${esc(
+                this.language === "en"
+                  ? this.branchLabelEn(this.lastBranch)
+                  : this.branchLabelZh(this.lastBranch)
+              )}</p>`
+            : ""
+        }
+      </section>
+    `;
+  }
+
+  private branchLabelZh(branch: string): string {
+    const labels: Record<string, string> = {
+      cooperate: "合作路线",
+      compete: "竞争路线",
+      balanced: "均衡路线",
+      focused: "聚焦路线",
+      fit: "人尽其才",
+      reactive: "应急管理",
+      decisive: "果断路线",
+      steady: "稳妥路线",
+      offensive: "进攻路线"
+    };
+    return labels[branch] ?? branch;
+  }
+
+  private branchLabelEn(branch: string): string {
+    const labels: Record<string, string> = {
+      cooperate: "Cooperation Path",
+      compete: "Competition Path",
+      balanced: "Balanced Path",
+      focused: "Focused Path",
+      fit: "Right-Fit Path",
+      reactive: "Reactive Path",
+      decisive: "Decisive Path",
+      steady: "Steady Path",
+      offensive: "Offensive Path"
+    };
+    return labels[branch] ?? branch;
   }
 
   private renderDecisionChess(state: DecisionChessState): string {
@@ -357,6 +671,7 @@ export class LeadershipGamesApp {
       <p class="lg-hint">${en ? "Move toward the goal at the top middle. Collect trust, influence, and resources on the way." : "向棋盘顶部中间的目标前进，沿途收集信任、影响力与组织资源。"}</p>
       ${result}
       <section class="lg-board">${cells}</section>
+      ${this.reviewMarkup(state)}
       </main>
     `;
   }
@@ -386,6 +701,7 @@ export class LeadershipGamesApp {
         <button data-action="lg-choice" data-choice="cooperate">${en ? "Cooperate" : "合作"}</button>
         <button data-action="lg-choice" data-choice="compete">${en ? "Compete" : "竞争"}</button>
       </section>
+      ${this.reviewMarkup(state)}
       </main>
     `;
   }
@@ -437,6 +753,7 @@ export class LeadershipGamesApp {
       ${last}
       ${result}
       <section class="lg-form">${selects}<button data-action="lg-allocate">${en ? "Commit Allocation" : "确认分配"}</button></section>
+      ${this.reviewMarkup(state)}
       </main>
     `;
   }
@@ -477,13 +794,17 @@ export class LeadershipGamesApp {
       ${last}
       ${result}
       <section class="lg-team">${members}</section>
+      ${this.reviewMarkup(state)}
       </main>
     `;
   }
 
   private renderCrisisCommand(state: CrisisCommandState): string {
     const en = this.language === "en";
-    const event = CRISIS_EVENTS[state.round - 1];
+    const event =
+      CRISIS_EVENTS[
+        (state.round - 1 + state.offset) % CRISIS_EVENTS.length
+      ];
     if (!event) return this.renderIndex();
     const options = event.options
       .map(
@@ -515,6 +836,7 @@ export class LeadershipGamesApp {
       ${last}
       ${result}
       <section class="lg-options">${options}</section>
+      ${this.reviewMarkup(state)}
       </main>
     `;
   }
