@@ -82,6 +82,7 @@ import {
   addDimensionExp,
   dimensionLevel
 } from "../src/core/leadership-model.ts";
+import { generateCoachPlan } from "../src/core/coach-plan.ts";
 import {
   CHAPTER_PASS_STARS,
   DEFAULT_SAVE,
@@ -367,6 +368,17 @@ addDimensionExp(dimSave, "credibility", 12);
 assert(
   dimSave.dimensionExp.credibility === 12,
   "addDimensionExp should update credibility exp"
+);
+const planSave = structuredClone(DEFAULT_SAVE);
+const planA = generateCoachPlan(planSave, "business-breakthrough", "time-pressure");
+const planB = generateCoachPlan(planSave, "team-upgrade", "trust-gap");
+assert(
+  planA.phases.length === 3 && planB.phases.length === 3,
+  "90-day coach plan should contain 3 phases"
+);
+assert(
+  planA.summaryZh !== planB.summaryZh,
+  "different goals should generate different coach plans"
 );
 const decisionChess = createDecisionChess("battle");
 assert(

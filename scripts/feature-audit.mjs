@@ -113,6 +113,28 @@ try {
   }
   await page.locator('[data-action="lg-home"]').first().click();
   await page.waitForSelector(".map-shell");
+  await page.locator('[data-action="open-menu"]').first().click();
+  await page.waitForSelector('[data-action="open-coach"]', {
+    timeout: 15000
+  });
+  await page.locator('[data-action="open-coach"]').first().click();
+  await page.waitForSelector(".coach-plan-panel", { timeout: 15000 });
+  await page.locator('[data-action="coach-plan-goal"]').first().click();
+  await page.waitForSelector('[data-action="coach-plan-challenge"]', {
+    timeout: 15000
+  });
+  await page.locator('[data-action="coach-plan-challenge"]').first().click();
+  await page.waitForSelector(".coach-plan-result", { timeout: 15000 });
+  if ((await page.locator(".coach-plan-phase").count()) !== 3) {
+    throw new Error("90-day coach plan should contain 3 phases");
+  }
+  await page.locator('[data-action="coach-plan-check"]').first().click();
+  await page.locator('[data-action="open-menu"]').first().click();
+  await page.waitForSelector('[data-action="open-map"]', {
+    timeout: 15000
+  });
+  await page.locator('[data-action="open-map"]').first().click();
+  await page.waitForSelector(".map-shell", { timeout: 15000 });
   await page.click("[data-action=select-chapter][data-chapter='1']");
   await page.click("[data-action=replay-chapter]");
   await page.waitForSelector(".story-shell");

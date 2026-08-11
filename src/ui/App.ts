@@ -125,6 +125,14 @@ import {
   CoachWorkshopEngine,
   type WorkshopReport
 } from "../core/coach-workshop";
+import {
+  CHALLENGE_TITLES,
+  GOAL_TITLES,
+  generateCoachPlan,
+  type CoachChallenge,
+  type CoachGoal,
+  type CoachPlan
+} from "../core/coach-plan";
 import { scenarioCoachHint } from "../core/coach-hints";
 import {
   ASSESSMENT_QUESTIONS,
@@ -200,7 +208,7 @@ const SETTINGS_MIGRATION_KEY = "adaptive-ascent-settings-v2";
 const GUIDE_KEY = "adaptive-ascent-guide-v1";
 const GUIDE_REWARD_KEY = "adaptive-ascent-guide-reward";
 const ACHIEVEMENT_FAVORITE_KEY = "adaptive-ascent-achievement-favorites";
-const APP_VERSION = "1.7.17";
+const APP_VERSION = "1.7.18";
 
 type View =
   | "menu"
@@ -235,6 +243,11 @@ export class AdaptiveGameApp {
   private themeMusicPlaying = false;
   private coachEngine = new CoachWorkshopEngine();
   private coachReport?: WorkshopReport;
+  private coachPlan?: CoachPlan;
+  private coachGoal?: CoachGoal;
+  private coachChallenge?: CoachChallenge;
+  private coachPlanStep: "goal" | "challenge" | "plan" = "goal";
+  private coachPlanChecks: Record<string, boolean> = {};
   private muted = localStorage.getItem("adaptive-ascent-muted") === "1";
   private musicMuted =
     localStorage.getItem("adaptive-ascent-music") === "1";
@@ -3855,6 +3868,99 @@ export class AdaptiveGameApp {
     });
   }
 
+  private coachPlanMarkup(): string {
+    const en = this.language === "en";
+    if (this.coachPlanStep === "goal") {
+      const goals = Object.entries(GOAL_TITLES) as Array<
+        [CoachGoal, { zh: string; en: string; zhNote: string; enNote: string }]
+      >;
+      return `
+        <div class="coach-plan-wizard">
+          <h3>${en ? "Step 1 · Choose your 90-day goal" : "第 1 步 · 选择你的 90 天目标"}</h3>
+          <div class="coach-plan-options">
+            ${goals
+              .map(
+                ([key, info]) => `
+                  <button data-action="coach-plan-goal" data-goal="${key}">
+                    <strong>${en ? info.en : info.zh}</strong>
+                    <span>${en ? info.enNote : info.zhNote}</span>
+                  </button>
+                `
+              )
+              .join("")}
+          </div>
+        </div>
+      `;
+    }
+    if (this.coachPlanStep === "challenge") {
+      const challenges = Object.entries(CHALLENGE_TITLES) as Array<
+        [
+          CoachChallenge,
+          { zh: string; en: string; zhNote: string; enNote: string }
+        ]
+      >;
+      return `
+        <div class="coach-plan-wizard">
+          <h3>${en ? "Step 2 · Which challenge must the plan solve first?" : "第 2 步 · 计划必须优先解决哪个挑战？"}</h3>
+          <div class="coach-plan-options">
+            ${challenges
+              .map(
+                ([key, info]) => `
+                  <button data-action="coach-plan-challenge" data-challenge="${key}">
+                    <strong>${en ? info.en : info.zh}</strong>
+                    <span>${en ? info.enNote : info.zhNote}</span>
+                  </button>
+                `
+              )
+              .join("")}
+          </div>
+          <button class="link" data-action="coach-plan-restart">${en ? "Restart" : "重新开始"}</button>
+        </div>
+      `;
+    }
+    if (!this.coachPlan) {
+      return `<p class="muted">${en ? "Generate your plan first." : "请先生成你的计划。"}</p>`;
+    }
+    const plan = this.coachPlan;
+    return `
+      <div class="coach-plan-result">
+        <p class="muted">${en ? plan.summaryEn : plan.summaryZh}</p>
+        <div class="coach-plan-phases">
+          ${plan.phases
+            .map(
+              (phase, phaseIndex) => `
+                <article class="coach-plan-phase">
+                  <p class="eyebrow">${en ? phase.days : phase.days}</p>
+                  <h3>${en ? phase.titleEn : phase.titleZh}</h3>
+                  <p>${en ? phase.focusEn : phase.focusZh}</p>
+                  <ol>
+                    ${(en ? phase.actionsEn : phase.actionsZh)
+                      .map(
+                        (action, actionIndex) => {
+                          const key = `phase-${phaseIndex}-${actionIndex}`;
+                          const done = Boolean(this.coachPlanChecks[key]);
+                          return `<li><button class="${done ? "done" : ""}" data-action="coach-plan-check" data-key="${key}">${done ? "✔ " : ""}${escapeHtml(action)}</button></li>`;
+                        }
+                      )
+                      .join("")}
+                  </ol>
+                  <p class="coach-plan-weekly"><strong>${en ? "Weekly" : "每周"}</strong> ${en ? phase.weeklyEn : phase.weeklyZh}</p>
+                  <p class="coach-plan-checkpoint"><strong>${en ? "Checkpoint" : "检查点"}</strong> ${en ? phase.checkpointEn : phase.checkpointZh}</p>
+                  <p class="coach-plan-question">${en ? phase.questionEn : phase.questionZh}</p>
+                </article>
+              `
+            )
+            .join("")}
+        </div>
+        <p class="coach-plan-metrics">${en ? plan.metricEn : plan.metricZh}</p>
+        <div class="coach-plan-actions">
+          <button data-action="coach-plan-restart">${en ? "Rebuild Plan" : "重新生成"}</button>
+          <button data-action="open-report">${en ? "Open Review" : "打开复盘报告"}</button>
+        </div>
+      </div>
+    `;
+  }
+
   private renderCoach(): void {
     const en = this.language === "en";
     const report = this.coachReport;
@@ -3965,6 +4071,12 @@ export class AdaptiveGameApp {
               `
               : ""
           }
+        </section>
+
+        <section class="coach-plan-panel">
+          <h2>${en ? "Solo 90-Day Action Plan" : "单人 90 天行动计划"}</h2>
+          <p class="muted">${en ? "Answer two questions, and the coach will generate an adaptive plan from your role, ability gaps, five-dimension model, decision trajectory, and training progress." : "回答两个问题，教练会根据你的角色、能力短板、五维模型、决策轨迹和训练进度生成自适应计划。"}</p>
+          ${this.coachPlanMarkup()}
         </section>
 
         <section class="coach-import-panel">
@@ -5874,6 +5986,40 @@ export class AdaptiveGameApp {
       case "open-coach":
         this.audio.ui();
         this.show("coach");
+        break;
+      case "coach-plan-goal":
+        this.coachGoal = actionTarget.dataset.goal as CoachGoal;
+        this.coachPlanStep = "challenge";
+        this.renderCoach();
+        break;
+      case "coach-plan-challenge":
+        this.coachChallenge =
+          actionTarget.dataset.challenge as CoachChallenge;
+        this.coachPlanStep = "plan";
+        this.coachPlan =
+          this.coachGoal && this.coachChallenge
+            ? generateCoachPlan(
+                this.save,
+                this.coachGoal,
+                this.coachChallenge
+              )
+            : undefined;
+        this.coachPlanChecks = {};
+        this.renderCoach();
+        break;
+      case "coach-plan-check": {
+        const key = actionTarget.dataset.key ?? "";
+        this.coachPlanChecks[key] = !this.coachPlanChecks[key];
+        this.renderCoach();
+        break;
+      }
+      case "coach-plan-restart":
+        this.coachPlan = undefined;
+        this.coachGoal = undefined;
+        this.coachChallenge = undefined;
+        this.coachPlanStep = "goal";
+        this.coachPlanChecks = {};
+        this.renderCoach();
         break;
       case "coach-load-demo":
         this.loadCoachDemo();
