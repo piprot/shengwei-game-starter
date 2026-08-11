@@ -238,58 +238,6 @@
         </footer>
       </div>
     </div>
-    <script>
-      // ========== 美术图片自动刷新机制（AI 生成图需要 30~60 秒加载完成） ==========
-      (function () {
-        var API_HOST = "trae-api-cn.mchost.guru";
-        function refreshArt(reason) {
-          var imgs = document.querySelectorAll("img");
-          var changed = 0;
-          var ts = Date.now();
-          for (var i = 0; i < imgs.length; i++) {
-            try {
-              var u = new URL(imgs[i].src);
-              if (u.hostname !== API_HOST) continue;
-              u.searchParams.set("_t", String(ts));
-              imgs[i].src = u.href;
-              changed++;
-            } catch (e) {}
-          }
-          console.log("[art-refresh] " + (reason || "manual") + ": " + changed + " images reloaded");
-          return changed;
-        }
-        window.refreshArtImages = refreshArt;
-
-        // 右上角「刷新美术」按钮
-        document.addEventListener("DOMContentLoaded", function () {
-          setTimeout(function () {
-            var btn = document.createElement("button");
-            btn.innerHTML = "刷新美术 <span aria-hidden=\"true\">🔄</span>";
-            btn.setAttribute(
-              "title",
-              "AI 美术图首次生成需要 30-60 秒；如仍显示「生成中」，点这里刷新"
-            );
-            btn.style.cssText =
-              "position:fixed;top:46px;right:14px;z-index:999999;padding:6px 12px;border-radius:8px;" +
-              "background:rgba(5,170,130,0.95);color:#fff;border:1px solid rgba(255,255,255,0.3);" +
-              "font-family:inherit;font-size:12px;cursor:pointer;backdrop-filter:blur(4px);box-shadow:0 4px 16px rgba(0,0,0,0.4);";
-            btn.onclick = function () {
-              var n = refreshArt("manual");
-              btn.firstChild && (btn.firstChild.nodeValue = "已刷新 ✓ " + n + "张 ");
-              setTimeout(function () {
-                btn.innerHTML = "刷新美术 <span aria-hidden=\"true\">🔄</span>";
-              }, 2200);
-            };
-            document.body.appendChild(btn);
-          }, 1500);
-        });
-
-        // 自动刷新 3 次：30 秒 / 75 秒 / 150 秒（覆盖大部分生成时间窗口）
-        setTimeout(function () { refreshArt("auto-30s"); }, 30000);
-        setTimeout(function () { refreshArt("auto-75s"); }, 75000);
-        setTimeout(function () { refreshArt("auto-150s"); }, 150000);
-      })();
-    </script>
     <script type="module" src="/src/main.ts"></script>
   </body>
 </html>

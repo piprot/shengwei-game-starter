@@ -1363,73 +1363,9 @@ export class AdaptiveGameApp {
    *   ability-01 ~ ability-10   十项能力小插画
    *   bg-duel-lobby    1v1 大厅全屏背景（放 bg 目录）
    */
-  private artAsset(key: string, opts: { directApi?: boolean } = {}): string {
+  private artAsset(key: string, _opts: { directApi?: boolean } = {}): string {
     if (!key) return "";
-    const IMAGE_API = "https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image";
-    // 这些 key 对应的本地 public/ 图是确定存在的真实 AI 美术图（chapter-*.jpg 等），
-    // 可以优先使用本地路径，保证离线构建也能用。
-    const USE_LOCAL_WHITELIST = new Set([
-      "chapter-1", "chapter-2", "chapter-3", "chapter-4", "chapter-5",
-      "chapter-6", "chapter-7", "chapter-8", "chapter-9",
-      "bg-main-menu", "bg-victory"
-    ]);
-    const useLocal = opts.directApi === false || (!opts.directApi && USE_LOCAL_WHITELIST.has(key));
-
-    if (!useLocal || opts.directApi) {
-      const size = key.startsWith("bg-") || key.startsWith("menu-card-") || key.startsWith("duel-")
-        ? "landscape_16_9"
-        : key.startsWith("role-") ? "portrait_4_3" : "square_hd";
-      // 用 manifest 中的精准 prompt（与 generate-real-art.mjs 同源）
-      const promptMap: Record<string, string> = {
-        "menu-card-00": "Cinematic dark thriller, open book with neon bookmarks glowing, last chapter page corner folded, cinematic lighting, shallow depth of field, film grain, 8k",
-        "menu-card-01": "Ancient Chinese scroll showing power map of nine chapters, ink wash painting mixed with cyberpunk neon glow, dragon silhouette at bottom, cinematic composition, dark cinematic lighting",
-        "menu-card-02": "Two silhouettes facing each other across a modern boardroom table at dusk, tension in the air, dramatic window light, dramatic side lighting, cinematic film still, dark moody office interior",
-        "menu-card-03": "Ten floating glowing ability orbs in ten distinct colors arranged in radar grid, modern leadership dashboard UI holographic projection, dark cinematic, particle effects, 8k render",
-        "menu-card-04": "Data analyst reviewing radar chart performance report with pen in hand, modern glass office, golden hour light, documents and sticky notes scattered, cinematic shallow depth of field",
-        "menu-card-05": "Golden bronze trophy wall display with rare achievement badges glowing, glass trophy cabinet, cinematic spotlight, dark background, shallow depth of field",
-        "menu-card-06": "Organization relationship network graph visualized with glowing avatar nodes, six degrees of separation, dark cinematic background, neon connecting lines, office silhouettes",
-        "menu-card-07": "Video game dungeon trial gate with MBA case file floating in air, mystical dungeon entrance with neon runes, cinematic fantasy meets corporate dark mood",
-        "menu-card-08": "Minimalist dark settings control panel with glowing sliders sound language toggles, futuristic UI, cyberpunk control console, cinematic volumetric lighting",
-        "menu-card-09": "Three leadership role dossiers with portraits: parachute executive, startup founder, and high potential young manager, file folders on mahogany desk, dramatic warm lamp light, film noir mood",
-        "menu-card-10": "Corporate training coach workshop, whiteboard with team radar chart comparison, facilitation post-its, executives in meeting room, cinematic warm lighting with depth",
-        "treasure-fragment-1": "Ancient cracked jade seal fragment, Chinese dynasty artifact, side lit on dark velvet cloth, museum macro photography, cinematic close up, texture in cracks",
-        "treasure-fragment-2": "Fragment of Tang dynasty silk scroll with golden calligraphy, torn edges, aged patina, museum shot dark background, warm directional light, extreme detail",
-        "treasure-fragment-3": "Broken bronze ancient Chinese military tally half, corroded verdigris patina, dark display case, museum lighting, macro cinematic shot, mysterious mood",
-        "treasure-fragment-4": "Ancient Chinese bamboo slips oracle fragment, ink characters on broken strips, aged wood, low key side lighting, museum still life, cinematic mood",
-        "treasure-fragment-5": "Gold inlaid lacquerware shard with floral motif, ancient Chinese court artifact, dark velvet backdrop, macro cinematic lighting, rich texture",
-        "treasure-fragment-6": "Weathered stone stele rubbing fragment with carved dragons, Chinese legend artifact, dramatic side lighting, museum display, dark mood, texture of chiseled grooves",
-        "treasure-fragment-7": "Torn ancient Chinese military map fragment, ink on mulberry paper, red seal stamp, edges frayed, dark velvet background, museum photography, cinematic low key",
-        "treasure-fragment-8": "Fragment of ceremonial jade Gui tablet, ancient scholar artifact, smooth worn edge, dark cloth, soft side lighting, museum macro, mysterious silhouette",
-        "treasure-fragment-9": "Shard of blue and white imperial porcelain with dragon pattern, cracked glaze, dark velvet display, dramatic top down cinematic lighting, museum grade detail",
-        "role-parachute": "Portrait of parachute executive middle-aged Chinese man in tailored dark suit, confident gaze, modern office background blurred, cinematic three point lighting, mature leader look, film grain",
-        "role-founder": "Portrait of Chinese startup founder young man in casual smart outfit, energetic smile, background with glowing startup whiteboard KPIs, warm cinematic lighting, entrepreneur vibe",
-        "role-highPotential": "Portrait of high potential young Chinese woman manager, crisp blazer, intelligent gaze, modern glass office background, cinematic rim lighting, professional leadership portrait",
-        "duel-lobby": "Modern e-sports arena duel lobby with dual player stations, empty competitive arena, dramatic neon lighting, two opposing monitors glowing, dark cinematic mood, reflections on polished floor",
-        "duel-match": "Dramatic leadership duel scenario: two executives debating in boardroom, tension, dramatic split lighting left vs right, cinematic wide shot, dark moody office, blurred documents, pressure atmosphere",
-        "duel-reveal": "Cinematic dramatic reveal moment: scoreboard light show revealing winner, golden spotlight beam with particles falling, two silhouettes one cheering one consoling, dark stage epic composition",
-        "ach-cat-story": "Narrative story book open with glowing pages, main story chapters bookmarked, cinematic warm desk lamp lighting, dark background, magical realism particles",
-        "ach-cat-training": "Leadership training gym with mental weights dumbbells made of books, coach whistle, cinematic motivational training room, dramatic dark gym lighting with spot beam",
-        "ach-cat-trial": "RPG trial gate dungeon with MBA case scroll, glowing magical rune door with lock, cinematic dungeon lighting, mysterious fantasy corporate hybrid",
-        "ach-cat-duel": "Crossed swords of debate with clipboards for blades, two clashing opinions, duel arena background, dark cinematic, dramatic sparks at clash point",
-        "ach-cat-event": "Event calendar with rare golden stamps, confetti, limited edition badge, dark desk background, top down cinematic still life, dramatic warm side light",
-        "ach-cat-rank": "Trophy cup tier ladder bronze silver gold platinum legendary, on polished pedestal, dark cinematic spotlight, studio photography, bokeh background",
-        "ach-badge-base": "Ornate golden achievement badge medallion base, polished enamel with gear star border, metallic highlights, dark velvet background, macro studio shot, cinematic rim lighting",
-        "ability-01": "Get on the balcony leadership metaphor: leader standing on office building observation deck, looking down at busy organization below, cinematic dusk lighting, minimalist composition",
-        "ability-02": "Identify adaptive challenge metaphor, magnifying glass zooming into complex organizational Venn diagram with red circles marking adaptive work, cinematic dark analytic render",
-        "ability-03": "Regulate distress leadership metaphor, temperature gauge dial staying steady in boiling pressure cooker office, cinematic dark scene, glowing thermometer, calm in chaos",
-        "ability-04": "Hold the tension metaphor: tightrope walker between two skyscrapers with gold bar balance pole, storm below, not flinching, cinematic dramatic composition, dark clouds",
-        "ability-05": "Give the work back leadership metaphor, hand returning origami project to team members hands sitting around table, cinematic warm office lighting, collaborative mood",
-        "ability-06": "Shadow authority metaphor, shadow puppet theater of leader guiding conversations from behind curtain without center stage, cinematic side lighting, mysterious but caring",
-        "ability-07": "Draw the flame metaphor, matchstick igniting passion in team candle cluster, all candles lighting up in chain reaction, cinematic dark background, warm glow, macro",
-        "ability-08": "Diagnose system metaphor, doctor stethoscope listening to organizational chart engine, cinematic dark blue medical lab with holographic org chart, professional mood",
-        "ability-09": "Orchestrate intervention metaphor, conductor baton leading orchestra of diverse corporate roles each playing instrument, cinematic concert hall, spotlight, elegant composition",
-        "ability-10": "Raise purpose anchor metaphor, large ship anchor dropping into stormy leadership sea with lighthouse beam, cinematic epic seascape, dramatic waves, guiding light",
-        "bg-duel-lobby": "Dark cinematic 1v1 duel arena full screen background, moody atmospheric foggy stadium with rows of empty seats, dramatic neon light strips along floor, polished reflections, cyberpunk corporate vibe, widescreen, suitable for behind text content"
-      };
-      const prompt = promptMap[key] || key;
-      return `${IMAGE_API}?prompt=${encodeURIComponent(prompt)}&image_size=${encodeURIComponent(size)}`;
-    }
-    // 白名单：走本地 public 路径
+    // All images now use local Unsplash photos in public/art/ and public/bg/
     const useBgDir = key.startsWith("bg-");
     const dir = useBgDir ? "bg" : "art";
     const ext = key.endsWith(".svg") ? "svg" : "jpg";
