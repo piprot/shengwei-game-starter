@@ -77,6 +77,12 @@ import {
   gameTheoryPayoff
 } from "../src/core/leadership-games.ts";
 import {
+  DIMENSION_ORDER,
+  LEADERSHIP_DIMENSIONS,
+  addDimensionExp,
+  dimensionLevel
+} from "../src/core/leadership-model.ts";
+import {
   CHAPTER_PASS_STARS,
   DEFAULT_SAVE,
   NORMAL_DECISION_MS,
@@ -163,7 +169,7 @@ for (const path of TRAINING_PATHS) {
   assert(scored.correct === path.questions.length, `${path.abilityId} perfect answers must score perfectly`);
 }
 
-assert(TRIAL_STAGES.length === 19, "trial must contain 19 stages");
+assert(TRIAL_STAGES.length === 24, "trial must contain 24 stages");
 assert(
   new Set(TRIAL_STAGES.map((stage) => stage.order)).size === TRIAL_STAGES.length,
   "trial stage orders must be unique"
@@ -344,6 +350,24 @@ for (const node of DUEL_BANK) {
     `duel node ${node.id} should cover expert/partial/risk qualities`
   );
 }
+assert(
+  DIMENSION_ORDER.length === 5,
+  "leadership model should contain 5 dimensions"
+);
+assert(
+  TRIAL_STAGES.filter((stage) => stage.dimension).length === 5,
+  "five trial stages should map to leadership dimensions"
+);
+assert(
+  dimensionLevel(40) === 5,
+  "dimension exp 40 should reach level 5"
+);
+const dimSave = structuredClone(DEFAULT_SAVE);
+addDimensionExp(dimSave, "credibility", 12);
+assert(
+  dimSave.dimensionExp.credibility === 12,
+  "addDimensionExp should update credibility exp"
+);
 const decisionChess = createDecisionChess("battle");
 assert(
   decisionChess.board.length === 5 && decisionChess.board[0].length === 5,

@@ -2873,3 +2873,80 @@ button:focus-visible,
    • 加载占位：为元素添加 .vu-shimmer 或 .vu-skeleton 即可获得微光效果。
    ========================================================================= */
 
+
+/* =========================================================================
+   领导力五维模型 · 士气
+   ========================================================================= */
+.dimension-panel {
+  margin: 18px 0;
+  padding: 16px 18px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: var(--vu-radius, 8px);
+  background: rgba(12, 22, 28, 0.72);
+}
+.dimension-panel h2 {
+  margin: 0 0 12px;
+}
+.dimension-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 12px;
+}
+.dimension-row {
+  padding: 12px;
+  border: 1px solid color-mix(in srgb, var(--dim, #41c7c0) 38%, transparent);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.04);
+}
+.dimension-head {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.dimension-head strong {
+  color: var(--dim, #41c7c0);
+}
+.dimension-head span {
+  color: var(--vu-muted, #9fb3c8);
+  font-size: 12px;
+}
+.dimension-head em {
+  margin-left: auto;
+  color: #f2c14e;
+  font-style: normal;
+  font-weight: 800;
+}
+.dimension-bar {
+  height: 8px;
+  margin: 8px 0 6px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.1);
+  overflow: hidden;
+}
+.dimension-bar i {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+  background: var(--dim, #41c7c0);
+}
+.dimension-row small {
+  color: var(--vu-muted, #9fb3c8);
+  line-height: 1.5;
+}
+.trial-morale-panel {
+  margin: 0 0 14px;
+  padding: 12px 14px;
+  border: 1px solid rgba(87, 199, 163, 0.4);
+  border-radius: 8px;
+  background: rgba(87, 199, 163, 0.1);
+}
+.trial-morale-panel strong {
+  color: #aef1ec;
+}
+.trial-morale-panel .trial-energy-bar {
+  margin: 6px 0;
+}
+.trial-morale-panel small {
+  color: #bdece8;
+}

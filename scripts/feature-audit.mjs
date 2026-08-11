@@ -161,7 +161,7 @@ try {
   await page.click("[data-action=open-trial]");
   await page.waitForSelector(".trial-shell");
   const stageCount = await page.locator(".trial-stage-card").count();
-  if (stageCount !== 19) throw new Error(`expected 19 trial stages, got ${stageCount}`);
+  if (stageCount !== 24) throw new Error(`expected 24 trial stages, got ${stageCount}`);
   await page.locator(".trial-stage-card.open button").first().click();
   await page.waitForSelector(".trial-phase-panel");
 

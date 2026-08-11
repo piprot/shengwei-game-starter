@@ -10,6 +10,13 @@ export type AbilityId =
   | "structure"
   | "communication";
 
+export type LeadershipDimension =
+  | "credibility"
+  | "empathy"
+  | "decisiveness"
+  | "vision"
+  | "resilience";
+
 export type ResourceKey = "energy" | "trust" | "influence" | "capital";
 
 export type RoleId = "parachute" | "founder" | "highPotential";
@@ -204,6 +211,10 @@ export interface SaveState {
   leadershipBranches: Record<string, string>;
   /** Per-game highest unlocked difficulty (1-3). */
   leadershipBestLevel: Record<string, number>;
+  /** Five-dimension leadership model experience. */
+  dimensionExp: Record<LeadershipDimension, number>;
+  /** Team morale affected by resilience and adversity choices. */
+  morale: number;
 }
 
 export interface ChoiceOutcome {

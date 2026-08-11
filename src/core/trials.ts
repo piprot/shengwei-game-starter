@@ -1,6 +1,10 @@
 import { abilityLevel } from "./abilities.ts";
 import { EXPANDED_TRAINING } from "./trainingExtras.ts";
-import type { AbilityId, SaveState } from "./types.ts";
+import type {
+  AbilityId,
+  LeadershipDimension,
+  SaveState
+} from "./types.ts";
 
 export interface TrialQuestion {
   prompt: string;
@@ -64,6 +68,7 @@ export interface TrialStageDef {
   rewardItem?: string;
   rewardUnlock?: string;
   source: TrialQuestionSource;
+  dimension?: LeadershipDimension;
 }
 
 export interface PracticeTaskDef {
@@ -680,6 +685,92 @@ export const TRIAL_STAGES: TrialStageDef[] = [
         }
       }
     }
+  }
+,
+  {
+    id: "dim_credibility",
+    order: 20,
+    name: "信服力试炼",
+    boss: "言行裂缝",
+    style: "solo",
+    scene: "团队发现你承诺的晋升名单没有兑现，质疑开始蔓延。",
+    resolution: "承认偏差、公开标准，并用可验证的行动重建信任。",
+    gates: [{ abilityId: "authority", level: 3 }],
+    minChapter: 5,
+    staminaCost: 14,
+    rewardExp: 4,
+    rewardItem: "信誉账本",
+    rewardUnlock: "解锁「以身作则」进阶情境",
+    dimension: "credibility",
+    source: { kind: "custom", question: { prompt: "团队发现你上季度承诺的晋升名单没有兑现，你该怎么做？", options: ["先公开承认偏差，再给出可验证的新标准", "解释客观限制，维持原有决定", "暂时不提，等下次机会"], answer: 0, explanation: "信服力来自言行一致；先承认偏差并给出可验证标准，才能重建尊重。", referenceAnswer: "公开承认偏差，并用可验证标准重建信任。" } }
+  },
+  {
+    id: "dim_empathy",
+    order: 21,
+    name: "共情力试炼",
+    boss: "沉默员工",
+    style: "solo",
+    scene: "一位连续加班的核心员工开始沉默，交付仍在继续，但团队氛围明显降温。",
+    resolution: "先一对一倾听真实压力，再调整任务和资源。",
+    gates: [{ abilityId: "communication", level: 3 }],
+    minChapter: 5,
+    staminaCost: 14,
+    rewardExp: 4,
+    rewardItem: "共情清单",
+    rewardUnlock: "解锁「关怀团队」进阶情境",
+    dimension: "empathy",
+    source: { kind: "custom", question: { prompt: "核心员工连续加班后开始沉默，你如何回应？", options: ["先一对一倾听真实压力，再调整任务和资源", "公开表扬他的付出，继续推进", "给他放假，暂不过问原因"], answer: 0, explanation: "共情力靠关怀与有效沟通增长；先听懂压力，再给资源支持。", referenceAnswer: "先倾听压力，再调整任务和资源。" } }
+  },
+  {
+    id: "dim_decisiveness",
+    order: 22,
+    name: "决断力试炼",
+    boss: "两难岔路",
+    style: "solo",
+    scene: "两个方案都有人支持：一个保护现金流，一个抢占窗口期。会议只剩十五分钟。",
+    resolution: "先明确必须守住的结果，再按优先次序拍板。",
+    gates: [{ abilityId: "strategy", level: 3 }],
+    minChapter: 5,
+    staminaCost: 14,
+    rewardExp: 4,
+    rewardItem: "决策罗盘",
+    rewardUnlock: "解锁「把控方向」进阶情境",
+    dimension: "decisiveness",
+    source: { kind: "custom", question: { prompt: "两个方案都有人支持，会议只剩十五分钟，你怎么办？", options: ["先明确必须守住的结果，再按优先次序拍板", "让两方再补充数据，下次再议", "先选支持人数更多的一方"], answer: 0, explanation: "决断力靠做对的事和把控方向增长；先定义不可退让的结果，再决策。", referenceAnswer: "先明确底线结果，再按优先级决策。" } }
+  },
+  {
+    id: "dim_vision",
+    order: 23,
+    name: "格局力试炼",
+    boss: "亲力亲为者",
+    style: "solo",
+    scene: "你发现自己仍是所有关键决策的审批节点，团队开始等你拍板。",
+    resolution: "选择一项关键业务完整授权，并给接手人试错与复盘空间。",
+    gates: [{ abilityId: "deploy", level: 3 }],
+    minChapter: 5,
+    staminaCost: 14,
+    rewardExp: 4,
+    rewardItem: "授权地图",
+    rewardUnlock: "解锁「培养他人」进阶情境",
+    dimension: "vision",
+    source: { kind: "custom", question: { prompt: "团队所有关键决策都在等你拍板，你会怎么做？", options: ["选一项关键业务完整授权，给接手人试错与复盘空间", "继续审批，但加快速度", "要求团队先给出完整方案再交给你"], answer: 0, explanation: "格局力靠培养他人与授权放权增长；真正授权意味着允许对方在边界内做决定。", referenceAnswer: "完整授权一项关键业务，并给试错与复盘空间。" } }
+  },
+  {
+    id: "dim_resilience",
+    order: 24,
+    name: "韧性值试炼",
+    boss: "连败困局",
+    style: "solo",
+    scene: "连续两次失败后，团队开始怀疑方向，士气明显下降。",
+    resolution: "承认失败，保留关键证据，用一个小胜重建动势。",
+    gates: [{ abilityId: "recovery", level: 3 }],
+    minChapter: 5,
+    staminaCost: 14,
+    rewardExp: 4,
+    rewardItem: "动势火种",
+    rewardUnlock: "解锁「困境重建」进阶情境",
+    dimension: "resilience",
+    source: { kind: "custom", question: { prompt: "连续两次失败后团队士气下降，你会怎么带团队？", options: ["承认失败，保留关键证据，用一个可达成的小胜重建动势", "淡化失败，直接布置下一轮目标", "更换核心成员来改变气氛"], answer: 0, explanation: "韧性在困境选择中波动并影响士气；承认失败并用小胜重建动势，是最有效的止损。", referenceAnswer: "承认失败，保留证据，用小胜重建动势。" } }
   }
 ];
 

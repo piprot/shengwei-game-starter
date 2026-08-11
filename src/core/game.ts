@@ -11,11 +11,13 @@ import {
   getNode,
   randomEventEligibleCount
 } from "./story.ts";
+import { addDimensionExp, applyMoraleChange } from "./leadership-model.ts";
 import type {
   AbilityId,
   ChoiceOutcome,
   DecisionRecord,
   DuelHistoryEntry,
+  LeadershipDimension,
   OptionQuality,
   PlayerProfile,
   ResourceKey,
@@ -142,6 +144,14 @@ export const DEFAULT_SAVE: SaveState = {
   leadershipAchievements: {},
   leadershipBranches: {},
   leadershipBestLevel: {},
+  dimensionExp: {
+    credibility: 0,
+    empathy: 0,
+    decisiveness: 0,
+    vision: 0,
+    resilience: 0
+  },
+  morale: 75,
   recentPickPositions: [],
   organizationInvestments: 0,
   npcLeads: [],
@@ -405,6 +415,22 @@ function normalizeSave(save: SaveState): SaveState {
       save.leadershipBestLevel && typeof save.leadershipBestLevel === "object"
         ? save.leadershipBestLevel
         : {},
+    dimensionExp: {
+      credibility: clamp(
+        Number(save.dimensionExp?.credibility) || 0,
+        0,
+        100
+      ),
+      empathy: clamp(Number(save.dimensionExp?.empathy) || 0, 0, 100),
+      decisiveness: clamp(
+        Number(save.dimensionExp?.decisiveness) || 0,
+        0,
+        100
+      ),
+      vision: clamp(Number(save.dimensionExp?.vision) || 0, 0, 100),
+      resilience: clamp(Number(save.dimensionExp?.resilience) || 0, 0, 100)
+    },
+    morale: clamp(Number(save.morale) || 75, 0, 100),
     recentPickPositions: Array.isArray(save.recentPickPositions)
       ? save.recentPickPositions.slice(-5)
       : [],
@@ -449,6 +475,8 @@ export function computeSaveHash(save: SaveState): string {
     lgach: save.leadershipAchievements,
     lgbranch: save.leadershipBranches,
     lgbest: save.leadershipBestLevel,
+    dexp: save.dimensionExp,
+    mor: save.morale,
     pc: save.playCount,
     mp: save.masteryPoints,
     dh: (save.decisionHistory ?? []).map((d) => [d.nodeId, d.optionIndex, d.qualityScore]),
@@ -1340,7 +1368,8 @@ export function applyTrialAnswer(
   rewardItem?: string,
   resourceCost = 0,
   wrongPenalty = 6,
-  hpCost = 0
+  hpCost = 0,
+  dimension?: LeadershipDimension
 ): TrialAnswerOutcome {
   const cleared = correct && !save.trialCleared.includes(stageId);
   const energyChange = -(staminaCost + (correct ? 0 : wrongPenalty));
@@ -1369,10 +1398,14 @@ export function applyTrialAnswer(
     if (save.trialCleared.length >= 5) save.achievements.push("trial_five");
     if (save.trialCleared.length >= 19) save.achievements.push("trial_all");
     if (stageId.startsWith("mba_")) save.achievements.push("mba_clear");
+    if (dimension) {
+      addDimensionExp(save, dimension, 2);
+    }
   } else {
     save.trialStreak = 0;
     save.masteryPoints += 1;
   }
+  applyMoraleChange(save, correct ? 5 : -4);
   save.achievements = [...new Set(save.achievements)];
   saveState(save);
   return {

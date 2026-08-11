@@ -117,6 +117,11 @@ import {
   type LeadershipGameId
 } from "./leadership-games";
 import {
+  DIMENSION_ORDER,
+  LEADERSHIP_DIMENSIONS,
+  dimensionLevel
+} from "../core/leadership-model";
+import {
   CoachWorkshopEngine,
   type WorkshopReport
 } from "../core/coach-workshop";
@@ -195,7 +200,7 @@ const SETTINGS_MIGRATION_KEY = "adaptive-ascent-settings-v2";
 const GUIDE_KEY = "adaptive-ascent-guide-v1";
 const GUIDE_REWARD_KEY = "adaptive-ascent-guide-reward";
 const ACHIEVEMENT_FAVORITE_KEY = "adaptive-ascent-achievement-favorites";
-const APP_VERSION = "1.7.15";
+const APP_VERSION = "1.7.16";
 
 type View =
   | "menu"
@@ -3026,6 +3031,7 @@ export class AdaptiveGameApp {
         <button class="link" data-action="open-menu">${this.t("returnHome")}</button>
       </header>
       <main class="ability-shell" aria-label="${this.language === "en" ? "Ability map" : "能力图谱"}">
+        ${this.dimensionMarkup()}
         <section class="ability-head">
           <div>
             <p class="eyebrow">${this.t("abilityTitle")}</p>
@@ -3167,6 +3173,7 @@ export class AdaptiveGameApp {
         <button class="link sound-toggle" data-action="toggle-sound" aria-label="${this.language === "en" ? "Toggle sound" : "切换声音"}">${this.muted ? this.t("soundOff") : this.t("soundOn")}</button>
       </header>
       <main class="report-shell" aria-label="${this.language === "en" ? "Review report" : "复盘报告"}">
+        ${this.dimensionMarkup()}
         <section class="report-hero">
           <div>
             <p class="eyebrow">${this.t("reportTitle")}</p>
@@ -4112,6 +4119,11 @@ export class AdaptiveGameApp {
             <small>${accelerator > 0 ? `${this.t("trialAcceleratorActive")} Lv.${accelerator}` : this.t("trialBuyCost")} 15 · ${capital} · ${influence} · ${trust}</small>
           </div>
         </section>
+        <section class="trial-morale-panel">
+          <strong>${en ? "Morale" : "士气"}</strong>
+          <div class="trial-energy-bar"><i style="width:${this.save.morale ?? 75}%"></i></div>
+          <small>${en ? "Resilience and adversity choices move morale." : "韧性值与困境选择会改变士气。"}</small>
+        </section>
         ${
           this.activePracticeTaskId
             ? (() => {
@@ -4328,6 +4340,7 @@ export class AdaptiveGameApp {
             <span>${this.t("trialEnergyCost")} ${trialCostFor(this.save, stage)}</span>
             <span>${this.t("trialHp")} ${this.save.trialHp} / 100</span>
             <span>${stage.gates.map((gate) => `${this.abilityDisplay(gate.abilityId).name} Lv.${gate.level}`).join(" + ")}</span>
+            ${stage.dimension ? `<span>${en ? LEADERSHIP_DIMENSIONS[stage.dimension].en : LEADERSHIP_DIMENSIONS[stage.dimension].zh} · Lv.${dimensionLevel(this.save.dimensionExp?.[stage.dimension] ?? 0)}</span>` : ""}
           </div>
           <div class="trial-faction-bars">
             <span>${this.t("trialTrust")} ${this.trialFactionTrust}</span>
@@ -6491,7 +6504,8 @@ export class AdaptiveGameApp {
           activeStage.rewardItem,
           activeStage.resourceCost ?? 0,
           this.save.trialItems.includes("重启铃") ? 3 : 6,
-          this.save.trialItems.includes("风险边界书") ? 10 : 20
+          this.save.trialItems.includes("风险边界书") ? 10 : 20,
+          activeStage.dimension
         );
         if (correct) {
           this.audio.trainingMastery();
@@ -6583,7 +6597,8 @@ export class AdaptiveGameApp {
           activeStage.rewardItem,
           activeStage.resourceCost ?? 0,
           this.save.trialItems.includes("重启铃") ? 3 : 6,
-          this.save.trialItems.includes("风险边界书") ? 10 : 20
+          this.save.trialItems.includes("风险边界书") ? 10 : 20,
+          activeStage.dimension
         );
         if (correct) {
           this.audio.trainingMastery();
@@ -8903,6 +8918,37 @@ export class AdaptiveGameApp {
         <small>${statusLabel}</small>
       </button>
     `;
+  }
+
+  private dimensionMarkup(): string {
+    const en = this.language === "en";
+    const bars = DIMENSION_ORDER.map((id) => {
+      const def = LEADERSHIP_DIMENSIONS[id];
+      const exp = this.save.dimensionExp?.[id] ?? 0;
+      const level = dimensionLevel(exp);
+      const color =
+        id === "credibility"
+          ? "#f2c14e"
+          : id === "empathy"
+            ? "#e9826c"
+            : id === "decisiveness"
+              ? "#41c7c0"
+              : id === "vision"
+                ? "#8f8cd9"
+                : "#57c7a3";
+      return `
+        <div class="dimension-row" style="--dim:${color}">
+          <div class="dimension-head">
+            <strong>${en ? def.en : def.zh}</strong>
+            <span>${en ? def.enSub : def.zhSub}</span>
+            <em>Lv.${level}</em>
+          </div>
+          <div class="dimension-bar"><i style="width:${Math.min(100, exp)}%"></i></div>
+          <small>${en ? def.growEn : def.growZh}</small>
+        </div>
+      `;
+    }).join("");
+    return `<section class="dimension-panel"><h2>${en ? "Five-Dimension Leadership Model" : "领导力五维模型"}</h2><div class="dimension-grid">${bars}</div></section>`;
   }
 
   private resourceChips(profile: PlayerProfile): string {
