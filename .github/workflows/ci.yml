@@ -90,6 +90,9 @@ jobs:
       - name: Music resume audit
         run: npm run test:music
 
+      - name: Coach hint audit
+        run: npm run test:coach-hints
+
   deploy:
     needs: [build, test]
     runs-on: ubuntu-latest

@@ -124,6 +124,7 @@ import {
   CoachWorkshopEngine,
   type WorkshopReport
 } from "../core/coach-workshop";
+import { scenarioCoachHint } from "../core/coach-hints";
 import {
   ASSESSMENT_QUESTIONS,
   certificationLevel
@@ -198,7 +199,7 @@ const SETTINGS_MIGRATION_KEY = "adaptive-ascent-settings-v2";
 const GUIDE_KEY = "adaptive-ascent-guide-v1";
 const GUIDE_REWARD_KEY = "adaptive-ascent-guide-reward";
 const ACHIEVEMENT_FAVORITE_KEY = "adaptive-ascent-achievement-favorites";
-const APP_VERSION = "1.7.10";
+const APP_VERSION = "1.7.11";
 
 type View =
   | "menu"
@@ -1345,6 +1346,97 @@ export class AdaptiveGameApp {
     return `--chapter-art:url('${url}')`;
   }
 
+  /**
+   * 统一的美术资源 URL 注册表。
+   *
+   * 所有非章节、非 NPC 的补充美术图都通过这里解析路径：
+   * - 放入 public/art 或 public/bg 目录下的图片会被 Vite 原样拷贝到 dist 根
+   * - 若图片尚未生成（文件缺失），浏览器会走 onerror fallback 展示纯色块，不会白屏
+   *
+   * 命名规范（与 scripts/generate-real-art.mjs 同步）：
+   *   menu-card-00 ~ menu-card-10      首页十大模块卡片封面
+   *   treasure-fragment-1 ~ treasure-fragment-9  藏宝图 9 残片
+   *   role-parachute / role-founder / role-highPotential  三张角色立绘（jpg，替代原有 svg 简笔画）
+   *   duel-lobby / duel-match / duel-reveal  1v1 三场景
+   *   ach-cat-story/training/trial/duel/event/rank  成就六大类封面
+   *   ach-badge-base    通用成就徽章底版
+   *   ability-01 ~ ability-10   十项能力小插画
+   *   bg-duel-lobby    1v1 大厅全屏背景（放 bg 目录）
+   */
+  private artAsset(key: string, opts: { directApi?: boolean } = {}): string {
+    if (!key) return "";
+    const IMAGE_API = "https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image";
+    // 这些 key 对应的本地 public/ 图是确定存在的真实 AI 美术图（chapter-*.jpg 等），
+    // 可以优先使用本地路径，保证离线构建也能用。
+    const USE_LOCAL_WHITELIST = new Set([
+      "chapter-1", "chapter-2", "chapter-3", "chapter-4", "chapter-5",
+      "chapter-6", "chapter-7", "chapter-8", "chapter-9",
+      "bg-main-menu", "bg-victory"
+    ]);
+    const useLocal = opts.directApi === false || (!opts.directApi && USE_LOCAL_WHITELIST.has(key));
+
+    if (!useLocal || opts.directApi) {
+      const size = key.startsWith("bg-") || key.startsWith("menu-card-") || key.startsWith("duel-")
+        ? "landscape_16_9"
+        : key.startsWith("role-") ? "portrait_4_3" : "square_hd";
+      // 用 manifest 中的精准 prompt（与 generate-real-art.mjs 同源）
+      const promptMap: Record<string, string> = {
+        "menu-card-00": "Cinematic dark thriller, open book with neon bookmarks glowing, last chapter page corner folded, cinematic lighting, shallow depth of field, film grain, 8k",
+        "menu-card-01": "Ancient Chinese scroll showing power map of nine chapters, ink wash painting mixed with cyberpunk neon glow, dragon silhouette at bottom, cinematic composition, dark cinematic lighting",
+        "menu-card-02": "Two silhouettes facing each other across a modern boardroom table at dusk, tension in the air, dramatic window light, dramatic side lighting, cinematic film still, dark moody office interior",
+        "menu-card-03": "Ten floating glowing ability orbs in ten distinct colors arranged in radar grid, modern leadership dashboard UI holographic projection, dark cinematic, particle effects, 8k render",
+        "menu-card-04": "Data analyst reviewing radar chart performance report with pen in hand, modern glass office, golden hour light, documents and sticky notes scattered, cinematic shallow depth of field",
+        "menu-card-05": "Golden bronze trophy wall display with rare achievement badges glowing, glass trophy cabinet, cinematic spotlight, dark background, shallow depth of field",
+        "menu-card-06": "Organization relationship network graph visualized with glowing avatar nodes, six degrees of separation, dark cinematic background, neon connecting lines, office silhouettes",
+        "menu-card-07": "Video game dungeon trial gate with MBA case file floating in air, mystical dungeon entrance with neon runes, cinematic fantasy meets corporate dark mood",
+        "menu-card-08": "Minimalist dark settings control panel with glowing sliders sound language toggles, futuristic UI, cyberpunk control console, cinematic volumetric lighting",
+        "menu-card-09": "Three leadership role dossiers with portraits: parachute executive, startup founder, and high potential young manager, file folders on mahogany desk, dramatic warm lamp light, film noir mood",
+        "menu-card-10": "Corporate training coach workshop, whiteboard with team radar chart comparison, facilitation post-its, executives in meeting room, cinematic warm lighting with depth",
+        "treasure-fragment-1": "Ancient cracked jade seal fragment, Chinese dynasty artifact, side lit on dark velvet cloth, museum macro photography, cinematic close up, texture in cracks",
+        "treasure-fragment-2": "Fragment of Tang dynasty silk scroll with golden calligraphy, torn edges, aged patina, museum shot dark background, warm directional light, extreme detail",
+        "treasure-fragment-3": "Broken bronze ancient Chinese military tally half, corroded verdigris patina, dark display case, museum lighting, macro cinematic shot, mysterious mood",
+        "treasure-fragment-4": "Ancient Chinese bamboo slips oracle fragment, ink characters on broken strips, aged wood, low key side lighting, museum still life, cinematic mood",
+        "treasure-fragment-5": "Gold inlaid lacquerware shard with floral motif, ancient Chinese court artifact, dark velvet backdrop, macro cinematic lighting, rich texture",
+        "treasure-fragment-6": "Weathered stone stele rubbing fragment with carved dragons, Chinese legend artifact, dramatic side lighting, museum display, dark mood, texture of chiseled grooves",
+        "treasure-fragment-7": "Torn ancient Chinese military map fragment, ink on mulberry paper, red seal stamp, edges frayed, dark velvet background, museum photography, cinematic low key",
+        "treasure-fragment-8": "Fragment of ceremonial jade Gui tablet, ancient scholar artifact, smooth worn edge, dark cloth, soft side lighting, museum macro, mysterious silhouette",
+        "treasure-fragment-9": "Shard of blue and white imperial porcelain with dragon pattern, cracked glaze, dark velvet display, dramatic top down cinematic lighting, museum grade detail",
+        "role-parachute": "Portrait of parachute executive middle-aged Chinese man in tailored dark suit, confident gaze, modern office background blurred, cinematic three point lighting, mature leader look, film grain",
+        "role-founder": "Portrait of Chinese startup founder young man in casual smart outfit, energetic smile, background with glowing startup whiteboard KPIs, warm cinematic lighting, entrepreneur vibe",
+        "role-highPotential": "Portrait of high potential young Chinese woman manager, crisp blazer, intelligent gaze, modern glass office background, cinematic rim lighting, professional leadership portrait",
+        "duel-lobby": "Modern e-sports arena duel lobby with dual player stations, empty competitive arena, dramatic neon lighting, two opposing monitors glowing, dark cinematic mood, reflections on polished floor",
+        "duel-match": "Dramatic leadership duel scenario: two executives debating in boardroom, tension, dramatic split lighting left vs right, cinematic wide shot, dark moody office, blurred documents, pressure atmosphere",
+        "duel-reveal": "Cinematic dramatic reveal moment: scoreboard light show revealing winner, golden spotlight beam with particles falling, two silhouettes one cheering one consoling, dark stage epic composition",
+        "ach-cat-story": "Narrative story book open with glowing pages, main story chapters bookmarked, cinematic warm desk lamp lighting, dark background, magical realism particles",
+        "ach-cat-training": "Leadership training gym with mental weights dumbbells made of books, coach whistle, cinematic motivational training room, dramatic dark gym lighting with spot beam",
+        "ach-cat-trial": "RPG trial gate dungeon with MBA case scroll, glowing magical rune door with lock, cinematic dungeon lighting, mysterious fantasy corporate hybrid",
+        "ach-cat-duel": "Crossed swords of debate with clipboards for blades, two clashing opinions, duel arena background, dark cinematic, dramatic sparks at clash point",
+        "ach-cat-event": "Event calendar with rare golden stamps, confetti, limited edition badge, dark desk background, top down cinematic still life, dramatic warm side light",
+        "ach-cat-rank": "Trophy cup tier ladder bronze silver gold platinum legendary, on polished pedestal, dark cinematic spotlight, studio photography, bokeh background",
+        "ach-badge-base": "Ornate golden achievement badge medallion base, polished enamel with gear star border, metallic highlights, dark velvet background, macro studio shot, cinematic rim lighting",
+        "ability-01": "Get on the balcony leadership metaphor: leader standing on office building observation deck, looking down at busy organization below, cinematic dusk lighting, minimalist composition",
+        "ability-02": "Identify adaptive challenge metaphor, magnifying glass zooming into complex organizational Venn diagram with red circles marking adaptive work, cinematic dark analytic render",
+        "ability-03": "Regulate distress leadership metaphor, temperature gauge dial staying steady in boiling pressure cooker office, cinematic dark scene, glowing thermometer, calm in chaos",
+        "ability-04": "Hold the tension metaphor: tightrope walker between two skyscrapers with gold bar balance pole, storm below, not flinching, cinematic dramatic composition, dark clouds",
+        "ability-05": "Give the work back leadership metaphor, hand returning origami project to team members hands sitting around table, cinematic warm office lighting, collaborative mood",
+        "ability-06": "Shadow authority metaphor, shadow puppet theater of leader guiding conversations from behind curtain without center stage, cinematic side lighting, mysterious but caring",
+        "ability-07": "Draw the flame metaphor, matchstick igniting passion in team candle cluster, all candles lighting up in chain reaction, cinematic dark background, warm glow, macro",
+        "ability-08": "Diagnose system metaphor, doctor stethoscope listening to organizational chart engine, cinematic dark blue medical lab with holographic org chart, professional mood",
+        "ability-09": "Orchestrate intervention metaphor, conductor baton leading orchestra of diverse corporate roles each playing instrument, cinematic concert hall, spotlight, elegant composition",
+        "ability-10": "Raise purpose anchor metaphor, large ship anchor dropping into stormy leadership sea with lighthouse beam, cinematic epic seascape, dramatic waves, guiding light",
+        "bg-duel-lobby": "Dark cinematic 1v1 duel arena full screen background, moody atmospheric foggy stadium with rows of empty seats, dramatic neon light strips along floor, polished reflections, cyberpunk corporate vibe, widescreen, suitable for behind text content"
+      };
+      const prompt = promptMap[key] || key;
+      return `${IMAGE_API}?prompt=${encodeURIComponent(prompt)}&image_size=${encodeURIComponent(size)}`;
+    }
+    // 白名单：走本地 public 路径
+    const useBgDir = key.startsWith("bg-");
+    const dir = useBgDir ? "bg" : "art";
+    const ext = key.endsWith(".svg") ? "svg" : "jpg";
+    const filename = key.endsWith(".jpg") || key.endsWith(".svg") ? key : `${key}.${ext}`;
+    return new URL(`./${dir}/${filename}`, window.location.href).href;
+  }
+
   private renderMenu(): void {
     const summary = profileSummary(this.save);
     const started = this.save.profileCreated;
@@ -1464,53 +1556,79 @@ export class AdaptiveGameApp {
           </div>
         </section>
         <section class="menu-grid">
-          ${this.save.lastStoryNodeId ? `<button class="menu-card resume-card" data-action="resume-last-node"><span class="card-index">00</span><h2>${this.t("menuResume")}</h2><p>${this.t("resumeHint")}</p></button>` : ""}
-          <button class="menu-card" data-action="open-map" aria-keyshortcuts="M">
+          ${this.save.lastStoryNodeId ? `<button class="menu-card resume-card has-art" data-action="resume-last-node">
+            <img class="menu-card-cover" src="${this.artAsset("menu-card-00")}" alt="" loading="lazy" onerror="this.style.display='none'" />
+            <span class="menu-card-mask"></span>
+            <span class="card-index">00</span>
+            <h2>${this.t("menuResume")}</h2>
+            <p>${this.t("resumeHint")}</p>
+          </button>` : ""}
+          <button class="menu-card has-art" data-action="open-map" aria-keyshortcuts="M">
+            <img class="menu-card-cover" src="${this.artAsset("menu-card-01")}" alt="" loading="lazy" onerror="this.style.display='none'" />
+            <span class="menu-card-mask"></span>
             <span class="card-index">01</span>
             <h2>${this.t("mainQuest")}</h2>
             <p>${this.language === "en" ? "Nine chapters of power, 18 real workplace scenarios, and choices that reshape your ability map." : "九章权力架构，18 个真实职场情境，每一次选择都在改变你的能力图谱。"}</p>
           </button>
-          <button class="menu-card" data-action="open-duel" aria-keyshortcuts="D">
+          <button class="menu-card has-art" data-action="open-duel" aria-keyshortcuts="D">
+            <img class="menu-card-cover" src="${this.artAsset("menu-card-02")}" alt="" loading="lazy" onerror="this.style.display='none'" />
+            <span class="menu-card-mask"></span>
             <span class="card-index">02</span>
             <h2>${this.t("duel")}</h2>
             <p>${this.language === "en" ? "AI practice, local duo, or remote duels use scenario-golf baselines to judge who handles complexity better." : "AI 陪练、本地双人或远程对战，用情境高尔夫基准判断谁更能应对复杂局势。"}</p>
           </button>
-          <button class="menu-card" data-action="open-ability" aria-keyshortcuts="A">
+          <button class="menu-card has-art" data-action="open-ability" aria-keyshortcuts="A">
+            <img class="menu-card-cover" src="${this.artAsset("menu-card-03")}" alt="" loading="lazy" onerror="this.style.display='none'" />
+            <span class="menu-card-mask"></span>
             <span class="card-index">03</span>
             <h2>${this.t("ability")}</h2>
             <p>${this.language === "en" ? "Ten abilities, five ranks, and classic theory support let you see strengths, gaps, and growth paths." : "十项能力、五级段位、经典理论支撑，随时查看你的优势、短板和成长路径。"}</p>
           </button>
-          <button class="menu-card" data-action="open-report" aria-keyshortcuts="R">
+          <button class="menu-card has-art" data-action="open-report" aria-keyshortcuts="R">
+            <img class="menu-card-cover" src="${this.artAsset("menu-card-04")}" alt="" loading="lazy" onerror="this.style.display='none'" />
+            <span class="menu-card-mask"></span>
             <span class="card-index">04</span>
             <h2>${this.t("report")}</h2>
             <p>${this.language === "en" ? "Turn in-game performance into training advice you can transfer back to real work." : "从游戏表现反推训练建议，把决策反馈迁移回真实工作。"}</p>
           </button>
-          <button class="menu-card" data-action="open-achievements">
+          <button class="menu-card has-art" data-action="open-achievements">
+            <img class="menu-card-cover" src="${this.artAsset("menu-card-05")}" alt="" loading="lazy" onerror="this.style.display='none'" />
+            <span class="menu-card-mask"></span>
             <span class="card-index">05</span>
             <h2>${this.t("achievements")}</h2>
             <p>${this.language === "en" ? "Track chapters, side quests, assessments, duels, and rank milestones." : "追踪章节、支线、测评、1v1 与能力段位的完成进度。"}</p>
           </button>
-          <button class="menu-card" data-action="open-relations">
+          <button class="menu-card has-art" data-action="open-relations">
+            <img class="menu-card-cover" src="${this.artAsset("menu-card-06")}" alt="" loading="lazy" onerror="this.style.display='none'" />
+            <span class="menu-card-mask"></span>
             <span class="card-index">06</span>
             <h2>${this.t("relations")}</h2>
             <p>${this.language === "en" ? "See key people from the campaign and side quests, and whether those relationships became organizational capability." : "查看主线与支线中结识的关键人物，以及关系是否已经转化为组织能力。"}</p>
           </button>
-          <button class="menu-card" data-action="open-trial">
+          <button class="menu-card has-art" data-action="open-trial">
+            <img class="menu-card-cover" src="${this.artAsset("menu-card-07")}" alt="" loading="lazy" onerror="this.style.display='none'" />
+            <span class="menu-card-mask"></span>
             <span class="card-index">07</span>
             <h2>${this.t("trialTitle")}</h2>
             <p>${this.language === "en" ? "Spend energy, break through gates, collect loot, and unlock MBA cases." : "消耗精力打怪升级，用能力门槛解锁关卡、战利品和 MBA 高难案例。"}</p>
           </button>
-          <button class="menu-card" data-action="open-settings">
+          <button class="menu-card has-art" data-action="open-settings">
+            <img class="menu-card-cover" src="${this.artAsset("menu-card-08")}" alt="" loading="lazy" onerror="this.style.display='none'" />
+            <span class="menu-card-mask"></span>
             <span class="card-index">08</span>
             <h2>${this.t("settingsTitle")}</h2>
             <p>${this.language === "en" ? "Sound, language, difficulty, save data, and help in one place." : "统一管理声音、语言、难度、存档数据与操作说明。"}</p>
           </button>
-          <button class="menu-card" data-action="open-profile">
+          <button class="menu-card has-art" data-action="open-profile">
+            <img class="menu-card-cover" src="${this.artAsset("menu-card-09")}" alt="" loading="lazy" onerror="this.style.display='none'" />
+            <span class="menu-card-mask"></span>
             <span class="card-index">09</span>
             <h2>${this.language === "en" ? "Role Archives" : "角色档案"}</h2>
             <p>${this.language === "en" ? "Keep every role's save and switch between parachute, founder, and high potential without deleting progress." : "空降、创业、高潜三套档案独立保存，随时切换，不再删档。"}</p>
           </button>
-          <button class="menu-card" data-action="open-coach">
+          <button class="menu-card has-art" data-action="open-coach">
+            <img class="menu-card-cover" src="${this.artAsset("menu-card-10")}" alt="" loading="lazy" onerror="this.style.display='none'" />
+            <span class="menu-card-mask"></span>
             <span class="card-index">10</span>
             <h2>${this.language === "en" ? "Coach Workshop" : "教练工作坊"}</h2>
             <p>${this.language === "en" ? "Import team saves, compare group radar, surface decision blind spots, and plan a facilitated workshop." : "导入学员存档，对比小组雷达，找出决策盲区，生成可执行的工作坊流程。"}</p>
@@ -1577,10 +1695,13 @@ export class AdaptiveGameApp {
                     .map((slot) => {
                       const active = slot.role === this.save.profile.role;
                       return `
-                        <div class="role-slot-card ${active ? "active" : ""} ${slot.exists ? "" : "empty"}">
-                          <strong>${this.roleDisplay(slot.role).name}</strong>
-                          <span>${slot.exists ? `${escapeHtml(slot.name)} · ${en ? "Chapters" : "章节"} ${slot.chapterCount}/9 · ${en ? "Mastery" : "修炼"} ${slot.masteryPoints}` : (en ? "No save yet" : "未建档")}</span>
-                          <button data-action="${slot.exists ? "switch-role" : "new-role"}" data-role="${slot.role}">${slot.exists ? (active ? (en ? "Current" : "当前") : (en ? "Switch" : "切换")) : (en ? "Create" : "新建")}</button>
+                        <div class="role-slot-card ${active ? "active" : ""} ${slot.exists ? "" : "empty"} has-slot-art">
+                          <img class="role-slot-avatar" src="${this.artAsset(`role-${slot.role}`)}" alt="${this.roleDisplay(slot.role).name}" onerror="this.style.opacity='0'" loading="lazy" />
+                          <div class="role-slot-body">
+                            <strong>${this.roleDisplay(slot.role).name}</strong>
+                            <span>${slot.exists ? `${escapeHtml(slot.name)} · ${en ? "Chapters" : "章节"} ${slot.chapterCount}/9 · ${en ? "Mastery" : "修炼"} ${slot.masteryPoints}` : (en ? "No save yet" : "未建档")}</span>
+                            <button data-action="${slot.exists ? "switch-role" : "new-role"}" data-role="${slot.role}">${slot.exists ? (active ? (en ? "Current" : "当前") : (en ? "Switch" : "切换")) : (en ? "Create" : "新建")}</button>
+                          </div>
                         </div>
                       `;
                     })
@@ -1606,7 +1727,7 @@ export class AdaptiveGameApp {
                     const roleView = this.roleDisplay(role.id);
                     return `
                     <button type="button" class="role-card ${this.pendingRole === role.id ? "selected" : ""}" data-action="select-role" data-role="${role.id}">
-                      <img class="role-portrait" src="./art/role-${role.id}.svg" alt="${roleView.name}" />
+                      <img class="role-portrait" src="${this.artAsset(`role-${role.id}`)}" alt="${roleView.name}" onerror="this.onerror=null; this.src='./art/role-${role.id}.svg'" loading="lazy" />
                       <span class="role-name">${roleView.name}</span>
                       <span class="role-desc">${en ? ROLE_EN[role.id].description : role.description}</span>
                       <span class="role-start">${en ? `Start: ${role.startingResources.energy} Energy / ${role.startingResources.trust} Trust` : `起点：${role.startingResources.energy} 精力 / ${role.startingResources.trust} 信任`}</span>
@@ -1844,7 +1965,9 @@ export class AdaptiveGameApp {
                 isAchievementUnlocked(this.save, item.id)
               ).length;
               return `
-                <div class="achievement-category-stat">
+                <div class="achievement-category-stat has-cat-art">
+                  <img class="ach-cat-cover" src="${this.artAsset(`ach-cat-${category}`)}" alt="" loading="lazy" onerror="this.style.display='none'" />
+                  <span class="ach-cat-mask"></span>
                   <strong>${categoryName[category]}</strong>
                   <span>${done} / ${items.length}</span>
                 </div>
@@ -1898,7 +2021,7 @@ export class AdaptiveGameApp {
                         achievement.id
                       );
                       return `
-                        <article class="achievement-card rarity-${rarity} ${done ? "unlocked" : "locked"}">
+                        <article class="achievement-card rarity-${rarity} ${done ? "unlocked" : "locked"} has-ach-art">
                           <button
                             class="ach-favorite"
                             data-action="toggle-achievement-favorite"
@@ -1906,7 +2029,10 @@ export class AdaptiveGameApp {
                             aria-pressed="${favorited ? "true" : "false"}"
                             aria-label="${en ? (favorited ? "Remove from collection" : "Add to collection") : (favorited ? "取消收藏" : "加入收藏")}"
                           >${favorited ? "★" : "☆"}</button>
-                          <span class="achievement-icon">${achievement.icon}</span>
+                          <div class="achievement-icon-wrap">
+                            <img class="achievement-badge" src="${this.artAsset("ach-badge-base")}" alt="" loading="lazy" onerror="this.style.display='none'" />
+                            <span class="achievement-icon">${achievement.icon}</span>
+                          </div>
                           <div>
                             <div class="achievement-meta">
                               <span class="ach-rarity rarity-${rarity}">${rarityName[rarity]}</span>
@@ -2213,7 +2339,11 @@ export class AdaptiveGameApp {
                 ${CHAPTERS.map((item) => {
                   const done = isChapterComplete(this.save, item.id);
                   const civ = civilizationForChapter(item.id);
-                  return `<span class="${done ? "found" : ""}" title="${escapeAttr(this.language === "en" ? civ.relicEn : civ.relicZh)}" style="--dot:${civ.color}">${done ? "✓" : "○"}</span>`;
+                  const title = escapeAttr(this.language === "en" ? civ.relicEn : civ.relicZh);
+                  return `<span class="${done ? "found" : "missing"} treasure-frag-wrap" title="${title}" style="--dot:${civ.color}">
+                    <img class="treasure-frag" src="${this.artAsset(`treasure-fragment-${item.id}`)}" alt="${title}" onerror="this.style.display='none'" loading="lazy" />
+                    <span class="treasure-frag-text">${done ? "✓" : "○"}</span>
+                  </span>`;
                 }).join("")}
               </div>
               <p class="muted">${this.language === "en" ? "Each completed chapter reveals one piece of the treasure map." : "每完成一章，藏宝图就会显出一块残片。"}</p>
@@ -5103,8 +5233,10 @@ export class AdaptiveGameApp {
         <div class="brand">${this.t("brand")}</div>
         <button class="link" data-action="open-menu">${this.t("returnHome")}</button>
       </header>
-      <main class="duel-lobby" aria-label="${this.language === "en" ? "Duel lobby" : "1v1 大厅"}">
-        <section class="duel-hero">
+      <main class="duel-lobby has-lobby-art" aria-label="${this.language === "en" ? "Duel lobby" : "1v1 大厅"}">
+        <img class="duel-lobby-bg" src="${this.artAsset("bg-duel-lobby")}" alt="" aria-hidden="true" onerror="this.style.display='none'" />
+        <section class="duel-hero has-hero-art">
+          <img class="duel-hero-art" src="${this.artAsset("duel-lobby")}" alt="" loading="lazy" onerror="this.style.display='none'" />
           <p class="eyebrow">${this.t("duelTitle")}</p>
           <h1>${this.language === "en" ? "Who can make the better call in a complex situation?" : "谁能在复杂局势中做出更好的判断？"}</h1>
           <p class="muted">${this.language === "en" ? "Every round uses a real workplace slice, and choices are scored against an expert baseline. Remote mode connects peer to peer through WebRTC without a server." : "每一回合都使用真实职场切片，选择会被专家基准评分。远程模式通过 WebRTC 点对点连接，无需服务器。"}</p>
@@ -5319,7 +5451,8 @@ export class AdaptiveGameApp {
     const roundKey = `${engine.currentRound}-${engine.picks[0] ?? ""}-${engine.picks[1] ?? ""}`;
     if (this.duelPredictionPhase) {
       this.root.innerHTML = `
-        <main class="duel-predict" aria-label="${this.t("duelPredict")}">
+        <main class="duel-predict has-predict-art" aria-label="${this.t("duelPredict")}">
+          <img class="duel-predict-bg" src="${this.artAsset("duel-match")}" alt="" aria-hidden="true" onerror="this.style.display='none'" />
           <p class="eyebrow">${this.t("duelPredict")}</p>
           <h1>${en ? "Bet on the opponent's style before the reveal" : "揭晓前，先押注对手风格"}</h1>
           <p class="muted">${en ? "Hit the opponent's actual style this round for a +20% score bonus (minimum +2)." : "押中对方本回合的实际风格，获得本回合 20% 分数加成（至少 +2 分）。"}<br />${escapeHtml(nodeView.stake)}</p>
@@ -5368,7 +5501,8 @@ export class AdaptiveGameApp {
     }
     if (this.duelRevealing) {
       this.root.innerHTML =
-        '<main class="duel-reveal" aria-label="' + this.t("duelReveal") + '">' +
+        '<main class="duel-reveal has-reveal-art" aria-label="' + this.t("duelReveal") + '">' +
+        '<img class="duel-reveal-bg" src="${this.artAsset("duel-reveal")}" alt="" aria-hidden="true" onerror="this.style.display=\'none\'" />' +
         '<h1>' + this.t("duelReveal") + '</h1>' +
         '<div class="reveal-spinner"></div>' +
         '</main>';
@@ -5384,7 +5518,8 @@ export class AdaptiveGameApp {
           <span style="--dot:${engine.players[1].color}"><strong>${engine.players[1].name}</strong> ${engine.scores[1]}</span>
         </div>
       </header>
-      <main class="duel-shell" data-round-key="${roundKey}" aria-label="${this.language === "en" ? "Duel round" : "对决回合"}">
+      <main class="duel-shell has-duel-art" data-round-key="${roundKey}" aria-label="${this.language === "en" ? "Duel round" : "对决回合"}">
+        <img class="duel-stage-bg" src="${this.artAsset("duel-match")}" alt="" aria-hidden="true" onerror="this.style.display='none'" />
         ${
           this.duelTimedOutThisRound
             ? `<div class="duel-timeout-note" role="status">${this.language === "en" ? "This round timed out. The system chose the safest option for you." : "本回合超时，系统已自动选择最稳妥选项。"}</div>`
@@ -8974,8 +9109,11 @@ export class AdaptiveGameApp {
     const level = abilityLevel(exp);
     const ability = ABILITIES[id];
     const detail = this.abilityDetailDisplay(id);
+    // ABILITY_ORDER 是固定 10 项顺序，对应 ability-01.jpg ~ ability-10.jpg
+    const abilityIndex = (ABILITY_ORDER.indexOf(id) + 1).toString().padStart(2, "0");
     return `
-      <div class="ability-card">
+      <div class="ability-card has-ability-art">
+        <img class="ability-illust" src="${this.artAsset(`ability-${abilityIndex}`)}" alt="${this.abilityDisplay(id).name}" loading="lazy" onerror="this.style.display='none'" />
         <div class="ability-head">
           <span style="--dot:${ability.color}"></span>
           <div>
@@ -9019,27 +9157,12 @@ export class AdaptiveGameApp {
   }
 
   private adaptiveHint(node: StoryNode): string {
-    const relevant = [
-      ...new Set(
-        node.options.flatMap((option) =>
-          Object.keys(option.effects) as AbilityId[]
-        )
-      )
-    ];
-    if (relevant.length === 0) {
-      return this.language === "en"
-        ? "Read the key relationships first, then choose the move most likely to build trust."
-        : "先看关键关系，再选最可能建立信任的行动。";
-    }
-    const weakest = relevant.sort(
-      (a, b) =>
-        abilityLevel(this.save.profile.abilities[a]) -
-        abilityLevel(this.save.profile.abilities[b])
-    )[0];
-    const ability = this.abilityDisplay(weakest);
-    return this.language === "en"
-      ? `This situation stresses your ${ability.name}. Focus: ${ability.tagline}`
-      : `本局对你的「${ABILITIES[weakest].name}」要求较高：${ability.tagline} 建议：${ABILITIES[weakest].trainingPath}`;
+    return scenarioCoachHint({
+      node,
+      save: this.save,
+      language: this.language,
+      seed: this.save.scenarioSeed
+    });
   }
 
   private roleOptionLabel(option: StoryOption, index: number): string {

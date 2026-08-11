@@ -1300,6 +1300,153 @@ button:focus-visible,
   }
 }
 
+/* =========================================================================
+   10. 人物关系页清晰度修复（画布+卡片字号/对比度强化）
+   ========================================================================= */
+
+/* 10.1 关系网络图 canvas：强制足够高度 + 圆角 + 间距 */
+.relation-graph {
+  width: 100% !important;
+  display: block !important;
+  min-height: 440px !important;
+  height: auto !important;
+  border-radius: 20px !important;
+  margin: 20px 0 28px !important;
+  background:
+    linear-gradient(135deg, rgba(13, 22, 27, 0.96), rgba(17, 29, 35, 0.96)) !important;
+  box-shadow:
+    0 10px 40px rgba(0, 0, 0, 0.55),
+    inset 0 0 70px rgba(0, 0, 0, 0.55) !important;
+}
+
+/* 10.2 关系卡片网格：更宽的列 + 更大间距 */
+.relation-grid {
+  display: grid !important;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)) !important;
+  gap: 18px !important;
+  margin: 12px 0 40px !important;
+}
+@media (max-width: 720px) {
+  .relation-grid {
+    grid-template-columns: 1fr !important;
+    gap: 14px !important;
+  }
+}
+
+/* 10.3 所有 NPC 卡片：统一深色背景 + 高对比文字 */
+.npc-card,
+.npc-card.hidden,
+.npc-card.known,
+.npc-card.trusted {
+  position: relative;
+  padding: 18px 18px 20px !important;
+  border-radius: 18px !important;
+  background:
+    linear-gradient(150deg, rgba(17, 29, 40, 0.94), rgba(13, 22, 27, 0.94)) !important;
+  border: 1px solid rgba(65, 199, 192, 0.18) !important;
+  box-shadow:
+    0 8px 28px rgba(0, 0, 0, 0.5),
+    inset 0 1px 0 rgba(255, 255, 255, 0.04) !important;
+  color: #e7eef2 !important;
+  isolation: isolate;
+}
+.npc-card.hidden {
+  background:
+    linear-gradient(150deg, rgba(20, 28, 34, 0.94), rgba(16, 22, 27, 0.94)) !important;
+  border-color: rgba(159, 179, 200, 0.12) !important;
+  opacity: 1 !important;
+}
+.npc-card.known {
+  border-color: rgba(65, 199, 192, 0.32) !important;
+  box-shadow:
+    0 10px 30px rgba(0, 0, 0, 0.55),
+    inset 0 1px 0 rgba(65, 199, 192, 0.12) !important;
+}
+.npc-card.trusted {
+  border-color: rgba(242, 193, 78, 0.4) !important;
+  box-shadow:
+    0 10px 32px rgba(0, 0, 0, 0.6),
+    0 0 24px rgba(242, 193, 78, 0.12),
+    inset 0 1px 0 rgba(242, 193, 78, 0.16) !important;
+}
+
+/* 10.4 卡片内头像尺寸放大 */
+.npc-avatar-wrap {
+  margin-right: 14px !important;
+  flex-shrink: 0 !important;
+}
+.npc-avatar {
+  width: 56px !important;
+  height: 56px !important;
+  font-size: 22px !important;
+  border-radius: 14px !important;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.45) !important;
+}
+
+/* 10.5 卡片文字：放大字号 + 强对比度颜色 */
+.npc-card h2 {
+  font-size: 20px !important;
+  line-height: 1.3 !important;
+  font-weight: 700 !important;
+  margin: 0 0 4px !important;
+  letter-spacing: 0.01em !important;
+  color: #f2f7fb !important;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.55) !important;
+}
+.npc-card small {
+  display: block !important;
+  font-size: 14px !important;
+  line-height: 1.5 !important;
+  margin: 0 0 8px !important;
+  color: #a9bcd0 !important;
+  font-weight: 500 !important;
+}
+.npc-card p {
+  font-size: 15px !important;
+  line-height: 1.8 !important;
+  margin: 0 0 10px !important;
+  color: #dde7ef !important;
+  letter-spacing: 0.01em !important;
+}
+.npc-card em {
+  display: block !important;
+  font-style: normal !important;
+  font-size: 14px !important;
+  line-height: 1.7 !important;
+  margin: 8px 0 0 !important;
+  padding: 10px 12px !important;
+  border-radius: 10px !important;
+  color: #c2d2de !important;
+  background: rgba(65, 199, 192, 0.08) !important;
+  border-left: 3px solid rgba(65, 199, 192, 0.45) !important;
+}
+.npc-status {
+  font-size: 13px !important;
+  font-weight: 700 !important;
+  padding: 5px 12px !important;
+  border-radius: 999px !important;
+  letter-spacing: 0.03em !important;
+  margin: 0 0 10px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+}
+.npc-card.trusted .npc-status {
+  background: rgba(242, 193, 78, 0.16) !important;
+  color: #f2c14e !important;
+  border: 1px solid rgba(242, 193, 78, 0.35) !important;
+  text-shadow: 0 0 8px rgba(242, 193, 78, 0.3) !important;
+}
+.npc-card.known .npc-status {
+  background: rgba(65, 199, 192, 0.14) !important;
+  color: #79e3dd !important;
+  border: 1px solid rgba(65, 199, 192, 0.32) !important;
+}
+.npc-card.hidden .npc-status {
+  background: rgba(159, 179, 200, 0.1) !important;
+  color: #9fb3c8 !important;
+  border: 1px solid rgba(159, 179, 200, 0.18) !important;
+}
+
 /* 横屏移动：顶栏压缩 */
 @media (max-width: 900px) and (orientation: landscape) {
   .topbar {

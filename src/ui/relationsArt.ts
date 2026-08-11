@@ -7,7 +7,7 @@ export function renderRelationGraph(
 ): void {
   const dpr = Math.min(2, window.devicePixelRatio || 1);
   const width = canvas.clientWidth || 640;
-  const height = canvas.clientHeight || 320;
+  const height = canvas.clientHeight || 440;
   canvas.width = width * dpr;
   canvas.height = height * dpr;
   const ctx = canvas.getContext("2d");
@@ -23,51 +23,82 @@ export function renderRelationGraph(
 
   const cx = width / 2;
   const cy = height / 2;
-  const radius = Math.min(width, height) * 0.32;
+  const radius = Math.min(width, height) * 0.36;
 
+  ctx.save();
+  ctx.shadowColor = "rgba(242, 193, 78, 0.6)";
+  ctx.shadowBlur = 18;
   ctx.beginPath();
-  ctx.arc(cx, cy, 10, 0, Math.PI * 2);
+  ctx.arc(cx, cy, 16, 0, Math.PI * 2);
   ctx.fillStyle = "#f2c14e";
   ctx.fill();
-  ctx.font = "700 12px 'Microsoft YaHei', sans-serif";
+  ctx.restore();
+  ctx.font = "700 16px 'Microsoft YaHei', 'PingFang SC', sans-serif";
   ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
   ctx.fillStyle = "#0d161b";
-  ctx.fillText("你", cx, cy + 4);
+  ctx.fillText("你", cx, cy);
 
   NPCS.forEach((npc, index) => {
     const angle = (index / NPCS.length) * Math.PI * 2 - Math.PI / 2;
     const x = cx + Math.cos(angle) * radius;
     const y = cy + Math.sin(angle) * radius;
     const relation = npcRelation(save, npc);
-    const weight =
-      relation.status === "已建立关系"
-        ? 5
-        : relation.status === "存在线索"
-          ? 3
-          : 1;
-    const color =
-      relation.status === "已建立关系"
-        ? "#f2c14e"
-        : relation.status === "存在线索"
-          ? "#41c7c0"
-          : "rgba(159, 179, 200, 0.28)";
+    const established = relation.status === "已建立关系";
+    const known = relation.status === "存在线索";
+    const weight = established ? 5 : known ? 3 : 1.2;
+    const color = established
+      ? "#f2c14e"
+      : known
+        ? "#41c7c0"
+        : "rgba(159, 179, 200, 0.38)";
 
     ctx.beginPath();
     ctx.moveTo(cx, cy);
     ctx.lineTo(x, y);
     ctx.strokeStyle = color;
     ctx.lineWidth = weight;
-    ctx.setLineDash(relation.status === "尚未接触" ? [3, 5] : []);
+    ctx.setLineDash(relation.status === "尚未接触" ? [4, 6] : []);
     ctx.stroke();
     ctx.setLineDash([]);
 
+    const nodeSize = established ? 14 : known ? 11 : 9;
+    ctx.save();
     ctx.beginPath();
-    ctx.arc(x, y, relation.status === "已建立关系" ? 9 : 6, 0, Math.PI * 2);
+    ctx.arc(x, y, nodeSize, 0, Math.PI * 2);
     ctx.fillStyle = color;
+    if (established || known) {
+      ctx.shadowColor = color;
+      ctx.shadowBlur = established ? 22 : 14;
+    }
     ctx.fill();
-    ctx.fillStyle = "#e7eef2";
-    ctx.font = "11px 'Microsoft YaHei', sans-serif";
-    ctx.fillText(npc.name.slice(0, 2), x, y + 4);
+    ctx.restore();
+
+    // NPC 名字放到节点外圈（径向偏移，沿角度方向外推，避免被线盖住）
+    const labelOffset = nodeSize + 18;
+    const lx = cx + Math.cos(angle) * (radius + labelOffset);
+    const ly = cy + Math.sin(angle) * (radius + labelOffset);
+    const alignRight = Math.cos(angle) > 0.15;
+    const alignLeft = Math.cos(angle) < -0.15;
+    ctx.textAlign = alignRight ? "left" : alignLeft ? "right" : "center";
+    ctx.textBaseline = "middle";
+
+    ctx.save();
+    ctx.font = established
+      ? "700 15px 'Microsoft YaHei', 'PingFang SC', sans-serif"
+      : known
+        ? "600 14px 'Microsoft YaHei', 'PingFang SC', sans-serif"
+        : "500 13px 'Microsoft YaHei', 'PingFang SC', sans-serif";
+    // 文字描边 + 阴影，保证任何背景下清晰
+    ctx.shadowColor = "rgba(0, 0, 0, 0.9)";
+    ctx.shadowBlur = 8;
+    ctx.lineWidth = 3.5;
+    ctx.strokeStyle = "rgba(5, 10, 14, 0.95)";
+    ctx.strokeText(npc.name, lx, ly);
+    ctx.shadowBlur = 0;
+    ctx.fillStyle = established ? "#ffe9b2" : known ? "#caf6f3" : "#dfe7ef";
+    ctx.fillText(npc.name, lx, ly);
+    ctx.restore();
   });
 }
 
