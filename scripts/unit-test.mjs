@@ -29,7 +29,10 @@ import {
   trialRewardExpFor
 } from "../src/core/trials.ts";
 import { hiddenRouteSteps } from "../src/core/hiddenRoutes.ts";
-import { scenarioShellFor } from "../src/core/scenarioShell.ts";
+import {
+  proceduralNarrativeFor,
+  scenarioShellFor
+} from "../src/core/scenarioShell.ts";
 import { CoachWorkshopEngine } from "../src/core/coach-workshop.ts";
 
 
@@ -241,6 +244,21 @@ assert(
 assert(
   shellA.zh.length > 0 && shellA.en.length > 0,
   "scenario shell labels should be non-empty in both languages"
+);
+const narrativeA = proceduralNarrativeFor(1, 100, "parachute");
+const narrativeB = proceduralNarrativeFor(1, 100, "founder");
+assert(
+  narrativeA.zh === narrativeB.zh && narrativeA.en === narrativeB.en,
+  "procedural narrative should be deterministic for the same chapter and seed"
+);
+const narrativeC = proceduralNarrativeFor(2, 100, "parachute");
+assert(
+  narrativeA.zh !== narrativeC.zh || narrativeA.en !== narrativeC.en,
+  "procedural narrative should vary by chapter"
+);
+assert(
+  narrativeA.zh.length >= 40 && narrativeA.en.length >= 40,
+  "procedural narrative should produce complete bilingual prose"
 );
 
 const seededSave = structuredClone(DEFAULT_SAVE);

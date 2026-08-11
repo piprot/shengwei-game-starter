@@ -19,7 +19,7 @@
 | diminished-fifth / MarkovMusic | 程序化音乐、状态转移旋律 | `src/core/music-climax.ts`、`src/core/theme-music.ts` | `test:music` |
 | procedural-svg-art | 参数化种子美术 | `scripts/generate-chapter-art.mjs` | `generate:art`、章节图片 200 |
 | Arcade Design System / AETHER-HUD | 设计令牌、高端 HUD | `src/ui/visual-upgrade-v2.css`、`src/eastern-theme.css` | `audit`、axe |
-| Procedural Narrative Generator / flask-madlibs | 模板化情境外壳 | `src/core/scenarioShell.ts` | `test:unit` 情境外壳断言 |
+| Procedural Narrative Generator / flask-madlibs | 模板化情境外壳、完整程序化叙事 | `src/core/scenarioShell.ts` 的 `proceduralNarrativeFor`、剧情页「程序化叙事」 | `test:unit` 叙事断言、Playwright 剧情页检查 |
 | local hot-seat references | 本地双人回合归属与移交 | 1v1 本地模式 `hotSeatTurn/localPassed` | 3 回合双人 smoke |
 | Communication-Training-Simulator | 可见验收标准 | 修炼失败 toast 缺失关键词 | `test:features` |
 | dialogue-forge / if-player-react | 分支可维护、选项文案结构 | 分支节点与选项卡片 | `content-audit`、`leadership-audit` |

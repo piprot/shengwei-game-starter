@@ -48,3 +48,95 @@ export function scenarioShellFor(
     key: crisis.en
   };
 }
+
+export interface ProceduralNarrativeText {
+  zh: string;
+  en: string;
+}
+
+const NARRATIVE_OPENINGS = [
+  {
+    zh: "消息在周三下午的周会上传开，会议室里没有人先开口。",
+    en: "The news spread at Wednesday's weekly review, and no one in the room spoke first."
+  },
+  {
+    zh: "季度复盘刚结束，一封没有抄送你的邮件先到了关键客户手里。",
+    en: "The quarterly review had just ended when an email that skipped you reached the key client first."
+  },
+  {
+    zh: "新任命的第二天，你发现核心项目群的日程已经排到下个月，但没有人知道谁在负责。",
+    en: "On your second day, you find the core project calendar already fills the month, and no one can say who owns it."
+  }
+] as const;
+
+const NARRATIVE_STAKEHOLDERS = [
+  {
+    zh: "财务负责人已经准备好一页纸的止损清单，正在等你表态。",
+    en: "The finance lead already has a one-page stop-loss list and is waiting for your position."
+  },
+  {
+    zh: "最资深的老员工没有说话，但所有人的目光都在往他身上飘。",
+    en: "The most senior veteran says nothing, yet every gaze in the room drifts toward him."
+  },
+  {
+    zh: "HR 私下提醒你：上周已经有人开始私下更新简历。",
+    en: "HR quietly warns you that people started updating their resumes last week."
+  }
+] as const;
+
+const NARRATIVE_TENSIONS = [
+  {
+    zh: "真正的问题不是方案本身，而是有人在等它失败后接手资源。",
+    en: "The real problem is not the plan; someone is waiting for it to fail so they can take the resources."
+  },
+  {
+    zh: "数据表面一致，但两份报表背后的口径完全不同。",
+    en: "The data looks aligned, but the two reports use completely different definitions."
+  },
+  {
+    zh: "所有人都支持改革，也都在等着别人先承担风险。",
+    en: "Everyone supports the change, and everyone is waiting for someone else to take the risk."
+  }
+] as const;
+
+const NARRATIVE_URGENCIES = [
+  {
+    zh: "你最多只有 72 小时，之后任何调整都会变成“推翻前任”。",
+    en: "You have at most 72 hours; after that, any adjustment reads as overturning your predecessor."
+  },
+  {
+    zh: "董事会下周一就要看到结论，而关键证据还缺最后一块。",
+    en: "The board expects a conclusion by Monday, and the final piece of evidence is still missing."
+  },
+  {
+    zh: "客户已经给了最后期限，团队内部却连统一口径都还没达成。",
+    en: "The client has set a final deadline, while the team still has not aligned on a single message."
+  }
+] as const;
+
+function narrativeIndex(seed: number, salt: number, length: number): number {
+  const value = Math.abs(Math.floor(seed) || 1) * 31 + salt * 17;
+  return value % length;
+}
+
+export function proceduralNarrativeFor(
+  chapterId: number,
+  seed: number,
+  _role: "parachute" | "founder" | "highPotential" = "parachute"
+): ProceduralNarrativeText {
+  const safeSeed = Math.abs(Math.floor(seed) || 1) + chapterId * 101;
+  const opening =
+    NARRATIVE_OPENINGS[narrativeIndex(safeSeed, 1, NARRATIVE_OPENINGS.length)];
+  const stakeholder =
+    NARRATIVE_STAKEHOLDERS[
+      narrativeIndex(safeSeed, 2, NARRATIVE_STAKEHOLDERS.length)
+    ];
+  const tension =
+    NARRATIVE_TENSIONS[narrativeIndex(safeSeed, 3, NARRATIVE_TENSIONS.length)];
+  const urgency =
+    NARRATIVE_URGENCIES[narrativeIndex(safeSeed, 4, NARRATIVE_URGENCIES.length)];
+  return {
+    zh: `${opening.zh} ${stakeholder.zh} ${tension.zh} ${urgency.zh}`,
+    en: `${opening.en} ${stakeholder.en} ${tension.en} ${urgency.en}`
+  };
+}

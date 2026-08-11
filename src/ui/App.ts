@@ -197,7 +197,10 @@ import {
 import { renderAbilityRadar, renderGroupRadar } from "./charts";
 import { renderPowerBoard } from "./art";
 import { renderTrainingBoard } from "./trainingArt";
-import { scenarioShellFor } from "../core/scenarioShell";
+import {
+  proceduralNarrativeFor,
+  scenarioShellFor
+} from "../core/scenarioShell";
 import {
   dueReviewCards,
   dualAxisQuality,
@@ -231,7 +234,7 @@ const SETTINGS_MIGRATION_KEY = "adaptive-ascent-settings-v2";
 const GUIDE_KEY = "adaptive-ascent-guide-v1";
 const GUIDE_REWARD_KEY = "adaptive-ascent-guide-reward";
 const ACHIEVEMENT_FAVORITE_KEY = "adaptive-ascent-achievement-favorites";
-const APP_VERSION = "1.7.28";
+const APP_VERSION = "1.7.29";
 
 type View =
   | "menu"
@@ -2599,6 +2602,28 @@ export class AdaptiveGameApp {
     `;
   }
 
+  private proceduralNarrativeMarkup(): string {
+    if (!this.storyNodeId) return "";
+    let node: StoryNode;
+    try {
+      node = getNode(this.storyNodeId);
+    } catch {
+      return "";
+    }
+    const narrative = proceduralNarrativeFor(
+      node.chapterId,
+      this.save.scenarioSeed ?? 1,
+      this.save.profile.role
+    );
+    const en = this.language === "en";
+    return `
+      <details class="procedural-narrative">
+        <summary>${en ? "Procedural Narrative" : "程序化叙事"}</summary>
+        <p>${escapeHtml(en ? narrative.en : narrative.zh)}</p>
+      </details>
+    `;
+  }
+
   private renderStory(): void {
     if (!this.storyNodeId) {
       this.show("map");
@@ -2771,6 +2796,7 @@ export class AdaptiveGameApp {
                 <p>${escapeHtml(this.language === "en" ? ROLE_EN[this.save.profile.role].lens : ROLES[this.save.profile.role].lens)}</p>
               </div>
               <p class="scenario-context">${escapeHtml(node.context)}</p>
+              ${this.proceduralNarrativeMarkup()}
               <div class="stake">
                 <strong>${this.t("currentTest")}</strong>
                 <p>${escapeHtml(node.stake)}</p>
