@@ -380,6 +380,17 @@ assert(
   planA.summaryZh !== planB.summaryZh,
   "different goals should generate different coach plans"
 );
+const founderSave = structuredClone(DEFAULT_SAVE);
+founderSave.profile.role = "founder";
+const founderPlan = generateCoachPlan(
+  founderSave,
+  "business-breakthrough",
+  "time-pressure"
+);
+assert(
+  founderPlan.roleZh !== planA.roleZh,
+  "coach plan should differentiate roles"
+);
 const decisionChess = createDecisionChess("battle");
 assert(
   decisionChess.board.length === 5 && decisionChess.board[0].length === 5,

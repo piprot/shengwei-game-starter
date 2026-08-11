@@ -158,6 +158,18 @@ export function generateCoachPlan(
       : role === "founder"
         ? "Founder"
         : "High-Potential Leader";
+  const roleNoteZh =
+    role === "parachute"
+      ? "先建立可信度，再谈变革"
+      : role === "founder"
+        ? "先守住现金流，再建体系"
+        : "先赢得关键支持，再推动协作";
+  const roleNoteEn =
+    role === "parachute"
+      ? "Build credibility before driving change"
+      : role === "founder"
+        ? "Protect cash flow before building systems"
+        : "Win key support before driving collaboration";
 
   const styleZh =
     style === "expert"
@@ -223,8 +235,8 @@ export function generateCoachPlan(
         days: "第 1~30 天",
         titleZh: "诊断与微胜利",
         titleEn: "Diagnose & Small Wins",
-        focusZh: `验证「${goalInfo.zh}」的真实障碍，并建立信任。`,
-        focusEn: `Verify the real blockers of "${goalInfo.en}" and build trust.`,
+        focusZh: `验证「${goalInfo.zh}」的真实障碍，并建立信任。${roleNoteZh}。`,
+        focusEn: `Verify the real blockers of "${goalInfo.en}" and build trust. ${roleNoteEn}.`,
         actionsZh: phaseOneActionsZh,
         actionsEn: phaseOneActionsEn,
         weeklyZh: "每周做一次 30 分钟一对一，只问“你看到的最大障碍是什么”。",
