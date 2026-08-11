@@ -76,24 +76,39 @@ try {
 
   await page.click("[data-action=open-map]");
   await page.waitForSelector(".map-shell");
-  await page.click("[data-action=open-junqi]");
-  await page.waitForSelector(".junqi-board");
-  const junqiCellCount = await page.locator(".junqi-cell").count();
-  const junqiPieceCount = await page
-    .locator(".junqi-cell:not(.empty)")
-    .count();
-  if (junqiCellCount !== 36 || junqiPieceCount !== 26) {
+  await page.click("[data-action=open-leadership-games]");
+  await page.waitForSelector(".lg-grid");
+  const gameCardCount = await page.locator(".lg-card").count();
+  if (gameCardCount !== 5) {
     throw new Error(
-      `junqi board malformed: ${junqiCellCount} cells, ${junqiPieceCount} pieces`
+      `leadership game center should expose 5 games, got ${gameCardCount}`
     );
   }
-  await page.locator('[data-row="4"][data-col="0"]').first().click();
-  await page.locator('[data-row="3"][data-col="0"]').first().click();
-  await page.waitForTimeout(400);
-  if ((await page.locator(".junqi-command").count()) !== 4) {
-    throw new Error("junqi should expose 4 leadership commands");
+  await page
+    .locator('[data-action="lg-start"][data-game="decision-chess"][data-mode="teach"]')
+    .first()
+    .click();
+  await page.waitForSelector(".lg-board");
+  await page.locator(".lg-cell.move").first().click();
+  await page.waitForTimeout(300);
+  await page.locator('[data-action="lg-back"]').first().click();
+  await page.waitForSelector(".lg-grid");
+  for (const gameId of [
+    "decision-chess",
+    "game-theory",
+    "resource-allocation",
+    "team-management",
+    "crisis-command"
+  ]) {
+    await page
+      .locator(`[data-action="lg-start"][data-game="${gameId}"][data-mode="teach"]`)
+      .first()
+      .click();
+    await page.waitForSelector(".lg-shell");
+    await page.locator('[data-action="lg-back"]').first().click();
+    await page.waitForSelector(".lg-grid");
   }
-  await page.click("[data-action=junqi-back]");
+  await page.locator('[data-action="lg-home"]').first().click();
   await page.waitForSelector(".map-shell");
   await page.click("[data-action=select-chapter][data-chapter='1']");
   await page.click("[data-action=replay-chapter]");

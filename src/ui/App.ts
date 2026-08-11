@@ -113,18 +113,9 @@ import { npcStoryFor } from "../core/npcStories";
 import { duelBankEn } from "../core/duelBank";
 import { EXTRA_MAIN_OPTIONS_EN } from "../core/mainScenarios";
 import {
-  JUNQI_COMMAND_COSTS,
-  JUNQI_PIECE_LABELS,
-  applyAiMove,
-  applyMove,
-  createJunqiGame,
-  legalMoves,
-  useJunqiCommand,
-  type JunqiCommand,
-  type JunqiGame,
-  type JunqiMove,
-  type JunqiPiece
-} from "../core/junqi";
+  LeadershipGamesApp,
+  type LeadershipGameId
+} from "./leadership-games";
 import {
   CoachWorkshopEngine,
   type WorkshopReport
@@ -204,7 +195,7 @@ const SETTINGS_MIGRATION_KEY = "adaptive-ascent-settings-v2";
 const GUIDE_KEY = "adaptive-ascent-guide-v1";
 const GUIDE_REWARD_KEY = "adaptive-ascent-guide-reward";
 const ACHIEVEMENT_FAVORITE_KEY = "adaptive-ascent-achievement-favorites";
-const APP_VERSION = "1.7.12";
+const APP_VERSION = "1.7.13";
 
 type View =
   | "menu"
@@ -216,7 +207,7 @@ type View =
   | "settings"
   | "map"
   | "story"
-  | "junqi"
+  | "leadershipGames"
   | "chapterTransition"
   | "ability"
   | "report"
@@ -314,10 +305,7 @@ export class AdaptiveGameApp {
   private integrityGateNodeId?: string;
   private pendingIntegrityOption?: number;
   private integrityGateMode: "cost" | "ability" = "cost";
-  private junqiGame?: JunqiGame;
-  private junqiSelectedPieceId?: string;
-  private junqiPendingCommand?: JunqiCommand;
-  private junqiResult?: "win" | "lose";
+  private leadershipGames?: LeadershipGamesApp;
   private wrongReviewQueue: string[] = [];
   private wrongReviewIndex = 0;
   private hiddenBranchAbilityId?: AbilityId;
@@ -628,8 +616,8 @@ export class AdaptiveGameApp {
     const scene =
       view === "story"
         ? "story"
-        : view === "junqi"
-          ? "duel"
+        : view === "leadershipGames"
+          ? "menu"
         : view === "duel"
           ? "duel"
           : view === "training" || view === "trial" || view === "trialBattle"
@@ -1306,8 +1294,8 @@ export class AdaptiveGameApp {
       case "story":
         this.renderStory();
         break;
-      case "junqi":
-        this.renderJunqi();
+      case "leadershipGames":
+        this.renderLeadershipGames();
         break;
       case "chapterTransition":
         this.renderChapterTransition();
@@ -2174,13 +2162,13 @@ export class AdaptiveGameApp {
             ? `<div class="trust-crisis-banner" role="alert">${this.language === "en" ? "Trust crisis: recent risk-heavy choices made the team withhold information. Play steady scenarios to rebuild trust." : "信任危机：近期风险选择让团队开始保留信息。先完成稳健情境重建信任。"}</div>`
             : ""
         }
-        <section class="junqi-quest-banner" style="--dot:#41c7c0">
+        <section class="lg-quest-banner" style="--dot:#41c7c0">
           <img src="./art/chapter-${chapter.id}.jpg" alt="" loading="lazy" />
           <div>
-            <p class="eyebrow">${this.language === "en" ? "Junqi War Room" : "军棋推演"}</p>
-            <h2>${this.language === "en" ? "Deploy, motivate, and command under uncertainty" : "排兵布阵，激励团队，在迷雾中调度资源"}</h2>
-            <p>${this.language === "en" ? `Wins ${this.save.junqiWins} · Losses ${this.save.junqiLosses}. Every rank is a leadership capability; every capture is a resource decision.` : `胜 ${this.save.junqiWins} · 负 ${this.save.junqiLosses}。每个棋子都对应一种管理能力，每次吃子都是一次资源调度。`}</p>
-            <button data-action="open-junqi">${this.language === "en" ? "Enter War Room" : "进入军棋推演"}</button>
+            <p class="eyebrow">${this.language === "en" ? "Leadership Game Center" : "领导力游戏中心"}</p>
+            <h2>${this.language === "en" ? "Five games to train leadership judgment" : "五个游戏，练出领导力判断"}</h2>
+            <p>${this.language === "en" ? `Wins ${this.save.leadershipGameWins} · Losses ${this.save.leadershipGameLosses}. Decision chess, game theory, resource allocation, team management, and crisis command.` : `胜 ${this.save.leadershipGameWins} · 负 ${this.save.leadershipGameLosses}。决策棋、博弈推演、资源分配、团队管理与危机指挥。`}</p>
+            <button data-action="open-leadership-games">${this.language === "en" ? "Enter Game Center" : "进入游戏中心"}</button>
           </div>
         </section>
         ${
@@ -2385,11 +2373,11 @@ export class AdaptiveGameApp {
                   `
               }
             </div>
-            <div class="junqi-quest-panel">
-              <h3>${this.language === "en" ? "Junqi War Room" : "军棋推演"}</h3>
-              <p class="muted">${this.language === "en" ? `Wins ${this.save.junqiWins} · Losses ${this.save.junqiLosses}` : `胜 ${this.save.junqiWins} · 负 ${this.save.junqiLosses}`}</p>
-              <p class="muted">${this.language === "en" ? "Deployment, motivation, team coordination, and resource scheduling decide the board." : "排兵布阵、激励员工、团队管理与资源调度，会共同决定棋盘胜负。"}</p>
-              <button data-action="open-junqi">${this.language === "en" ? "Enter War Room" : "进入军棋推演"}</button>
+            <div class="lg-quest-panel">
+              <h3>${this.language === "en" ? "Leadership Game Center" : "领导力游戏中心"}</h3>
+              <p class="muted">${this.language === "en" ? `Wins ${this.save.leadershipGameWins} · Losses ${this.save.leadershipGameLosses}` : `胜 ${this.save.leadershipGameWins} · 负 ${this.save.leadershipGameLosses}`}</p>
+              <p class="muted">${this.language === "en" ? "Five single-player games with teach, train, and battle modes." : "五个单机游戏，每个都有教学、训练、对战模式。"}</p>
+              <button data-action="open-leadership-games">${this.language === "en" ? "Enter Game Center" : "进入游戏中心"}</button>
             </div>
             <div class="event-book-panel mobile-collapse">
               <h3>${this.language === "en" ? "Event Log" : "事件簿"}</h3>
@@ -2859,359 +2847,58 @@ export class AdaptiveGameApp {
     this.renderMap();
   }
 
-    private openJunqi(): void {
-    this.junqiResult = undefined;
-    this.junqiSelectedPieceId = undefined;
-    this.junqiPendingCommand = undefined;
-    this.junqiGame = createJunqiGame(this.junqiCommandPoints());
+      private openLeadershipGames(): void {
+    this.leadershipGames = new LeadershipGamesApp(this.language, {
+      onBack: () => this.show("map"),
+      onReward: (gameId, won, score) =>
+        this.completeLeadershipGame(gameId, won, score),
+      onAudio: (kind) => {
+        if (kind === "ui") this.audio.ui();
+        else if (kind === "win") this.audio.win();
+        else if (kind === "lose") this.audio.lose();
+        else this.audio.choose();
+      }
+    });
     this.audio.ui();
-    this.show("junqi");
+    this.show("leadershipGames");
   }
 
-  private junqiCommandPoints(): number {
-    const abilities = this.save.profile.abilities;
-    const level = (id: AbilityId): number => abilityLevel(abilities[id] ?? 0);
-    let points = 5;
-    points += Math.min(2, Math.floor((level("deploy") + level("strategy")) / 4));
-    points += Math.min(
-      2,
-      Math.floor(
-        (this.save.profile.resources.influence +
-          this.save.profile.resources.trust) /
-          120
-      )
-    );
-    return Math.max(4, Math.min(9, points));
-  }
-
-  private junqiBackToMap(): void {
-    this.junqiGame = undefined;
-    this.junqiSelectedPieceId = undefined;
-    this.junqiPendingCommand = undefined;
-    this.show("map");
-  }
-
-  private findJunqiPiece(id: string): JunqiPiece | undefined {
-    return (
-      this.junqiGame?.board.flat().find((piece) => piece?.id === id) ??
-      undefined
-    );
-  }
-
-  private handleJunqiCell(row: number, col: number): void {
-    const game = this.junqiGame;
-    if (!game || game.winner || game.turn !== "player") return;
-    const piece = game.board[row][col];
-    if (this.junqiPendingCommand) {
-      this.applyJunqiCommandTarget(row, col);
+  private renderLeadershipGames(): void {
+    if (!this.leadershipGames) {
+      this.openLeadershipGames();
       return;
     }
-    if (this.junqiSelectedPieceId) {
-      const selected = this.findJunqiPiece(this.junqiSelectedPieceId);
-      if (selected && selected.row === row && selected.col === col) {
-        this.junqiSelectedPieceId = undefined;
-        this.renderJunqi();
-        return;
-      }
-      const move = legalMoves(game, "player").find(
-        (item) =>
-          item.pieceId === this.junqiSelectedPieceId &&
-          item.to[0] === row &&
-          item.to[1] === col
-      );
-      if (move) {
-        this.performPlayerMove(move);
-        return;
-      }
-    }
-    if (piece && piece.side === "player") {
-      const hasMove = legalMoves(game, "player").some(
-        (item) => item.pieceId === piece.id
-      );
-      if (hasMove) {
-        this.junqiSelectedPieceId = piece.id;
-        this.renderJunqi();
-      }
-    }
+    this.leadershipGames.render(this.root);
   }
 
-  private performPlayerMove(move: JunqiMove): void {
-    const game = this.junqiGame;
-    if (!game) return;
-    let next = applyMove(game, move);
-    if (next !== game && !next.winner && next.turn === "ai") {
-      next = applyAiMove(next);
-    }
-    this.junqiGame = next;
-    this.junqiSelectedPieceId = undefined;
-    this.junqiPendingCommand = undefined;
-    if (next.winner) {
-      this.finishJunqi(next.winner);
-    } else {
-      this.audio.choose();
-    }
-    this.renderJunqi();
-  }
-
-  private finishJunqi(winner: "player" | "ai"): void {
-    if (winner === "player") {
-      this.save.junqiWins += 1;
+  private completeLeadershipGame(
+    gameId: LeadershipGameId,
+    won: boolean,
+    score: number
+  ): void {
+    if (won) {
+      this.save.leadershipGameWins += 1;
       this.save.masteryPoints += 2;
       this.save.profile.resources.influence = clamp(
-        this.save.profile.resources.influence + 6,
+        this.save.profile.resources.influence + 5,
         0,
         100
       );
       this.save.profile.resources.trust = clamp(
-        this.save.profile.resources.trust + 4,
+        this.save.profile.resources.trust + 3,
         0,
         100
       );
-      this.junqiResult = "win";
-      this.audio.win();
     } else {
-      this.save.junqiLosses += 1;
+      this.save.leadershipGameLosses += 1;
       this.save.profile.resources.energy = clamp(
-        this.save.profile.resources.energy - 5,
+        this.save.profile.resources.energy - 4,
         0,
         100
       );
-      this.junqiResult = "lose";
-      this.audio.lose();
     }
     this.persistSave();
-    trackEvent("junqi_result", { winner });
-  }
-
-  private applyJunqiCommand(command: JunqiCommand): void {
-    const game = this.junqiGame;
-    if (!game || game.winner || game.turn !== "player") return;
-    if (game.commandPoints < JUNQI_COMMAND_COSTS[command]) return;
-    if (
-      command === "deploy" ||
-      command === "motivate" ||
-      command === "reinforce"
-    ) {
-      this.junqiPendingCommand = command;
-      this.junqiSelectedPieceId = undefined;
-      this.renderJunqi();
-      return;
-    }
-    const next = useJunqiCommand(game, command);
-    if (next !== game) {
-      this.junqiGame = next;
-      this.audio.ui();
-    }
-    this.renderJunqi();
-  }
-
-  private applyJunqiCommandTarget(row: number, col: number): void {
-    const game = this.junqiGame;
-    const command = this.junqiPendingCommand;
-    if (!game || !command) return;
-    let next = game;
-    if (command === "deploy") {
-      const piece = game.board[row][col];
-      if (!piece || piece.side !== "player") {
-        this.junqiPendingCommand = undefined;
-        this.junqiSelectedPieceId = undefined;
-        this.renderJunqi();
-        return;
-      }
-      if (!this.junqiSelectedPieceId) {
-        this.junqiSelectedPieceId = piece.id;
-        this.renderJunqi();
-        return;
-      }
-      const selected = this.findJunqiPiece(this.junqiSelectedPieceId);
-      if (
-        selected &&
-        selected.side === "player" &&
-        row >= 3 &&
-        !game.board[row][col]
-      ) {
-        next = useJunqiCommand(game, "deploy", {
-          pieceId: selected.id,
-          to: [row, col]
-        });
-      }
-      this.junqiSelectedPieceId = undefined;
-      this.junqiPendingCommand = undefined;
-    } else if (command === "motivate") {
-      const piece = game.board[row][col];
-      if (piece && piece.side === "player") {
-        next = useJunqiCommand(game, "motivate", { pieceId: piece.id });
-      }
-      this.junqiPendingCommand = undefined;
-    } else if (command === "reinforce") {
-      if (row >= 3 && !game.board[row][col]) {
-        next = useJunqiCommand(game, "reinforce", { to: [row, col] });
-      }
-      this.junqiPendingCommand = undefined;
-    }
-    if (next !== game) {
-      this.junqiGame = next;
-      this.audio.ui();
-    }
-    this.renderJunqi();
-  }
-
-  private renderJunqi(): void {
-    if (!this.junqiGame) {
-      this.openJunqi();
-      return;
-    }
-    const game = this.junqiGame;
-    const en = this.language === "en";
-    const legal =
-      !game.winner && game.turn === "player" ? legalMoves(game, "player") : [];
-    const legalSet = new Set(
-      legal.map((move) => `${move.to[0]},${move.to[1]}`)
-    );
-    const selectedId = this.junqiSelectedPieceId;
-    const pending = this.junqiPendingCommand;
-    const cells = game.board
-      .map((row, r) =>
-        row
-          .map((piece, c) => {
-            const isSelected = piece?.id === selectedId;
-            const isLegal = legalSet.has(`${r},${c}`);
-            const isOwn = piece?.side === "player";
-            const isMotivated = piece?.id === game.commandState.motivatePieceId;
-            const deploySlot =
-              pending === "deploy" && selectedId && r >= 3 && !piece;
-            const reinforceSlot =
-              pending === "reinforce" && r >= 3 && !piece;
-            const clickable =
-              isLegal ||
-              (isOwn && !game.winner && game.turn === "player") ||
-              deploySlot ||
-              reinforceSlot;
-            let label = "";
-            let cls = "junqi-cell empty";
-            if (piece) {
-              label =
-                piece.side === "player" || piece.revealed
-                  ? JUNQI_PIECE_LABELS[piece.type][en ? "en" : "zh"]
-                  : "?";
-              cls = `junqi-cell ${piece.side === "player" ? "player" : "ai"}`;
-              if (piece.type === "flag") cls += " flag";
-              if (piece.type === "mine") cls += " mine";
-              if (piece.type === "bomb") cls += " bomb";
-            }
-            if (isSelected) cls += " selected";
-            if (isLegal) cls += " legal";
-            if (isMotivated) cls += " motivated";
-            const marker = piece
-              ? escapeHtml(label)
-              : isLegal
-                ? "●"
-                : deploySlot || reinforceSlot
-                  ? "○"
-                  : "";
-            return `
-              <button class="${cls}" data-action="junqi-cell" data-row="${r}" data-col="${c}" ${clickable ? "" : "disabled aria-disabled=\"true\""}>
-                <span class="junqi-cell-label">${marker}</span>
-                ${isMotivated ? `<span class="junqi-motivate-badge">${en ? "Boost" : "激励"}</span>` : ""}
-              </button>
-            `;
-          })
-          .join("")
-      )
-      .join("");
-    const commands: Array<{
-      key: JunqiCommand;
-      zh: string;
-      en: string;
-      cost: number;
-    }> = [
-      { key: "deploy", zh: "排兵布阵", en: "Deploy", cost: JUNQI_COMMAND_COSTS.deploy },
-      { key: "motivate", zh: "激励员工", en: "Motivate", cost: JUNQI_COMMAND_COSTS.motivate },
-      { key: "coordinate", zh: "团队协同", en: "Coordinate", cost: JUNQI_COMMAND_COSTS.coordinate },
-      { key: "reinforce", zh: "资源调度", en: "Reinforce", cost: JUNQI_COMMAND_COSTS.reinforce }
-    ];
-    const commandButtons = commands
-      .map((item) => {
-        const used =
-          item.key === "deploy"
-            ? game.commandState.deployUsed
-            : item.key === "motivate"
-              ? game.commandState.motivateUsed
-              : item.key === "coordinate"
-                ? game.commandState.coordinateUsed
-                : game.commandState.reinforceUsed;
-        const affordable = game.commandPoints >= item.cost;
-        const disabled =
-          used ||
-          !affordable ||
-          Boolean(game.winner) ||
-          game.turn !== "player";
-        return `
-          <button class="junqi-command ${used ? "used" : ""}" data-action="junqi-command" data-command="${item.key}" ${disabled ? "disabled aria-disabled=\"true\"" : ""}>
-            <span>${en ? item.en : item.zh}</span>
-            <small>${item.cost} ${en ? "CP" : "指挥点"}</small>
-          </button>
-        `;
-      })
-      .join("");
-    const resultMarkup = game.winner
-      ? `
-        <section class="junqi-result ${game.winner === "player" ? "win" : "lose"}">
-          <h2>${en ? (game.winner === "player" ? "Victory" : "Defeat") : game.winner === "player" ? "推演胜利" : "推演失利"}</h2>
-          <p>${en ? (game.winner === "player" ? "You won the war room. +6 influence, +4 trust, +2 mastery." : "The AI held the line. -5 energy.") : game.winner === "player" ? "你赢得军棋推演：影响力 +6、信任 +4、修炼点 +2。" : "AI 守住了战线：精力 -5。"}</p>
-          <div class="junqi-actions">
-            <button class="primary" data-action="junqi-new">${en ? "New Game" : "新一局"}</button>
-            <button data-action="junqi-back">${en ? "Back to Map" : "返回地图"}</button>
-          </div>
-        </section>
-      `
-      : "";
-    const pendingHint = pending
-      ? `<p class="junqi-pending">${
-          en
-            ? pending === "deploy"
-              ? "Select a player piece, then choose a back-row destination."
-              : pending === "motivate"
-                ? "Choose one player piece to boost for its next attack."
-                : "Choose an empty back-row cell for the reinforcement."
-            : pending === "deploy"
-              ? "先选一个己方棋子，再选后两排空位完成部署。"
-              : pending === "motivate"
-                ? "选择一个己方棋子，下一次进攻时获得 +1 军衔。"
-                : "选择一个后两排空位，调度一名排长增援。"
-        }</p>`
-      : "";
-    this.root.innerHTML = `
-      <header class="topbar">
-        <div class="brand">${this.t("brand")}</div>
-        <button class="link" data-action="junqi-back">${en ? "Map" : "返回地图"}</button>
-        <div class="topbar-meta"><span>${en ? `W ${this.save.junqiWins} / L ${this.save.junqiLosses}` : `胜 ${this.save.junqiWins} / 负 ${this.save.junqiLosses}`}</span></div>
-      </header>
-      <main class="junqi-shell" aria-label="${en ? "Junqi War Room" : "军棋推演"}">
-        <section class="junqi-hero">
-          <p class="eyebrow">${en ? "Junqi War Room" : "军棋推演"}</p>
-          <h1>${en ? "Command the board like a leadership team" : "像管理一支团队一样指挥棋盘"}</h1>
-          <p class="muted">${en ? `Command Points: ${game.commandPoints}. Deploy pieces, motivate key members, coordinate two moves, and schedule reinforcements.` : `指挥点：${game.commandPoints}。排兵布阵、激励关键成员、团队协同两步走、调度增援。`}</p>
-          <div class="junqi-turn">${game.winner ? (en ? "Finished" : "已结束") : game.turn === "player" ? (en ? "Your turn" : "你的回合") : (en ? "AI thinking" : "AI 思考中")}</div>
-        </section>
-        ${pendingHint}
-        ${resultMarkup}
-        <section class="junqi-board-wrap">
-          <div class="junqi-board">${cells}</div>
-          <aside class="junqi-sidebar">
-            <div class="junqi-legend">
-              <h3>${en ? "Rank Ladder" : "军衔高低"}</h3>
-              <p>${en ? "Commander > Marshal > Division > Brigade > Regiment > Battalion > Company > Platoon > Engineer" : "司令 > 军长 > 师长 > 旅长 > 团长 > 营长 > 连长 > 排长 > 工兵"}</p>
-              <p class="muted">${en ? "Bomb removes both. Mine stops all except Engineer. Flag must be captured." : "炸弹同归于尽；地雷只有工兵能排；夺取军旗即胜。"}</p>
-            </div>
-            <div class="junqi-commands">
-              <h3>${en ? "Leadership Commands" : "领导力指令"}</h3>
-              ${commandButtons}
-            </div>
-          </aside>
-        </section>
-      </main>
-    `;
+    trackEvent("leadership_game", { gameId, won, score });
   }
 
   private renderChapterTransition(): void {
@@ -5680,6 +5367,11 @@ export class AdaptiveGameApp {
     this.audio.unlock();
     this.audio.ensure();
 
+    if (this.view === "leadershipGames" && action.startsWith("lg-")) {
+      this.leadershipGames?.handleAction(action, actionTarget);
+      return;
+    }
+
     if (!ONLINE_ENABLED && action.startsWith("cloud-")) {
       this.cloudStatus =
         this.language === "en"
@@ -7125,25 +6817,8 @@ export class AdaptiveGameApp {
       case "choose-option":
         this.chooseStoryOption(actionTarget);
         break;
-      case "open-junqi":
-        this.openJunqi();
-        break;
-      case "junqi-cell":
-        this.handleJunqiCell(
-          Number(actionTarget.dataset.row),
-          Number(actionTarget.dataset.col)
-        );
-        break;
-      case "junqi-command":
-        this.applyJunqiCommand(
-          actionTarget.dataset.command as JunqiCommand
-        );
-        break;
-      case "junqi-new":
-        this.openJunqi();
-        break;
-      case "junqi-back":
-        this.junqiBackToMap();
+      case "open-leadership-games":
+        this.openLeadershipGames();
         break;
       case "organizational-invest":
         this.organizationalInvest();

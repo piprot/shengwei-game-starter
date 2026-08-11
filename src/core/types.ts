@@ -194,6 +194,10 @@ export interface SaveState {
   junqiWins: number;
   /** Junqi war-room losses. */
   junqiLosses: number;
+  /** Leadership game center wins. */
+  leadershipGameWins: number;
+  /** Leadership game center losses. */
+  leadershipGameLosses: number;
 }
 
 export interface ChoiceOutcome {
