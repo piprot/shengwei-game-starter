@@ -25,6 +25,19 @@ save.profile.role = "highPotential";
 const chapterOne = nodesForChapter(1);
 applyStoryChoice(save, chapterOne[0].id, 0);
 applyStoryChoice(save, chapterOne[1].id, 0);
+const now = Date.now();
+save.reviewCards = [
+  {
+    nodeId: chapterOne[0].id,
+    easiness: 2.6,
+    intervalDays: 1,
+    repetition: 1,
+    dueAt: now + 86400000,
+    lastQuality: 1,
+    wasEverIncorrect: true,
+    lastReviewedAt: now
+  }
+];
 
 const exported = JSON.stringify(save);
 const imported = importSaveJson(exported);
@@ -33,6 +46,8 @@ const checks = [
   imported.profile.name === "CrossBrowser",
   imported.playCount === save.playCount,
   imported.chapterRecords.length === save.chapterRecords.length,
+  imported.reviewCards?.[0]?.nodeId === save.reviewCards?.[0]?.nodeId,
+  imported.reviewCards?.[0]?.intervalDays === 1,
   computeSaveHash(imported) === computeSaveHash(save)
 ];
 

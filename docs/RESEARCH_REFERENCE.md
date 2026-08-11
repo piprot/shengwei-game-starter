@@ -260,3 +260,13 @@
 - `PEZ/clojurescript-reactive-spa-scroll-restore-example`：https://github.com/PEZ/clojurescript-reactive-spa-scroll-restore-example
   可借鉴点：SPA 路由/视图切换后的滚动位置处理。
   对应修复：`show(view)` 切换视图时统一 `window.scrollTo(0,0)`，避免长页返回后停在中段。
+
+## 间隔复习落地（2026-08-11）
+
+从 `basketball-iq-trainer` 与 `claude-tutor` 借用的 SM-2 间隔复习思路已落地为 `src/core/review-schedule.ts`：
+
+- 未选专家项的决策生成复习卡，首次到期 1 天，之后按 1 / 6 / 15+ 天间隔增长。
+- 回练时只有专家项才算通过；部分有效或高风险会重置连续通过次数。
+- 主菜单新增「到期复习 N 题」横幅，到期卡不再只藏在报告页。
+- 复盘报告新增「间隔复习」面板：到期 / 累计 / 已掌握数量 + 一键进入到期回练。
+- 复习卡进入存档并参与哈希、迁移与跨浏览器导出回归。

@@ -12,6 +12,7 @@ import {
   randomEventEligibleCount
 } from "./story.ts";
 import { addDimensionExp, applyMoraleChange } from "./leadership-model.ts";
+import { normalizeReviewCards } from "./review-schedule.ts";
 import type {
   AbilityId,
   ChoiceOutcome,
@@ -144,6 +145,7 @@ export const DEFAULT_SAVE: SaveState = {
   leadershipAchievements: {},
   leadershipBranches: {},
   leadershipBestLevel: {},
+  reviewCards: [],
   dimensionExp: {
     credibility: 0,
     empathy: 0,
@@ -415,6 +417,7 @@ function normalizeSave(save: SaveState): SaveState {
       save.leadershipBestLevel && typeof save.leadershipBestLevel === "object"
         ? save.leadershipBestLevel
         : {},
+    reviewCards: normalizeReviewCards(save.reviewCards),
     dimensionExp: {
       credibility: clamp(
         Number(save.dimensionExp?.credibility) || 0,
@@ -475,6 +478,14 @@ export function computeSaveHash(save: SaveState): string {
     lgach: save.leadershipAchievements,
     lgbranch: save.leadershipBranches,
     lgbest: save.leadershipBestLevel,
+    rv: (save.reviewCards ?? []).map((card) => [
+      card.nodeId,
+      card.easiness,
+      card.intervalDays,
+      card.repetition,
+      card.dueAt,
+      card.lastQuality
+    ]),
     dexp: save.dimensionExp,
     mor: save.morale,
     pc: save.playCount,

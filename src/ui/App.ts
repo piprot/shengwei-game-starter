@@ -198,6 +198,12 @@ import { renderPowerBoard } from "./art";
 import { renderTrainingBoard } from "./trainingArt";
 import { scenarioShellFor } from "../core/scenarioShell";
 import {
+  dueReviewCards,
+  recordReviewResult,
+  reviewStats,
+  scheduleMissedDecision
+} from "../core/review-schedule";
+import {
   renderPowerSandbox,
   renderRelationGraph
 } from "./relationsArt";
@@ -209,7 +215,7 @@ const SETTINGS_MIGRATION_KEY = "adaptive-ascent-settings-v2";
 const GUIDE_KEY = "adaptive-ascent-guide-v1";
 const GUIDE_REWARD_KEY = "adaptive-ascent-guide-reward";
 const ACHIEVEMENT_FAVORITE_KEY = "adaptive-ascent-achievement-favorites";
-const APP_VERSION = "1.7.21";
+const APP_VERSION = "1.7.22";
 
 type View =
   | "menu"
@@ -1488,6 +1494,7 @@ export class AdaptiveGameApp {
             `
             : ""
         }
+        ${this.dueReviewBanner()}
         ${
           started && this.save.playCount === 0
             ? `
@@ -3334,6 +3341,7 @@ export class AdaptiveGameApp {
               : `<p class="muted">${this.language === "en" ? "Finish a duel to see local records." : "完成一局对战后会显示本地记录。"}</p><button data-action="open-duel">${this.language === "en" ? "Play a Duel" : "去打一局"}</button>`
           }
         </section>
+        ${this.dueReviewMarkup()}
         <section class="wrong-answer-review">
           <h3>${this.language === "en" ? "Judgment Review (Missed Expert Moves)" : "判断错题集（未选专家项）"}</h3>
           ${
@@ -5811,6 +5819,28 @@ export class AdaptiveGameApp {
         );
         this.audio.ui();
         break;
+      case "open-due-review": {
+        const dueIds = dueReviewCards(this.save.reviewCards ?? []).map(
+          (card) => card.nodeId
+        );
+        if (dueIds.length === 0) {
+          this.showToast(
+            this.language === "en"
+              ? "No review cards are due right now."
+              : "当前没有到期的复习卡。"
+          );
+          break;
+        }
+        this.wrongReviewQueue = dueIds;
+        this.wrongReviewIndex = 0;
+        this.storyNodeId = dueIds[0];
+        this.replayMode = true;
+        this.lastOutcome = undefined;
+        this.lastOutcomeNodeId = undefined;
+        this.audio.ui();
+        this.show("story");
+        break;
+      }
       case "open-wrong-review": {
         const wrongIds = [
           ...new Set(
@@ -7688,6 +7718,14 @@ export class AdaptiveGameApp {
       this.lastOutcomeNodeId = this.storyNodeId;
       this.pendingBranchNodeId = undefined;
       this.pendingChapterTransition = undefined;
+      if (this.wrongReviewQueue.length > 0) {
+        this.save.reviewCards = recordReviewResult(
+          this.save.reviewCards ?? [],
+          this.storyNodeId,
+          rawOption.quality
+        );
+        this.persistSave();
+      }
       this.renderStory();
       return;
     }
@@ -7737,6 +7775,13 @@ export class AdaptiveGameApp {
       isAchievementUnlocked(this.save, achievement.id)
     ).map((achievement) => achievement.id);
     const outcome = applyStoryChoice(this.save, this.storyNodeId, optionIndex);
+    if (outcome.option.quality !== "expert") {
+      this.save.reviewCards = scheduleMissedDecision(
+        this.save.reviewCards ?? [],
+        this.storyNodeId,
+        outcome.option.quality
+      );
+    }
     const leadNpc = this.randomEventNpcId(this.storyNodeId);
     if (leadNpc && !(this.save.npcLeads ?? []).includes(leadNpc)) {
       this.save.npcLeads = [...(this.save.npcLeads ?? []), leadNpc];
@@ -9287,6 +9332,39 @@ export class AdaptiveGameApp {
       return "技术性解决：快速处理了症状，但责任仍在你手里。下一步要把工作还回去，并补一个验证节点。";
     }
     return "权威或回避动作：只适合紧急的技术问题。用得太多，会压住不同意见，团队不再带真实信息上来。";
+  }
+
+  private dueReviewBanner(): string {
+    const due = dueReviewCards(this.save.reviewCards ?? []);
+    if (due.length === 0) return "";
+    const en = this.language === "en";
+    return `
+      <section class="due-review-banner">
+        <strong>${en ? `Spaced review: ${due.length} due now` : `间隔复习：${due.length} 题已到期`}</strong>
+        <button data-action="open-due-review">${en ? "Review Now" : "立即回练"}</button>
+      </section>
+    `;
+  }
+
+  private dueReviewMarkup(): string {
+    const cards = this.save.reviewCards ?? [];
+    const due = dueReviewCards(cards);
+    const stats = reviewStats(cards);
+    if (stats.total === 0) return "";
+    const en = this.language === "en";
+    return `
+      <section class="due-review-panel">
+        <h3>${en ? "Spaced Review" : "间隔复习"}</h3>
+        <p>${en
+          ? `${stats.due} due now · ${stats.total} tracked · ${stats.mastered} mastered. Missed expert moves return after 1 / 6 / 15+ day intervals.`
+          : `当前到期 ${stats.due} 题 · 累计 ${stats.total} 题 · 已掌握 ${stats.mastered} 题。未选专家项会按 1 / 6 / 15+ 天间隔安排回练。`}</p>
+        ${
+          due.length
+            ? `<button class="wrong-review-cta" data-action="open-due-review">${en ? `Start Due Review (${due.length})` : `开始到期回练（${due.length}）`}</button>`
+            : `<p class="muted">${en ? "No cards due right now." : "当前没有到期的复习卡。"}</p>`
+        }
+      </section>
+    `;
   }
 
   private wrongAnswerMarkup(): string {

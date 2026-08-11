@@ -3975,6 +3975,54 @@ button.trial-now {
   margin: 16px 0;
 }
 
+.due-review-panel {
+  margin: 16px 0;
+  padding: 14px 16px;
+  border: 1px solid rgba(242, 193, 78, 0.35);
+  border-radius: 8px;
+  background: rgba(242, 193, 78, 0.07);
+}
+
+.due-review-panel h3 {
+  margin: 0 0 8px;
+  color: #f2c14e;
+  font-size: 15px;
+}
+
+.due-review-panel p {
+  margin: 0;
+  color: #c6d2dc;
+  font-size: 13px;
+  line-height: 1.55;
+}
+
+.due-review-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin: 12px 0;
+  padding: 12px 14px;
+  border: 1px solid rgba(242, 193, 78, 0.4);
+  border-radius: 8px;
+  background: rgba(242, 193, 78, 0.08);
+  color: #f8e2ae;
+}
+
+.due-review-banner strong {
+  font-size: 14px;
+}
+
+.due-review-banner button {
+  border: 1px solid rgba(242, 193, 78, 0.55);
+  border-radius: 8px;
+  padding: 8px 12px;
+  background: rgba(242, 193, 78, 0.14);
+  color: #f8e2ae;
+  font-weight: 700;
+  cursor: pointer;
+}
+
 .wrong-answer-review h3 {
   margin: 0 0 10px;
   color: #e9826c;

@@ -379,8 +379,8 @@ for (const path of TRAINING_PATHS) {
   }
 }
 
-if (TRIAL_STAGES.length !== 19) {
-  problems.push("trial must contain 19 stages");
+if (TRIAL_STAGES.length !== 24) {
+  problems.push("trial must contain 24 stages");
 }
 if (new Set(TRIAL_STAGES.map((stage) => stage.order)).size !== TRIAL_STAGES.length) {
   problems.push("trial orders must be unique");

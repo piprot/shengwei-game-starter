@@ -1,3 +1,5 @@
+import type { ReviewCard } from "./review-schedule.ts";
+
 export type AbilityId =
   | "insight"
   | "deploy"
@@ -211,6 +213,8 @@ export interface SaveState {
   leadershipBranches: Record<string, string>;
   /** Per-game highest unlocked difficulty (1-3). */
   leadershipBestLevel: Record<string, number>;
+  /** SM-2 间隔复习卡：未选专家项的决策进入到期回练队列。 */
+  reviewCards?: ReviewCard[];
   /** Five-dimension leadership model experience. */
   dimensionExp: Record<LeadershipDimension, number>;
   /** Team morale affected by resilience and adversity choices. */

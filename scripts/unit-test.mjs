@@ -77,6 +77,12 @@ import {
   gameTheoryPayoff
 } from "../src/core/leadership-games.ts";
 import {
+  dueReviewCards,
+  recordReviewResult,
+  reviewStats,
+  scheduleMissedDecision
+} from "../src/core/review-schedule.ts";
+import {
   DIMENSION_ORDER,
   LEADERSHIP_DIMENSIONS,
   addDimensionExp,
@@ -460,7 +466,59 @@ const crisisNext = applyCrisisChoice(crisis, 0);
 assert(
   crisisNext.score === 10,
   "expert crisis choice should score 10"
-);assert(RANDOM_EVENT_IDS.length >= 20, "random events must be 20+");
+);
+
+const reviewCards = scheduleMissedDecision([], "c1n1", "risk", 1000);
+assert(
+  reviewCards.length === 1 && reviewCards[0].dueAt === 1000 + 86400000,
+  "missed decision should create a review card due after one day"
+);
+const reviewedOnce = recordReviewResult(
+  reviewCards,
+  "c1n1",
+  "expert",
+  2000
+);
+assert(
+  reviewedOnce[0].repetition === 1 && reviewedOnce[0].intervalDays === 1,
+  "first expert review should set interval to one day"
+);
+const partialFail = recordReviewResult(
+  reviewCards,
+  "c1n1",
+  "partial",
+  1500
+);
+assert(
+  partialFail[0].repetition === 0,
+  "non-expert review should reset the streak"
+);
+const reviewedTwice = recordReviewResult(
+  reviewedOnce,
+  "c1n1",
+  "expert",
+  3000
+);
+const reviewedThrice = recordReviewResult(
+  reviewedTwice,
+  "c1n1",
+  "expert",
+  4000
+);
+assert(
+  reviewedThrice[0].intervalDays >= 15,
+  "repeated expert reviews should grow the interval to 15+ days"
+);
+assert(
+  dueReviewCards(reviewCards, 1000 + 86400000 + 1).length === 1,
+  "due review should surface cards past due"
+);
+assert(
+  reviewStats(reviewedThrice).mastered === 1,
+  "mastered count should reflect 15+ day interval"
+);
+
+assert(RANDOM_EVENT_IDS.length >= 20, "random events must be 20+");
 assert(
   RANDOM_EVENT_IDS.every((id) => RANDOM_EVENT_META[id]),
   "every random event must have metadata"
