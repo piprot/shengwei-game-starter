@@ -220,7 +220,7 @@ const SETTINGS_MIGRATION_KEY = "adaptive-ascent-settings-v2";
 const GUIDE_KEY = "adaptive-ascent-guide-v1";
 const GUIDE_REWARD_KEY = "adaptive-ascent-guide-reward";
 const ACHIEVEMENT_FAVORITE_KEY = "adaptive-ascent-achievement-favorites";
-const APP_VERSION = "1.7.24";
+const APP_VERSION = "1.7.25";
 
 type View =
   | "menu"
@@ -9707,6 +9707,70 @@ export class AdaptiveGameApp {
       .join("");
   }
 
+  private sixPartReviewMarkup(outcome: ChoiceOutcome): string {
+    const en = this.language === "en";
+    const nodeId = this.lastOutcomeNodeId ?? this.storyNodeId;
+    let node: StoryNode | null = null;
+    try {
+      if (nodeId) {
+        node = this.storyNodeDisplay(
+          getNodeForRole(this.save.profile.role, nodeId)
+        );
+      }
+    } catch {
+      node = null;
+    }
+    if (!node) return "";
+    const intel = NODE_INTEL[node.id] ?? [];
+    const expert = node.options.find(
+      (option) => option.quality === "expert"
+    );
+    const quality = outcome.option.quality;
+    const lesson =
+      quality === "expert"
+        ? en
+          ? "Replicate this pattern in the next similar situation: diagnose first, act second, and keep a verifiable standard."
+          : "把这一判断复制到下一个相似情境：先诊断、再行动，用可验证标准守住结果。"
+        : quality === "partial"
+          ? en
+            ? "You solved part of it. Hand the responsibility and verification node back instead of carrying the team alone."
+            : "你解决了一半；下一步把责任和验证节点还回去，而不是继续替团队扛。"
+          : en
+            ? "Stop the loss first, then review. Confirm key information and trust before using authority or risk again."
+            : "先止损再复盘；下一次先确认关键信息和信任，再动用权威或冒险。";
+    return `
+      <details class="six-part-review">
+        <summary>${en ? "Six-Part Review" : "六段式复盘"}</summary>
+        <dl>
+          <div>
+            <dt>${en ? "Situation" : "现场"}</dt>
+            <dd>${escapeHtml(node.context)}</dd>
+          </div>
+          <div>
+            <dt>${en ? "Intel" : "情报"}</dt>
+            <dd>${intel.length ? `<ul>${intel.slice(0, 3).map((item) => `<li>${escapeHtml(item)}</li>`).join("")}</ul>` : escapeHtml(node.stake)}</dd>
+          </div>
+          <div>
+            <dt>${en ? "Trade-off" : "取舍"}</dt>
+            <dd>${escapeHtml(outcome.option.label)} · ${escapeHtml(outcome.option.summary)}</dd>
+          </div>
+          <div>
+            <dt>${en ? "Outcome" : "结果"}</dt>
+            <dd>${escapeHtml(outcome.option.feedback)}</dd>
+          </div>
+          <div>
+            <dt>${en ? "Comparison" : "对比"}</dt>
+            <dd>${en ? `Your move: ${this.qualityLabel(quality)}` : `你的选择：${this.qualityLabel(quality)}`}${expert ? ` · ${en ? "Expert baseline" : "专家基准"}：${escapeHtml(expert.label)}` : ""}</dd>
+          </div>
+          <div>
+            <dt>${en ? "Lesson" : "教训"}</dt>
+            <dd>${escapeHtml(lesson)}</dd>
+          </div>
+        </dl>
+      </details>
+    `;
+  }
+
   private outcomeMarkup(outcome: ChoiceOutcome): string {
     const option = outcome.option;
     const transitionId = this.pendingChapterTransition;
@@ -9778,6 +9842,7 @@ export class AdaptiveGameApp {
         <h2>${escapeHtml(option.label)}</h2>
         <p>${escapeHtml(option.feedback)}</p>
         <blockquote>${escapeHtml(option.theory)}</blockquote>
+        ${this.sixPartReviewMarkup(outcome)}
         <div class="leadership-lens ${option.quality}">
           <strong>${this.language === "en" ? "Adaptive Leadership Lens" : "自适应领导力视角"}</strong>
           <p>${escapeHtml(this.leadershipLensText(option.quality))}</p>

@@ -2188,6 +2188,50 @@ button.trial-now {
   line-height: 1.7;
 }
 
+.six-part-review {
+  margin: 14px 0;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--panel);
+}
+
+.six-part-review summary {
+  padding: 10px 12px;
+  color: var(--gold);
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.six-part-review dl {
+  display: grid;
+  gap: 10px;
+  margin: 0;
+  padding: 0 12px 12px;
+}
+
+.six-part-review dl div {
+  padding-top: 8px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.six-part-review dt {
+  color: var(--teal);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.six-part-review dd {
+  margin: 4px 0 0;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.six-part-review ul {
+  margin: 0;
+  padding-left: 18px;
+}
+
 .quality {
   display: inline-block;
   padding: 5px 10px;
