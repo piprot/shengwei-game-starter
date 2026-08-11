@@ -626,7 +626,7 @@ html[data-vu="off"] * {
 }
 
 /* =========================================================================
-   经典影视副线 · 片场关卡
+   军棋推演 · 地图入口卡片
    ========================================================================= */
 .junqi-quest-panel {
   margin: 12px 0;
@@ -657,152 +657,8 @@ html[data-vu="off"] * {
 .junqi-quest-panel button:hover {
   background: color-mix(in srgb, #b497f0 12%, transparent);
 }
-.film-shell {
-  max-width: 1060px;
-  margin: 0 auto;
-  padding: 18px 20px 40px;
-}
-.film-hero {
-  position: relative;
-  padding: 26px 28px;
-  border: 1px solid color-mix(in srgb, var(--dot, #b497f0) 42%, transparent);
-  border-radius: var(--vu-radius);
-  background:
-    radial-gradient(circle at 8% 12%, color-mix(in srgb, var(--dot, #b497f0) 20%, transparent), transparent 44%),
-    linear-gradient(135deg, var(--vu-panel-2), var(--vu-bg-deep));
-  box-shadow: var(--vu-shadow-soft);
-  overflow: hidden;
-}
-.film-hero h1 {
-  margin: 6px 0 12px;
-  font-family: var(--vu-font-display);
-  font-size: clamp(26px, 4vw, 44px);
-  line-height: 1.15;
-  letter-spacing: 0;
-  color: var(--vu-ink);
-}
-.film-tags {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-}
-.film-tags span {
-  padding: 4px 10px;
-  border: 1px solid color-mix(in srgb, var(--dot, #b497f0) 40%, transparent);
-  border-radius: var(--vu-radius-pill);
-  color: var(--vu-ink-soft);
-  font-size: 12px;
-  background: rgba(7, 12, 16, 0.42);
-}
-.film-scene {
-  margin: 16px 0;
-  padding: 20px 22px;
-  border-left: 3px solid var(--dot, #b497f0);
-  border-radius: var(--vu-radius);
-  background: var(--vu-panel);
-}
-.film-scene span,
-.film-mirror span,
-.film-quote span,
-.film-feedback span {
-  display: block;
-  margin-bottom: 8px;
-  font-size: 12px;
-  letter-spacing: 0.08em;
-  color: var(--vu-muted-soft);
-  text-transform: uppercase;
-}
-.film-scene p {
-  margin: 0;
-  color: var(--vu-ink-soft);
-  font-size: 17px;
-  line-height: 1.75;
-}
-.film-decision h2 {
-  margin: 0 0 14px;
-  color: var(--vu-ink);
-}
-.film-options {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 12px;
-}
-.film-options .option-card {
-  min-height: 150px;
-  align-items: flex-start;
-}
-.film-options .option-letter {
-  margin-top: 2px;
-}
-.film-outcome .film-hero {
-  margin-bottom: 16px;
-}
-.film-review-panel {
-  display: grid;
-  gap: 14px;
-}
-.film-mirror,
-.film-quote,
-.film-feedback,
-.film-reward-note {
-  padding: 18px 20px;
-  border: 1px solid var(--vu-line);
-  border-radius: var(--vu-radius);
-  background: var(--vu-panel);
-}
-.film-mirror p,
-.film-feedback p {
-  margin: 0;
-  color: var(--vu-ink-soft);
-  line-height: 1.7;
-}
-.film-quote blockquote {
-  margin: 0;
-  padding: 4px 0 4px 14px;
-  border-left: 2px solid var(--vu-gold-line);
-  color: var(--vu-gold-bright);
-  font-family: var(--vu-font-display);
-  font-size: 18px;
-  line-height: 1.6;
-}
-.film-reward-note {
-  color: var(--vu-teal-bright);
-  font-size: 13px;
-}
-.film-actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-  margin-top: 18px;
-}
-.film-actions button {
-  border: 1px solid var(--vu-line-strong);
-  border-radius: var(--vu-radius);
-  padding: 10px 16px;
-  background: transparent;
-  color: var(--vu-ink-soft);
-  cursor: pointer;
-}
-.film-actions button.primary {
-  border-color: var(--vu-gold-line);
-  color: var(--vu-gold-bright);
-  background: color-mix(in srgb, var(--vu-gold) 10%, transparent);
-}
-
-@media (max-width: 900px) {
-  .film-options {
-    grid-template-columns: 1fr;
-  }
-  .film-actions {
-    flex-direction: column;
-  }
-  .film-actions button {
-    width: 100%;
-  }
-}
-
 /* =========================================================================
-   章节剧情影像与影视副线主入口
+   章节剧情影像与军棋推演入口
    ========================================================================= */
 .chapter-narrative {
   display: grid;
@@ -1224,15 +1080,7 @@ html[data-vu="off"] * {
   font-size: 13px;
   line-height: 1.5;
 }
-.film-poster {
-  width: 100%;
-  height: 150px;
-  margin-top: 12px;
-  border-radius: 6px;
-  background-size: cover;
-  background-position: center;
-  filter: saturate(0.85) brightness(0.9);
-}
+
 
 @media (max-width: 900px) {
   .map-guide-overlay ol,
