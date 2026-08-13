@@ -2752,6 +2752,10 @@ button:focus-visible,
 .duel-lobby.has-lobby-art {
   position: relative;
   isolation: isolate;
+  background:
+    radial-gradient(1100px 520px at 72% 8%, rgba(65, 199, 192, 0.34), transparent 62%),
+    radial-gradient(900px 460px at 12% 88%, rgba(242, 193, 78, 0.28), transparent 58%),
+    linear-gradient(180deg, #243640 0%, #172229 58%, #10181e 100%);
 }
 .duel-lobby-bg {
   position: absolute;
@@ -2760,8 +2764,9 @@ button:focus-visible,
   height: 100%;
   object-fit: cover;
   z-index: 0;
-  opacity: 0.22;
-  filter: saturate(0.7) blur(0.5px) contrast(1.05);
+  opacity: 0.88;
+  mix-blend-mode: screen;
+  filter: saturate(1.15) blur(0.5px) contrast(1.05) brightness(1.02);
   pointer-events: none;
 }
 .duel-lobby.has-lobby-art::after {
@@ -2770,7 +2775,7 @@ button:focus-visible,
   inset: 0;
   z-index: 1;
   pointer-events: none;
-  background: linear-gradient(180deg, rgba(7,11,14,0.3) 0%, rgba(7,11,14,0.88) 65%, rgba(7,11,14,0.96) 100%);
+  background: linear-gradient(180deg, rgba(7,11,14,0.06) 0%, rgba(7,11,14,0.24) 58%, rgba(7,11,14,0.36) 100%);
 }
 .duel-hero.has-hero-art {
   position: relative;
@@ -2790,6 +2795,7 @@ button:focus-visible,
   grid-row: 1 / span 4;
   z-index: 2;
   background: var(--vu-panel-2);
+  filter: brightness(1.08) saturate(1.06);
 }
 .duel-hero.has-hero-art > p.eyebrow,
 .duel-hero.has-hero-art > h1,
@@ -2798,6 +2804,11 @@ button:focus-visible,
 .duel-hero.has-hero-art > .resume-duel-button {
   grid-column: 1;
   z-index: 2;
+}
+.duel-hero h1,
+.duel-hero p,
+.duel-hero .mode-switch button {
+  text-shadow: 0 2px 14px rgba(7, 11, 14, 0.92);
 }
 @media (max-width: 900px) {
   .duel-hero.has-hero-art {
@@ -2815,6 +2826,10 @@ button:focus-visible,
 .duel-reveal.has-reveal-art {
   position: relative;
   isolation: isolate;
+  background:
+    radial-gradient(1000px 480px at 50% 0%, rgba(65, 199, 192, 0.28), transparent 60%),
+    radial-gradient(760px 420px at 90% 90%, rgba(242, 193, 78, 0.22), transparent 55%),
+    linear-gradient(180deg, #22323c 0%, #152027 55%, #0f181e 100%);
 }
 .duel-stage-bg,
 .duel-predict-bg,
@@ -2825,8 +2840,9 @@ button:focus-visible,
   height: 100%;
   object-fit: cover;
   z-index: 0;
-  opacity: 0.15;
-  filter: saturate(0.6) blur(1px);
+  opacity: 0.75;
+  mix-blend-mode: screen;
+  filter: saturate(1.12) blur(0.8px) contrast(1.04) brightness(1.02);
   pointer-events: none;
 }
 .duel-shell.has-duel-art::after,
@@ -2837,7 +2853,7 @@ button:focus-visible,
   inset: 0;
   z-index: 1;
   pointer-events: none;
-  background: linear-gradient(180deg, rgba(7,11,14,0.35) 0%, rgba(7,11,14,0.88) 50%, rgba(7,11,14,0.95) 100%);
+  background: linear-gradient(180deg, rgba(7,11,14,0.06) 0%, rgba(7,11,14,0.26) 55%, rgba(7,11,14,0.4) 100%);
 }
 .duel-shell.has-duel-art > *,
 .duel-predict.has-predict-art > *,
@@ -2952,32 +2968,101 @@ button:focus-visible,
 }
 
 /* =========================================================================
-   主页模块三排排序：第一排核心玩法，第二排成长档案，第三排设置与辅助
+   主页模块四组分类：个人训练 / 团体训练 / 培训师模块 / 系统设置
    ========================================================================= */
-.menu-grid {
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  grid-auto-flow: row dense;
+.menu-groups {
+  display: grid;
+  gap: 26px;
+  margin-top: 30px;
 }
-.menu-card[data-action="open-map"] { order: 1; }
-.menu-card[data-action="open-trial"] { order: 2; }
-.menu-card[data-action="open-leadership-games"] { order: 3; }
-.menu-card[data-action="open-duel"] { order: 4; }
-.menu-card[data-action="open-ability"] { order: 5; }
-.menu-card[data-action="open-relations"] { order: 6; }
-.menu-card[data-action="open-report"] { order: 7; }
-.menu-card[data-action="open-achievements"] { order: 8; }
-.menu-card[data-action="open-settings"] { order: 9; }
-.menu-card[data-action="open-profile"] { order: 10; }
-.menu-card[data-action="open-coach"] { order: 11; }
-.menu-card.resume-card { order: 12; }
+.menu-group {
+  padding: 18px;
+  border: 1px solid var(--vu-line);
+  border-radius: var(--vu-radius);
+  background:
+    linear-gradient(180deg, rgba(24, 36, 44, 0.55) 0%, rgba(12, 19, 24, 0.72) 100%),
+    var(--vu-panel);
+  box-shadow: var(--vu-shadow-soft);
+}
+.menu-group-head {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 14px;
+}
+.menu-group-index {
+  display: grid;
+  place-items: center;
+  flex: 0 0 auto;
+  width: 42px;
+  height: 42px;
+  border: 1px solid rgba(242, 193, 78, 0.45);
+  border-radius: 10px;
+  background: rgba(242, 193, 78, 0.12);
+  color: var(--vu-gold-bright, #f8e2ae);
+  font-size: 13px;
+  font-weight: 900;
+  letter-spacing: 0;
+}
+.menu-group-head h2 {
+  margin: 0;
+  color: #eef4f7;
+  font-size: 19px;
+}
+.menu-group-head p {
+  margin: 3px 0 0;
+  color: #9fb3c8;
+  font-size: 13px;
+  line-height: 1.5;
+}
+.menu-group-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 14px;
+}
+.menu-group-grid .menu-card {
+  order: unset;
+}
+.menu-group-grid .menu-card-cover {
+  opacity: 0.68;
+  mix-blend-mode: normal;
+  filter: saturate(1) contrast(1.08) brightness(1.08);
+}
+.menu-group-grid .menu-card:hover .menu-card-cover,
+.menu-group-grid .menu-card:focus-visible .menu-card-cover {
+  opacity: 0.9;
+}
+.menu-group-grid .menu-card-mask {
+  background:
+    linear-gradient(180deg, rgba(10, 16, 19, 0.1) 0%, rgba(10, 16, 19, 0.35) 45%, rgba(10, 16, 19, 0.72) 100%),
+    linear-gradient(90deg, rgba(10, 16, 19, 0.18) 0%, rgba(10, 16, 19, 0.02) 50%, rgba(10, 16, 19, 0.18) 100%);
+}
+.menu-group-grid .menu-card h2,
+.menu-group-grid .menu-card p {
+  text-shadow: 0 1px 10px rgba(7, 11, 14, 0.9);
+}
+.menu-group-grid .menu-card {
+  animation: vu-card-stagger 520ms var(--vu-ease) both;
+}
+.menu-group-grid .menu-card:nth-child(1) { animation-delay: 40ms; }
+.menu-group-grid .menu-card:nth-child(2) { animation-delay: 100ms; }
+.menu-group-grid .menu-card:nth-child(3) { animation-delay: 160ms; }
+.menu-group-grid .menu-card:nth-child(4) { animation-delay: 220ms; }
+.menu-group-grid .menu-card:nth-child(5) { animation-delay: 280ms; }
+.menu-group-grid .menu-card:nth-child(6) { animation-delay: 340ms; }
+.menu-group-grid .menu-card:nth-child(7) { animation-delay: 400ms; }
+.menu-group-grid .menu-card:nth-child(8) { animation-delay: 460ms; }
 @media (max-width: 980px) {
-  .menu-grid {
+  .menu-group-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 @media (max-width: 560px) {
-  .menu-grid {
+  .menu-group-grid {
     grid-template-columns: 1fr;
+  }
+  .menu-group {
+    padding: 14px;
   }
 }
 

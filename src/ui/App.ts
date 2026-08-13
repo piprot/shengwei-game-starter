@@ -235,7 +235,7 @@ const SETTINGS_MIGRATION_KEY = "adaptive-ascent-settings-v2";
 const GUIDE_KEY = "adaptive-ascent-guide-v1";
 const GUIDE_REWARD_KEY = "adaptive-ascent-guide-reward";
 const ACHIEVEMENT_FAVORITE_KEY = "adaptive-ascent-achievement-favorites";
-const APP_VERSION = "1.7.34";
+const APP_VERSION = "1.7.36";
 
 type View =
   | "menu"
@@ -1591,105 +1591,83 @@ export class AdaptiveGameApp {
             <button data-action="open-relations">${this.language === "en" ? "Open Relationship Map" : "查看人物关系"}</button>
           </div>
         </section>
-        <section class="menu-grid">
-          ${this.save.lastStoryNodeId ? `<button class="menu-card resume-card has-art" data-action="resume-last-node">
-            <img class="menu-card-cover" src="${this.artAsset("menu-card-00")}" alt="" loading="lazy" onerror="this.style.display='none'" />
-            <span class="menu-card-mask"></span>
-            <span class="card-index">00</span>
-            <h2>${this.t("menuResume")}</h2>
-            <p>${this.t("resumeHint")}</p>
-          </button>` : ""}
-          <button class="menu-card has-art" data-action="open-map" aria-keyshortcuts="M">
-            <img class="menu-card-cover" src="${this.artAsset("menu-card-01")}" alt="" loading="lazy" onerror="this.style.display='none'" />
-            <span class="menu-card-mask"></span>
-            <span class="card-index">01</span>
-            <h2>${this.t("mainQuest")}</h2>
-            <p>${this.language === "en" ? "Nine chapters of power, 18 real workplace scenarios, and choices that reshape your ability map." : "九章权力架构，18 个真实职场情境，每一次选择都在改变你的能力图谱。"}</p>
-          </button>
-          <button class="menu-card has-art" data-action="open-duel" aria-keyshortcuts="D">
-            <img class="menu-card-cover" src="${this.artAsset("menu-card-02")}" alt="" loading="lazy" onerror="this.style.display='none'" />
-            <span class="menu-card-mask"></span>
-            <span class="card-index">02</span>
-            <h2>${this.t("duel")}</h2>
-            <p>${this.language === "en" ? "AI practice, local duo, or remote duels use scenario-golf baselines to judge who handles complexity better." : "AI 陪练、本地双人或远程对战，用情境高尔夫基准判断谁更能应对复杂局势。"}</p>
-          </button>
-          <button class="menu-card has-art" data-action="open-ability" aria-keyshortcuts="A">
-            <img class="menu-card-cover" src="${this.artAsset("menu-card-03")}" alt="" loading="lazy" onerror="this.style.display='none'" />
-            <span class="menu-card-mask"></span>
-            <span class="card-index">03</span>
-            <h2>${this.t("ability")}</h2>
-            <p>${this.language === "en" ? "Ten abilities, five ranks, and classic theory support let you see strengths, gaps, and growth paths." : "十项能力、五级段位、经典理论支撑，随时查看你的优势、短板和成长路径。"}</p>
-          </button>
-          <button class="menu-card has-art" data-action="open-report" aria-keyshortcuts="R">
-            <img class="menu-card-cover" src="${this.artAsset("menu-card-04")}" alt="" loading="lazy" onerror="this.style.display='none'" />
-            <span class="menu-card-mask"></span>
-            <span class="card-index">04</span>
-            <h2>${this.t("report")}</h2>
-            <p>${this.language === "en" ? "Turn in-game performance into training advice you can transfer back to real work." : "从游戏表现反推训练建议，把决策反馈迁移回真实工作。"}</p>
-          </button>
-          <button class="menu-card has-art" data-action="open-achievements">
-            <img class="menu-card-cover" src="${this.artAsset("menu-card-05")}" alt="" loading="lazy" onerror="this.style.display='none'" />
-            <span class="menu-card-mask"></span>
-            <span class="card-index">05</span>
-            <h2>${this.t("achievements")}</h2>
-            <p>${this.language === "en" ? "Track chapters, side quests, assessments, duels, and rank milestones." : "追踪章节、支线、测评、1v1 与能力段位的完成进度。"}</p>
-          </button>
-          <button class="menu-card has-art" data-action="open-relations">
-            <img class="menu-card-cover" src="${this.artAsset("menu-card-06")}" alt="" loading="lazy" onerror="this.style.display='none'" />
-            <span class="menu-card-mask"></span>
-            <span class="card-index">06</span>
-            <h2>${this.t("relations")}</h2>
-            <p>${this.language === "en" ? "See key people from the campaign and side quests, and whether those relationships became organizational capability." : "查看主线与支线中结识的关键人物，以及关系是否已经转化为组织能力。"}</p>
-          </button>
-          <button class="menu-card has-art" data-action="open-trial">
-            <img class="menu-card-cover" src="${this.artAsset("menu-card-07")}" alt="" loading="lazy" onerror="this.style.display='none'" />
-            <span class="menu-card-mask"></span>
-            <span class="card-index">07</span>
-            <h2>${this.t("trialTitle")}</h2>
-            <p>${this.language === "en" ? "Spend energy, break through gates, collect loot, and unlock MBA cases." : "消耗精力打怪升级，用能力门槛解锁关卡、战利品和 MBA 高难案例。"}</p>
-          </button>
-          <button class="menu-card has-art" data-action="open-settings">
-            <img class="menu-card-cover" src="${this.artAsset("menu-card-08")}" alt="" loading="lazy" onerror="this.style.display='none'" />
-            <span class="menu-card-mask"></span>
-            <span class="card-index">08</span>
-            <h2>${this.t("settingsTitle")}</h2>
-            <p>${this.language === "en" ? "Sound, language, difficulty, save data, and help in one place." : "统一管理声音、语言、难度、存档数据与操作说明。"}</p>
-          </button>
-          <button class="menu-card has-art" data-action="open-profile">
-            <img class="menu-card-cover" src="${this.artAsset("menu-card-09")}" alt="" loading="lazy" onerror="this.style.display='none'" />
-            <span class="menu-card-mask"></span>
-            <span class="card-index">09</span>
-            <h2>${this.language === "en" ? "Role Archives" : "角色档案"}</h2>
-            <p>${this.language === "en" ? "Keep every role's save and switch between parachute, founder, and high potential without deleting progress." : "空降、创业、高潜三套档案独立保存，随时切换，不再删档。"}</p>
-          </button>
-          <button class="menu-card has-art" data-action="open-coach">
-            <img class="menu-card-cover" src="${this.artAsset("menu-card-10")}" alt="" loading="lazy" onerror="this.style.display='none'" />
-            <span class="menu-card-mask"></span>
-            <span class="card-index">10</span>
-            <h2>${this.language === "en" ? "Coach Workshop" : "教练工作坊"}</h2>
-            <p>${this.language === "en" ? "Import team saves, compare group radar, surface decision blind spots, and plan a facilitated workshop." : "导入学员存档，对比小组雷达，找出决策盲区，生成可执行的工作坊流程。"}</p>
-          </button>
-          <button class="menu-card has-art" data-action="open-leadership-games">
-            <img class="menu-card-cover" src="${this.artAsset("menu-card-10")}" alt="" loading="lazy" onerror="this.style.display='none'" />
-            <span class="menu-card-mask"></span>
-            <span class="card-index">11</span>
-            <h2>${this.language === "en" ? "Leadership Games" : "领导力游戏"}</h2>
-            <p>${this.language === "en" ? "Five polished mini-games with teaching, training, battle, review, achievements, and increasing difficulty." : "五个精品小游戏：教学、训练、对战、复盘、成就与逐级难度。"}</p>
-          </button>
-          <button class="menu-card has-art" data-action="open-custom-scenarios">
-            <img class="menu-card-cover" src="${this.artAsset("menu-card-10")}" alt="" loading="lazy" onerror="this.style.display='none'" />
-            <span class="menu-card-mask"></span>
-            <span class="card-index">12</span>
-            <h2>${this.language === "en" ? "Scenario Workshop" : "情境工坊"}</h2>
-            <p>${this.language === "en" ? "Write a real workplace dilemma, validate the expert/partial/risk structure, and play it with your team." : "写下真实职场两难，校验专家/部分/风险结构，再与团队一起试玩复盘。"}</p>
-          </button>
-          <button class="menu-card has-art" data-action="open-team-academy">
-            <img class="menu-card-cover" src="${this.artAsset("menu-card-10")}" alt="" loading="lazy" onerror="this.style.display='none'" />
-            <span class="menu-card-mask"></span>
-            <span class="card-index">13</span>
-            <h2>${this.language === "en" ? "Team Academy" : "团队管理训练营"}</h2>
-            <p>${this.language === "en" ? "Three roles, 108 scenarios, and a scenario-to-homework learning loop for team management." : "三类角色、108 个情境，用情境→公式→练习→作业闭环提升团队管理能力。"}</p>
-          </button>
+        <section class="menu-groups" aria-label="${this.language === "en" ? "Training modules" : "训练模块"}">
+          ${(() => {
+            const en = this.language === "en";
+            const card = (
+              action: string,
+              art: string,
+              index: string,
+              titleZh: string,
+              titleEn: string,
+              descZh: string,
+              descEn: string,
+              extra = ""
+            ) => `
+              <button class="menu-card has-art" data-action="${action}" ${extra}>
+                <img class="menu-card-cover" src="${this.artAsset(art)}" alt="" loading="lazy" onerror="this.style.display='none'" />
+                <span class="menu-card-mask"></span>
+                <span class="card-index">${index}</span>
+                <h2>${en ? titleEn : titleZh}</h2>
+                <p>${en ? descEn : descZh}</p>
+              </button>`;
+            const group = (
+              index: string,
+              titleZh: string,
+              titleEn: string,
+              descZh: string,
+              descEn: string,
+              cards: string
+            ) => `
+              <section class="menu-group">
+                <header class="menu-group-head">
+                  <span class="menu-group-index">${index}</span>
+                  <div>
+                    <h2>${en ? titleEn : titleZh}</h2>
+                    <p>${en ? descEn : descZh}</p>
+                  </div>
+                </header>
+                <div class="menu-group-grid">${cards}</div>
+              </section>`;
+            const personalCards = [
+              this.save.lastStoryNodeId
+                ? `<button class="menu-card resume-card has-art" data-action="resume-last-node">
+                    <img class="menu-card-cover" src="${this.artAsset("menu-card-00")}" alt="" loading="lazy" onerror="this.style.display='none'" />
+                    <span class="menu-card-mask"></span>
+                    <span class="card-index">00</span>
+                    <h2>${this.t("menuResume")}</h2>
+                    <p>${this.t("resumeHint")}</p>
+                  </button>`
+                : "",
+              card("open-map", "menu-card-01", "01", this.t("mainQuest"), "Campaign", "九章权力架构，18 个真实职场情境，每一次选择都在改变你的能力图谱。", "Nine chapters of power, 18 real workplace scenarios, and choices that reshape your ability map.", 'aria-keyshortcuts="M"'),
+              card("open-duel", "menu-card-02", "02", this.t("duel"), "1v1 Duel", "AI 陪练、本地双人或远程对战，用情境高尔夫基准判断谁更能应对复杂局势。", "AI practice, local duo, or remote duels use scenario-golf baselines to judge who handles complexity better.", 'aria-keyshortcuts="D"'),
+              card("open-leadership-games", "menu-card-10", "03", "领导力游戏", "Leadership Games", "五个精品小游戏：教学、训练、对战、复盘、成就与逐级难度。", "Five polished mini-games with teaching, training, battle, review, achievements, and increasing difficulty."),
+              card("open-ability", "menu-card-03", "04", this.t("ability"), "Ability Map", "十项能力、五级段位、经典理论支撑，随时查看你的优势、短板和成长路径。", "Ten abilities, five ranks, and classic theory support let you see strengths, gaps, and growth paths.", 'aria-keyshortcuts="A"'),
+              card("open-report", "menu-card-04", "05", this.t("report"), "Review Report", "从游戏表现反推训练建议，把决策反馈迁移回真实工作。", "Turn in-game performance into training advice you can transfer back to real work.", 'aria-keyshortcuts="R"'),
+              card("open-trial", "menu-card-07", "06", this.t("trialTitle"), "Trial Grounds", "消耗精力打怪升级，用能力门槛解锁关卡、战利品和 MBA 高难案例。", "Spend energy, break through gates, collect loot, and unlock MBA cases."),
+              card("open-achievements", "menu-card-05", "07", this.t("achievements"), "Achievements", "追踪章节、支线、测评、1v1 与能力段位的完成进度。", "Track chapters, side quests, assessments, duels, and rank milestones."),
+              card("open-relations", "menu-card-06", "08", this.t("relations"), "Relations", "查看主线与支线中结识的关键人物，以及关系是否已经转化为组织能力。", "See key people from the campaign and side quests, and whether those relationships became organizational capability.")
+            ].join("");
+            const groupCards = [
+              card("open-team-academy", "menu-card-10", "01", "团队管理训练营", "Team Academy", "三类角色、108 个情境，用情境→公式→练习→作业闭环提升团队管理能力。", "Three roles, 108 scenarios, and a scenario-to-homework learning loop for team management."),
+              card("open-duel", "menu-card-02", "02", "双人/远程对练", "Local & Remote Duels", "本地双人轮流、远程邀请码对战，用对决大厅直接开房间。", "Take turns on one device or duel remotely with invite codes from the same lobby."),
+              card("open-leadership-games", "menu-card-10", "03", "领导力对战", "Leadership Battle", "教学、训练、对战与复盘一体，适合两人或小组轮流上场。", "Teach, train, battle, and review together, built for pairs and small groups.")
+            ].join("");
+            const trainerCards = [
+              card("open-coach", "menu-card-10", "01", "教练工作坊", "Coach Workshop", "导入学员存档，对比小组雷达，找出决策盲区，生成可执行的工作坊流程。", "Import team saves, compare group radar, surface decision blind spots, and plan a facilitated workshop."),
+              card("open-custom-scenarios", "menu-card-10", "02", "情境工坊", "Scenario Workshop", "写下真实职场两难，校验专家/部分/风险结构，再与团队一起试玩复盘。", "Write a real workplace dilemma, validate the expert/partial/risk structure, and play it with your team.")
+            ].join("");
+            const systemCards = [
+              card("open-settings", "menu-card-08", "01", this.t("settingsTitle"), "Settings", "统一管理声音、语言、难度、存档数据与操作说明。", "Sound, language, difficulty, save data, and help in one place."),
+              card("open-profile", "menu-card-09", "02", "角色档案", "Role Archives", "空降、创业、高潜三套档案独立保存，随时切换，不再删档。", "Keep every role's save and switch between parachute, founder, and high potential without deleting progress.")
+            ].join("");
+            return [
+              group("01", "个人训练", "Personal Training", "主线、AI 对练、小游戏与个人复盘，完成从判断到成长的闭环。", "Campaign, AI duels, mini-games and reviews for your personal leadership loop.", personalCards),
+              group("02", "团体训练", "Group Training", "两人或小组一起练：团队课程、同屏轮流、远程开房和领导力小游戏。", "Practice together as a pair or group: team courses, same-screen turns, remote rooms, and leadership mini-games.", groupCards),
+              group("03", "培训师模块", "Trainer Hub", "面向培训师：导入小组存档、生成工作坊流程、校验并共创真实案例。", "For facilitators: import team saves, build workshop agendas, validate and co-create real cases.", trainerCards),
+              group("04", "系统设置", "System & Settings", "声音、语言、难度、存档数据与操作说明统一管理。", "Sound, language, difficulty, save data and help in one place.", systemCards)
+            ].join("");
+          })()}
         </section>
       </main>
     `;
