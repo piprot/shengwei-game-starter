@@ -346,12 +346,12 @@ export const PARACHUTE_SCENARIOS: AcademyScenario[] = [
     id: "p32",
     role: "parachute",
     level: 8,
-    title: "与上级意见不一致",
-    situation: "上级要求的方向与你对团队的判断明显冲突。",
+    title: "上级要求改变团队方向",
+    situation: "上级要求调整团队方向，但会破坏团队现有节奏。",
     options: ["直接反对", "私下提供数据和建议后再执行", "表面答应背后不做", "越级沟通"],
     best: 1,
     feedback: "先对齐信息，用事实影响上级，再在执行中保留反馈通道。",
-    knowledge: "向上管理"
+    knowledge: "跨层对齐"
   },
   {
     id: "p33",

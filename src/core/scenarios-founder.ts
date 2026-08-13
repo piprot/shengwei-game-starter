@@ -5,12 +5,12 @@ export const FOUNDER_SCENARIOS: AcademyScenario[] = [
     id: "f1",
     role: "founder",
     level: 1,
-    title: "从零开始",
-    situation: "你刚创业，只有你一个人，需要想清楚第一个产品方向和团队定位。",
-    options: ["先招人再想方向", "先写清要解决的客户问题", "模仿竞品", "等融资到位"],
+    title: "定团队目标",
+    situation: "你刚开始创业，团队成员还不清楚要一起解决什么问题，目标模糊。",
+    options: ["先招人再定目标", "先和团队对齐客户问题与目标", "模仿竞品", "等融资到位再谈"],
     best: 1,
-    feedback: "先定义客户问题和价值主张，再谈团队和融资。",
-    knowledge: "创业定位"
+    feedback: "团队管理先从对齐目标和分工开始，目标不清再多人也跑不动。",
+    knowledge: "团队目标"
   },
   {
     id: "f2",
@@ -181,12 +181,12 @@ export const FOUNDER_SCENARIOS: AcademyScenario[] = [
     id: "f17",
     role: "founder",
     level: 5,
-    title: "融资失败",
-    situation: "新一轮融资被否，现金流只够三个月。",
+    title: "现金流危机下稳住团队",
+    situation: "公司现金流紧张，团队人心浮动，担心裁员，交付开始受影响。",
     options: ["隐瞒团队", "公开事实并一起降本保命", "立刻裁员", "找高利贷"],
     best: 1,
     feedback: "危机时透明沟通并共同决策，比隐瞒更稳。",
-    knowledge: "制胜法则"
+    knowledge: "危机管理"
   },
   {
     id: "f18",
@@ -324,12 +324,12 @@ export const FOUNDER_SCENARIOS: AcademyScenario[] = [
     id: "f30",
     role: "founder",
     level: 8,
-    title: "向上汇报",
-    situation: "董事会要求你汇报公司进展，你只有模糊数据。",
-    options: ["讲愿景", "用具体结果和下一步里程碑", "画饼", "让CFO代答"],
+    title: "为团队争取资源",
+    situation: "董事会要求汇报团队进展，但团队需要更多资源才能完成目标。",
+    options: ["讲愿景", "用团队具体结果和里程碑争取资源", "画饼", "让CFO代答"],
     best: 1,
-    feedback: "向董事会要可验证结果，而不是情绪。",
-    knowledge: "向上管理"
+    feedback: "用可验证的团队成果争取资源，而不是空谈。",
+    knowledge: "团队资源"
   },
   {
     id: "f31",
@@ -346,12 +346,12 @@ export const FOUNDER_SCENARIOS: AcademyScenario[] = [
     id: "f32",
     role: "founder",
     level: 8,
-    title: "短期利益诱惑",
-    situation: "一个大客户要求你放弃长期战略去赚快钱。",
-    options: ["接受", "评估对核心战略的长期影响", "拒绝并得罪客户", "先签再说"],
+    title: "大客户要求团队改方向",
+    situation: "大客户要求团队放弃长期目标去赚快钱，团队开始摇摆。",
+    options: ["接受", "评估对团队长期目标的影响并沟通取舍", "直接拒绝", "先签再说"],
     best: 1,
-    feedback: "舍得法则：长期影响力比短期利益更重要。",
-    knowledge: "舍得法则"
+    feedback: "团队管理要守住长期目标，同时用取舍机制沟通。",
+    knowledge: "团队取舍"
   },
   {
     id: "f33",
