@@ -661,7 +661,7 @@ export const ACADEMY_COURSES: TeamAcademyCourse[] = [
         ],
         homework: "把你本周最琐碎的任务，改写为包含「做深动作」的交付清单。",
         keywords: ["基础任务", "附加值", "可见", "产出", "做深"],
-        laws: ["过程法则", "镜像法则", "高潜36情境"]
+        laws: ["过程法则", "镜像法则", "领导梯队"]
       },
       {
         id: "h2",
@@ -703,7 +703,7 @@ export const ACADEMY_COURSES: TeamAcademyCourse[] = [
         ],
         homework: "写出一次你被忽略贡献的场景，并改写为「合作+确认」的沟通脚本。",
         keywords: ["功劳", "合作", "可见", "确认", "资源"],
-        laws: ["亲和力法则", "增值法则", "高潜36情境"]
+        laws: ["亲和力法则", "增值法则", "影响力"]
       },
       {
         id: "h3",
@@ -745,7 +745,7 @@ export const ACADEMY_COURSES: TeamAcademyCourse[] = [
         ],
         homework: "找一个你近期不同意但已决定的方案，写一段私下反馈脚本：验证、假设性语言、补充分析。",
         keywords: ["私下", "反馈", "风险", "假设", "保留面子"],
-        laws: ["接纳法则", "时机法则", "高潜36情境"]
+        laws: ["接纳法则", "时机法则", "格鲁夫给经理人的第一课"]
       },
       {
         id: "h4",
@@ -787,7 +787,7 @@ export const ACADEMY_COURSES: TeamAcademyCourse[] = [
         ],
         homework: "为你当前协调的项目画一张最小依赖表：需要谁、做什么、每周多少时间、由谁检查。",
         keywords: ["透明", "承诺", "依赖", "意愿", "协调"],
-        laws: ["核心圈法则", "制胜法则", "高潜36情境"]
+        laws: ["核心圈法则", "制胜法则", "上任第一年"]
       },
       {
         id: "h5",
@@ -806,7 +806,7 @@ export const ACADEMY_COURSES: TeamAcademyCourse[] = [
         ],
         homework: "写一份当前变化期的30天行动清单：连接、透明、报告、差距补强。",
         keywords: ["空降", "透明", "报告", "晋升", "行动"],
-        laws: ["接纳法则", "高潜36情境"]
+        laws: ["接纳法则", "领导梯队"]
       },
       {
         id: "h6",
@@ -825,7 +825,7 @@ export const ACADEMY_COURSES: TeamAcademyCourse[] = [
         ],
         homework: "为你的新人写一份90天成长计划：阶段、目标、每周1对1主题。",
         keywords: ["新人", "成长", "依赖", "试点", "判断"],
-        laws: ["核心圈法则", "制胜法则", "高潜36情境"]
+        laws: ["核心圈法则", "制胜法则", "影响力"]
       },
       {
         id: "h7",
@@ -844,7 +844,7 @@ export const ACADEMY_COURSES: TeamAcademyCourse[] = [
         ],
         homework: "写一份你的职业兴趣与能力清单：想做什么、差距、下季度一个可逆尝试。",
         keywords: ["兴趣", "风险", "资源", "盲区", "示弱"],
-        laws: ["过程法则", "制胜法则", "高潜36情境"]
+        laws: ["过程法则", "制胜法则", "驱动力"]
       },
       {
         id: "h8",
@@ -863,7 +863,7 @@ export const ACADEMY_COURSES: TeamAcademyCourse[] = [
         ],
         homework: "写一份半年晋升准备清单：差距、2个跨部门项目、支持角色安排。",
         keywords: ["晋升", "差距", "可见度", "功劳", "行动"],
-        laws: ["增值法则", "高潜36情境"]
+        laws: ["增值法则", "卓有成效的管理者"]
       },
       {
         id: "h9",
@@ -882,7 +882,7 @@ export const ACADEMY_COURSES: TeamAcademyCourse[] = [
         ],
         homework: "写一份你的第一次带团队90天计划：观察、沟通、边界、反馈机制。",
         keywords: ["决策", "实习生", "坦诚", "质疑", "边界"],
-        laws: ["制胜法则", "领导力试炼", "高潜36情境"]
+        laws: ["制胜法则", "领导力试炼", "哈佛商学院最受欢迎的领导课"]
       }
     ]
   }

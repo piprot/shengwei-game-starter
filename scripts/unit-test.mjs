@@ -637,6 +637,10 @@ assert(
   ALL_ACADEMY_SCENARIOS.length === 108,
   "team academy should contain 108 scenarios across three roles"
 );
+assert(
+  new Set(ALL_ACADEMY_SCENARIOS.map((item) => item.id)).size === 108,
+  "team academy scenario ids should be unique across roles"
+);
 for (const role of ["parachute", "founder", "highPotential"]) {
   const scenarios = scenariosForRole(role);
   assert(
