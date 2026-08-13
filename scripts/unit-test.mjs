@@ -105,6 +105,7 @@ import {
   ACADEMY_COURSES,
   TEAM_MENTORS,
   applyPracticeAnswer,
+  courseFor,
   createTeamAcademyState,
   recruitMentor,
   submitHomework
@@ -641,6 +642,18 @@ assert(
   new Set(ALL_ACADEMY_SCENARIOS.map((item) => item.id)).size === 108,
   "team academy scenario ids should be unique across roles"
 );
+assert(
+  ALL_ACADEMY_SCENARIOS.every((item) => item.paths?.length === 4),
+  "every academy scenario should explain all 4 paths"
+);
+const academyBestCount = { 0: 0, 1: 0, 2: 0, 3: 0 };
+for (const item of ALL_ACADEMY_SCENARIOS) {
+  academyBestCount[item.best] += 1;
+}
+assert(
+  Object.values(academyBestCount).every((count) => count >= 6),
+  "academy best answers should be distributed across all options"
+);
 for (const role of ["parachute", "founder", "highPotential"]) {
   const scenarios = scenariosForRole(role);
   assert(
@@ -663,25 +676,65 @@ for (const role of ["parachute", "founder", "highPotential"]) {
     ids.size === 36,
     `${role} lessons should cover all 36 scenario ids`
   );
+  assert(
+    course.lessons.every((lesson) => lesson.checklist?.length >= 5),
+    `${role} lessons should each have a 5-item action checklist`
+  );
 }
 
 const academyState = createTeamAcademyState("parachute");
-const scenarioResult = applyScenarioChoice(academyState, "p1", 1);
+const p1 = ALL_ACADEMY_SCENARIOS.find((item) => item.id === "p1");
+const scenarioResult = applyScenarioChoice(academyState, "p1", p1.best);
 assert(
   scenarioResult.correct === true &&
     scenarioResult.gained === 6 &&
+    scenarioResult.path &&
+    scenarioResult.bestPath &&
     scenarioResult.state.completedScenarios.length === 1,
-  "team academy scenario choice should score and track completion"
+  "team academy scenario choice should score, track completion and return path"
+);
+const replayed = applyScenarioChoice(
+  scenarioResult.state,
+  "p1",
+  p1.best
+);
+assert(
+  replayed.gained === 0 && replayed.state.completedScenarios.length === 1,
+  "team academy scenario should not award repeat points after completion"
+);
+const wrongIndex = p1.best === 0 ? 1 : 0;
+const wrongResult = applyScenarioChoice(academyState, "p2", wrongIndex);
+assert(
+  wrongResult.correct === false &&
+    wrongResult.gained === 0 &&
+    wrongResult.state.completedScenarios.length === 0,
+  "wrong academy scenario choice should not mark completion"
+);
+const p2 = ALL_ACADEMY_SCENARIOS.find((item) => item.id === "p2");
+const retried = applyScenarioChoice(wrongResult.state, "p2", p2.best);
+assert(
+  retried.correct === true && retried.gained === 6,
+  "academy scenario should award points on first correct attempt after a wrong try"
 );
 const practiceResult = applyPracticeAnswer(
   academyState,
   "p1",
   0,
-  1
+  courseFor("parachute").lessons[0].practice[0].answer
 );
 assert(
   practiceResult.correct === true && practiceResult.gained === 6,
   "team academy practice answer should score correct choices"
+);
+const practiceReplay = applyPracticeAnswer(
+  practiceResult.state,
+  "p1",
+  0,
+  courseFor("parachute").lessons[0].practice[0].answer
+);
+assert(
+  practiceReplay.gained === 0,
+  "team academy practice should not award repeat points after a correct answer"
 );
 const homeworkResult = submitHomework(
   academyState,
@@ -692,11 +745,27 @@ assert(
   homeworkResult.score >= 70 && homeworkResult.passed === true,
   "team academy homework should pass with keywords"
 );
+const homeworkReplay = submitHomework(
+  homeworkResult.state,
+  "p1",
+  "前任信任观察1对1授权"
+);
+assert(
+  homeworkReplay.passed === true &&
+    homeworkReplay.state.dimensions.trust ===
+      homeworkResult.state.dimensions.trust,
+  "team academy homework should not double-award dimensions"
+);
 const mentored = recruitMentor(academyState, TEAM_MENTORS[0].id);
 assert(
   mentored.mentorId === TEAM_MENTORS[0].id &&
     mentored.dimensions.trust === 8,
   "team academy mentor should boost the matching dimension"
+);
+const mentoredAgain = recruitMentor(mentored, TEAM_MENTORS[0].id);
+assert(
+  mentoredAgain.dimensions.trust === 8,
+  "team academy should only allow one mentor per run"
 );
 
 assert(RANDOM_EVENT_IDS.length >= 20, "random events must be 20+");

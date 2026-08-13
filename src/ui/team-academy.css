@@ -200,6 +200,29 @@
   line-height: 1.6;
 }
 
+.ta-path-review p,
+.ta-best-path p {
+  margin: 6px 0;
+  color: #c6d2dc;
+  line-height: 1.65;
+}
+
+.ta-path-choice {
+  margin-top: 0;
+}
+
+.ta-path-choice b,
+.ta-path-review b,
+.ta-best-path b {
+  color: #f2c14e;
+}
+
+.ta-knowledge {
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid rgba(255, 255, 255, 0.12);
+}
+
 .ta-homework textarea {
   width: 100%;
   min-height: 96px;

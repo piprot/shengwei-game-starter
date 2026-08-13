@@ -2,6 +2,12 @@ export type TeamRole = "parachute" | "founder" | "highPotential";
 
 export type InfluenceKey = "trust" | "connection" | "strategy" | "succession";
 
+export interface AcademyScenarioPath {
+  outcome: string;
+  why: string;
+  recovery: string;
+}
+
 export interface TeamAcademyPractice {
   prompt: string;
   options: string[];
@@ -19,6 +25,7 @@ export interface TeamAcademyLesson {
   formula: string;
   model: string[];
   examples: string[];
+  checklist: string[];
   practice: TeamAcademyPractice[];
   homework: string;
   keywords: string[];
@@ -43,6 +50,7 @@ export interface AcademyScenario {
   best: number;
   feedback: string;
   knowledge: string;
+  paths: AcademyScenarioPath[];
 }
 
 export interface TeamAcademyState {
@@ -52,6 +60,7 @@ export interface TeamAcademyState {
   completedScenarios: string[];
   scenarioScores: Record<string, number>;
   practiceScores: Record<string, number>;
+  practiceAnswered: Record<string, number[]>;
   homeworkScores: Record<string, number>;
   mentorId?: string;
   updatedAt: number;
@@ -118,6 +127,13 @@ export const ACADEMY_COURSES: TeamAcademyCourse[] = [
           }
         ],
         homework: "列出本周3件可以授权给前任或骨干的任务，并写出授权边界与检查节点。",
+        checklist: [
+          "完成全员一对一访谈，每人30分钟，只问现状和历史",
+          "画出团队信息地图：谁掌握关键信息、谁影响舆论",
+          "整理前任的历史风险清单，标注优先级",
+          "与前任约定每周沟通节奏和边界",
+          "第30天做一次公开盘点，汇报观察结论"
+        ],
         keywords: ["前任", "信任", "观察", "1对1", "授权"],
         laws: ["根基法则", "影响力法则", "上任第一年"]
       },
@@ -160,6 +176,13 @@ export const ACADEMY_COURSES: TeamAcademyCourse[] = [
           }
         ],
         homework: "写一份你所在团队最常见的技术或流程问题复盘，包含原因、影响和下一步方案。",
+        checklist: [
+          "用两天Review团队近半年的代码、方案和项目状态",
+          "找出1-2个真实技术债或性能瓶颈",
+          "组织一次不追责的技术复盘会",
+          "亲自牵头解决一个问题，把方法沉淀成文档",
+          "把复盘文档放入团队知识库，供新人查阅"
+        ],
         keywords: ["技术", "杠杆", "复盘", "方案", "文档"],
         laws: ["管理杠杆率", "镜像法则", "格鲁夫给经理人的第一课"]
       },
@@ -202,6 +225,13 @@ export const ACADEMY_COURSES: TeamAcademyCourse[] = [
           }
         ],
         homework: "为本周一个真实任务写一份Brief：背景、目标、负责人、检查节点、成功标准。",
+        checklist: [
+          "为本周任务写一份书面Brief，包含目标、负责人、检查节点、成功标准",
+          "固定每周30分钟一对一，提前发问题清单",
+          "给任务时说明“为什么做、做多久、成功标准”",
+          "对新人用贴标签激励，对资深成员用请教式反馈",
+          "把口头结论同步成简短书面记录"
+        ],
         keywords: ["1对1", "自主", "专精", "目的", "Brief"],
         laws: ["驱动力", "不懂说话你怎么带团队", "亲和力法则"]
       },
@@ -244,6 +274,13 @@ export const ACADEMY_COURSES: TeamAcademyCourse[] = [
           }
         ],
         homework: "画出你的岗位接班人表：候选人、能力差距、未来三个月补短板的动作。",
+        checklist: [
+          "列出本周所有工作，圈出30%可授权任务",
+          "选2-3名高潜，分配一个端到端小项目",
+          "用“岗位×候选人×能力差距”表做一次盘点",
+          "给每个培养对象设一个可验证的交付目标",
+          "向上汇报时用“谁独立交付了什么”的句式"
+        ],
         keywords: ["授权", "接班人", "梯队", "培养", "证据"],
         laws: ["接班规划", "授权法则", "传承法则", "哈佛商学院最受欢迎的领导课"]
       },
@@ -263,6 +300,13 @@ export const ACADEMY_COURSES: TeamAcademyCourse[] = [
           { prompt: "核心成员离职原因不明时，先做？", options: ["加薪硬留", "了解真实动机", "直接放人", "签竞业"], answer: 1, explanation: "先搞清楚是钱、成长还是信任问题。" }
         ],
         homework: "为一名关键成员写一份30天绩效反馈：事实、差距、下一步行动。",
+        checklist: [
+          "把模糊目标翻译成3个可量化KR",
+          "为关键项目设定每周检查节点",
+          "主动同步一次坏消息并带恢复方案",
+          "对关键成员做一次30天绩效反馈",
+          "用数据记录核心成员的动机信号"
+        ],
         keywords: ["目标", "反馈", "延期", "关键成员", "绩效"],
         laws: ["格鲁夫给经理人的第一课", "驱动力", "绩效管理"]
       },
@@ -282,6 +326,13 @@ export const ACADEMY_COURSES: TeamAcademyCourse[] = [
           { prompt: "会议总不出结论，应？", options: ["继续开会", "区分两类会议", "取消会议", "书面发言"], answer: 1, explanation: "决策会议要控制人数并产出结论。" }
         ],
         homework: "为你最常开的会写一份会议类型和决策产出标准。",
+        checklist: [
+          "识别团队当前3个信任风险点",
+          "为越级汇报设定“紧急升级规则”",
+          "把例会拆成信息同步会和决策会",
+          "把模糊目标翻译成可验证KR",
+          "每周做一次边界复查并记录"
+        ],
         keywords: ["信任", "边界", "会议", "前任", "目标"],
         laws: ["团队协作的五大障碍", "格鲁夫给经理人的第一课"]
       },
@@ -301,6 +352,13 @@ export const ACADEMY_COURSES: TeamAcademyCourse[] = [
           { prompt: "你成为决策瓶颈，首先？", options: ["继续拍板", "列出可授权任务", "减少决策", "让团队猜"], answer: 1, explanation: "先授权30%。" }
         ],
         homework: "写一个试点团队的OKR草稿：目标、3个KR、70%成功线。",
+        checklist: [
+          "写一版试点团队OKR：1个目标、3个KR、70%成功线",
+          "挑一个小团队试点三周",
+          "给挑战目标设置安全失败空间",
+          "列出可授权任务清单，按能力分级",
+          "每周复盘试点数据，决定是否推广"
+        ],
         keywords: ["OKR", "试点", "授权", "目标", "驱动力"],
         laws: ["这就是OKR", "驱动力", "授权法则"]
       },
@@ -320,6 +378,13 @@ export const ACADEMY_COURSES: TeamAcademyCourse[] = [
           { prompt: "下属公开质疑你的决定，最好？", options: ["当场反驳", "邀请他做风险识别者", "立即改", "冷处理"], answer: 1, explanation: "倾听而不让步。" }
         ],
         homework: "写一份90天梯队汇报：授权动作、2名培养对象、各自可验证结果。",
+        checklist: [
+          "为每名培养对象做意愿、能力、任务三问诊断",
+          "记录“谁独立交付了什么”的具体证据",
+          "邀请质疑者担任风险识别者",
+          "与上级对齐梯队验收标准",
+          "写一份90天梯队汇报初稿"
+        ],
         keywords: ["诊断", "证据", "质疑", "梯队", "汇报"],
         laws: ["接班规划", "领导力试炼", "哈佛商学院最受欢迎的领导课"]
       },
@@ -339,6 +404,13 @@ export const ACADEMY_COURSES: TeamAcademyCourse[] = [
           { prompt: "离开前交接最重要的是？", options: ["留给自己", "确认接班并演练", "口头交代", "让上级指定"], answer: 1, explanation: "交接要可验证。" }
         ],
         homework: "写一份接班人交接清单：岗位、候选人、能力差距、交接演练日期。",
+        checklist: [
+          "列出团队现有文化习惯及其成因",
+          "在自己团队试点一个风险清单机制",
+          "用固定一对一和书面同步替代高频社交",
+          "为绩效评估准备事实、差距和改善计划",
+          "确定接班人并安排交接演练"
+        ],
         keywords: ["文化", "沟通", "交接", "接班人", "评估"],
         laws: ["传承法则", "哈佛商学院最受欢迎的领导课", "卓有成效的管理者"]
       }
@@ -389,6 +461,13 @@ export const ACADEMY_COURSES: TeamAcademyCourse[] = [
           }
         ],
         homework: "写下你团队当前最想实现的一个月目标，以及一个本周就能完成的小胜利。",
+        checklist: [
+          "写下本月最重要的一个目标",
+          "找出一个本周能完成的小胜利",
+          "把愿景讲成“为谁解决什么问题”",
+          "邀请核心成员参与一次关键决策",
+          "每周复盘一次你的决策是否成为瓶颈"
+        ],
         keywords: ["盖子", "影响力", "愿景", "小胜", "追随"],
         laws: ["盖子法则", "影响力法则", "动势法则"]
       },
@@ -431,6 +510,13 @@ export const ACADEMY_COURSES: TeamAcademyCourse[] = [
           }
         ],
         homework: "把团队当前目标拆成3个要务和3个可量化KR，并标出你要放弃的一件事。",
+        checklist: [
+          "列出当前3个要务并排序",
+          "用“不做哪个损失最大”砍掉一项",
+          "把目标翻译成3个可量化KR",
+          "明确每个要务的负责人和检查节点",
+          "把放弃项存档，防止复活主义"
+        ],
         keywords: ["方向", "优先", "OKR", "KR", "取舍"],
         laws: ["导航法则", "优先次序法则", "舍得法则", "这就是OKR"]
       },
@@ -473,6 +559,13 @@ export const ACADEMY_COURSES: TeamAcademyCourse[] = [
           }
         ],
         homework: "为当前最重要项目写一段「为什么重要」的说明，并给团队一个可自主决策的小范围。",
+        checklist: [
+          "为最重要项目写一页“为什么重要”",
+          "给团队一个可自主决策的小范围",
+          "把任务设计成“跳一跳够得着”",
+          "用追踪替代控制，让进度可见",
+          "每周收集一次成员对意义感的反馈"
+        ],
         keywords: ["自主", "专精", "目的", "追踪", "意义"],
         laws: ["驱动力", "动势法则", "增值法则"]
       },
@@ -515,6 +608,13 @@ export const ACADEMY_COURSES: TeamAcademyCourse[] = [
           }
         ],
         homework: "为一名骨干设计3个月成长计划：当前授权级别、目标级别、2个完整项目、检查节点。",
+        checklist: [
+          "为骨干设计3个月成长计划",
+          "给1-2个完整项目并设检查节点",
+          "明确当前授权级别和目标级别",
+          "记录每次授权的成败证据",
+          "每月和骨干对齐一次成长进度"
+        ],
         keywords: ["授权", "倍增", "领导者", "接班人", "培养"],
         laws: ["授权法则", "爆炸性倍增法则", "传承法则", "赋能"]
       },
@@ -534,6 +634,13 @@ export const ACADEMY_COURSES: TeamAcademyCourse[] = [
           { prompt: "合伙人理念冲突，最好？", options: ["选边站", "做成可量化假设", "让董事会裁决", "各干各的"], answer: 1, explanation: "用数据化解立场。" }
         ],
         homework: "为当前公司写一份90天生存计划：现金流、优先级、一个共同验证假设。",
+        checklist: [
+          "写90天现金流计划：收入、支出、安全垫",
+          "把优先级收敛到一个核心假设",
+          "对核心团队做分层透明沟通",
+          "定一个两周内可赢的小目标",
+          "每周复盘现金和安全垫变化"
+        ],
         keywords: ["融资", "透明", "士气", "复盘", "数据"],
         laws: ["制胜法则", "团队协作的五大障碍", "卓有成效的管理者"]
       },
@@ -553,6 +660,13 @@ export const ACADEMY_COURSES: TeamAcademyCourse[] = [
           { prompt: "被迫裁员，按什么决定？", options: ["人情", "业务优先级", "工龄", "随机"], answer: 1, explanation: "裁员要基于组织需要。" }
         ],
         homework: "画一张当前项目的最小依赖清单：需要谁、做什么、每周多少时间。",
+        checklist: [
+          "画最小依赖清单：需要谁、做什么、多少时间",
+          "为每个跨部门问题定义唯一owner",
+          "把跨部门依赖写进周会清单",
+          "为需求变更建立记录和成本机制",
+          "每月检查一次“踢皮球”案例"
+        ],
         keywords: ["目标", "依赖", "远程", "裁员", "协作"],
         laws: ["赋能", "团队协作的五大障碍"]
       },
@@ -572,6 +686,13 @@ export const ACADEMY_COURSES: TeamAcademyCourse[] = [
           { prompt: "培养接班人犯错后？", options: ["收回授权", "复盘系统继续培养", "公开批评", "让他离职"], answer: 1, explanation: "控制损失并转化为成长。" }
         ],
         homework: "写一份公司价值观行为清单：每条价值观对应2个可观察行为。",
+        checklist: [
+          "把价值观翻译成可观察行为",
+          "复盘最近三次冲突，先系统后个人",
+          "选2-3名高潜做轮岗项目",
+          "给接班人设定明确授权测试",
+          "每月记录一次文化行为变化"
+        ],
         keywords: ["文化", "价值观", "高潜", "接班人", "验证"],
         laws: ["赋能", "爆炸性倍增法则", "领导力试炼"]
       },
@@ -591,6 +712,13 @@ export const ACADEMY_COURSES: TeamAcademyCourse[] = [
           { prompt: "团队提新方向，最好？", options: ["拒绝", "最小验证", "立刻投入", "让团队决定"], answer: 1, explanation: "用低成本验证代替拍脑袋。" }
         ],
         homework: "为团队一个新想法写一个7天最小验证方案：假设、动作、判断标准。",
+        checklist: [
+          "写一个7天最小验证方案",
+          "定义验证的假设、动作和判断标准",
+          "为团队争取资源前先做数据准备",
+          "把出差或离开时的决策边界写清楚",
+          "每周复盘新方向的验证结果"
+        ],
         keywords: ["授权", "汇报", "验证", "新方向", "取舍"],
         laws: ["舍得法则", "导航法则", "直觉法则"]
       },
@@ -610,6 +738,13 @@ export const ACADEMY_COURSES: TeamAcademyCourse[] = [
           { prompt: "准备扩张，先培养？", options: ["更多执行者", "可独立带队的管理者", "自己先跑", "外包"], answer: 1, explanation: "扩张靠可复制人才。" }
         ],
         homework: "写一份规模化授权图：层级、例外规则、每个层级的决策边界。",
+        checklist: [
+          "画分级授权图：层级、例外规则、决策边界",
+          "把高频低风险决策直接授权",
+          "为每层授权配审计和检查节点",
+          "把季度计划拆成周交付物",
+          "每月复查一次你还在做什么本不该你做的事"
+        ],
         keywords: ["授权", "目标", "扩张", "管理者", "传承"],
         laws: ["赋能", "爆炸性倍增法则", "传承法则"]
       }
@@ -645,6 +780,13 @@ export const ACADEMY_COURSES: TeamAcademyCourse[] = [
           { prompt: "职责不清时最该？", options: ["等出问题", "重画职责矩阵并公开", "让资历深的人全包", "只提醒一人"], answer: 1, explanation: "显式化分工比靠默契可靠。" }
         ],
         homework: "为当前项目写一份职责矩阵：成员、任务、决策边界、检查节点。",
+        checklist: [
+          "为项目写职责矩阵：成员、任务、决策边界",
+          "和每位成员一对一确认负载和意愿",
+          "把目标翻译成验收标准并公开",
+          "设定每件事的唯一owner",
+          "每周复查一次分工是否失衡"
+        ],
         keywords: ["目标", "分工", "职责", "优先级", "对齐"],
         laws: ["格鲁夫给经理人的第一课", "上任第一年", "团队协作的五大障碍"]
       },
@@ -672,6 +814,13 @@ export const ACADEMY_COURSES: TeamAcademyCourse[] = [
           { prompt: "团队容量不足时？", options: ["全员加班", "重排并向上确认可砍项", "硬接需求", "让客户排序"], answer: 1, explanation: "管理预期比硬扛更重要。" }
         ],
         homework: "为下周会议写一份议程：背景、决策项、需要谁、期望产出。",
+        checklist: [
+          "为下周会议写议程：背景、决策项、需要谁",
+          "会前发议题，会上限讨论差异",
+          "把跨部门依赖切到最小再谈协作",
+          "为每个协作请求写明价值和边界",
+          "会后24小时内同步结论"
+        ],
         keywords: ["会议", "议题", "决策", "依赖", "资源"],
         laws: ["格鲁夫给经理人的第一课", "团队协作的五大障碍", "影响力"]
       },
@@ -699,6 +848,13 @@ export const ACADEMY_COURSES: TeamAcademyCourse[] = [
           { prompt: "两名成员方案冲突，最好？", options: ["站一边", "做可验证对比", "终止合作", "抽签"], answer: 1, explanation: "用数据解决立场。" }
         ],
         homework: "写一份成员绩效反馈模板：事实、影响、期望、检查节点。",
+        checklist: [
+          "写一份反馈模板：事实、影响、期望、检查节点",
+          "为最近一次错误做系统复盘",
+          "把冲突变成可验证的对比实验",
+          "约定检查节点而不是只做总结",
+          "每月收集一次反馈效果"
+        ],
         keywords: ["反馈", "复盘", "冲突", "检查", "数据"],
         laws: ["上任第一年", "团队协作的五大障碍", "卓有成效的管理者"]
       },
@@ -726,6 +882,13 @@ export const ACADEMY_COURSES: TeamAcademyCourse[] = [
           { prompt: "计划不执行，先检查？", options: ["执行力", "目标是否可量化", "换人", "每天催"], answer: 1, explanation: "偏差常来自目标不清。" }
         ],
         homework: "把当前模糊目标改写成3个可量化KR。",
+        checklist: [
+          "把模糊目标改写成3个可量化KR",
+          "给一个成员完整小任务验证自主权",
+          "把“做完”改成可验证交付物",
+          "为挑战目标设置安全失败空间",
+          "每周复盘执行偏差的原因"
+        ],
         keywords: ["情绪", "内驱力", "KR", "目标", "执行"],
         laws: ["驱动力", "这就是OKR", "格鲁夫给经理人的第一课"]
       },
@@ -753,6 +916,13 @@ export const ACADEMY_COURSES: TeamAcademyCourse[] = [
           { prompt: "授权骨干时，最好？", options: ["继续全控", "按授权阶梯逐步放权", "完全放手", "让经理授权"], answer: 1, explanation: "授权要按能力阶梯推进。" }
         ],
         homework: "为一名新人写30天成长计划，并为一名骨干写授权阶梯表。",
+        checklist: [
+          "为新人写30天成长计划",
+          "为骨干画授权阶梯表",
+          "建立异步文档和固定同步节奏",
+          "把辅导写进老员工的目标",
+          "每周检查一次远程协作信息差"
+        ],
         keywords: ["远程", "新人", "辅导", "授权", "节奏"],
         laws: ["赋能", "驱动力", "领导梯队"]
       },
@@ -780,6 +950,13 @@ export const ACADEMY_COURSES: TeamAcademyCourse[] = [
           { prompt: "核心成员想离职，先？", options: ["加薪", "了解真实原因", "直接放人", "签竞业"], answer: 1, explanation: "先知道是钱、成长还是信任。" }
         ],
         homework: "画一张你团队的业绩×潜力九宫格，并标出2名培养对象。",
+        checklist: [
+          "画业绩×潜力九宫格",
+          "标出2名培养对象和证据",
+          "为授权设定安全失败边界",
+          "为关键成员做动机盘点",
+          "每月更新一次人才盘点"
+        ],
         keywords: ["授权", "机制", "离职", "盘点", "潜力"],
         laws: ["领导梯队", "影响力", "上任第一年"]
       },
@@ -807,6 +984,13 @@ export const ACADEMY_COURSES: TeamAcademyCourse[] = [
           { prompt: "绩效沟通最重要？", options: ["避免冲突", "事实和改善计划", "打低分", "让HR谈"], answer: 1, explanation: "绩效反馈要具体可行动。" }
         ],
         homework: "为一名接班人写90天培养计划：项目、授权级别、检查节点。",
+        checklist: [
+          "为接班人写90天培养计划",
+          "为绩效沟通准备事实和改善计划",
+          "公开调整分工并说明依据",
+          "设置授权的检查节点",
+          "每月复盘培养进展"
+        ],
         keywords: ["梯队", "接班人", "绩效", "调配", "计划"],
         laws: ["领导梯队", "哈佛商学院最受欢迎的领导课", "卓有成效的管理者"]
       },
@@ -834,6 +1018,13 @@ export const ACADEMY_COURSES: TeamAcademyCourse[] = [
           { prompt: "有人越级，先？", options: ["公开警告", "诊断动机再对齐边界", "也越级", "忽略"], answer: 1, explanation: "先看是信任还是流程问题。" }
         ],
         homework: "写一份团队复盘规则：先系统后个人、不追责、必须有行动项。",
+        checklist: [
+          "写团队复盘规则：先系统后个人",
+          "奖励主动暴露问题的人",
+          "安排一次低威胁的非正式交流",
+          "建立共享信息库和同步机制",
+          "每月检查一次信息透明度"
+        ],
         keywords: ["文化", "氛围", "边界", "透明", "复盘"],
         laws: ["团队协作的五大障碍", "赋能", "影响力"]
       },
@@ -861,6 +1052,13 @@ export const ACADEMY_COURSES: TeamAcademyCourse[] = [
           { prompt: "第一次带团队，先？", options: ["和以前一样", "对齐目标和机制", "只发指令", "等出问题再管"], answer: 1, explanation: "先立目标和协作机制。" }
         ],
         homework: "写一份你的管理转型90天计划：目标、机制、反馈、交接。",
+        checklist: [
+          "写管理转型90天计划",
+          "为交接写清单并做演练",
+          "危机时先止损再复盘",
+          "邀请质疑者参与验证",
+          "每周复盘一次转型进展"
+        ],
         keywords: ["交接", "危机", "质疑", "机制", "转型"],
         laws: ["哈佛商学院最受欢迎的领导课", "领导梯队", "卓有成效的管理者"]
       }
@@ -876,6 +1074,7 @@ export function createTeamAcademyState(role: TeamRole): TeamAcademyState {
     completedScenarios: [],
     scenarioScores: {},
     practiceScores: {},
+    practiceAnswered: {},
     homeworkScores: {},
     updatedAt: Date.now()
   };
@@ -895,9 +1094,15 @@ export function applyPracticeAnswer(
   const question = lesson?.practice[questionIndex];
   if (!lesson || !question) return { state, correct: false, gained: 0 };
   const correct = question.answer === optionIndex;
-  const gained = correct ? 6 : 0;
+  const answered = state.practiceAnswered[lessonId] ?? [];
+  const alreadyCorrect = answered.includes(questionIndex);
+  const gained = correct && !alreadyCorrect ? 6 : 0;
+  const practiceAnswered = correct && !alreadyCorrect
+    ? { ...state.practiceAnswered, [lessonId]: [...answered, questionIndex] }
+    : state.practiceAnswered;
   const next: TeamAcademyState = {
     ...state,
+    practiceAnswered,
     practiceScores: {
       ...state.practiceScores,
       [lessonId]: (state.practiceScores[lessonId] ?? 0) + gained
@@ -914,6 +1119,14 @@ export function submitHomework(
 ): { state: TeamAcademyState; score: number; passed: boolean; missing: string[] } {
   const lesson = courseFor(state.role).lessons.find((item) => item.id === lessonId);
   if (!lesson) return { state, score: 0, passed: false, missing: [] };
+  if (state.completedLessons.includes(lessonId)) {
+    return {
+      state,
+      score: state.homeworkScores[lessonId] ?? 100,
+      passed: true,
+      missing: []
+    };
+  }
   const hit = lesson.keywords.filter((keyword) => text.includes(keyword));
   const score = Math.min(100, Math.round((hit.length / Math.max(1, lesson.keywords.length)) * 100) + 40);
   const passed = score >= 70;
@@ -944,7 +1157,7 @@ export function recruitMentor(
   mentorId: string
 ): TeamAcademyState {
   const mentor = TEAM_MENTORS.find((item) => item.id === mentorId);
-  if (!mentor) return state;
+  if (!mentor || state.mentorId) return state;
   return {
     ...state,
     mentorId,
@@ -985,6 +1198,10 @@ export function loadTeamAcademyState(): TeamAcademyState | null {
       completedScenarios: Array.isArray(parsed.completedScenarios)
         ? parsed.completedScenarios
         : [],
+      practiceAnswered:
+        parsed.practiceAnswered && typeof parsed.practiceAnswered === "object"
+          ? parsed.practiceAnswered
+          : {},
       scenarioScores:
         parsed.scenarioScores && typeof parsed.scenarioScores === "object"
           ? parsed.scenarioScores

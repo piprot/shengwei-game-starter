@@ -65,7 +65,18 @@ export class TeamAcademyApp {
   private currentScenarioId?: string;
   private questionIndex = 0;
   private lastAnswer?: { correct: boolean; explanation: string };
-  private scenarioResult?: { correct: boolean; feedback: string };
+  private scenarioResult?: {
+    correct: boolean;
+    feedback: string;
+    chosen: string;
+    outcome: string;
+    why: string;
+    recovery: string;
+    bestIndex: number;
+    bestText: string;
+    bestWhy: string;
+    knowledge: string;
+  };
   private homeworkResult?: { score: number; passed: boolean; missing: string[] };
 
   constructor(
@@ -142,13 +153,39 @@ export class TeamAcademyApp {
       );
       this.states[this.currentRole] = result.state;
       this.persist();
-      this.scenarioResult = { correct: result.correct, feedback: result.feedback };
+      const scenario = scenarioById(this.currentScenarioId);
+      this.scenarioResult = {
+        correct: result.correct,
+        feedback: result.feedback,
+        chosen: scenario?.options[Number(target.dataset.option)] ?? "",
+        outcome: result.path?.outcome ?? "",
+        why: result.path?.why ?? "",
+        recovery: result.path?.recovery ?? "",
+        bestIndex: result.bestIndex,
+        bestText: scenario?.options[result.bestIndex] ?? "",
+        bestWhy: result.bestPath?.why ?? "",
+        knowledge: scenario?.knowledge ?? ""
+      };
       this.callbacks.onAudio(result.correct ? "correct" : "wrong");
       this.render(this.root);
       return;
     }
     if (action === "ta-scenario-back") {
       this.currentScenarioId = undefined;
+      this.scenarioResult = undefined;
+      this.callbacks.onAudio("ui");
+      this.render(this.root);
+      return;
+    }
+    if (action === "ta-next-scenario") {
+      const lesson = courseFor(this.currentRole).lessons.find(
+        (item) => item.scenarioIds.includes(this.currentScenarioId ?? "")
+      );
+      if (!lesson || !this.currentScenarioId) return;
+      const index = lesson.scenarioIds.indexOf(this.currentScenarioId);
+      const next = lesson.scenarioIds[index + 1];
+      if (!next) return;
+      this.currentScenarioId = next;
       this.scenarioResult = undefined;
       this.callbacks.onAudio("ui");
       this.render(this.root);
@@ -326,11 +363,34 @@ export class TeamAcademyApp {
         `
       )
       .join("");
+    const lesson = courseFor(this.currentRole).lessons.find((item) =>
+      item.scenarioIds.includes(scenario.id)
+    );
+    const scenarioIndex = lesson
+      ? lesson.scenarioIds.indexOf(scenario.id)
+      : 0;
+    const nextId = lesson?.scenarioIds[scenarioIndex + 1];
     const result = this.scenarioResult
       ? `<div class="ta-feedback ${this.scenarioResult.correct ? "correct" : "wrong"}">
-          <strong>${this.scenarioResult.correct ? (en ? "Good call" : "判断正确") : (en ? "Review the knowledge point" : "再看知识点")}</strong>
-          <p>${esc(this.scenarioResult.feedback)}</p>
-        </div>`
+            <strong>${this.scenarioResult.correct ? (en ? "Good call" : "判断正确") : (en ? "Review the path" : "需要复盘")}</strong>
+            <p>${esc(this.scenarioResult.feedback)}</p>
+          </div>
+          <section class="ta-panel ta-path-review">
+            <h2>${en ? "Your Path" : "你选择的路径"}</h2>
+            <p class="ta-path-choice"><b>${en ? "Choice" : "你选了"}：</b>${esc(this.scenarioResult.chosen)}</p>
+            <p><b>${en ? "Result" : "结果"}：</b>${esc(this.scenarioResult.outcome)}</p>
+            <p><b>${en ? "Why" : "为什么"}：</b>${esc(this.scenarioResult.why)}</p>
+            <p><b>${en ? "Recovery" : "补救"}：</b>${esc(this.scenarioResult.recovery)}</p>
+          </section>
+          <section class="ta-panel ta-best-path">
+            <h2>${en ? "Best Path" : "最优路径"}</h2>
+            <p class="ta-path-choice"><b>${en ? "Best" : "最优"}（${this.scenarioResult.bestIndex + 1}/4）：</b>${esc(this.scenarioResult.bestText)}</p>
+            <p><b>${en ? "Why" : "为什么"}：</b>${esc(this.scenarioResult.bestWhy)}</p>
+            <p class="ta-knowledge"><b>${en ? "Knowledge" : "知识点"}：</b>${esc(this.scenarioResult.knowledge)}</p>
+          </section>`
+      : "";
+    const nextAction = this.scenarioResult && nextId
+      ? `<button class="primary" data-action="ta-next-scenario">${en ? "Next Scenario" : "下一个情境"}</button>`
       : "";
     return `
       <header class="topbar">
@@ -340,13 +400,13 @@ export class TeamAcademyApp {
       </header>
       <main class="ta-shell ta-scenario-play" aria-label="${esc(scenario.title)}">
         <section class="ta-play-hero">
-          <p class="eyebrow">${en ? `Level ${scenario.level} · Scenario` : `第 ${scenario.level} 关 · 情境`}</p>
+          <p class="eyebrow">${en ? `Level ${scenario.level} · Scenario ${scenarioIndex + 1}/4` : `第 ${scenario.level} 关 · 情境 ${scenarioIndex + 1}/4`}</p>
           <h1>${esc(scenario.title)}</h1>
           <p>${esc(scenario.situation)}</p>
         </section>
         ${result}
         <section class="ta-play-options">${options}</section>
-        <div class="ta-actions"><button class="primary" data-action="ta-scenario-back">${en ? "Back to Lesson" : "返回本课"}</button></div>
+        <div class="ta-actions"><button class="primary" data-action="ta-scenario-back">${en ? "Back to Lesson" : "返回本课"}</button>${nextAction}</div>
       </main>
     `;
   }
@@ -403,6 +463,9 @@ export class TeamAcademyApp {
     `;
     const modelSteps = lesson.model.map((step) => `<li>${esc(step)}</li>`).join("");
     const examples = lesson.examples.map((item) => `<li>${esc(item)}</li>`).join("");
+    const checklist = (lesson.checklist ?? [])
+      .map((item) => `<li>${esc(item)}</li>`)
+      .join("");
     return `
       <header class="topbar">
         <div class="brand">${en ? "Ascend" : "升维"}</div>
@@ -426,7 +489,7 @@ export class TeamAcademyApp {
                 return `
                   <button class="ta-scenario-card ${done ? "done" : ""}" data-action="ta-scenario" data-scenario="${scenario.id}">
                     <strong>${esc(scenario.title)}</strong>
-                    <span>${done ? (en ? "Done" : "已完成") : (en ? `${score} pts` : `${score} 分`)}</span>
+                    <span>${done ? (en ? "Done" : "已完成") : (en ? "Not started" : "未开始")}</span>
                   </button>
                 `;
               })
@@ -448,6 +511,11 @@ export class TeamAcademyApp {
         <section class="ta-panel">
           <p class="eyebrow">${en ? "Step 5 · Transfer" : "第 5 步 · 举一反三"}</p>
           <ul>${examples}</ul>
+        </section>
+        <section class="ta-panel">
+          <p class="eyebrow">${en ? "Step 6 · Action Checklist" : "第 6 步 · 落地清单"}</p>
+          <h2>${en ? "This week, complete these five actions" : "本周完成这 5 个动作"}</h2>
+          <ol>${checklist}</ol>
         </section>
         ${practiceMarkup}
         ${homeworkMarkup}

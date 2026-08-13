@@ -11,6 +11,7 @@
     "preview": "vite preview",
     "test": "node scripts/smoke.mjs",
     "test:unit": "node --experimental-strip-types scripts/unit-test.mjs",
+    "test:academy": "node --experimental-strip-types scripts/team-academy-audit.mjs",
     "audit": "node scripts/audit.mjs",
     "content-audit": "node --experimental-strip-types scripts/content-audit.mjs",
     "leadership-audit": "node --experimental-strip-types scripts/leadership-audit.mjs",

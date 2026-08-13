@@ -68,6 +68,9 @@ jobs:
       - name: Unit tests
         run: npm run test:unit
 
+      - name: Team academy audit
+        run: npm run test:academy
+
       - name: Ability balance gate
         run: npm run ability-balance
 
