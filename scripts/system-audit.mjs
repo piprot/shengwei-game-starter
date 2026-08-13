@@ -69,7 +69,8 @@ const VIEWS = [
   { action: "open-settings", selector: ".settings-shell" },
   { action: "open-coach", selector: ".coach-shell" },
   { action: "open-leadership-games", selector: ".lg-grid" },
-  { action: "open-custom-scenarios", selector: ".custom-workshop-shell" }
+  { action: "open-custom-scenarios", selector: ".custom-workshop-shell" },
+  { action: "open-team-academy", selector: ".ta-shell" }
 ];
 
 try {
@@ -93,6 +94,9 @@ try {
       await page.locator('[data-action="lg-home"]').first().click();
       await page.waitForSelector(".map-shell", { timeout: 15000 });
       await openMenu.click();
+    } else if (view.action === "open-team-academy") {
+      await page.locator('[data-action="ta-home"]').first().click();
+      await page.waitForSelector(".menu-shell", { timeout: 15000 });
     } else {
       await openMenu.click();
     }

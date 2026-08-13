@@ -13,6 +13,7 @@ import "./dashboard-stamp.css";
 import "./transitions.css";
 import "./texture-details.css";
 import "./ui/leadership-games.css";
+import "./ui/team-academy.css";
 import { AdaptiveGameApp } from "./ui/App";
 
 /**

@@ -97,6 +97,19 @@ import {
   validateCustomScenario
 } from "../src/core/custom-scenarios.ts";
 import {
+  ALL_ACADEMY_SCENARIOS,
+  applyScenarioChoice,
+  scenariosForRole
+} from "../src/core/academy-scenarios.ts";
+import {
+  ACADEMY_COURSES,
+  TEAM_MENTORS,
+  applyPracticeAnswer,
+  createTeamAcademyState,
+  recruitMentor,
+  submitHomework
+} from "../src/core/team-academy.ts";
+import {
   DIMENSION_ORDER,
   LEADERSHIP_DIMENSIONS,
   addDimensionExp,
@@ -618,6 +631,68 @@ assert(
 assert(
   importCustomScenarios("{broken json", 1).length === 0,
   "broken custom scenario import should return an empty list"
+);
+
+assert(
+  ALL_ACADEMY_SCENARIOS.length === 108,
+  "team academy should contain 108 scenarios across three roles"
+);
+for (const role of ["parachute", "founder", "highPotential"]) {
+  const scenarios = scenariosForRole(role);
+  assert(
+    scenarios.length === 36,
+    `${role} should have 36 scenarios`
+  );
+  assert(
+    new Set(scenarios.map((item) => item.level)).size === 9,
+    `${role} scenarios should span 9 levels`
+  );
+  const course = ACADEMY_COURSES.find((item) => item.role === role);
+  assert(
+    course && course.lessons.length === 9,
+    `${role} course should have 9 lessons`
+  );
+  const ids = new Set(
+    course.lessons.flatMap((lesson) => lesson.scenarioIds)
+  );
+  assert(
+    ids.size === 36,
+    `${role} lessons should cover all 36 scenario ids`
+  );
+}
+
+const academyState = createTeamAcademyState("parachute");
+const scenarioResult = applyScenarioChoice(academyState, "p1", 1);
+assert(
+  scenarioResult.correct === true &&
+    scenarioResult.gained === 6 &&
+    scenarioResult.state.completedScenarios.length === 1,
+  "team academy scenario choice should score and track completion"
+);
+const practiceResult = applyPracticeAnswer(
+  academyState,
+  "p1",
+  0,
+  1
+);
+assert(
+  practiceResult.correct === true && practiceResult.gained === 6,
+  "team academy practice answer should score correct choices"
+);
+const homeworkResult = submitHomework(
+  academyState,
+  "p1",
+  "前任信任观察1对1授权"
+);
+assert(
+  homeworkResult.score >= 70 && homeworkResult.passed === true,
+  "team academy homework should pass with keywords"
+);
+const mentored = recruitMentor(academyState, TEAM_MENTORS[0].id);
+assert(
+  mentored.mentorId === TEAM_MENTORS[0].id &&
+    mentored.dimensions.trust === 8,
+  "team academy mentor should boost the matching dimension"
 );
 
 assert(RANDOM_EVENT_IDS.length >= 20, "random events must be 20+");

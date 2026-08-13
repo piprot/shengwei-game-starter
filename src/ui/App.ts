@@ -117,6 +117,7 @@ import {
   LeadershipGamesApp,
   type LeadershipGameId
 } from "./leadership-games";
+import { TeamAcademyApp } from "./team-academy";
 import {
   DIMENSION_ORDER,
   LEADERSHIP_DIMENSIONS,
@@ -234,7 +235,7 @@ const SETTINGS_MIGRATION_KEY = "adaptive-ascent-settings-v2";
 const GUIDE_KEY = "adaptive-ascent-guide-v1";
 const GUIDE_REWARD_KEY = "adaptive-ascent-guide-reward";
 const ACHIEVEMENT_FAVORITE_KEY = "adaptive-ascent-achievement-favorites";
-const APP_VERSION = "1.7.31";
+const APP_VERSION = "1.7.32";
 
 type View =
   | "menu"
@@ -250,6 +251,7 @@ type View =
   | "dualReview"
   | "customScenarios"
   | "customScenarioPlay"
+  | "teamAcademy"
   | "chapterTransition"
   | "ability"
   | "report"
@@ -353,6 +355,7 @@ export class AdaptiveGameApp {
   private pendingIntegrityOption?: number;
   private integrityGateMode: "cost" | "ability" = "cost";
   private leadershipGames?: LeadershipGamesApp;
+  private teamAcademy?: TeamAcademyApp;
   private wrongReviewQueue: string[] = [];
   private wrongReviewIndex = 0;
   private dualReviewQueue: string[] = [];
@@ -688,6 +691,8 @@ export class AdaptiveGameApp {
         : view === "dualReview"
           ? "menu"
         : view === "customScenarios" || view === "customScenarioPlay"
+          ? "menu"
+        : view === "teamAcademy"
           ? "menu"
         : view === "duel"
           ? "duel"
@@ -1394,6 +1399,9 @@ export class AdaptiveGameApp {
       case "customScenarioPlay":
         this.renderCustomScenarioPlay();
         break;
+      case "teamAcademy":
+        this.renderTeamAcademy();
+        break;
       case "chapterTransition":
         this.renderChapterTransition();
         break;
@@ -1674,6 +1682,13 @@ export class AdaptiveGameApp {
             <span class="card-index">12</span>
             <h2>${this.language === "en" ? "Scenario Workshop" : "情境工坊"}</h2>
             <p>${this.language === "en" ? "Write a real workplace dilemma, validate the expert/partial/risk structure, and play it with your team." : "写下真实职场两难，校验专家/部分/风险结构，再与团队一起试玩复盘。"}</p>
+          </button>
+          <button class="menu-card has-art" data-action="open-team-academy">
+            <img class="menu-card-cover" src="${this.artAsset("menu-card-10")}" alt="" loading="lazy" onerror="this.style.display='none'" />
+            <span class="menu-card-mask"></span>
+            <span class="card-index">13</span>
+            <h2>${this.language === "en" ? "Team Academy" : "团队管理训练营"}</h2>
+            <p>${this.language === "en" ? "Three roles, 108 scenarios, and a scenario-to-homework learning loop for team management." : "三类角色、108 个情境，用情境→公式→练习→作业闭环提升团队管理能力。"}</p>
           </button>
         </section>
       </main>
@@ -3017,6 +3032,14 @@ export class AdaptiveGameApp {
       return;
     }
     this.leadershipGames.render(this.root);
+  }
+
+  private renderTeamAcademy(): void {
+    if (!this.teamAcademy) {
+      this.show("menu");
+      return;
+    }
+    this.teamAcademy.render(this.root);
   }
 
   private resetDualSelection(): void {
@@ -5953,6 +5976,10 @@ export class AdaptiveGameApp {
       this.leadershipGames?.handleAction(action, actionTarget);
       return;
     }
+    if (this.view === "teamAcademy" && action.startsWith("ta-")) {
+      this.teamAcademy?.handleAction(action, actionTarget);
+      return;
+    }
 
     if (!ONLINE_ENABLED && action.startsWith("cloud-")) {
       this.cloudStatus =
@@ -6323,6 +6350,22 @@ export class AdaptiveGameApp {
         this.resetDualSelection();
         this.audio.ui();
         this.show("report");
+        break;
+      case "open-team-academy":
+        this.teamAcademy = new TeamAcademyApp(
+          this.save.profile.role as "parachute" | "founder" | "highPotential",
+          this.language,
+          {
+            onBack: () => this.show("menu"),
+            onAudio: (kind) => {
+              if (kind === "correct") this.audio.expert();
+              else if (kind === "wrong") this.audio.risk();
+              else this.audio.ui();
+            }
+          }
+        );
+        this.audio.ui();
+        this.show("teamAcademy");
         break;
       case "open-custom-scenarios":
         this.customPlayId = undefined;
