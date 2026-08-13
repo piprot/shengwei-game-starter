@@ -1731,7 +1731,7 @@ export class AdaptiveGameApp {
                       const active = slot.role === this.save.profile.role;
                       return `
                         <div class="role-slot-card ${active ? "active" : ""} ${slot.exists ? "" : "empty"} has-slot-art">
-                          <img class="role-slot-avatar" src="${this.artAsset(`role-${slot.role}`)}" alt="${this.roleDisplay(slot.role).name}" onerror="this.style.opacity='0'" loading="lazy" />
+                          <img class="role-slot-avatar" src="${this.artAsset(`role-${slot.role}.svg`)}" alt="${this.roleDisplay(slot.role).name}" onerror="this.style.opacity='0'" loading="lazy" />
                           <div class="role-slot-body">
                             <strong>${this.roleDisplay(slot.role).name}</strong>
                             <span>${slot.exists ? `${escapeHtml(slot.name)} · ${en ? "Chapters" : "章节"} ${slot.chapterCount}/9 · ${en ? "Mastery" : "修炼"} ${slot.masteryPoints}` : (en ? "No save yet" : "未建档")}</span>
@@ -1762,7 +1762,7 @@ export class AdaptiveGameApp {
                     const roleView = this.roleDisplay(role.id);
                     return `
                     <button type="button" class="role-card ${this.pendingRole === role.id ? "selected" : ""}" data-action="select-role" data-role="${role.id}">
-                      <img class="role-portrait" src="${this.artAsset(`role-${role.id}`)}" alt="${roleView.name}" onerror="this.onerror=null; this.src='./art/role-${role.id}.svg'" loading="lazy" />
+                      <img class="role-portrait" src="${this.artAsset(`role-${role.id}.svg`)}" alt="${roleView.name}" onerror="this.onerror=null; this.src='./art/role-${role.id}.svg'" loading="lazy" />
                       <span class="role-name">${roleView.name}</span>
                       <span class="role-desc">${en ? ROLE_EN[role.id].description : role.description}</span>
                       <span class="role-start">${en ? `Start: ${role.startingResources.energy} Energy / ${role.startingResources.trust} Trust` : `起点：${role.startingResources.energy} 精力 / ${role.startingResources.trust} 信任`}</span>
